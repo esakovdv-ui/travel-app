@@ -180,6 +180,28 @@
   right: 0;
 }
 
+.calendarClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 20, 43, 0.06);
+  color: var(--c-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background var(--transition), color var(--transition);
+}
+.calendarClose:hover {
+  background: rgba(20, 20, 43, 0.12);
+  color: var(--c-text);
+}
+
 .popoverCalendar {
   width: auto;
   min-width: 660px;
