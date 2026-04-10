@@ -693,8 +693,11 @@
 }
 
 @media (max-width: 480px) {
-  .inner { gap: 8px; }
+  .inner { gap: 8px; min-height: 56px; }
   .actions { gap: 6px; }
   .compactPill { max-width: 200px; padding-left: 12px; }
   .compactPillHideOnMobile { display: none; }
+  .headerTab { padding: 6px 8px; gap: 4px; }
+  .headerTabIcon { display: none; }
+  .headerTabLabel { font-size: 0.82rem; }
 }

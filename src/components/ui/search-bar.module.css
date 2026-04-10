@@ -289,3 +289,67 @@
   cursor: pointer;
 }
 .ageSelect:focus { border-color: var(--c-red); }
+
+/* Mobile */
+@media (max-width: 860px) {
+  .bar,
+  .barTours {
+    grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1.1fr) auto minmax(44px, auto);
+    padding: 4px;
+    border-radius: 999px;
+    gap: 0;
+  }
+
+  .div {
+    height: 20px;
+  }
+
+  .seg {
+    padding: 8px 10px;
+  }
+
+  .segLabel {
+    font-size: 0.6rem;
+  }
+
+  .segValue {
+    font-size: 0.78rem;
+  }
+
+  .submitBtnText {
+    display: none;
+  }
+
+  .submitBtn {
+    min-width: 40px;
+    min-height: 40px;
+    width: 40px;
+    padding: 0;
+    border-radius: 999px;
+  }
+
+  /* Скрываем поле "Откуда" и его разделитель на мобиле */
+  .segFrom,
+  .divFrom {
+    display: none;
+  }
+
+  .popoverCalendar {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .bar,
+  .barTours {
+    grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr) auto minmax(40px, auto);
+  }
+
+  .seg {
+    padding: 7px 8px;
+  }
+}

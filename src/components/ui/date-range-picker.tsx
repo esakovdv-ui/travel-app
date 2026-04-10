@@ -174,7 +174,7 @@ export function DateRangePicker({ value, onChange, onConfirm }: Props) {
         <button type="button" className={styles.navBtn}
           onClick={() => setLeftMonth(m => addMonths(m, -1))}>‹</button>
         {renderMonth(leftMonth)}
-        {renderMonth(rightMonth)}
+        <div className={styles.secondMonth}>{renderMonth(rightMonth)}</div>
         <button type="button" className={styles.navBtn}
           onClick={() => setLeftMonth(m => addMonths(m, 1))}>›</button>
       </div>

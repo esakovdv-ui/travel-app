@@ -195,7 +195,7 @@ export function SearchBar({
           {/* Откуда — только для туров */}
           {showFromCity && (<>
             <div
-              className={`${styles.seg} ${activeField === 'from' ? styles.segActive : ''}`}
+              className={`${styles.seg} ${styles.segFrom} ${activeField === 'from' ? styles.segActive : ''}`}
               onClick={() => toggle('from')}
               role="button" tabIndex={0}
             >
@@ -215,7 +215,7 @@ export function SearchBar({
                 </div>
               )}
             </div>
-            <div className={`${styles.div} ${activeField === 'from' || activeField === 'where' ? styles.divHidden : ''}`} />
+            <div className={`${styles.div} ${styles.divFrom} ${activeField === 'from' || activeField === 'where' ? styles.divHidden : ''}`} />
           </>)}
 
           {/* Куда */}

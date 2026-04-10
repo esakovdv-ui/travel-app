@@ -62,7 +62,7 @@ function HotelsPageInner() {
       endDateTill:   searchParams.get('endDateTill')   ?? '',
       adults:        searchParams.get('adults')        ?? '2',
       fromCity:      searchParams.get('fromCity')      ?? 'Moscow',
-      searchType:    'hotel',
+      searchType:    'auto',
       ...(searchParams.get('toCity') ? { toCity: searchParams.get('toCity')! } : {}),
       ...(Number(searchParams.get('kids') ?? 0) > 0 ? {
         kids:     searchParams.get('kids')!,
