@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   MagnifyingGlassIcon, MapPinIcon, CalendarBlankIcon,
-  UsersThreeIcon, AirplaneTakeoffIcon, BuildingsIcon,
+  UsersThreeIcon, AirplaneTakeoffIcon, BuildingsIcon, XIcon,
 } from '@/components/icons';
 import { DateRangePicker, DateRangeValue } from './date-range-picker';
 import { DestinationSearch } from './destination-search';
@@ -112,6 +112,18 @@ export function SearchBar({
   const [kids, setKids] = useState(initialValues?.kids ?? 0);
   const [kidsAges, setKidsAges] = useState<number[]>(initialValues?.kidsAges ?? []);
   const [activeField, setActiveField] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Закрываем поповер при клике вне компонента
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setActiveField(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Labels
   const whenLabel = (() => {
@@ -166,7 +178,7 @@ export function SearchBar({
   }
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} ref={wrapRef}>
       {/* Tabs */}
       {showTabs && (
         <div className={styles.tabs} role="tablist">
@@ -258,6 +270,14 @@ export function SearchBar({
             </span>
             {activeField === 'when' && (
               <div className={`${styles.popover} ${styles.popoverCalendar}`} onClick={e => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className={styles.calendarClose}
+                  onClick={() => setActiveField(null)}
+                  aria-label="Закрыть календарь"
+                >
+                  <XIcon weight="bold" size={16} />
+                </button>
                 <DateRangePicker
                   value={dateRange}
                   onChange={setDateRange}
