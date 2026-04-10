@@ -1,0 +1,411 @@
+.wrap {
+  position: relative;
+}
+
+/* === Compact sticky bar === */
+.compactBar {
+  position: fixed;
+  top: 82px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 8px 8px 20px;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 4px 24px rgba(20, 20, 43, 0.14);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.compactBarVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.compactSegment {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--c-text);
+  padding: 0 14px;
+}
+
+.compactSegmentMuted {
+  color: var(--c-text-muted);
+  font-weight: 400;
+}
+
+.compactDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(20, 20, 43, 0.12);
+  flex-shrink: 0;
+}
+
+.compactSearchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--c-red);
+  color: #fff;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* === Tabs === */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.tab:hover {
+  background: rgba(20, 20, 43, 0.04);
+  color: var(--c-text);
+}
+
+.tabActive {
+  background: #fff;
+  color: var(--c-text);
+  box-shadow: 0 8px 20px rgba(20, 20, 43, 0.07);
+}
+
+.tabIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(20, 20, 43, 0.05);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.tabText {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.tabLabel {
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tabHint {
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.tabBadge {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(20, 20, 43, 0.08);
+  color: var(--c-text);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* === Search bar === */
+.form {
+  position: relative;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) auto minmax(160px, 1fr) auto minmax(200px, 1.08fr);
+  align-items: center;
+  gap: 0;
+  padding: 6px;
+  border: 1px solid rgba(20, 20, 43, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 40px rgba(20, 20, 43, 0.08);
+}
+
+.segment {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.segment:hover {
+  background: rgba(20, 20, 43, 0.035);
+}
+
+.segmentActive {
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(20, 20, 43, 0.08);
+}
+
+.segmentWho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.segmentText {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.segmentLabel {
+  color: var(--c-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.segmentInput,
+.segmentValue {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  appearance: none;
+}
+
+.divider {
+  width: 1px;
+  height: 30px;
+  background: rgba(20, 20, 43, 0.08);
+  transition: opacity var(--transition);
+}
+
+.dividerHidden {
+  opacity: 0;
+}
+
+.searchButton {
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-red);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  white-space: nowrap;
+}
+
+.searchButton:hover {
+  background: var(--c-red-hover);
+  transform: scale(1.03);
+}
+
+.searchButtonText {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+/* === Popover === */
+.popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(320px, 100%);
+  padding: 16px 20px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(20, 20, 43, 0.12);
+  z-index: 5;
+}
+
+.popoverRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(20, 20, 43, 0.08);
+}
+
+.popoverRow:last-child {
+  border-bottom: 0;
+}
+
+.popoverLabel {
+  color: var(--c-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.popoverHint {
+  margin-top: 3px;
+  color: var(--c-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.counterButton {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(20, 20, 43, 0.14);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--c-text);
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counterButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.counterValue {
+  min-width: 12px;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+/* === Pills === */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.pill {
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+}
+
+/* === Responsive === */
+@media (max-width: 900px) {
+  .compactBar {
+    top: 72px;
+  }
+
+  .tabs {
+    justify-content: flex-start;
+  }
+
+  .tabHint {
+    display: none;
+  }
+
+  .bar {
+    grid-template-columns: 1fr 1fr;
+    border-radius: 26px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .segmentWho {
+    grid-column: 1 / -1;
+  }
+
+  .popover {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .compactBar {
+    width: calc(100% - 32px);
+    justify-content: space-between;
+  }
+
+  .searchButtonText {
+    display: none;
+  }
+
+  .searchButton {
+    width: 52px;
+    padding: 0;
+  }
+
+  .bar {
+    grid-template-columns: 1fr;
+    border-radius: 24px;
+  }
+
+  .segment {
+    padding: 10px 12px;
+    border-radius: 18px;
+    background: rgba(20, 20, 43, 0.03);
+  }
+
+  .segmentWho {
+    flex-direction: row;
+  }
+
+  .popover {
+    position: static;
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 20px;
+  }
+
+  .tab {
+    padding: 8px 12px;
+  }
+
+  .tabBadge {
+    display: none;
+  }
+}

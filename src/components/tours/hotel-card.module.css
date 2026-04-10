@@ -1,0 +1,272 @@
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.card:hover {
+  box-shadow: var(--shadow-sm);
+  outline: 2px solid var(--c-blue);
+}
+
+/* ── Горизонтальный вариант ── */
+.cardRow {
+  flex-direction: row;
+  border-radius: var(--radius-md);
+}
+.cardRow .imageWrap {
+  width: 220px;
+  flex-shrink: 0;
+  aspect-ratio: unset;
+  height: auto;
+  border-radius: 0;
+}
+.cardRow .body {
+  padding: 16px 20px;
+}
+.cardRow .footer {
+  margin-top: auto;
+}
+
+@media (max-width: 640px) {
+  .cardRow .imageWrap {
+    width: 120px;
+  }
+}
+
+/* ── Фото ── */
+.imageWrap {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--c-surface-alt);
+  flex-shrink: 0;
+}
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.card:hover .image {
+  transform: none;
+}
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-text-light);
+  font-size: 2rem;
+}
+
+/* оверлеи на фото */
+.imageTop {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  pointer-events: none;
+}
+.imageBottom {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  pointer-events: none;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+}
+.star {
+  font-size: 11px;
+  color: #f5c000;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+
+.labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.labelInstant {
+  background: rgba(20, 160, 90, 0.85);
+  color: #fff;
+}
+.labelCheap {
+  background: rgba(232, 39, 42, 0.85);
+  color: #fff;
+}
+
+/* ── Тело карточки ── */
+.body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+/* строка: название + рейтинг */
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.rating {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.ratingHigh   { background: #dcfce7; color: #15803d; }
+.ratingMid    { background: #fef9c3; color: #854d0e; }
+.ratingLow    { background: var(--c-blue-subtle); color: var(--c-text-muted); }
+
+/* локация */
+.location {
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.locationIcon { flex-shrink: 0; opacity: 0.6; }
+
+/* характеристики */
+.specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+.spec {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--c-blue-subtle);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+/* разделитель */
+.divider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 4px 0;
+}
+
+/* строка питание */
+.mealRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mealBadge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--c-yellow-subtle);
+  color: #7a5800;
+  white-space: nowrap;
+}
+.mealHint {
+  font-size: 0.75rem;
+  color: var(--c-text-light);
+}
+
+/* футер */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.priceBlock {}
+.priceFrom {
+  font-size: 0.7rem;
+  color: var(--c-text-light);
+  font-weight: 500;
+}
+.price {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--c-text);
+  line-height: 1.1;
+}
+.pricePrev {
+  font-size: 0.8rem;
+  color: var(--c-text-light);
+  text-decoration: line-through;
+  margin-left: 5px;
+}
+.nights {
+  font-size: 0.75rem;
+  color: var(--c-text-light);
+  margin-top: 1px;
+}
+
+.bookBtn {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  white-space: nowrap;
+}
+.bookBtn:hover {
+  background: var(--c-red-hover);
+  transform: scale(1.03);
+}

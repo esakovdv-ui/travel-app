@@ -1,0 +1,29 @@
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ratingRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ratingLabel {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+}
+
+.ratingInput {
+  max-width: 120px;
+}
+
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+}

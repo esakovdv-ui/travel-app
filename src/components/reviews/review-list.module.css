@@ -1,0 +1,72 @@
+.list {
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--c-blue-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  flex-shrink: 0;
+}
+
+.authorName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--c-text);
+}
+
+.date {
+  font-size: 0.75rem;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.stars {
+  color: var(--c-yellow);
+  font-size: 0.9rem;
+  letter-spacing: -1px;
+  flex-shrink: 0;
+}
+
+.comment {
+  font-size: 0.9rem;
+  color: var(--c-text-muted);
+  line-height: 1.65;
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--c-text-muted);
+  font-size: 0.9rem;
+}

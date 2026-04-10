@@ -1,0 +1,154 @@
+.page {
+  padding: 16px 24px 0;
+  padding-right: calc(42vw + 48px);
+}
+
+.layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 268px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 96px);
+  overflow-x: visible;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 32px;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.results {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 80px;
+}
+
+.resetLink {
+  background: none;
+  border: none;
+  color: var(--c-red);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.resultsCount {
+  font-size: 0.88rem;
+  color: var(--c-text-muted);
+}
+
+.mapPanel {
+  position: fixed;
+  right: 0;
+  top: 72px;
+  width: 42vw;
+  height: calc(100vh - 72px);
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 16px;
+  color: var(--c-text-muted);
+  font-size: 0.95rem;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--c-border);
+  border-top-color: var(--c-red);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  background: var(--c-red-subtle);
+  color: var(--c-red);
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 64px 16px;
+  color: var(--c-text-light);
+  font-size: 0.95rem;
+}
+
+/* Средние экраны: сайдбар уже, карточки меньше */
+@media (max-width: 1100px) {
+  .layout {
+    gap: 20px;
+  }
+}
+
+/* Планшет: карта скрывается, results растягивается */
+@media (max-width: 1024px) {
+  .results {
+    flex: 1;
+  }
+  .mapPanel {
+    display: none;
+  }
+}
+
+/* Мобайл: сайдбар скрыт, страница перестаёт быть фиксированной */
+@media (max-width: 860px) {
+  .page {
+    height: auto;
+    overflow: visible;
+  }
+  .layout {
+    flex-direction: column;
+    gap: 0;
+    overflow: visible;
+    height: auto;
+  }
+  .sidebar {
+    display: none;
+  }
+  .results {
+    height: auto;
+    overflow: visible;
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 16px 48px;
+  }
+}

@@ -1,0 +1,117 @@
+.card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px;
+  text-decoration: none;
+  color: #ffffff;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.bgWarm {
+  background: linear-gradient(145deg, #f4a102 0%, #d06000 100%);
+}
+
+.bgCold {
+  background: linear-gradient(145deg, #1a3a80 0%, #0c2461 100%);
+}
+
+.bgActive {
+  background: linear-gradient(145deg, #d62828 0%, #8b1010 100%);
+}
+
+/* Suprematist geometric shapes overlay */
+.geoAccent {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.geoAccent::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 160px;
+  height: 160px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.geoAccent::after {
+  content: '';
+  position: absolute;
+  bottom: 60px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.body {
+  position: relative;
+  z-index: 1;
+}
+
+.direction {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: normal;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  max-width: 240px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius);
+  transition: background var(--transition), border-color var(--transition);
+  width: fit-content;
+}
+
+.cta:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.arrow {
+  transition: transform var(--transition);
+}
+
+.card:hover .arrow {
+  transform: translateX(4px);
+}

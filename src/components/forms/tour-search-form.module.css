@@ -1,0 +1,111 @@
+.form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  margin-bottom: 32px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  grid-column: span 2;
+}
+
+@media (max-width: 640px) {
+  .fieldWide { grid-column: span 1; }
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 15px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fafafa;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.select:focus { border-color: #f97316; }
+
+.destWrap {
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  background: #fafafa;
+  font-size: 15px;
+  transition: border-color 0.15s;
+}
+.destWrap:focus-within { border-color: #f97316; }
+
+.dateBtn {
+  text-align: left;
+  color: #1a1a1a;
+  width: 100%;
+}
+.dateBtn:not([disabled]):hover { border-color: #f97316; }
+
+.calendarWrap {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  border-radius: 16px;
+}
+
+.kidsAges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kidsAgeField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.submitBtn:hover:not(:disabled) { background: #1d4ed8; }
+.submitBtn:disabled { background: #e0e0e0; color: #aaa; cursor: default; }

@@ -1,0 +1,25 @@
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.submitBtn {
+  margin-top: 8px;
+}
+
+.note {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+}

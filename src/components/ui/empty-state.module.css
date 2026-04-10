@@ -1,0 +1,53 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 72px 32px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+
+.mark {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--c-border-strong);
+  border-radius: 50%;
+}
+
+.mark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: var(--c-blue-subtle);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: normal;
+  color: var(--c-text);
+  margin-bottom: 8px;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: var(--c-text-muted);
+  line-height: 1.6;
+  max-width: 360px;
+  margin-bottom: 24px;
+}

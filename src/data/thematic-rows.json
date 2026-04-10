@@ -1,0 +1,78 @@
+[
+  {
+    "id": "beach",
+    "title": "Спокойный пляжный отдых",
+    "description": "Мягкие перелёты, первая линия и сценарии, где не нужно ничего усложнять.",
+    "eyebrow": "Море / relax",
+    "href": "/tours",
+    "enabled": true,
+    "order": 0,
+    "search": {
+      "toCountry": "TR",
+      "toCity": "",
+      "adults": 2,
+      "nightsFrom": 7,
+      "nightsTo": 14,
+      "startOffsetDays": 14,
+      "endOffsetDays": 60,
+      "maxResults": 10
+    }
+  },
+  {
+    "id": "europe",
+    "title": "Города для длинных выходных",
+    "description": "Короткие поездки с плотным впечатлением: архитектура, еда, прогулки и ритм города.",
+    "eyebrow": "City break",
+    "href": "/tours",
+    "enabled": false,
+    "order": 1,
+    "search": {
+      "toCountry": "AE",
+      "toCity": "",
+      "adults": 2,
+      "nightsFrom": 3,
+      "nightsTo": 7,
+      "startOffsetDays": 14,
+      "endOffsetDays": 60,
+      "maxResults": 10
+    }
+  },
+  {
+    "id": "egypt",
+    "title": "Египет — солнце и история",
+    "description": "Красное море, пирамиды и курорты Хургады и Шарм-эль-Шейха на любой вкус.",
+    "eyebrow": "Egypt / classic",
+    "href": "/tours",
+    "enabled": true,
+    "order": 2,
+    "search": {
+      "toCountry": "EG",
+      "toCity": "",
+      "adults": 2,
+      "nightsFrom": 7,
+      "nightsTo": 14,
+      "startOffsetDays": 14,
+      "endOffsetDays": 60,
+      "maxResults": 10
+    }
+  },
+  {
+    "id": "active",
+    "title": "Активные недели",
+    "description": "Трекинг, серфинг, хайкинг и сборки, где движение становится частью впечатления.",
+    "eyebrow": "Move / adventure",
+    "href": "/tours",
+    "enabled": true,
+    "order": 3,
+    "search": {
+      "toCountry": "TH",
+      "toCity": "",
+      "adults": 2,
+      "nightsFrom": 10,
+      "nightsTo": 21,
+      "startOffsetDays": 21,
+      "endOffsetDays": 90,
+      "maxResults": 10
+    }
+  }
+]

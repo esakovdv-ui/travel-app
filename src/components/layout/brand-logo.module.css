@@ -1,0 +1,31 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #000;
+}
+
+.textLine {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .text { display: none; }
+}

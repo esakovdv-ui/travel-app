@@ -1,0 +1,291 @@
+.wrap {}
+
+.form {
+  position: relative;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--transition);
+  color: var(--c-text-muted);
+}
+.tab:hover { background: var(--c-blue-subtle); }
+
+.tabActive {
+  background: var(--c-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--c-text);
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+.tabActive .tabIcon { opacity: 1; }
+
+.tabText {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.tabLabel {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.tabHint {
+  font-size: 11px;
+  color: var(--c-text-light);
+  line-height: 1.2;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto minmax(180px, 1.1fr) auto minmax(220px, 1.2fr);
+  align-items: center;
+  padding: 5px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.barTours {
+  grid-template-columns: minmax(0,1fr) auto minmax(0,1.2fr) auto minmax(100px,0.9fr) auto minmax(220px,1.2fr);
+}
+
+/* Segment */
+.seg {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--transition);
+}
+.seg:hover { background: var(--c-blue-subtle); }
+
+.segActive {
+  background: var(--c-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.segWho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.segText { display: grid; gap: 3px; }
+
+.segRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.segLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.segValue {
+  font-size: 0.86rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.segPlaceholder { color: var(--c-text-light); }
+
+/* Divider */
+.div {
+  width: 1px;
+  height: 28px;
+  background: var(--c-border);
+  transition: opacity var(--transition);
+  flex-shrink: 0;
+}
+.divHidden { opacity: 0; }
+
+/* Submit button */
+.submitBtn {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.submitBtn:hover:not(:disabled) {
+  background: var(--c-red-hover);
+  transform: scale(1.03);
+}
+.submitBtn:disabled { background: var(--c-text-light); cursor: default; }
+
+.submitBtnText {
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+/* Popover */
+.popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  width: min(280px, 90vw);
+  padding: 14px 18px;
+  border-radius: var(--radius-xl);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+}
+
+.popoverRight {
+  left: auto;
+  right: 0;
+}
+
+.popoverCalendar {
+  width: auto;
+  min-width: 660px;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Cities in from popover */
+.popoverRow {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.popoverRow:hover { background: var(--c-blue-subtle); }
+.popoverRowActive { background: var(--c-red-subtle); font-weight: 600; }
+
+/* Guests */
+.guestRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--c-border);
+  gap: 16px;
+}
+.guestRow:last-of-type { border-bottom: none; }
+
+.guestLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-text);
+  margin: 0 0 2px;
+}
+
+.guestHint {
+  font-size: 12px;
+  color: var(--c-text-light);
+  margin: 0;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.counterBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-border-strong);
+  background: none;
+  font-size: 18px;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--transition);
+}
+.counterBtn:hover:not(:disabled) { border-color: var(--c-text); }
+.counterBtn:disabled { opacity: 0.3; cursor: default; }
+
+.counterVal {
+  font-size: 15px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Kids ages */
+.kidsAges {
+  margin-top: 12px;
+  border-top: 1px solid var(--c-border);
+  padding-top: 12px;
+}
+
+.kidsAgesTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  margin: 0 0 10px;
+}
+
+.kidsAgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ageSelect {
+  padding: 5px 8px;
+  border: 1.5px solid var(--c-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+.ageSelect:focus { border-color: var(--c-red); }

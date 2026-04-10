@@ -1,0 +1,254 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.header {
+  margin-bottom: 4px;
+}
+
+.pageTitle {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: normal;
+  color: var(--c-text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pageTitleAccent {
+  width: 4px;
+  height: 24px;
+  background: var(--c-blue);
+  border-radius: 2px;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: var(--c-text-muted);
+}
+
+.notice {
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.86rem;
+}
+
+.noticeSuccess {
+  border: 1px solid rgba(22, 163, 74, 0.28);
+  background: rgba(22, 163, 74, 0.06);
+  color: #15803d;
+}
+
+.noticeError {
+  border: 1px solid rgba(214, 40, 40, 0.24);
+  background: rgba(214, 40, 40, 0.06);
+  color: var(--c-red);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.rowList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rowCard {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.rowCard.disabled {
+  opacity: 0.6;
+}
+
+.rowHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rowHeader:hover {
+  background: var(--c-surface-alt);
+}
+
+.rowOrder {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c-blue);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rowInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.rowTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--c-text);
+}
+
+.rowMeta {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+
+.rowBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.badgeOn {
+  background: rgba(22, 163, 74, 0.1);
+  color: #15803d;
+}
+
+.badgeOff {
+  background: var(--c-surface-alt);
+  color: var(--c-text-muted);
+}
+
+.rowChevron {
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+  transition: transform 0.18s;
+}
+
+.rowChevron.open {
+  transform: rotate(180deg);
+}
+
+.rowBody {
+  padding: 0 24px 24px;
+  border-top: 1px solid var(--c-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+}
+
+.fieldGroupTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-bg);
+  font-size: 0.875rem;
+  color: var(--c-text);
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--c-blue);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.toggleInput {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  appearance: none;
+  background: var(--c-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+
+.toggleInput:checked {
+  background: var(--c-blue);
+}
+
+.toggleInput::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: left 0.18s;
+}
+
+.toggleInput:checked::after {
+  left: 19px;
+}
+
+.toggleLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.numberRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
