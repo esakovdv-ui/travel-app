@@ -1,5 +1,54 @@
 # Мои Путешествия — Travel Marketplace
 
+## Правила работы с репозиторием
+
+### Ветки
+- `main` — продакшн, защищена. Прямой пуш запрещён
+- `feature/dima` — ветка Димы
+- `feature/arthur` — ветка Артура
+
+### Процесс работы
+
+1. **Перед началом задачи** — обновить свою ветку:
+   ```bash
+   git checkout feature/dima   # или feature/arthur
+   git pull origin main        # подтянуть актуальный код
+   ```
+
+2. **Работаешь, сохраняешь изменения:**
+   ```bash
+   git add .
+   git commit -m "Краткое описание что сделал"
+   git push origin feature/dima
+   ```
+
+3. **Когда задача готова — создаёшь Pull Request:**
+   - Заходишь на github.com/esakovdv-ui/travel-app
+   - Нажимаешь **Compare & pull request**
+   - Описываешь что сделал → **Create pull request**
+   - Второй участник проверяет и нажимает **Merge**
+
+4. **После мержа — деплой на сервер:**
+   ```bash
+   ssh root@72.56.32.183 "/home/deploy.sh"
+   ```
+
+5. **Если нужно откатиться:**
+   ```bash
+   ssh root@72.56.32.183
+   cd /home/travel-app
+   git log --oneline        # смотришь историю
+   git checkout abc1234     # переключаешься на нужный коммит
+   npm run build && pm2 restart travel-app
+   ```
+
+### Главные правила
+- Никогда не коммитить напрямую в `main`
+- Всегда подтягивать актуальный код перед началом работы (`git pull`)
+- Описывать коммиты понятно: «Добавил фильтр по звёздам», а не «fix» или «update»
+
+---
+
 Next.js 15 + React 19 + TypeScript приложение для продажи туров и отелей через White Label API Level Travel.
 
 ---
