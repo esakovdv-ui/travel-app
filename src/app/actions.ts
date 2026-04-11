@@ -12,7 +12,17 @@ import {
 import { hashPassword, verifyPassword } from '@/lib/security';
 import { bookingSchema, loginSchema, packageSchema, registrationSchema, reviewSchema } from '@/lib/validation';
 import { AppError } from '@/lib/errors';
+import { ZodError } from 'zod';
 import type { TravelReviewStatus } from '@/types/travel';
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof ZodError) {
+    return error.errors[0]?.message ?? 'Ошибка валидации';
+  }
+  if (error instanceof AppError) return error.message;
+  if (error instanceof Error) return error.message;
+  return 'Произошла ошибка, попробуйте снова';
+}
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 дней
 
@@ -62,12 +72,7 @@ export async function registerAction(formData: FormData) {
       role: user.role,
     });
   } catch (error) {
-    const message = error instanceof AppError
-      ? error.message
-      : error instanceof Error
-        ? error.message
-        : 'Ошибка при регистрации';
-    redirectPath = buildStatusUrl('/auth/register', { error: message });
+    redirectPath = buildStatusUrl('/auth/register', { error: getErrorMessage(error) });
   }
   redirect(redirectPath);
 }
@@ -94,8 +99,7 @@ export async function loginAction(formData: FormData) {
       });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Ошибка при входе';
-    redirectPath = buildStatusUrl('/auth/login', { error: message });
+    redirectPath = buildStatusUrl('/auth/login', { error: getErrorMessage(error) });
   }
   redirect(redirectPath);
 }
