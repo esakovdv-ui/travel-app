@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { TicketIcon, HeartIcon, StarIcon, SlidersIcon, UsersThreeIcon } from '@/components/icons';
 import { buildMetadata } from '@/lib/seo';
 import { listFeaturedPackages, listBookingsByUser } from '@/lib/repositories';
@@ -14,7 +13,7 @@ export const metadata = buildMetadata({
 
 export default async function AccountPage() {
   const session = await getSession();
-  if (!session) redirect('/auth/login?next=/account');
+  if (!session) return null; // middleware уже редиректит неавторизованных
 
   const [bookings, saved] = await Promise.all([
     listBookingsByUser(session.userId),
