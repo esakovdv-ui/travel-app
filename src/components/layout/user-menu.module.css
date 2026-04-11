@@ -1,0 +1,133 @@
+.skeleton {
+  width: 120px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--c-border);
+  opacity: 0.5;
+}
+
+/* Не авторизован */
+.loginBtn {
+  height: 42px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  box-shadow: 0 8px 20px rgba(20, 20, 43, 0.06);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.loginBtn:hover { background: var(--c-blue-subtle); }
+
+.loginLabel { font-size: 0.84rem; font-weight: 600; }
+
+/* Авторизован */
+.wrap {
+  position: relative;
+}
+
+.avatarBtn {
+  height: 42px;
+  border-radius: 999px;
+  background: #fff;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 6px;
+  box-shadow: 0 8px 20px rgba(20, 20, 43, 0.06);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.avatarBtn:hover { background: var(--c-blue-subtle); }
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c-red);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+/* Дропдаун */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 40px rgba(20, 20, 43, 0.14);
+  z-index: 300;
+  overflow: hidden;
+}
+
+.dropdownHeader {
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdownName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.dropdownEmail {
+  font-size: 12px;
+  color: var(--c-text-light);
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 0 8px;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--c-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+.dropdownItem:hover { background: var(--c-blue-subtle); }
+
+.dropdownLogout {
+  color: var(--c-red);
+  width: 100%;
+  margin-bottom: 4px;
+}
+.dropdownLogout:hover { background: var(--c-red-subtle); }
+
+@media (max-width: 640px) {
+  .name { display: none; }
+  .avatarBtn { padding: 0 6px; width: 42px; justify-content: center; }
+  .loginLabel { display: none; }
+  .loginBtn { width: 42px; padding: 0; justify-content: center; }
+}
