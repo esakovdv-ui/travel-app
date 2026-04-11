@@ -1,15 +1,32 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createJwtToken } from '@/lib/jwt';
-import { createBooking, createReview, findUserByEmail, registerUser, updateReviewStatus, upsertPackage } from '@/lib/repositories';
+import { SESSION_COOKIE, JWT_SECRET } from '@/lib/session';
+import {
+  createBooking, createReview, findUserByEmail,
+  registerUser, updateReviewStatus, upsertPackage,
+} from '@/lib/repositories';
 import { hashPassword, verifyPassword } from '@/lib/security';
 import { bookingSchema, loginSchema, packageSchema, registrationSchema, reviewSchema } from '@/lib/validation';
 import { AppError } from '@/lib/errors';
 import type { TravelReviewStatus } from '@/types/travel';
 
-const JWT_SECRET = 'replace-in-env';
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 дней
+
+async function setSessionCookie(payload: Record<string, string>) {
+  const token = await createJwtToken(payload, JWT_SECRET, SESSION_MAX_AGE);
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_MAX_AGE,
+    path: '/',
+  });
+}
 
 function buildStatusUrl(basePath: string, params: Record<string, string>) {
   const searchParams = new URLSearchParams(params);
@@ -22,37 +39,57 @@ export async function registerAction(formData: FormData) {
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
     email: formData.get('email'),
-    password: formData.get('password')
+    password: formData.get('password'),
   });
 
-  await registerUser({
+  const user = await registerUser({
     id: crypto.randomUUID(),
     email: parsed.email,
     passwordHash: await hashPassword(parsed.password),
     firstName: parsed.firstName,
     lastName: parsed.lastName,
     role: 'user',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   });
 
-  await createJwtToken({ email: parsed.email, role: 'user' }, JWT_SECRET);
-  redirect('/tours');
+  await setSessionCookie({
+    userId: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  });
+
+  redirect('/account');
 }
 
 export async function loginAction(formData: FormData) {
   const parsed = loginSchema.parse({
     email: formData.get('email'),
-    password: formData.get('password')
+    password: formData.get('password'),
   });
 
   const user = await findUserByEmail(parsed.email);
 
   if (!user || !(await verifyPassword(parsed.password, user.passwordHash))) {
-    throw new AppError('Invalid email or password.', 401);
+    throw new AppError('Неверный email или пароль.', 401);
   }
 
-  await createJwtToken({ email: user.email, role: user.role }, JWT_SECRET);
-  redirect('/tours');
+  await setSessionCookie({
+    userId: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  });
+
+  redirect('/account');
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE);
+  redirect('/auth/login');
 }
 
 export async function createBookingAction(formData: FormData) {
@@ -65,18 +102,17 @@ export async function createBookingAction(formData: FormData) {
       customerEmail: formData.get('customerEmail'),
       travelersCount: formData.get('travelersCount'),
       travelDate: formData.get('travelDate'),
-      notes: formData.get('notes')
+      notes: formData.get('notes'),
     });
 
     await createBooking({
       id: crypto.randomUUID(),
       status: 'pending',
       createdAt: new Date().toISOString(),
-      ...parsed
+      ...parsed,
     });
 
     revalidatePath('/account');
-    revalidatePath('/tours');
     redirect(buildStatusUrl(redirectTo, { status: 'success', booking: 'created' }));
   } catch (error) {
     const message = error instanceof AppError ? error.message : 'Не удалось создать бронирование.';
@@ -93,14 +129,14 @@ export async function createReviewAction(formData: FormData) {
       authorName: formData.get('authorName'),
       authorEmail: formData.get('authorEmail'),
       rating: formData.get('rating'),
-      comment: formData.get('comment')
+      comment: formData.get('comment'),
     });
 
     await createReview({
       id: crypto.randomUUID(),
       status: 'pending',
       createdAt: new Date().toISOString(),
-      ...parsed
+      ...parsed,
     });
 
     revalidatePath('/admin/reviews');
@@ -127,7 +163,7 @@ export async function upsertPackageAction(formData: FormData) {
       .split(',')
       .map((tag) => tag.trim())
       .filter(Boolean),
-    isFeatured: formData.get('isFeatured') === 'true'
+    isFeatured: formData.get('isFeatured') === 'true',
   });
 
   await upsertPackage(parsed);
