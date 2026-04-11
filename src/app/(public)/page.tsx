@@ -3,6 +3,7 @@ import { listFeaturedReviews } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
 import { APP_NAME } from '@/lib/constants';
 import { readThematicRows, fetchRowHotels } from '@/lib/thematic-rows';
+import { readSearchTags } from '@/lib/search-tags';
 import type { HotelData } from '@/components/tours/hotel-card';
 import {
   UmbrellaIcon, GlobeIcon, AirplaneTakeoffIcon, AirplaneLandingIcon,
@@ -16,23 +17,29 @@ function nights(n: number) {
   return 'ночей';
 }
 
+function tagIcon(icon: string) {
+  switch (icon) {
+    case 'globe':            return <GlobeIcon weight="regular" size={18} />;
+    case 'airplane-takeoff': return <AirplaneTakeoffIcon weight="regular" size={18} />;
+    case 'airplane-landing': return <AirplaneLandingIcon weight="regular" size={18} />;
+    case 'map-pin':          return <MapPinIcon weight="regular" size={18} />;
+    case 'suitcase':         return <SuitcaseIcon weight="regular" size={18} />;
+    case 'umbrella-duotone': return <UmbrellaIcon weight="duotone" size={18} />;
+    default:                 return <UmbrellaIcon weight="regular" size={18} />;
+  }
+}
+
 export const metadata = buildMetadata({
   title: APP_NAME,
   description:
     'Современный сервис для поиска путешествий: тёплые страны, северные направления и активные маршруты в одном премиальном интерфейсе.'
 });
 
-const CATEGORY_ITEMS = [
-  { label: 'Жаркие страны',   href: '/tours?category=warm',   icon: <UmbrellaIcon weight="regular" size={18} /> },
-  { label: 'Холодные страны', href: '/tours?category=cold',   icon: <GlobeIcon weight="regular" size={18} /> },
-  { label: 'Активный отдых',  href: '/tours?category=active', icon: <AirplaneTakeoffIcon weight="regular" size={18} /> },
-  { label: 'Пляжи',           href: '/tours?query=beach',     icon: <UmbrellaIcon weight="duotone" size={18} /> },
-  { label: 'Горы',            href: '/tours?query=mountains', icon: <MapPinIcon weight="regular" size={18} /> },
-  { label: 'Северные страны', href: '/tours?category=cold',   icon: <AirplaneLandingIcon weight="regular" size={18} /> },
-  { label: 'Европа',          href: '/tours?query=europe',    icon: <SuitcaseIcon weight="regular" size={18} /> },
-];
-
 export default async function HomePage() {
+  const searchTags = readSearchTags()
+    .filter(t => t.enabled)
+    .sort((a, b) => a.order - b.order);
+
   const rowConfigs = readThematicRows()
     .filter(r => r.enabled)
     .sort((a, b) => a.order - b.order);
@@ -57,9 +64,9 @@ export default async function HomePage() {
       <section className={styles.categorySection}>
         <div className="shell">
           <div className={styles.categoryRail}>
-            {CATEGORY_ITEMS.map((item) => (
-              <Link className={styles.categoryChip} href={item.href} key={item.label}>
-                <span className={styles.categoryIcon}>{item.icon}</span>
+            {searchTags.map((item) => (
+              <Link className={styles.categoryChip} href={item.href} key={item.id}>
+                <span className={styles.categoryIcon}>{tagIcon(item.icon)}</span>
                 <span className={styles.categoryText}>{item.label}</span>
               </Link>
             ))}
