@@ -35,55 +35,69 @@ function buildStatusUrl(basePath: string, params: Record<string, string>) {
 }
 
 export async function registerAction(formData: FormData) {
-  const parsed = registrationSchema.parse({
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-  });
+  let redirectPath = '/account';
+  try {
+    const parsed = registrationSchema.parse({
+      firstName: formData.get('firstName'),
+      lastName: formData.get('lastName'),
+      email: formData.get('email'),
+      password: formData.get('password'),
+    });
 
-  const user = await registerUser({
-    id: crypto.randomUUID(),
-    email: parsed.email,
-    passwordHash: await hashPassword(parsed.password),
-    firstName: parsed.firstName,
-    lastName: parsed.lastName,
-    role: 'user',
-    createdAt: new Date().toISOString(),
-  });
+    const user = await registerUser({
+      id: crypto.randomUUID(),
+      email: parsed.email,
+      passwordHash: await hashPassword(parsed.password),
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      role: 'user',
+      createdAt: new Date().toISOString(),
+    });
 
-  await setSessionCookie({
-    userId: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-  });
-
-  redirect('/account');
+    await setSessionCookie({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    });
+  } catch (error) {
+    const message = error instanceof AppError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : 'Ошибка при регистрации';
+    redirectPath = buildStatusUrl('/auth/register', { error: message });
+  }
+  redirect(redirectPath);
 }
 
 export async function loginAction(formData: FormData) {
-  const parsed = loginSchema.parse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-  });
+  let redirectPath = '/account';
+  try {
+    const parsed = loginSchema.parse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+    });
 
-  const user = await findUserByEmail(parsed.email);
+    const user = await findUserByEmail(parsed.email);
 
-  if (!user || !(await verifyPassword(parsed.password, user.passwordHash))) {
-    throw new AppError('Неверный email или пароль.', 401);
+    if (!user || !(await verifyPassword(parsed.password, user.passwordHash))) {
+      redirectPath = buildStatusUrl('/auth/login', { error: 'Неверный email или пароль' });
+    } else {
+      await setSessionCookie({
+        userId: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Ошибка при входе';
+    redirectPath = buildStatusUrl('/auth/login', { error: message });
   }
-
-  await setSessionCookie({
-    userId: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-  });
-
-  redirect('/account');
+  redirect(redirectPath);
 }
 
 export async function logoutAction() {

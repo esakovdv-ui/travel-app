@@ -9,7 +9,9 @@ export const metadata = buildMetadata({
   description: 'Войдите в аккаунт для управления бронированиями и сохранёнными турами.'
 });
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -20,6 +22,8 @@ export default function LoginPage() {
 
         <h1 className={styles.formTitle}>Войдите или зарегистрируйтесь</h1>
         <p className={styles.formSub}>Введите email и пароль для входа в аккаунт</p>
+
+        {error && <p className={styles.formError}>{error}</p>}
 
         <form action={loginAction} className={styles.form}>
           <div className="field">

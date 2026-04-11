@@ -9,7 +9,9 @@ export const metadata = buildMetadata({
   description: 'Создайте аккаунт для бронирования туров, отзывов и сохранения любимых направлений.'
 });
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -20,6 +22,8 @@ export default function RegisterPage() {
 
         <h1 className={styles.formTitle}>Создайте аккаунт</h1>
         <p className={styles.formSub}>Заполните форму, чтобы начать путешествовать</p>
+
+        {error && <p className={styles.formError}>{error}</p>}
 
         <form action={registerAction} className={styles.form}>
           <div className={styles.formRow}>
@@ -38,7 +42,7 @@ export default function RegisterPage() {
           </div>
           <div className="field">
             <label className="field-label" htmlFor="reg-pass">Пароль</label>
-            <input id="reg-pass" className="input" name="password" placeholder="Минимум 8 символов" required type="password" autoComplete="new-password" />
+            <input id="reg-pass" className="input" name="password" placeholder="Минимум 8 символов" required type="password" autoComplete="new-password" minLength={8} />
           </div>
           <button className="btn btn-primary btn-block btn-lg" type="submit">
             Создать аккаунт
