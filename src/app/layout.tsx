@@ -7,6 +7,7 @@ import { listPackages } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
 import { AppProvider } from '@/context/app-context';
 import { APP_NAME } from '@/lib/constants';
+import { getSession } from '@/lib/session';
 
 const manrope = Manrope({
   subsets: ['latin', 'cyrillic'],
@@ -25,13 +26,20 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const packages = await listPackages();
+  const [packages, session] = await Promise.all([listPackages(), getSession()]);
+
+  const initialUser = session ? {
+    firstName: session.firstName,
+    lastName: session.lastName,
+    email: session.email,
+    initials: `${session.firstName[0] ?? ''}${session.lastName[0] ?? ''}`.toUpperCase(),
+  } : null;
 
   return (
     <html lang="ru">
       <body className={`${manrope.variable} ${unbounded.variable}`}>
         <AppProvider initialPackages={packages}>
-          <SiteHeader />
+          <SiteHeader initialUser={initialUser} />
           {children}
           <ConditionalFooter />
         </AppProvider>

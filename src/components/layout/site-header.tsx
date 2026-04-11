@@ -9,7 +9,7 @@ import {
   BuildingsIcon, AirplaneTakeoffIcon,
 } from '@/components/icons';
 import { SearchBar, SearchBarValues, SearchBarSnapshot, SearchTab } from '@/components/ui/search-bar';
-import { UserMenu } from './user-menu';
+import { UserMenu, UserMenuUser } from './user-menu';
 import styles from './site-header.module.css';
 
 const NAV_LINKS = [
@@ -59,7 +59,7 @@ function SearchBarFromURL({
   );
 }
 
-export function SiteHeader() {
+export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null }) {
   const pathname = usePathname();
   const router   = useRouter();
   const isHome     = pathname === '/';
@@ -217,7 +217,7 @@ export function SiteHeader() {
                 <MagnifyingGlassIcon weight="light" size={18} />
               </Link>
             )}
-            <UserMenu />
+            <UserMenu initialUser={initialUser} />
           </div>
 
           <button className={styles.menuToggle}
