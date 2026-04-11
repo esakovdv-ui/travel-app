@@ -21,6 +21,8 @@ const unbounded = Unbounded({
   display: 'swap'
 });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = buildMetadata({
   title: APP_NAME
 });
