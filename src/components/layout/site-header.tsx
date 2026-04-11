@@ -5,10 +5,11 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BrandLogo } from './brand-logo';
 import {
-  MagnifyingGlassIcon, ListIcon, XIcon, UserIcon,
+  MagnifyingGlassIcon, ListIcon, XIcon,
   BuildingsIcon, AirplaneTakeoffIcon,
 } from '@/components/icons';
 import { SearchBar, SearchBarValues, SearchBarSnapshot, SearchTab } from '@/components/ui/search-bar';
+import { UserMenu } from './user-menu';
 import styles from './site-header.module.css';
 
 const NAV_LINKS = [
@@ -216,10 +217,7 @@ export function SiteHeader() {
                 <MagnifyingGlassIcon weight="light" size={18} />
               </Link>
             )}
-            <Link className={styles.profileAction} href="/account" aria-label="Профиль">
-              <UserIcon weight="light" size={18} aria-hidden="true" />
-              <span className={styles.profileLabel}>Профиль</span>
-            </Link>
+            <UserMenu />
           </div>
 
           <button className={styles.menuToggle}
