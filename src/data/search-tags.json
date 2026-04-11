@@ -1,0 +1,9 @@
+[
+  { "id": "warm",   "label": "Жаркие страны",   "icon": "umbrella",          "href": "/tours?toCountry=TR", "enabled": true,  "order": 0 },
+  { "id": "cold",   "label": "Холодные страны",  "icon": "globe",             "href": "/tours?toCountry=FI", "enabled": true,  "order": 1 },
+  { "id": "active", "label": "Активный отдых",   "icon": "airplane-takeoff",  "href": "/tours?toCountry=TH", "enabled": true,  "order": 2 },
+  { "id": "beach",  "label": "Пляжи",            "icon": "umbrella-duotone",  "href": "/tours?toCountry=EG", "enabled": true,  "order": 3 },
+  { "id": "mountains", "label": "Горы",          "icon": "map-pin",           "href": "/tours?toCountry=GE", "enabled": true,  "order": 4 },
+  { "id": "north",  "label": "Северные страны",  "icon": "airplane-landing",  "href": "/tours?toCountry=NO", "enabled": true,  "order": 5 },
+  { "id": "europe", "label": "Европа",           "icon": "suitcase",          "href": "/tours?toCountry=IT", "enabled": true,  "order": 6 }
+]

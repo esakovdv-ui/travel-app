@@ -1,0 +1,51 @@
+.tagList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tagRow.disabled {
+  opacity: 0.55;
+}
+
+.orderBadge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c-blue);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rowActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.deleteBtn {
+  color: var(--c-red) !important;
+}
