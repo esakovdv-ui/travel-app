@@ -6,18 +6,19 @@ import { UserIcon, SignOutIcon, SlidersIcon, TicketIcon } from '@/components/ico
 import { logoutAction } from '@/app/actions';
 import styles from './user-menu.module.css';
 
-interface User {
+export interface UserMenuUser {
   firstName: string;
   lastName: string;
   email: string;
   initials: string;
 }
 
-export function UserMenu() {
-  const [user, setUser] = useState<User | null | undefined>(undefined); // undefined = loading
+export function UserMenu({ initialUser }: { initialUser?: UserMenuUser | null }) {
+  const [user, setUser] = useState<UserMenuUser | null>(initialUser ?? null);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Обновляем при смене маршрута (логин/логаут без перезагрузки страницы)
   useEffect(() => {
     fetch('/api/me', { cache: 'no-store' })
       .then(r => r.json())
@@ -31,11 +32,6 @@ export function UserMenu() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
-
-  // Загружается
-  if (user === undefined) {
-    return <div className={styles.skeleton} />;
-  }
 
   // Не авторизован
   if (!user) {
