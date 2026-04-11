@@ -1,6 +1,6 @@
 import { TicketIcon, HeartIcon, StarIcon, SlidersIcon, UsersThreeIcon } from '@/components/icons';
 import { buildMetadata } from '@/lib/seo';
-import { listFeaturedPackages, listBookingsByUser } from '@/lib/repositories';
+import { listBookingsByUser } from '@/lib/repositories';
 import { getSession } from '@/lib/session';
 import { logoutAction } from '@/app/actions';
 import { BOOKING_STATUS_LABELS } from '@/lib/constants';
@@ -15,10 +15,7 @@ export default async function AccountPage() {
   const session = await getSession();
   if (!session) return null; // middleware уже редиректит неавторизованных
 
-  const [bookings, saved] = await Promise.all([
-    listBookingsByUser(session.userId),
-    listFeaturedPackages(),
-  ]);
+  const bookings = await listBookingsByUser(session.userId);
 
   const initials = `${session.firstName[0] ?? ''}${session.lastName[0] ?? ''}`.toUpperCase();
 
@@ -77,22 +74,6 @@ export default async function AccountPage() {
                 })}
               </div>
             )}
-          </div>
-
-          {/* Saved */}
-          <div className={styles.panel}>
-            <h2 className={styles.sectionTitle}>Сохранённые туры</h2>
-            <div className={styles.savedGrid}>
-              {saved.slice(0, 3).map((pkg) => (
-                <a key={pkg.id} href={`/packages/${pkg.slug}`} className={styles.savedCard}>
-                  <img src={pkg.heroImage} alt={pkg.title} className={styles.savedImage} />
-                  <div className={styles.savedBody}>
-                    <p className={styles.savedDestination}>{pkg.destination}</p>
-                    <p className={styles.savedTitle}>{pkg.title}</p>
-                  </div>
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Settings */}
