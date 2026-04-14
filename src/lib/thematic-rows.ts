@@ -38,7 +38,7 @@ export function writeThematicRows(rows: ThematicRowConfig[]): void {
 
 const LT_BASE = 'https://api.level.travel';
 const LT_HEADERS = {
-  'Authorization': `Token token="${process.env.LEVEL_TRAVEL_API_KEY}"`,
+  'Authorization': `Token token="${process.env.NEXT_PUBLIC_LT_PARTNER_TOKEN}"`,
   'Accept': 'application/vnd.leveltravel.v3.7',
 };
 
