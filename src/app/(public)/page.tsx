@@ -7,15 +7,10 @@ import { readSearchTags } from '@/lib/search-tags';
 import type { HotelData } from '@/components/tours/hotel-card';
 import {
   UmbrellaIcon, GlobeIcon, AirplaneTakeoffIcon, AirplaneLandingIcon,
-  MapPinIcon, SuitcaseIcon, StarIcon, ArrowRightIcon,
+  MapPinIcon, SuitcaseIcon, StarIcon,
 } from '@/components/icons';
+import ThematicRowBlock from '@/components/ThematicRowBlock';
 import styles from './home.module.css';
-
-function nights(n: number) {
-  if (n === 1) return 'ночь';
-  if (n >= 2 && n <= 4) return 'ночи';
-  return 'ночей';
-}
 
 function tagIcon(icon: string) {
   switch (icon) {
@@ -76,71 +71,7 @@ export default async function HomePage() {
 
       <section className={styles.thematicSection}>
         {thematicRows.map((collection) => (
-          <section className={styles.thematicRow} key={collection.title}>
-            <div className={`shell ${styles.thematicRowHeader}`}>
-              <div>
-                <p className={styles.thematicEyebrow}>{collection.eyebrow}</p>
-                <h3 className={styles.thematicRowTitle}>{collection.title}</h3>
-                <p className={styles.thematicRowDescription}>{collection.description}</p>
-              </div>
-              <Link className={styles.thematicMore} href={collection.href}>
-                Смотреть всё
-              </Link>
-            </div>
-
-            <div className={styles.thematicScroller}>
-              {collection.items.map((item) => {
-                const wlBaseUrl = process.env.NEXT_PUBLIC_WL_BASE_URL ?? '';
-                const image = item.hotel.images?.[0]?.x500;
-                const price = item.min_price?.toLocaleString('ru-RU');
-
-                return (
-                  <a
-                    className={styles.thematicListingCard}
-                    href={`${wlBaseUrl}${item.hotel.link}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={`${collection.id}-${item.tour_id}`}
-                  >
-                    {image
-                      ? <img alt={item.hotel.name} className={styles.thematicListingImage} src={image} />
-                      : <div className={`${styles.thematicListingImage} ${styles.thematicListingImagePlaceholder}`} />
-                    }
-                    <div className={styles.thematicListingBody}>
-                      <div className={styles.thematicListingTop}>
-                        <p className={styles.thematicListingPlace}>
-                          {item.hotel.region_name}
-                        </p>
-                        {item.hotel.rating > 0 && (
-                          <span className={styles.thematicListingRating}>
-                            <StarIcon weight="fill" size={12} /> {item.hotel.rating.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className={styles.thematicListingTitle}>{item.hotel.name}</h4>
-                      <p className={styles.thematicListingMeta}>
-                        {item.min_price_nights} {nights(item.min_price_nights)}
-                        {item.hotel.stars > 0 && ` · ${'★'.repeat(item.hotel.stars)}`}
-                      </p>
-                      <p className={styles.thematicListingPrice}>от {price} ₽</p>
-                    </div>
-                  </a>
-                );
-              })}
-
-              <Link className={styles.thematicSeeAllCard} href={collection.href}>
-                <div className={styles.thematicSeeAllStack} aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className={styles.thematicSeeAllFooter}>
-                  <span className={styles.thematicSeeAllText}>Смотреть всё</span>
-                  <ArrowRightIcon weight="regular" size={18} />
-                </div>
-              </Link>
-            </div>
-          </section>
+          <ThematicRowBlock key={collection.id} collection={collection} />
         ))}
       </section>
 
