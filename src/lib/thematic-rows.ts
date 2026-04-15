@@ -83,8 +83,7 @@ export const fetchRowHotels = unstable_cache(
     const enqueueData = await ltFetch(`${LT_BASE}/search/enqueue?${params}`);
     const request_id: string = enqueueData.request_id;
     if (!request_id) {
-      console.error(`[thematic-rows] ${rowId}: нет request_id`);
-      return [];
+      throw new Error(`[thematic-rows] ${rowId}: нет request_id`);
     }
 
     // Шаг 2: ждём завершения статуса (как в SDK — сначала статус, потом отели)
@@ -110,8 +109,9 @@ export const fetchRowHotels = unstable_cache(
       await new Promise(r => setTimeout(r, 2000));
     }
 
-    console.warn(`[thematic-rows] ${rowId}: timeout`);
-    return [];
+    // Бросаем ошибку вместо return [] — unstable_cache не кэширует результат при ошибке,
+    // поэтому следующий запрос снова попробует API (а не получит [] из кэша на 6 часов)
+    throw new Error(`[thematic-rows] ${rowId}: timeout`);
   },
   ['thematic-row-hotels'],
   { revalidate: 6 * 60 * 60, tags: ['thematic-rows'] }
