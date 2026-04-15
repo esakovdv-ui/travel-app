@@ -329,6 +329,33 @@
   line-height: 1.7;
 }
 
+/* Skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeletonBlock,
+.skeletonLine {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #efefef 25%, #e0e0e0 50%, #efefef 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.skeletonLine {
+  height: 10px;
+  margin-top: 4px;
+}
+
+.skeletonLineShort  { width: 55%; }
+.skeletonLineMid    { width: 80%; height: 13px; }
+.skeletonLineXShort { width: 40%; }
+
+.thematicListingCardSkeleton {
+  pointer-events: none;
+}
+
 @media (max-width: 900px) {
   .thematicRowHeader,
   .reviewGrid {
