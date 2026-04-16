@@ -51,19 +51,20 @@ export default async function HomePage() {
     .filter(r => r.enabled)
     .sort((a, b) => a.order - b.order);
 
-  const [reviews, ...rowResults] = await Promise.all([
-    listFeaturedReviews(3),
-    ...rowConfigs.map(r =>
-      fetchRowHotels(r.id, r.search).catch((err) => {
-        console.error(`[thematic-rows] Ошибка ряда "${r.id}":`, err);
-        return [] as HotelData[];
-      })
-    ),
-  ]);
+  // Последовательно — чтобы не словить rate-limit LT API при параллельных запросах
+  const reviews = await listFeaturedReviews(3);
+  const rowResults: HotelData[][] = [];
+  for (const r of rowConfigs) {
+    const items = await fetchRowHotels(r.id, r.search).catch((err) => {
+      console.error(`[thematic-rows] Ошибка ряда "${r.id}":`, err);
+      return [] as HotelData[];
+    });
+    rowResults.push(items);
+  }
 
   const thematicRows = rowConfigs.map((config, i) => ({
     ...config,
-    items: rowResults[i] as HotelData[],
+    items: rowResults[i],
   }));
 
   return (
