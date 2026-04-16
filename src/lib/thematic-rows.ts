@@ -51,10 +51,18 @@ function toDisplayDate(date: string): string {
   return date;
 }
 
-async function ltFetch(url: string) {
-  const res = await fetch(url, { headers: LT_HEADERS });
-  if (!res.ok) throw new Error(`LT API ${res.status}: ${url}`);
-  return res.json();
+async function ltFetch(url: string, retries = 3): Promise<unknown> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(url, { headers: LT_HEADERS, cache: 'no-store' });
+    if (res.ok) return res.json();
+    if (res.status === 403 && attempt < retries) {
+      // Rate limit — ждём перед повтором
+      await new Promise(r => setTimeout(r, 15000 * attempt));
+      continue;
+    }
+    throw new Error(`LT API ${res.status}: ${url}`);
+  }
+  throw new Error(`LT API: все попытки исчерпаны: ${url}`);
 }
 
 // Кэшируем каждый ряд на 6 часов
