@@ -103,11 +103,11 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
   useEffect(() => {
     if (!isHome) return;
     const handler = () => {
-      const y = window.scrollY;
-      if (!scrolledRef.current && y > 180) {
+      const y = window.scrollY || document.documentElement.scrollTop;
+      if (!scrolledRef.current && y > 80) {
         scrolledRef.current = true;
         setScrolled(true);
-      } else if (scrolledRef.current && y < 80) {
+      } else if (scrolledRef.current && y < 40) {
         scrolledRef.current = false;
         setScrolled(false);
         setSearchOpen(false);
