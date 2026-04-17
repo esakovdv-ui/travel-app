@@ -223,7 +223,6 @@
   padding: 0 0 16px;
   position: relative;
   animation: slideDown 0.22s ease;
-  overflow: hidden;
 }
 
 .searchRowHidden {
