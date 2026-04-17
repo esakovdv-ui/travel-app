@@ -104,10 +104,10 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
     if (!isHome) return;
     const handler = () => {
       const y = window.scrollY || document.documentElement.scrollTop;
-      if (!scrolledRef.current && y > 10) {
+      if (!scrolledRef.current && y > 60) {
         scrolledRef.current = true;
         setScrolled(true);
-      } else if (scrolledRef.current && y < 5) {
+      } else if (scrolledRef.current && y < 20) {
         scrolledRef.current = false;
         setScrolled(false);
         setSearchOpen(false);
@@ -229,8 +229,8 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
         </div>
 
         {/* Full search */}
-        {showFullSearch && (
-          <div className={`shell ${styles.searchRow}`} ref={isHome ? searchRef : null}>
+        {(showFullSearch || isSearchPage) && (
+          <div className={`shell ${styles.searchRow} ${!showFullSearch ? styles.searchRowHidden : ''}`} ref={isHome ? searchRef : null}>
             {isSearchPage ? (
               <Suspense fallback={
                 <SearchBar
