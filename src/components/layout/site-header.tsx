@@ -104,10 +104,10 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
     if (!isHome) return;
     const handler = () => {
       const y = window.scrollY || document.documentElement.scrollTop;
-      if (!scrolledRef.current && y > 80) {
+      if (!scrolledRef.current && y > 10) {
         scrolledRef.current = true;
         setScrolled(true);
-      } else if (scrolledRef.current && y < 40) {
+      } else if (scrolledRef.current && y < 5) {
         scrolledRef.current = false;
         setScrolled(false);
         setSearchOpen(false);
