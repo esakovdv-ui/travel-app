@@ -102,19 +102,27 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
 
   useEffect(() => {
     if (!isHome) return;
-    const handler = () => {
-      const y = window.scrollY || document.documentElement.scrollTop;
-      if (!scrolledRef.current && y > 60) {
+
+    // Use IntersectionObserver instead of scroll events — immune to iOS Chrome
+    // viewport flicker when the address bar collapses/expands during scroll.
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'position:absolute;top:80px;height:1px;width:1px;pointer-events:none;';
+    document.body.prepend(sentinel);
+
+    const observer = new IntersectionObserver(([entry]) => {
+      const visible = entry.isIntersecting;
+      if (!visible && !scrolledRef.current) {
         scrolledRef.current = true;
         setScrolled(true);
-      } else if (scrolledRef.current && y < 20) {
+      } else if (visible && scrolledRef.current) {
         scrolledRef.current = false;
         setScrolled(false);
         setSearchOpen(false);
       }
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+    }, { threshold: 0 });
+
+    observer.observe(sentinel);
+    return () => { observer.disconnect(); sentinel.remove(); };
   }, [isHome]);
 
   useEffect(() => {
