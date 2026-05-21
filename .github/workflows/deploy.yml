@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/dima-auth
   workflow_dispatch:
 
 jobs:
@@ -16,4 +17,32 @@ jobs:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: /home/deploy.sh
+          script: |
+            set -e
+
+            cd /home/travel-app
+
+            echo "→ Получаем код с GitHub..."
+            git reset --hard
+            git fetch origin ${{ github.ref_name }}
+            git checkout -B ${{ github.ref_name }} origin/${{ github.ref_name }}
+
+            echo "→ Устанавливаем зависимости..."
+            npm install
+
+            echo "→ Собираем..."
+            npm run build
+
+            echo "→ Перезапускаем..."
+            pm2 restart travel-app
+
+            echo "→ Прогреваем кэш тематических блоков..."
+            sleep 5
+            ROWS=$(node -e "const r=require('./src/data/thematic-rows.json'); r.filter(x=>x.enabled).forEach(x=>console.log(x.id))" 2>/dev/null || echo "beach egypt active")
+            for ROW in $ROWS; do
+              echo "  → Прогрев ряда: $ROW"
+              curl -s "http://localhost:3000/api/thematic-rows/$ROW" -o /dev/null
+              sleep 35
+            done
+
+            echo "✓ Задеплоено!"
