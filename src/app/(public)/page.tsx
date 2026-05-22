@@ -24,18 +24,6 @@ function tagIcon(icon: string) {
   }
 }
 
-function tagIcon(icon: string) {
-  switch (icon) {
-    case 'globe':            return <GlobeIcon weight="regular" size={18} />;
-    case 'airplane-takeoff': return <AirplaneTakeoffIcon weight="regular" size={18} />;
-    case 'airplane-landing': return <AirplaneLandingIcon weight="regular" size={18} />;
-    case 'map-pin':          return <MapPinIcon weight="regular" size={18} />;
-    case 'suitcase':         return <SuitcaseIcon weight="regular" size={18} />;
-    case 'umbrella-duotone': return <UmbrellaIcon weight="duotone" size={18} />;
-    default:                 return <UmbrellaIcon weight="regular" size={18} />;
-  }
-}
-
 export const metadata = buildMetadata({
   title: APP_NAME,
   description:
