@@ -1,0 +1,7 @@
+# Travel App
+
+GitHub: https://github.com/esakovdv-ui/travel-app
+
+- Default branch for deploy: `main`; feature branch `feature/dima-auth` also triggers CI deploy.
+- Stack: Next.js, TypeScript. Env: `.env.local` (never commit).
+- Run locally: `npm install` then `npm run dev`.
