@@ -110,6 +110,7 @@ export async function POST(request: Request) {
       TITLE: `Заявка с лендинга «Радуга» — ${name}`,
       CATEGORY_ID: DEAL_CATEGORY_ID,
       STAGE_ID: DEAL_STAGE_ID,
+      TYPE_ID: '1',
       CONTACT_ID: contactId,
       SOURCE_ID: 'WEBFORM',
       ASSIGNED_BY_ID,
