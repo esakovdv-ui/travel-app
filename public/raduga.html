@@ -777,7 +777,7 @@
   </main>
 
   <script>
-    const shifts = [
+    let shifts = [
       {
         id: 'dream-30-07',
         title: 'Время мечтать',
@@ -866,6 +866,7 @@
     const shiftSelect = document.getElementById('shift');
 
     function renderShifts() {
+      shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
       shiftGrid.innerHTML = shifts.map((shift) => {
         return `
           <article class="card">
@@ -898,7 +899,19 @@
       });
     }
 
-    renderShifts();
+    async function loadShifts() {
+      try {
+        const response = await fetch('/api/raduga-shifts', { cache: 'no-store' });
+        if (response.ok) {
+          shifts = await response.json();
+        }
+      } catch (error) {
+        console.warn('Не удалось загрузить смены из админки', error);
+      }
+      renderShifts();
+    }
+
+    loadShifts();
 
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');

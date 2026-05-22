@@ -1,0 +1,83 @@
+[
+  {
+    "id": "dream-30-07",
+    "title": "Время мечтать",
+    "dates": "30 июня – 7 июля",
+    "oldPrice": 45000,
+    "price": 41400,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/602229/602229.png?id=1778679934",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002706&date=30.06.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB"
+  },
+  {
+    "id": "records-09-16",
+    "title": "Время рекордов",
+    "dates": "9–16 июля",
+    "oldPrice": 45000,
+    "price": 41400,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/602895/602895.png?id=1778744107",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB"
+  },
+  {
+    "id": "records-09-26",
+    "title": "Время рекордов",
+    "dates": "9–26 июля",
+    "oldPrice": 86000,
+    "price": 79120,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/604673/604673.png?id=1779257970",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=18&hotelScheme=1_17_3339_830_1_0_18&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_17&currency=RUB"
+  },
+  {
+    "id": "trend-17-06",
+    "title": "Время быть в тренде",
+    "dates": "17 июля – 6 августа",
+    "oldPrice": 99000,
+    "price": 91080,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=17.07.26&duration=21&hotelScheme=1_20_3339_830_1_0_21&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_20&currency=RUB"
+  },
+  {
+    "id": "trend-18-26",
+    "title": "Время быть в тренде",
+    "dates": "18–26 июля",
+    "oldPrice": 50000,
+    "price": 46000,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/602965/602965.png?id=1778744170",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB"
+  },
+  {
+    "id": "trend-18-05",
+    "title": "Время быть в тренде",
+    "dates": "18 июля – 5 августа",
+    "oldPrice": 90000,
+    "price": 82800,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=19&hotelScheme=1_18_3339_830_1_0_19&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_18&currency=RUB"
+  },
+  {
+    "id": "talents-28-05",
+    "title": "Время талантов",
+    "dates": "28 июля – 5 августа",
+    "oldPrice": 50000,
+    "price": 46000,
+    "image": "https://static.mosgortur.ru/images/constructor/blockTemplateData/602424/602424.png?id=1778680027",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002705&date=28.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB"
+  },
+  {
+    "id": "balance-29-05",
+    "title": "Время баланса",
+    "dates": "29 августа – 5 сентября",
+    "oldPrice": 40000,
+    "price": 36800,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002709&date=29.08.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB"
+  },
+  {
+    "id": "together-24-31",
+    "title": "Время быть вместе",
+    "dates": "24–31 октября",
+    "oldPrice": 40500,
+    "price": 37260,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002710&date=24.10.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB"
+  }
+]
