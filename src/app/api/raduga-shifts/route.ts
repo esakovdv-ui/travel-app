@@ -6,7 +6,8 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 const ADMIN_PASSWORD = process.env.RADUGA_ADMIN_PASSWORD ?? 'raduga2026';
-const shiftsPath = path.join(process.cwd(), 'src/data/raduga-shifts.json');
+const fallbackShiftsPath = path.join(process.cwd(), 'src/data/raduga-shifts.json');
+const runtimeShiftsPath = process.env.RADUGA_SHIFTS_PATH ?? path.join(process.cwd(), 'storage/raduga-shifts.json');
 
 const shiftSchema = z.object({
   id: z.string().min(1),
@@ -24,7 +25,12 @@ const payloadSchema = z.object({
 });
 
 async function readShifts() {
-  const raw = await fs.readFile(shiftsPath, 'utf8');
+  let raw: string;
+  try {
+    raw = await fs.readFile(runtimeShiftsPath, 'utf8');
+  } catch {
+    raw = await fs.readFile(fallbackShiftsPath, 'utf8');
+  }
   return z.array(shiftSchema).parse(JSON.parse(raw));
 }
 
@@ -48,7 +54,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Неверный пароль.' }, { status: 401 });
   }
 
-  await fs.writeFile(shiftsPath, `${JSON.stringify(parsed.data.shifts, null, 2)}\n`, 'utf8');
+  await fs.mkdir(path.dirname(runtimeShiftsPath), { recursive: true });
+  await fs.writeFile(runtimeShiftsPath, `${JSON.stringify(parsed.data.shifts, null, 2)}\n`, 'utf8');
 
   return NextResponse.json({ ok: true, shifts: parsed.data.shifts });
 }
