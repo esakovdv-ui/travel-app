@@ -42,6 +42,7 @@ export function RadugaAdminClient() {
   const [shifts, setShifts] = useState<RadugaShift[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
@@ -119,6 +120,35 @@ export function RadugaAdminClient() {
 
   function removeShift(index: number) {
     setShifts((current) => current.filter((_, shiftIndex) => shiftIndex !== index));
+  }
+
+  async function uploadImage(index: number, file: File | null) {
+    if (!file) return;
+
+    setUploadingIndex(index);
+    setStatus('');
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('password', password);
+      formData.append('shiftId', shifts[index]?.id || makeId());
+      formData.append('file', file);
+
+      const response = await fetch('/api/raduga-shift-images', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Не удалось загрузить изображение');
+
+      updateShift(index, { image: data.url });
+      setStatus('Изображение загружено. Не забудьте сохранить смены.');
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
+    } finally {
+      setUploadingIndex(null);
+    }
   }
 
   async function save() {
@@ -222,7 +252,20 @@ export function RadugaAdminClient() {
                     </div>
                     <div className={`${styles.field} ${styles.wide}`}>
                       <label>Изображение</label>
+                      {shift.image && (
+                        <img className={styles.preview} src={shift.image} alt={shift.title || 'Изображение смены'} />
+                      )}
                       <input className={styles.input} value={shift.image} onChange={(event) => updateShift(index, { image: event.target.value })} />
+                      <input
+                        className={styles.fileInput}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(event) => uploadImage(index, event.target.files?.[0] ?? null)}
+                        disabled={uploadingIndex === index}
+                      />
+                      <span className={styles.hint}>
+                        {uploadingIndex === index ? 'Загружаю изображение...' : 'Можно вставить ссылку вручную или загрузить JPG, PNG, WebP до 5 МБ.'}
+                      </span>
                     </div>
                   </div>
                 </article>
