@@ -866,6 +866,10 @@
               <option value="">Выберите смену</option>
             </select>
           </div>
+          <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+            <label for="website">Сайт</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
           <button class="btn" type="submit">Отправить заявку</button>
           <p class="form-note" id="form-note" aria-live="polite"></p>
         </form>
@@ -894,6 +898,10 @@
         <div class="field">
           <label for="modal-shift">Тип смены / выбранная смена</label>
           <input id="modal-shift" name="shift" type="text" readonly required>
+        </div>
+        <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+          <label for="modal-website">Сайт</label>
+          <input id="modal-website" name="website" type="text" tabindex="-1" autocomplete="off">
         </div>
         <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
         <p class="form-note" id="modal-form-note" aria-live="polite"></p>
@@ -1298,15 +1306,39 @@
       return shifts.find((shift) => shift.id === id);
     }
 
-    async function submitRadugaLead({ name, phone, shift, source }) {
+    function collectUtm() {
+      const params = new URLSearchParams(window.location.search);
+      const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+      const utm = {};
+      keys.forEach((key) => {
+        const value = params.get(key);
+        if (value) utm[key] = value;
+      });
+      return utm;
+    }
+
+    async function submitRadugaLead({ name, phone, shift, source, website = '' }) {
       const response = await fetch('/api/raduga-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, shift, source }),
+        body: JSON.stringify({
+          name,
+          phone,
+          shift,
+          source,
+          website,
+          utm: collectUtm(),
+        }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || 'Не удалось отправить заявку. Попробуйте позже.');
+      if (!response.ok || !data.ok) {
+        if (data.error === 'invalid_phone') {
+          throw new Error('Введите номер телефона полностью');
+        }
+        if (data.error === 'misconfigured') {
+          throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
+        }
+        throw new Error('Не удалось отправить заявку. Попробуйте позже.');
       }
       return data;
     }
@@ -1375,6 +1407,7 @@
           phone: modalPhoneCtrl.getValue(),
           shift: modalShift.value.trim(),
           source: 'popup',
+          website: document.getElementById('modal-website').value,
         });
         modalFormBody.classList.add('is-hidden');
         modalSuccess.classList.add('is-visible');
@@ -1424,6 +1457,7 @@
           phone: landingPhoneCtrl.getValue(),
           shift: shiftSelect.value.trim(),
           source: 'landing',
+          website: document.getElementById('website').value,
         });
         setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
         landingForm.name.value = '';

@@ -33,7 +33,9 @@ pm2 restart all
 - `LEVEL_TRAVEL_API_KEY` — ключ для Level Travel API (серверный, не публичный)
 - `NEXT_PUBLIC_WL_BASE_URL=https://russia.mosgortur.ru` — базовый URL White Label
 - `FONT_DIR=./scripts/fonts` — путь к шрифтам для PDF-генератора
-- `BITRIX24_WEBHOOK_URL` — входящий webhook Bitrix24 (база REST, без `/crm.lead.add.json`) для заявок с `/raduga`
+- `BITRIX_DOMAIN` — домен портала Bitrix24 (например `company.bitrix24.ru`)
+- `WEBHOOK_TOKEN` — токен входящего webhook (часть URL `/rest/1/xxxxx/`)
+- Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
 - `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
 ## История релизов
