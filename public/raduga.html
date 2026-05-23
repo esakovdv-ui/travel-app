@@ -579,6 +579,16 @@
     .form-note.is-error {
       color: #c62828;
     }
+    .field-error {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c62828;
+    }
+    .field-error.is-visible {
+      display: block;
+    }
 
     .modal-overlay {
       position: fixed;
@@ -847,7 +857,8 @@
           </div>
           <div class="field">
             <label for="phone">Телефон</label>
-            <input id="phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error">
+            <p class="field-error" id="phone-error" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="shift">Выбранная смена</label>
@@ -877,7 +888,8 @@
         </div>
         <div class="field">
           <label for="modal-phone">Телефон</label>
-          <input id="modal-phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required autocomplete="tel">
+          <input id="modal-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="modal-phone-error">
+          <p class="field-error" id="modal-phone-error" aria-live="polite"></p>
         </div>
         <div class="field">
           <label for="modal-shift">Тип смены / выбранная смена</label>
@@ -1038,6 +1050,134 @@
     const modalClose = document.getElementById('modal-close');
     const landingForm = document.getElementById('form');
     const landingFormNote = document.getElementById('form-note');
+    const landingPhone = document.getElementById('phone');
+    const landingPhoneError = document.getElementById('phone-error');
+    const modalPhoneError = document.getElementById('modal-phone-error');
+
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function extractNationalDigits(value) {
+      let digits = String(value).replace(/\D/g, '');
+      if (!digits) return '';
+      if (digits.length >= 11 && (digits[0] === '8' || digits[0] === '7')) {
+        digits = digits.slice(1);
+      }
+      return digits.slice(0, 10);
+    }
+
+    function formatNationalDigits(digits) {
+      if (!digits.length) return PHONE_MASK_EMPTY;
+      const area = (digits.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digits.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digits.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digits.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      return formatted.length;
+    }
+
+    function clearPhoneError(errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.remove('is-visible');
+    }
+
+    function validatePhoneField(input, errorEl) {
+      const digits = extractNationalDigits(input.value);
+      if (digits.length !== 10) {
+        errorEl.textContent = 'Введите номер телефона полностью';
+        errorEl.classList.add('is-visible');
+        input.setAttribute('aria-invalid', 'true');
+        return false;
+      }
+      clearPhoneError(errorEl);
+      input.removeAttribute('aria-invalid');
+      return true;
+    }
+
+    function phoneValueForSubmit(input) {
+      return `+7${extractNationalDigits(input.value)}`;
+    }
+
+    function resetPhoneField(input, errorEl) {
+      input.value = '';
+      clearPhoneError(errorEl);
+      input.removeAttribute('aria-invalid');
+    }
+
+    function bindPhoneMask(input, errorEl) {
+      function refresh(digits, preferredDigitIndex) {
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        const cursor = cursorFromDigitIndex(formatted, preferredDigitIndex ?? digits.length);
+        const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+        input.setSelectionRange(safeCursor, safeCursor);
+      }
+
+      input.addEventListener('focus', () => {
+        const digits = extractNationalDigits(input.value);
+        refresh(digits, digits.length);
+        if (!digits.length) {
+          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        if (!extractNationalDigits(input.value).length) {
+          input.value = '';
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        if (event.key === 'Backspace' && start <= PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) {
+          event.preventDefault();
+        }
+        if (event.key === 'Delete' && start < PHONE_MIN_CURSOR) {
+          event.preventDefault();
+        }
+      });
+
+      input.addEventListener('input', () => {
+        const cursor = input.selectionStart ?? 0;
+        const digitIndex = digitIndexFromCursor(input.value, cursor);
+        const digits = extractNationalDigits(input.value);
+        refresh(digits, digitIndex);
+        clearPhoneError(errorEl);
+      });
+
+      input.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const digits = extractNationalDigits(pasted);
+        refresh(digits, digits.length);
+        clearPhoneError(errorEl);
+      });
+    }
+
+    bindPhoneMask(landingPhone, landingPhoneError);
+    bindPhoneMask(modalPhone, modalPhoneError);
 
     function formatShiftLabel(shift) {
       return `${shift.title} — ${shift.dates}`;
@@ -1069,6 +1209,7 @@
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
+      resetPhoneField(modalPhone, modalPhoneError);
       setFormNote(modalFormNote, '', false);
       modalSubmit.disabled = false;
       reserveModal.classList.add('is-open');
@@ -1086,6 +1227,7 @@
       if (clearShift) {
         modalForm.reset();
         modalShift.value = '';
+        resetPhoneField(modalPhone, modalPhoneError);
       }
     }
 
@@ -1110,18 +1252,22 @@
     modalForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setFormNote(modalFormNote, '', false);
+      if (!validatePhoneField(modalPhone, modalPhoneError)) {
+        modalPhone.focus();
+        return;
+      }
       modalSubmit.disabled = true;
       try {
         await submitRadugaLead({
           name: modalName.value.trim(),
-          phone: modalPhone.value.trim(),
+          phone: phoneValueForSubmit(modalPhone),
           shift: modalShift.value.trim(),
           source: 'popup',
         });
         modalFormBody.classList.add('is-hidden');
         modalSuccess.classList.add('is-visible');
         modalName.value = '';
-        modalPhone.value = '';
+        resetPhoneField(modalPhone, modalPhoneError);
         setTimeout(() => closeReserveModal(true), 1800);
       } catch (error) {
         setFormNote(modalFormNote, error.message, true);
@@ -1154,17 +1300,21 @@
       event.preventDefault();
       const submitButton = landingForm.querySelector('button[type="submit"]');
       setFormNote(landingFormNote, '', false);
+      if (!validatePhoneField(landingPhone, landingPhoneError)) {
+        landingPhone.focus();
+        return;
+      }
       submitButton.disabled = true;
       try {
         await submitRadugaLead({
           name: landingForm.name.value.trim(),
-          phone: landingForm.phone.value.trim(),
+          phone: phoneValueForSubmit(landingPhone),
           shift: shiftSelect.value.trim(),
           source: 'landing',
         });
         setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
         landingForm.name.value = '';
-        landingForm.phone.value = '';
+        resetPhoneField(landingPhone, landingPhoneError);
         shiftSelect.value = '';
       } catch (error) {
         setFormNote(landingFormNote, error.message, true);
