@@ -1057,21 +1057,21 @@
     const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
     const PHONE_MIN_CURSOR = 4;
 
-    function extractNationalDigits(value) {
-      let digits = String(value).replace(/\D/g, '');
-      if (!digits) return '';
-      if (digits.length >= 11 && (digits[0] === '8' || digits[0] === '7')) {
-        digits = digits.slice(1);
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) {
+        raw = raw.slice(1);
       }
-      return digits.slice(0, 10);
+      return raw.slice(0, 10);
     }
 
-    function formatNationalDigits(digits) {
-      if (!digits.length) return PHONE_MASK_EMPTY;
-      const area = (digits.slice(0, 3) + '___').slice(0, 3);
-      const mid = (digits.slice(3, 6) + '___').slice(0, 3);
-      const part1 = (digits.slice(6, 8) + '__').slice(0, 2);
-      const part2 = (digits.slice(8, 10) + '__').slice(0, 2);
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
       return `+7 (${area}) ${mid}-${part1}-${part2}`;
     }
 
@@ -1094,164 +1094,201 @@
           if (seen === digitIndex) return i + 1;
         }
       }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
       return formatted.length;
     }
 
-    function clearPhoneError(errorEl) {
-      errorEl.textContent = '';
-      errorEl.classList.remove('is-visible');
-    }
+    function createPhoneMaskController(input, errorEl) {
+      let digits = '';
+      let skipKeydown = false;
 
-    function validatePhoneField(input, errorEl) {
-      const digits = extractNationalDigits(input.value);
-      if (digits.length !== 10) {
-        errorEl.textContent = 'Введите номер телефона полностью';
-        errorEl.classList.add('is-visible');
-        input.setAttribute('aria-invalid', 'true');
-        return false;
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.classList.remove('is-visible');
+        input.removeAttribute('aria-invalid');
       }
-      clearPhoneError(errorEl);
-      input.removeAttribute('aria-invalid');
-      return true;
-    }
 
-    function phoneValueForSubmit(input) {
-      return `+7${extractNationalDigits(input.value)}`;
-    }
-
-    function resetPhoneField(input, errorEl) {
-      input.value = '';
-      clearPhoneError(errorEl);
-      input.removeAttribute('aria-invalid');
-    }
-
-    function bindPhoneMask(input, errorEl) {
-      let suppressInput = false;
-
-      function refresh(digits, preferredDigitIndex) {
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
         const formatted = formatNationalDigits(digits);
         input.value = formatted;
-        const cursor = cursorFromDigitIndex(formatted, preferredDigitIndex ?? digits.length);
+        const cursor = cursorFromDigitIndex(formatted, index);
         const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
         input.setSelectionRange(safeCursor, safeCursor);
       }
 
-      function applyDigitsChange(nextDigits, preferredDigitIndex) {
-        suppressInput = true;
-        refresh(nextDigits, preferredDigitIndex);
-        clearPhoneError(errorEl);
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+        clearError();
       }
 
-      input.addEventListener('focus', () => {
-        const digits = extractNationalDigits(input.value);
-        refresh(digits, digits.length);
-        if (!digits.length) {
-          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
-        }
-      });
-
-      input.addEventListener('blur', () => {
-        if (!extractNationalDigits(input.value).length) {
-          input.value = '';
-        }
-      });
-
-      input.addEventListener('keydown', (event) => {
+      function selectionDigitRange() {
         const start = input.selectionStart ?? 0;
         const end = input.selectionEnd ?? 0;
-        let digits = extractNationalDigits(input.value);
-        let digitIndex = digitIndexFromCursor(input.value, start);
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) {
+          setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+        }
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) {
+          setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+        }
+      }
+
+      function handleKeydown(event) {
+        const { from, to } = selectionDigitRange();
 
         if (event.key === 'Backspace') {
           event.preventDefault();
-          if (start <= PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) return;
-
-          if (start !== end) {
-            const from = digitIndexFromCursor(input.value, start);
-            const to = digitIndexFromCursor(input.value, end);
-            applyDigitsChange(digits.slice(0, from) + digits.slice(to), from);
-            return;
-          }
-
-          if (digitIndex > 0) {
-            applyDigitsChange(
-              digits.slice(0, digitIndex - 1) + digits.slice(digitIndex),
-              digitIndex - 1,
-            );
-          }
+          deleteBackward(from, to);
           return;
         }
 
         if (event.key === 'Delete') {
           event.preventDefault();
-          if (start < PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) return;
-
-          if (start !== end) {
-            const from = digitIndexFromCursor(input.value, start);
-            const to = digitIndexFromCursor(input.value, end);
-            applyDigitsChange(digits.slice(0, from) + digits.slice(to), from);
-            return;
-          }
-
-          if (digitIndex < digits.length) {
-            applyDigitsChange(
-              digits.slice(0, digitIndex) + digits.slice(digitIndex + 1),
-              digitIndex,
-            );
-          }
+          deleteForward(from, to);
           return;
         }
 
         if (event.key.length === 1 && /\d/.test(event.key)) {
           event.preventDefault();
-          if (start !== end) {
-            const from = digitIndexFromCursor(input.value, start);
-            const to = digitIndexFromCursor(input.value, end);
-            digits = digits.slice(0, from) + digits.slice(to);
-            digitIndex = from;
-          }
-          if (digits.length < 10) {
-            applyDigitsChange(
-              digits.slice(0, digitIndex) + event.key + digits.slice(digitIndex),
-              digitIndex + 1,
-            );
-          }
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
           return;
         }
 
         if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
           event.preventDefault();
         }
+      }
+
+      input.addEventListener('focus', () => {
+        render(digits.length);
+        if (!digits.length) {
+          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        }
       });
 
-      input.addEventListener('input', () => {
-        if (suppressInput) {
-          suppressInput = false;
+      input.addEventListener('blur', () => {
+        if (!digits.length) {
+          input.value = '';
+        }
+      });
+
+      input.addEventListener('click', () => {
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+
+      input.addEventListener('beforeinput', (event) => {
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+
+        if (inputType === 'deleteContentBackward') {
+          event.preventDefault();
+          deleteBackward(from, to);
           return;
         }
-        const cursor = input.selectionStart ?? 0;
-        const digitIndex = digitIndexFromCursor(input.value, cursor);
-        const digits = extractNationalDigits(input.value);
-        refresh(digits, digitIndex);
-        clearPhoneError(errorEl);
+
+        if (inputType === 'deleteContentForward') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (
+          inputType === 'insertText'
+          || inputType === 'insertFromPaste'
+          || inputType === 'insertReplacementText'
+          || inputType === 'insertFromDrop'
+        ) {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) {
+            event.preventDefault();
+            return;
+          }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          insertAt(from, chunk);
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) {
+          skipKeydown = false;
+          return;
+        }
+        handleKeydown(event);
       });
 
       input.addEventListener('paste', (event) => {
         event.preventDefault();
         const pasted = (event.clipboardData || window.clipboardData).getData('text');
-        const start = input.selectionStart ?? 0;
-        const end = input.selectionEnd ?? 0;
-        let digits = extractNationalDigits(input.value);
-        const from = digitIndexFromCursor(input.value, start);
-        const to = digitIndexFromCursor(input.value, end);
-        const pastedDigits = extractNationalDigits(pasted);
-        const merged = (digits.slice(0, from) + pastedDigits + digits.slice(to)).slice(0, 10);
-        applyDigitsChange(merged, merged.length);
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, merged.length);
       });
+
+      return {
+        getValue() {
+          return `+7${digits}`;
+        },
+        validate() {
+          if (digits.length !== 10) {
+            errorEl.textContent = 'Введите номер телефона полностью';
+            errorEl.classList.add('is-visible');
+            input.setAttribute('aria-invalid', 'true');
+            return false;
+          }
+          clearError();
+          return true;
+        },
+        reset() {
+          digits = '';
+          input.value = '';
+          clearError();
+        },
+        showMask() {
+          render(0);
+          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        },
+      };
     }
 
-    bindPhoneMask(landingPhone, landingPhoneError);
-    bindPhoneMask(modalPhone, modalPhoneError);
+    const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
+    const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
 
     function formatShiftLabel(shift) {
       return `${shift.title} — ${shift.dates}`;
@@ -1283,7 +1320,7 @@
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
-      resetPhoneField(modalPhone, modalPhoneError);
+      modalPhoneCtrl.reset();
       setFormNote(modalFormNote, '', false);
       modalSubmit.disabled = false;
       reserveModal.classList.add('is-open');
@@ -1301,7 +1338,7 @@
       if (clearShift) {
         modalForm.reset();
         modalShift.value = '';
-        resetPhoneField(modalPhone, modalPhoneError);
+        modalPhoneCtrl.reset();
       }
     }
 
@@ -1326,22 +1363,23 @@
     modalForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       setFormNote(modalFormNote, '', false);
-      if (!validatePhoneField(modalPhone, modalPhoneError)) {
+      if (!modalPhoneCtrl.validate()) {
         modalPhone.focus();
+        modalPhoneCtrl.showMask();
         return;
       }
       modalSubmit.disabled = true;
       try {
         await submitRadugaLead({
           name: modalName.value.trim(),
-          phone: phoneValueForSubmit(modalPhone),
+          phone: modalPhoneCtrl.getValue(),
           shift: modalShift.value.trim(),
           source: 'popup',
         });
         modalFormBody.classList.add('is-hidden');
         modalSuccess.classList.add('is-visible');
         modalName.value = '';
-        resetPhoneField(modalPhone, modalPhoneError);
+        modalPhoneCtrl.reset();
         setTimeout(() => closeReserveModal(true), 1800);
       } catch (error) {
         setFormNote(modalFormNote, error.message, true);
@@ -1374,21 +1412,22 @@
       event.preventDefault();
       const submitButton = landingForm.querySelector('button[type="submit"]');
       setFormNote(landingFormNote, '', false);
-      if (!validatePhoneField(landingPhone, landingPhoneError)) {
+      if (!landingPhoneCtrl.validate()) {
         landingPhone.focus();
+        landingPhoneCtrl.showMask();
         return;
       }
       submitButton.disabled = true;
       try {
         await submitRadugaLead({
           name: landingForm.name.value.trim(),
-          phone: phoneValueForSubmit(landingPhone),
+          phone: landingPhoneCtrl.getValue(),
           shift: shiftSelect.value.trim(),
           source: 'landing',
         });
         setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
         landingForm.name.value = '';
-        resetPhoneField(landingPhone, landingPhoneError);
+        landingPhoneCtrl.reset();
         shiftSelect.value = '';
       } catch (error) {
         setFormNote(landingFormNote, error.message, true);
