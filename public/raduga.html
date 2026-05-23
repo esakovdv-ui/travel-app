@@ -1126,12 +1126,20 @@
     }
 
     function bindPhoneMask(input, errorEl) {
+      let suppressInput = false;
+
       function refresh(digits, preferredDigitIndex) {
         const formatted = formatNationalDigits(digits);
         input.value = formatted;
         const cursor = cursorFromDigitIndex(formatted, preferredDigitIndex ?? digits.length);
         const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
         input.setSelectionRange(safeCursor, safeCursor);
+      }
+
+      function applyDigitsChange(nextDigits, preferredDigitIndex) {
+        suppressInput = true;
+        refresh(nextDigits, preferredDigitIndex);
+        clearPhoneError(errorEl);
       }
 
       input.addEventListener('focus', () => {
@@ -1151,15 +1159,76 @@
       input.addEventListener('keydown', (event) => {
         const start = input.selectionStart ?? 0;
         const end = input.selectionEnd ?? 0;
-        if (event.key === 'Backspace' && start <= PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) {
+        let digits = extractNationalDigits(input.value);
+        let digitIndex = digitIndexFromCursor(input.value, start);
+
+        if (event.key === 'Backspace') {
           event.preventDefault();
+          if (start <= PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) return;
+
+          if (start !== end) {
+            const from = digitIndexFromCursor(input.value, start);
+            const to = digitIndexFromCursor(input.value, end);
+            applyDigitsChange(digits.slice(0, from) + digits.slice(to), from);
+            return;
+          }
+
+          if (digitIndex > 0) {
+            applyDigitsChange(
+              digits.slice(0, digitIndex - 1) + digits.slice(digitIndex),
+              digitIndex - 1,
+            );
+          }
+          return;
         }
-        if (event.key === 'Delete' && start < PHONE_MIN_CURSOR) {
+
+        if (event.key === 'Delete') {
+          event.preventDefault();
+          if (start < PHONE_MIN_CURSOR && end <= PHONE_MIN_CURSOR) return;
+
+          if (start !== end) {
+            const from = digitIndexFromCursor(input.value, start);
+            const to = digitIndexFromCursor(input.value, end);
+            applyDigitsChange(digits.slice(0, from) + digits.slice(to), from);
+            return;
+          }
+
+          if (digitIndex < digits.length) {
+            applyDigitsChange(
+              digits.slice(0, digitIndex) + digits.slice(digitIndex + 1),
+              digitIndex,
+            );
+          }
+          return;
+        }
+
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (start !== end) {
+            const from = digitIndexFromCursor(input.value, start);
+            const to = digitIndexFromCursor(input.value, end);
+            digits = digits.slice(0, from) + digits.slice(to);
+            digitIndex = from;
+          }
+          if (digits.length < 10) {
+            applyDigitsChange(
+              digits.slice(0, digitIndex) + event.key + digits.slice(digitIndex),
+              digitIndex + 1,
+            );
+          }
+          return;
+        }
+
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
           event.preventDefault();
         }
       });
 
       input.addEventListener('input', () => {
+        if (suppressInput) {
+          suppressInput = false;
+          return;
+        }
         const cursor = input.selectionStart ?? 0;
         const digitIndex = digitIndexFromCursor(input.value, cursor);
         const digits = extractNationalDigits(input.value);
@@ -1170,9 +1239,14 @@
       input.addEventListener('paste', (event) => {
         event.preventDefault();
         const pasted = (event.clipboardData || window.clipboardData).getData('text');
-        const digits = extractNationalDigits(pasted);
-        refresh(digits, digits.length);
-        clearPhoneError(errorEl);
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        let digits = extractNationalDigits(input.value);
+        const from = digitIndexFromCursor(input.value, start);
+        const to = digitIndexFromCursor(input.value, end);
+        const pastedDigits = extractNationalDigits(pasted);
+        const merged = (digits.slice(0, from) + pastedDigits + digits.slice(to)).slice(0, 10);
+        applyDigitsChange(merged, merged.length);
       });
     }
 
