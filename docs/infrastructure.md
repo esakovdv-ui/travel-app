@@ -11,11 +11,11 @@
 ## Деплой
 
 ### Автоматический (GitHub Actions)
-- Триггер: push в ветку `main`
+- Триггер: push в ветки `main` или `feature/dima-auth`
 - Также: `workflow_dispatch` (ручной запуск)
 - Конфиг: `.github/workflows/deploy.yml`
-- Подключение: SSH через `secrets.SSH_PRIVATE_KEY`
-- Выполняет: `/home/deploy.sh` на сервере
+- Подключение: SSH на VPS, в `/home/travel-app` выполняется `git fetch` + checkout ветки из push, `npm install`, `npm run build`, `pm2 restart travel-app`, прогрев thematic-rows API
+- Секрет: `SSH_PRIVATE_KEY`
 
 ### Ручной деплой
 ```bash
@@ -33,6 +33,8 @@ pm2 restart all
 - `LEVEL_TRAVEL_API_KEY` — ключ для Level Travel API (серверный, не публичный)
 - `NEXT_PUBLIC_WL_BASE_URL=https://russia.mosgortur.ru` — базовый URL White Label
 - `FONT_DIR=./scripts/fonts` — путь к шрифтам для PDF-генератора
+- `BITRIX24_WEBHOOK_URL` — входящий webhook Bitrix24 (база REST, без `/crm.lead.add.json`) для заявок с `/raduga`
+- `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
 ## История релизов
 

@@ -4,23 +4,25 @@
 
 ### Ветки
 - `main` — продакшн, защищена. Прямой пуш запрещён
-- `feature/dima` — ветка Димы
+- `feature/dima-auth` — рабочая ветка Димы (**автодеплой** при push, см. ниже)
+- `feature/dima` — устаревшее имя, в CI не участвует
 - `feature/arthur` — ветка Артура
 
 ### Процесс работы
 
 1. **Перед началом задачи** — обновить свою ветку:
    ```bash
-   git checkout feature/dima   # или feature/arthur
-   git pull origin main        # подтянуть актуальный код
+   git checkout feature/dima-auth   # или feature/arthur
+   git pull origin main             # подтянуть актуальный код
    ```
 
 2. **Работаешь, сохраняешь изменения:**
    ```bash
    git add .
    git commit -m "Краткое описание что сделал"
-   git push origin feature/dima
+   git push origin feature/dima-auth
    ```
+   Push в `feature/dima-auth` или merge в `main` запускает GitHub Actions и выкатывает код на сервер (см. `.github/workflows/deploy.yml`).
 
 3. **Когда задача готова — создаёшь Pull Request:**
    - Заходишь на github.com/esakovdv-ui/travel-app
@@ -28,7 +30,7 @@
    - Описываешь что сделал → **Create pull request**
    - Второй участник проверяет и нажимает **Merge**
 
-4. **После мержа — деплой на сервер:**
+4. **После мержа в `main`** — деплой идёт автоматически по CI. Ручной вариант:
    ```bash
    ssh root@72.56.32.183 "/home/deploy.sh"
    ```

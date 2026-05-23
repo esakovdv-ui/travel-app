@@ -576,6 +576,92 @@
       font-size: 14px;
       font-weight: 900;
     }
+    .form-note.is-error {
+      color: #c62828;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .52);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .modal-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      position: relative;
+      width: min(100%, 440px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 24px 22px 22px;
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .18);
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-close:hover {
+      background: #ffe8d4;
+      color: var(--orange-dark);
+    }
+    .modal h2 {
+      margin: 0 32px 8px 0;
+      font-size: clamp(24px, 4vw, 30px);
+      line-height: 1.1;
+      letter-spacing: -.03em;
+    }
+    .modal-lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal .field input[readonly] {
+      background: #fff;
+      color: var(--text);
+      cursor: default;
+      outline-color: var(--line);
+    }
+    .modal-success {
+      display: none;
+      padding: 8px 0 4px;
+    }
+    .modal-success.is-visible {
+      display: block;
+    }
+    .modal-success p {
+      margin: 0;
+      color: var(--green);
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .modal-form-body.is-hidden {
+      display: none;
+    }
 
     @media (max-width: 980px) {
       .hero-grid,
@@ -776,6 +862,33 @@
     </section>
   </main>
 
+  <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">&times;</button>
+      <h2 id="modal-title">Забронировать смену</h2>
+      <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
+      <div class="modal-success" id="modal-success">
+        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+      </div>
+      <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
+        <div class="field">
+          <label for="modal-name">Имя</label>
+          <input id="modal-name" name="name" type="text" placeholder="Как к вам обращаться" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="modal-phone">Телефон</label>
+          <input id="modal-phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required autocomplete="tel">
+        </div>
+        <div class="field">
+          <label for="modal-shift">Тип смены / выбранная смена</label>
+          <input id="modal-shift" name="shift" type="text" readonly required>
+        </div>
+        <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
+        <p class="form-note" id="modal-form-note" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
   <script>
     let shifts = [
       {
@@ -885,7 +998,7 @@
                 <span class="price">${money.format(shift.price)} ₽</span>
                 <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
               </div>
-              <a class="btn reserve-btn" href="${shift.url}" data-shift="${shift.id}">Забронировать</a>
+              <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>
             </div>
           </article>
         `;
@@ -913,11 +1026,107 @@
 
     loadShifts();
 
+    const reserveModal = document.getElementById('reserve-modal');
+    const modalForm = document.getElementById('modal-form');
+    const modalFormBody = modalForm;
+    const modalSuccess = document.getElementById('modal-success');
+    const modalName = document.getElementById('modal-name');
+    const modalPhone = document.getElementById('modal-phone');
+    const modalShift = document.getElementById('modal-shift');
+    const modalFormNote = document.getElementById('modal-form-note');
+    const modalSubmit = document.getElementById('modal-submit');
+    const modalClose = document.getElementById('modal-close');
+    const landingForm = document.getElementById('form');
+    const landingFormNote = document.getElementById('form-note');
+
+    function formatShiftLabel(shift) {
+      return `${shift.title} — ${shift.dates}`;
+    }
+
+    function findShiftById(id) {
+      return shifts.find((shift) => shift.id === id);
+    }
+
+    async function submitRadugaLead({ name, phone, shift, source }) {
+      const response = await fetch('/api/raduga-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, shift, source }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Не удалось отправить заявку. Попробуйте позже.');
+      }
+      return data;
+    }
+
+    function setFormNote(element, message, isError) {
+      element.textContent = message;
+      element.classList.toggle('is-error', Boolean(isError));
+    }
+
+    function openReserveModal(shift) {
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      modalShift.value = formatShiftLabel(shift);
+      setFormNote(modalFormNote, '', false);
+      modalSubmit.disabled = false;
+      reserveModal.classList.add('is-open');
+      reserveModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      modalName.focus();
+    }
+
+    function closeReserveModal(clearShift) {
+      reserveModal.classList.remove('is-open');
+      reserveModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      if (clearShift) {
+        modalForm.reset();
+        modalShift.value = '';
+      }
+    }
+
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');
       if (!button) return;
-      const picked = shifts.find((shift) => shift.id === button.dataset.shift);
-      if (picked) shiftSelect.value = `${picked.title} · ${picked.dates}`;
+      event.preventDefault();
+      const picked = findShiftById(button.dataset.shiftId);
+      if (picked) openReserveModal(picked);
+    });
+
+    modalClose.addEventListener('click', () => closeReserveModal(true));
+    reserveModal.addEventListener('click', (event) => {
+      if (event.target === reserveModal) closeReserveModal(true);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && reserveModal.classList.contains('is-open')) {
+        closeReserveModal(true);
+      }
+    });
+
+    modalForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setFormNote(modalFormNote, '', false);
+      modalSubmit.disabled = true;
+      try {
+        await submitRadugaLead({
+          name: modalName.value.trim(),
+          phone: modalPhone.value.trim(),
+          shift: modalShift.value.trim(),
+          source: 'popup',
+        });
+        modalFormBody.classList.add('is-hidden');
+        modalSuccess.classList.add('is-visible');
+        modalName.value = '';
+        modalPhone.value = '';
+        setTimeout(() => closeReserveModal(true), 1800);
+      } catch (error) {
+        setFormNote(modalFormNote, error.message, true);
+        modalSubmit.disabled = false;
+      }
     });
 
     const target = new Date('2026-06-01T23:59:00+03:00').getTime();
@@ -941,10 +1150,27 @@
     tick();
     setInterval(tick, 1000);
 
-    document.getElementById('form').addEventListener('submit', (event) => {
+    landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      document.getElementById('form-note').textContent = 'Заявка визуально принята. Подключите обработчик формы перед запуском рекламы.';
-      event.currentTarget.reset();
+      const submitButton = landingForm.querySelector('button[type="submit"]');
+      setFormNote(landingFormNote, '', false);
+      submitButton.disabled = true;
+      try {
+        await submitRadugaLead({
+          name: landingForm.name.value.trim(),
+          phone: landingForm.phone.value.trim(),
+          shift: shiftSelect.value.trim(),
+          source: 'landing',
+        });
+        setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+        landingForm.name.value = '';
+        landingForm.phone.value = '';
+        shiftSelect.value = '';
+      } catch (error) {
+        setFormNote(landingFormNote, error.message, true);
+      } finally {
+        submitButton.disabled = false;
+      }
     });
   </script>
 </body>
