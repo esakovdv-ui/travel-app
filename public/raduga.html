@@ -20,8 +20,8 @@
   <link rel="manifest" href="https://online.mosgortur.ru/new/favicon/manifest.json">
 
   <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js" async defer></script>
-  <title>Поиск туров</title>
-  <meta name="description" content="Смены в детский лагерь «Радуга» в Одинцовском районе. Акция ко Дню защиты детей действует до 1 июня 2026.">
+  <title>Закрытые цены на смены в ДОЛ «Радуга» — ранний доступ для клиентов Мосгортур</title>
+  <meta name="description" content="Закрытая акция на летние смены в детском лагере «Радуга». Специальные условия для клиентов из базы Мосгортур до 1 июня 2026.">
   <link rel="stylesheet" crossorigin href="https://online.mosgortur.ru/new/assets/index-CRg1FWTQ.css">
   <style>
     @font-face {
@@ -54,12 +54,16 @@
       --blue-soft: #d4f0ff;
       --blue: #0066cc;
       --violet-soft: #e1d2ff;
+      --navy: #1a1f2e;
+      --navy-soft: #2a3144;
+      --gold: #c9a227;
       --text: #000;
       --muted: #737373;
       --line: #e5e7eb;
       --panel: #f5f5f5;
       --white: #fff;
       --shadow: 0 12px 32px rgba(0, 0, 0, .08);
+      --shadow-premium: 0 16px 48px rgba(26, 31, 46, .12);
       --radius: 24px;
       --max: 1180px;
     }
@@ -178,6 +182,44 @@
       background: var(--green-soft);
       color: var(--green);
     }
+    .chip.navy {
+      background: rgba(26, 31, 46, .08);
+      color: var(--navy);
+    }
+    .chip.lock {
+      background: linear-gradient(135deg, #fff5eb, #ffe8d4);
+      color: var(--orange-dark);
+      gap: 6px;
+    }
+    .chip.lock svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .access-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 44px;
+      margin: 0 0 18px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+      color: #fff;
+      font-size: clamp(13px, 2vw, 15px);
+      font-weight: 800;
+      letter-spacing: -.01em;
+      box-shadow: var(--shadow-premium);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+    .access-top-bar svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      opacity: .9;
+    }
     h1 {
       margin: 0;
       max-width: 720px;
@@ -230,6 +272,27 @@
       line-height: 1.08;
       letter-spacing: -.025em;
       font-weight: 900;
+    }
+    .timer-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.45;
+      max-width: 520px;
+    }
+    .timer-expired {
+      display: none;
+      margin: 0;
+      color: var(--green);
+      font-size: clamp(20px, 2.5vw, 28px);
+      font-weight: 900;
+    }
+    .timer-panel.is-expired .timer {
+      display: none;
+    }
+    .timer-panel.is-expired .timer-expired {
+      display: block;
     }
     .timer {
       display: grid;
@@ -292,73 +355,124 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      border: 1px solid rgba(26, 31, 46, .06);
     }
-    .card-img {
-      height: 168px;
+    .card-top {
+      display: flex;
+      gap: 14px;
+      padding: 18px 18px 0;
+      align-items: flex-start;
+    }
+    .card-thumb {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
       background: var(--panel);
-      position: relative;
       overflow: hidden;
     }
-    .card-img img {
+    .card-thumb img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: 10px;
+      padding: 4px;
     }
-    .card-badge {
-      position: absolute;
-      left: 12px;
-      top: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #fff;
-      color: var(--orange);
-      font-size: 12px;
+    .card-head {
+      flex: 1;
+      min-width: 0;
+    }
+    .card-dates {
+      margin: 0;
+      font-size: clamp(22px, 2.5vw, 28px);
+      line-height: 1.08;
       font-weight: 900;
-      box-shadow: 0 6px 18px rgba(0,0,0,.08);
+      letter-spacing: -.03em;
+      color: var(--navy);
+    }
+    .card-title {
+      margin: 6px 0 0;
+      font-size: 15px;
+      line-height: 1.3;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .card-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 14px 18px 0;
+    }
+    .card-badge-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+      white-space: nowrap;
+    }
+    .card-badge-item.lock {
+      background: rgba(26, 31, 46, .08);
+      color: var(--navy);
+    }
+    .card-badge-item.deadline {
+      background: #fff0e3;
+      color: var(--orange-dark);
+    }
+    .card-badge-item.discount {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+    .card-badge-item.limited {
+      background: var(--panel);
+      color: #2d2d2d;
     }
     .card-body {
-      padding: 18px;
+      padding: 14px 18px 18px;
       display: flex;
       flex: 1;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
-    .card h3 {
-      margin: 0;
-      font-size: 24px;
-      line-height: 1.08;
-      font-weight: 900;
-      letter-spacing: -.025em;
-    }
-    .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .meta span {
-      padding: 7px 10px;
-      border-radius: 10px;
-      background: var(--panel);
-      color: #2d2d2d;
-      font-size: 13px;
-      font-weight: 800;
+    .price-block {
+      margin-top: auto;
     }
     .price-row {
-      margin-top: auto;
       display: flex;
       align-items: baseline;
       gap: 10px;
       flex-wrap: wrap;
     }
-    .price {
-      font-size: 28px;
+    .price-new {
+      font-size: clamp(26px, 3vw, 32px);
       font-weight: 900;
+      color: var(--orange-dark);
+      letter-spacing: -.02em;
     }
-    .old-price {
+    .price-old {
       color: var(--muted);
+      font-size: 15px;
       font-weight: 800;
       text-decoration: line-through;
+    }
+    .price-savings {
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--green);
+    }
+    .card-urgency-note {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff8f2;
+      color: #5c4a3a;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.4;
+      border: 1px solid rgba(255, 133, 0, .12);
     }
     .card .btn {
       width: 100%;
@@ -403,134 +517,121 @@
       opacity: .88;
     }
 
+    .benefit-panel {
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: var(--shadow);
+      padding: clamp(24px, 4vw, 36px);
+      border: 1px solid rgba(26, 31, 46, .05);
+    }
+    .benefit-list {
+      margin: 22px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .benefit-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--cream);
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.4;
+      color: #334155;
+    }
+    .benefit-list li svg {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      color: var(--orange);
+    }
+    .benefit-panel .btn {
+      margin-top: 24px;
+    }
+    .benefit-panel-muted {
+      background: linear-gradient(180deg, #fff 0%, var(--cream) 100%);
+    }
+    .section-link {
+      display: inline-flex;
+      margin-top: 20px;
+      color: var(--orange-dark);
+      font-weight: 900;
+      font-size: 15px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
     .camp-about {
       position: relative;
       overflow: hidden;
+      background: rgba(255, 255, 255, .5);
     }
     .camp-about .container {
       position: relative;
       z-index: 1;
     }
-    .camp-cards {
+    .camp-mini-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      position: relative;
-      z-index: 1;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
     }
-    .camp-card {
-      min-height: 280px;
-      padding: 24px;
-      border-radius: 24px;
+    .camp-mini-card {
+      padding: 20px;
+      border-radius: 18px;
       background: rgba(255, 255, 255, .94);
-      box-shadow: 0 14px 34px rgba(0, 0, 0, .07);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
       border: 1px solid rgba(0, 0, 0, .04);
     }
-    .camp-card h3 {
-      margin: 0 0 14px;
-      font-size: clamp(22px, 2vw, 28px);
-      line-height: 1.08;
-      letter-spacing: -.025em;
-      font-weight: 900;
-    }
-    .camp-card p {
-      margin: 0;
-      color: #334155;
-      font-size: 16px;
-      line-height: 1.5;
-      font-weight: 800;
-    }
-    .camp-card .note {
+    .camp-mini-card strong {
       display: block;
-      margin-top: 6px;
+      margin-bottom: 6px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+    .camp-mini-card span {
       color: var(--muted);
       font-size: 14px;
-      line-height: 1.45;
-      font-weight: 800;
-    }
-    .camp-card ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-    .camp-card li {
-      position: relative;
-      margin-top: 10px;
-      padding-left: 20px;
-      color: #334155;
-      font-size: 15px;
-      line-height: 1.42;
-      font-weight: 800;
-    }
-    .camp-card li:before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: .58em;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--orange);
-      box-shadow: 0 0 0 4px #fff0e3;
-    }
-    .camp-decor {
-      position: absolute;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .camp-decor.cross {
-      right: 7%;
-      top: 6px;
-      width: 42px;
-      height: 42px;
-      color: #8a2cff;
-      transform: rotate(12deg);
-    }
-    .camp-decor.bolt {
-      left: 2%;
-      top: 110px;
-      width: 46px;
-      height: 64px;
-      color: #ffcc00;
-      transform: rotate(-12deg);
-    }
-    .camp-decor.blob {
-      right: -16px;
-      bottom: 18px;
-      width: 96px;
-      height: 74px;
-      color: #32c8ff;
-      opacity: .55;
-    }
-    .camp-decor.heart {
-      left: 9%;
-      bottom: 4px;
-      width: 44px;
-      height: 44px;
-      color: #ff4f93;
-      transform: rotate(-8deg);
+      font-weight: 700;
+      line-height: 1.4;
     }
 
-    .urgency {
+    .final-cta {
       border-radius: 28px;
-      background: #fff;
-      box-shadow: var(--shadow);
-      padding: 24px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+      box-shadow: var(--shadow-premium);
+      padding: clamp(24px, 4vw, 32px);
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 18px;
       align-items: center;
+      color: #fff;
     }
-    .urgency h2 {
+    .final-cta h2 {
       margin: 0 0 8px;
-      font-size: clamp(26px, 3vw, 38px);
+      font-size: clamp(24px, 3vw, 36px);
       line-height: 1.08;
       letter-spacing: -.03em;
+      font-weight: 900;
     }
-    .urgency p {
+    .final-cta p {
       margin: 0;
-      color: var(--muted);
+      opacity: .85;
       font-weight: 700;
+      font-size: 15px;
+    }
+    .final-cta .btn {
+      white-space: nowrap;
+    }
+
+    .mobile-sticky-bar {
+      display: none;
     }
 
     .lead-block {
@@ -688,17 +789,77 @@
       .info-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-      .camp-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .camp-mini-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
-      .urgency {
+      .benefit-list {
         grid-template-columns: 1fr;
+      }
+      .final-cta {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body.has-sticky-bar {
+        padding-bottom: 72px;
+      }
+      .access-top-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        margin-bottom: 14px;
+        border-radius: 0;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        width: 100vw;
+      }
+      .mobile-sticky-bar {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        background: var(--white);
+        border-top: 1px solid var(--line);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, .08);
+        transition: transform .25s ease, opacity .25s ease;
+      }
+      .mobile-sticky-bar.is-hidden {
+        transform: translateY(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .mobile-sticky-bar-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 900;
+        color: var(--navy);
+        line-height: 1.25;
+      }
+      .mobile-sticky-bar-text svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      .mobile-sticky-bar .btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 13px;
+        white-space: nowrap;
       }
     }
 
     @media (max-width: 640px) {
       .container { width: min(100% - 20px, var(--max)); }
-      .hero { padding-top: 20px; }
+      .hero { padding-top: 12px; }
       .hero-main { min-height: 0; padding: 22px; }
       .hero-aside { min-height: 280px; }
       h1 { font-size: 34px; }
@@ -707,43 +868,46 @@
       .info-grid {
         grid-template-columns: 1fr;
       }
-      .camp-cards {
+      .camp-mini-grid {
         grid-template-columns: 1fr;
-      }
-      .camp-card {
-        min-height: 0;
-        padding: 20px;
-      }
-      .camp-decor {
-        display: none;
       }
       .section-head { display: block; }
       .section-text { margin-top: 10px; }
       .timer { gap: 6px; }
       .time-num { font-size: 20px; }
       .time-box { min-height: 68px; padding: 12px 4px; }
-      .card-img { height: 150px; }
+      .card-top { flex-direction: column; }
+      .card-thumb { width: 100%; height: 100px; }
+      .card-badges { gap: 4px; }
+      .card-badge-item { font-size: 10px; padding: 4px 8px; }
     }
   </style>
 </head>
-<body>
+<body class="has-sticky-bar">
   <main id="top">
     <section class="hero">
       <div class="container">
+        <p class="access-top-bar">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm3 8V6a3 3 0 1 0-6 0v3h6Z"/></svg>
+          🔒 Закрытый доступ для клиентов Мосгортур до 1 июня
+        </p>
         <div class="hero-grid">
           <div class="hero-main">
             <div>
               <div class="chips">
-                <span class="chip orange">Акция до 1 июня</span>
-                <span class="chip green">Места ограничены</span>
-                <span class="chip">7–17 лет</span>
+                <span class="chip lock">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm3 8V6a3 3 0 1 0-6 0v3h6Z"/></svg>
+                  Закрытый доступ
+                </span>
+                <span class="chip orange">До 1 июня</span>
+                <span class="chip navy">7–17 лет</span>
               </div>
-              <h1>Успейте забронировать<br>смену в “Радуге”</h1>
-              <p class="lead">До 1 июня действуют специальные условия на летние смены</p>
+              <h1>Только до 1 июня — закрытые цены на смены в «Радуге»</h1>
+              <p class="lead">Сейчас предложение доступно только по приглашению для клиентов из базы Мосгортур. С 1 июня акция станет доступна всем клиентам, а часть популярных смен может быть уже недоступна.</p>
             </div>
             <div class="hero-actions">
-              <a class="btn" href="#shifts">Смотреть смены</a>
-              <a class="btn btn-secondary" href="#lead-form">Помочь с выбором</a>
+              <a class="btn" href="#lead-form">Закрепить место по спецусловиям</a>
+              <a class="btn btn-secondary" href="#shifts">Смотреть смены</a>
             </div>
           </div>
 
@@ -754,9 +918,13 @@
           </aside>
         </div>
 
-        <div class="timer-panel">
-          <h2>До окончания акции</h2>
-          <div class="timer" aria-live="polite">
+        <div class="timer-panel" id="timer-panel">
+          <div>
+            <h2 id="timer-heading">До открытия акции для всех клиентов осталось</h2>
+            <p class="timer-note">После 1 июня предложение станет публичным, спрос вырастет, а популярные смены могут закончиться.</p>
+            <p class="timer-expired" id="timer-expired">Акция открыта для всех клиентов</p>
+          </div>
+          <div class="timer" aria-live="polite" id="timer">
             <div class="time-box"><span class="time-num" id="days">00</span><span class="time-label">дней</span></div>
             <div class="time-box"><span class="time-num" id="hours">00</span><span class="time-label">часов</span></div>
             <div class="time-box"><span class="time-num" id="minutes">00</span><span class="time-label">минут</span></div>
@@ -766,10 +934,45 @@
       </div>
     </section>
 
+    <section id="early-access">
+      <div class="container">
+        <div class="benefit-panel">
+          <h2 class="section-title">Почему вы видите это предложение раньше других?</h2>
+          <ul class="benefit-list">
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>Вы уже были клиентом Мосгортур</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>Для вас открыт ранний доступ к летним сменам</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>До 1 июня предложение доступно только клиентам из базы</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>С 1 июня акция станет доступна всем клиентам</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>После старта акции часть популярных смен может быть уже недоступна</li>
+          </ul>
+          <a class="btn" href="#lead-form">Воспользоваться закрытым доступом</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="why-now">
+      <div class="container">
+        <div class="benefit-panel benefit-panel-muted">
+          <h2 class="section-title">Почему лучше оставить заявку до открытия акции для всех клиентов</h2>
+          <ul class="benefit-list">
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>Сейчас действует закрытая цена</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>Можно выбрать смену до роста спроса</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>На популярные даты ограниченное количество мест</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>С 1 июня акция станет публичной</li>
+            <li><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z"/></svg>Менеджер поможет закрепить место заранее</li>
+          </ul>
+          <a class="section-link" href="#shifts">К сменам →</a>
+        </div>
+      </div>
+    </section>
+
     <section id="shifts">
       <div class="container">
         <div class="section-head">
-          <h2 class="section-title">Доступные смены</h2>
+          <div>
+            <h2 class="section-title">Закрытые цены на летние смены</h2>
+            <p class="section-text">Специальные условия доступны только клиентам из базы Мосгортур до публичного запуска акции 1 июня.</p>
+          </div>
         </div>
         <div class="grid" id="shift-grid"></div>
       </div>
@@ -778,62 +981,34 @@
     <section id="about" class="camp-about">
       <div class="container">
         <div class="section-head">
-          <h2 class="section-title">О детском оздоровительном лагере «Радуга»</h2>
-          <p class="section-text">Современное пространство для отдыха, развития и безопасного досуга детей.</p>
+          <h2 class="section-title">ДОЛ «Радуга» — где проходит отдых</h2>
+          <p class="section-text">Коротко о лагере, куда отправится ваш ребёнок.</p>
         </div>
-        <svg class="camp-decor cross" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M20 4h8v16h16v8H28v16h-8V28H4v-8h16V4Z" fill="currentColor"/>
-        </svg>
-        <svg class="camp-decor bolt" viewBox="0 0 48 64" aria-hidden="true">
-          <path d="M31 2 6 35h17l-6 27 25-36H25L31 2Z" fill="currentColor"/>
-        </svg>
-        <svg class="camp-decor blob" viewBox="0 0 120 90" aria-hidden="true">
-          <path d="M11 49C5 23 31 3 59 8c30 5 57 27 51 51-5 22-37 28-63 24-19-3-32-15-36-34Z" fill="currentColor"/>
-        </svg>
-        <svg class="camp-decor heart" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M24 41S7 31 7 17.5C7 10.8 12.1 7 17.6 7c3.2 0 5.6 1.5 6.4 3.2C24.8 8.5 27.2 7 30.4 7 35.9 7 41 10.8 41 17.5 41 31 24 41 24 41Z" fill="currentColor"/>
-        </svg>
-        <div class="camp-cards">
-          <article class="camp-card">
-            <h3>Расположение</h3>
-            <p>Экологически чистый живописный район с сосновыми лесами</p>
+        <div class="camp-mini-grid">
+          <article class="camp-mini-card">
+            <strong>Подмосковье</strong>
+            <span>Экологически чистый район с сосновыми лесами в Одинцовском районе</span>
           </article>
-          <article class="camp-card">
-            <h3>Развитая обучающая и досуговая инфраструктура</h3>
-            <ul>
-              <li>хобби-центры</li>
-              <li>футбольное поле</li>
-              <li>танцевальный и спортивный залы</li>
-              <li>площадка для проведения зимних эстафет</li>
-              <li>спортивный и досуговый инвентарь</li>
-            </ul>
+          <article class="camp-mini-card">
+            <strong>Безопасная территория</strong>
+            <span>Огороженная территория 6 гектаров с круглосуточным видеонаблюдением</span>
           </article>
-          <article class="camp-card">
-            <h3>Территория 6 гектаров</h3>
-            <p>Максимальная вместимость до 211 человек</p>
-            <span class="note">(165 детей и 46 сопровождающих)</span>
+          <article class="camp-mini-card">
+            <strong>Насыщенная программа</strong>
+            <span>Спорт, творчество, квесты и мероприятия на свежем воздухе</span>
           </article>
-          <article class="camp-card">
-            <h3>Комфорт и безопасность</h3>
-            <ul>
-              <li>круглосуточное видеонаблюдение</li>
-              <li>современные системы пожарной безопасности</li>
-              <li>автономные системы тепло- и водоснабжения</li>
-              <li>5-ступенчатая очистка воды</li>
-            </ul>
+          <article class="camp-mini-card">
+            <strong>Опытная команда</strong>
+            <span>Профессиональные вожатые и педагоги с опытом работы с детьми</span>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="container">
-        <div class="urgency">
-          <div>
-            <h2>Акция действует только до 1 июня</h2>
-            <p>После окончания акции стоимость может измениться, а места на популярных сменах могут закончиться.</p>
-          </div>
-          <a class="btn" href="#lead-form">Оставить заявку</a>
+          <article class="camp-mini-card">
+            <strong>Комфортное размещение</strong>
+            <span>Уютные корпуса, современные системы безопасности и комфорта</span>
+          </article>
+          <article class="camp-mini-card">
+            <strong>Удобная логистика</strong>
+            <span>Организованный трансфер и помощь с документами от менеджера</span>
+          </article>
         </div>
       </div>
     </section>
@@ -843,11 +1018,14 @@
         <div class="hero-main">
           <div>
             <div class="chips">
-              <span class="chip orange">Финальный шаг</span>
+              <span class="chip lock">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm3 8V6a3 3 0 1 0-6 0v3h6Z"/></svg>
+                Закрытый доступ
+              </span>
               <span class="chip">Без оплаты на сайте</span>
             </div>
-            <h2 class="section-title">Выберите смену для ребенка уже сегодня</h2>
-            <p class="lead">Оставьте заявку — менеджер поможет подобрать подходящую смену и ответит на вопросы по датам, документам и размещению.</p>
+            <h2 class="section-title">Закрепите место по закрытой цене до открытия акции для всех клиентов</h2>
+            <p class="lead">Оставьте заявку сейчас — менеджер поможет подобрать смену и оформить бронирование по специальным условиям до публичного запуска акции.</p>
           </div>
         </div>
         <form class="form-card" id="form">
@@ -870,20 +1048,40 @@
             <label for="website">Сайт</label>
             <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
           </div>
-          <button class="btn" type="submit">Отправить заявку</button>
+          <button class="btn" type="submit">Получить закрытое предложение</button>
           <p class="form-note" id="form-note" aria-live="polite"></p>
         </form>
       </div>
     </section>
+
+    <section>
+      <div class="container">
+        <div class="final-cta">
+          <div>
+            <h2>Закрытый доступ заканчивается 1 июня</h2>
+            <p>После публичного запуска спрос вырастет, а популярные смены могут стать недоступны.</p>
+          </div>
+          <a class="btn" href="#lead-form">Закрепить место по спецусловиям</a>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <div class="mobile-sticky-bar" id="mobile-sticky-bar">
+    <span class="mobile-sticky-bar-text">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 1a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5Zm3 8V6a3 3 0 1 0-6 0v3h6Z"/></svg>
+      🔒 Закрытый доступ до 1 июня
+    </span>
+    <a class="btn" href="#lead-form">Оставить заявку</a>
+  </div>
 
   <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">&times;</button>
-      <h2 id="modal-title">Забронировать смену</h2>
-      <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
+      <h2 id="modal-title">Забронировать по закрытой цене</h2>
+      <p class="modal-lead">Оставьте контакты — менеджер поможет закрепить место по специальным условиям до публичного запуска акции.</p>
       <div class="modal-success" id="modal-success">
-        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+        <p>Спасибо! Мы получили заявку. Менеджер свяжется с вами и поможет закрепить место по закрытым условиям.</p>
       </div>
       <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
         <div class="field">
@@ -903,7 +1101,7 @@
           <label for="modal-website">Сайт</label>
           <input id="modal-website" name="website" type="text" tabindex="-1" autocomplete="off">
         </div>
-        <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
+        <button class="btn" type="submit" id="modal-submit">Получить закрытое предложение</button>
         <p class="form-note" id="modal-form-note" aria-live="polite"></p>
       </form>
     </div>
@@ -998,27 +1196,42 @@
     const shiftGrid = document.getElementById('shift-grid');
     const shiftSelect = document.getElementById('shift');
 
+    const SUCCESS_MESSAGE = 'Спасибо! Мы получили заявку. Менеджер свяжется с вами и поможет закрепить место по закрытым условиям.';
+
     function renderShifts() {
       shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
       shiftGrid.innerHTML = shifts.map((shift) => {
+        const discount = shift.oldPrice > 0
+          ? Math.round((1 - shift.price / shift.oldPrice) * 100)
+          : 0;
+        const savings = shift.oldPrice - shift.price;
         return `
           <article class="card">
-            <div class="card-img">
-              <img src="${shift.image}" alt="${shift.title}" loading="lazy">
-              <span class="card-badge">Скидка 8%</span>
+            <div class="card-top">
+              <div class="card-thumb">
+                <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+              </div>
+              <div class="card-head">
+                <p class="card-dates">${shift.dates}</p>
+                <p class="card-title">${shift.title}</p>
+              </div>
+            </div>
+            <div class="card-badges">
+              <span class="card-badge-item lock">🔒 Закрытая цена</span>
+              <span class="card-badge-item deadline">До 1 июня</span>
+              <span class="card-badge-item discount">−${discount}%</span>
+              <span class="card-badge-item limited">Места ограничены</span>
             </div>
             <div class="card-body">
-              <h3>${shift.title}</h3>
-              <div class="meta">
-                <span>${shift.dates}</span>
-                <span>7–17 лет</span>
-                <span>Акция до 1 июня</span>
+              <div class="price-block">
+                <div class="price-row">
+                  <span class="price-new">${money.format(shift.price)} ₽</span>
+                  <span class="price-old">${money.format(shift.oldPrice)} ₽</span>
+                </div>
+                <p class="price-savings">Экономия ${money.format(savings)} ₽</p>
               </div>
-              <div class="price-row">
-                <span class="price">${money.format(shift.price)} ₽</span>
-                <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
-              </div>
-              <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>
+              <p class="card-urgency-note">Популярные смены могут закончиться после открытия акции для всех клиентов</p>
+              <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать по закрытой цене</button>
             </div>
           </article>
         `;
@@ -1420,7 +1633,10 @@
       }
     });
 
-    const target = new Date('2026-06-01T23:59:00+03:00').getTime();
+    const target = new Date('2026-06-01T00:00:00+03:00').getTime();
+    const timerPanel = document.getElementById('timer-panel');
+    const timerNote = document.querySelector('.timer-note');
+    const timerHeading = document.getElementById('timer-heading');
     const daysEl = document.getElementById('days');
     const hoursEl = document.getElementById('hours');
     const minutesEl = document.getElementById('minutes');
@@ -1431,7 +1647,13 @@
     }
 
     function tick() {
-      const diff = Math.max(0, target - Date.now());
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        timerPanel.classList.add('is-expired');
+        timerHeading.textContent = 'Акция открыта для всех клиентов';
+        if (timerNote) timerNote.style.display = 'none';
+        return;
+      }
       daysEl.textContent = pad(Math.floor(diff / 86400000));
       hoursEl.textContent = pad(Math.floor((diff % 86400000) / 3600000));
       minutesEl.textContent = pad(Math.floor((diff % 3600000) / 60000));
@@ -1440,6 +1662,15 @@
 
     tick();
     setInterval(tick, 1000);
+
+    const stickyBar = document.getElementById('mobile-sticky-bar');
+    const leadFormSection = document.getElementById('lead-form');
+    if (stickyBar && leadFormSection && 'IntersectionObserver' in window) {
+      const stickyObserver = new IntersectionObserver(([entry]) => {
+        stickyBar.classList.toggle('is-hidden', entry.isIntersecting);
+      }, { threshold: 0.15 });
+      stickyObserver.observe(leadFormSection);
+    }
 
     landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -1459,7 +1690,7 @@
           source: 'landing',
           website: document.getElementById('website').value,
         });
-        setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+        setFormNote(landingFormNote, SUCCESS_MESSAGE, false);
         landingForm.name.value = '';
         landingPhoneCtrl.reset();
         shiftSelect.value = '';
