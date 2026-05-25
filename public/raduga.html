@@ -21,7 +21,7 @@
 
   <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js" async defer></script>
   <title>Поиск туров</title>
-  <meta name="description" content="Смены в детский лагерь «Радуга» в Одинцовском районе. Акция ко Дню защиты детей действует до 1 июня 2026.">
+  <meta name="description" content="Летние смены в детский лагерь «Радуга» в Одинцовском районе. Специальные условия на отдельные смены до 1 июня 2026.">
   <link rel="stylesheet" crossorigin href="https://online.mosgortur.ru/new/assets/index-CRg1FWTQ.css">
   <style>
     @font-face {
@@ -734,12 +734,12 @@
           <div class="hero-main">
             <div>
               <div class="chips">
-                <span class="chip orange">Акция до 1 июня</span>
+                <span class="chip orange">Специальные условия до 1 июня</span>
                 <span class="chip green">Места ограничены</span>
                 <span class="chip">7–17 лет</span>
               </div>
               <h1>Успейте забронировать<br>смену в “Радуге”</h1>
-              <p class="lead">До 1 июня действуют специальные условия на летние смены</p>
+              <p class="lead">До 1 июня доступны специальные условия на летние смены. С 1 июня предложение станет доступно всем клиентам.</p>
             </div>
             <div class="hero-actions">
               <a class="btn" href="#shifts">Смотреть смены</a>
@@ -755,7 +755,7 @@
         </div>
 
         <div class="timer-panel">
-          <h2>До окончания акции</h2>
+          <h2>Специальные условия действуют еще</h2>
           <div class="timer" aria-live="polite">
             <div class="time-box"><span class="time-num" id="days">00</span><span class="time-label">дней</span></div>
             <div class="time-box"><span class="time-num" id="hours">00</span><span class="time-label">часов</span></div>
@@ -830,8 +830,8 @@
       <div class="container">
         <div class="urgency">
           <div>
-            <h2>Акция действует только до 1 июня</h2>
-            <p>После окончания акции стоимость может измениться, а места на популярных сменах могут закончиться.</p>
+            <h2>До 1 июня действуют специальные условия на отдельные смены</h2>
+            <p>С 1 июня предложение станет доступно всем клиентам, а количество свободных мест на популярных сменах может сократиться.</p>
           </div>
           <a class="btn" href="#lead-form">Оставить заявку</a>
         </div>
@@ -846,7 +846,7 @@
               <span class="chip orange">Финальный шаг</span>
               <span class="chip">Без оплаты на сайте</span>
             </div>
-            <h2 class="section-title">Выберите смену для ребенка уже сегодня</h2>
+            <h2 class="section-title">Успейте выбрать подходящую смену до 1 июня</h2>
             <p class="lead">Оставьте заявку — менеджер поможет подобрать подходящую смену и ответит на вопросы по датам, документам и размещению.</p>
           </div>
         </div>
@@ -1000,12 +1000,15 @@
 
     function renderShifts() {
       shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
-      shiftGrid.innerHTML = shifts.map((shift) => {
+      shiftGrid.innerHTML = shifts.map((shift, index) => {
+        const cardBadge = index === 0
+          ? '<span class="card-badge">Осталось мало мест</span>'
+          : '<span class="card-badge">Мест ограничено</span>';
         return `
           <article class="card">
             <div class="card-img">
               <img src="${shift.image}" alt="${shift.title}" loading="lazy">
-              <span class="card-badge">Скидка 8%</span>
+              ${cardBadge}
             </div>
             <div class="card-body">
               <h3>${shift.title}</h3>
