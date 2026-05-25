@@ -1103,6 +1103,7 @@
         console.warn('Не удалось загрузить смены из админки', error);
       }
       renderShifts();
+      tryOpenShiftFromUrl();
     }
 
     loadShifts();
@@ -1367,6 +1368,37 @@
       return shifts.find((shift) => shift.id === id);
     }
 
+    function getShiftIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('shift') || params.get('shift_id');
+    }
+
+    function setShiftInUrl(shiftId) {
+      if (!shiftId) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('shift', shiftId);
+      const next = `${url.pathname}${url.search}${url.hash}`;
+      history.replaceState({ radugaShift: shiftId }, '', next);
+    }
+
+    function clearShiftFromUrl() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('shift') && !url.searchParams.has('shift_id')) return;
+      url.searchParams.delete('shift');
+      url.searchParams.delete('shift_id');
+      const query = url.searchParams.toString();
+      history.replaceState(null, '', `${url.pathname}${query ? `?${query}` : ''}${url.hash}`);
+    }
+
+    function tryOpenShiftFromUrl() {
+      const shiftId = getShiftIdFromUrl();
+      if (!shiftId) return;
+      const shift = findShiftById(shiftId);
+      if (!shift) return;
+      trackRadugaBookingClick();
+      openReserveModal(shift);
+    }
+
     function collectUtm() {
       const params = new URLSearchParams(window.location.search);
       const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
@@ -1434,6 +1466,7 @@
       reserveModal.classList.add('is-open');
       reserveModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      setShiftInUrl(shift.id);
       modalName.focus();
     }
 
@@ -1441,6 +1474,7 @@
       reserveModal.classList.remove('is-open');
       reserveModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
+      clearShiftFromUrl();
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       if (clearShift) {
