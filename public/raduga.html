@@ -1103,6 +1103,7 @@
         console.warn('Не удалось загрузить смены из админки', error);
       }
       renderShifts();
+      shiftsLoaded = true;
       tryOpenShiftFromUrl();
     }
 
@@ -1368,29 +1369,89 @@
       return shifts.find((shift) => shift.id === id);
     }
 
-    function getShiftIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
+    let shiftsLoaded = false;
+    let shiftFromPostMessage = null;
+
+    function parseShiftFromSearch(search) {
+      if (!search) return null;
+      const query = search.startsWith('?') ? search : `?${search}`;
+      const params = new URLSearchParams(query);
       return params.get('shift') || params.get('shift_id');
+    }
+
+    function getAccessibleWindows() {
+      const wins = [window];
+      [window.parent, window.top].forEach((win) => {
+        if (!win || win === window || wins.includes(win)) return;
+        try {
+          void win.location.href;
+          wins.push(win);
+        } catch (_) {}
+      });
+      return wins;
+    }
+
+    function getSearchParamSources() {
+      const sources = [];
+      getAccessibleWindows().forEach((win) => {
+        sources.push(win.location.search);
+      });
+      if (document.referrer) {
+        try {
+          sources.push(new URL(document.referrer).search);
+        } catch (_) {}
+      }
+      return sources;
+    }
+
+    function getShiftIdFromUrl() {
+      for (const search of getSearchParamSources()) {
+        const id = parseShiftFromSearch(search);
+        if (id) return id;
+      }
+
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash) {
+        const fromHash = parseShiftFromSearch(
+          hash.includes('=') ? (hash.startsWith('?') ? hash : `?${hash}`) : `?shift=${encodeURIComponent(hash)}`
+        );
+        if (fromHash) return fromHash;
+      }
+
+      return shiftFromPostMessage;
+    }
+
+    function replaceUrlInWindow(win, mutator) {
+      try {
+        const url = new URL(win.location.href);
+        mutator(url);
+        const query = url.searchParams.toString();
+        const next = `${url.pathname}${query ? `?${query}` : ''}${url.hash}`;
+        win.history.replaceState({ radugaShift: url.searchParams.get('shift') || null }, '', next);
+      } catch (_) {}
     }
 
     function setShiftInUrl(shiftId) {
       if (!shiftId) return;
-      const url = new URL(window.location.href);
-      url.searchParams.set('shift', shiftId);
-      const next = `${url.pathname}${url.search}${url.hash}`;
-      history.replaceState({ radugaShift: shiftId }, '', next);
+      getAccessibleWindows().forEach((win) => {
+        replaceUrlInWindow(win, (url) => {
+          url.searchParams.set('shift', shiftId);
+        });
+      });
     }
 
     function clearShiftFromUrl() {
-      const url = new URL(window.location.href);
-      if (!url.searchParams.has('shift') && !url.searchParams.has('shift_id')) return;
-      url.searchParams.delete('shift');
-      url.searchParams.delete('shift_id');
-      const query = url.searchParams.toString();
-      history.replaceState(null, '', `${url.pathname}${query ? `?${query}` : ''}${url.hash}`);
+      getAccessibleWindows().forEach((win) => {
+        replaceUrlInWindow(win, (url) => {
+          url.searchParams.delete('shift');
+          url.searchParams.delete('shift_id');
+        });
+      });
     }
 
     function tryOpenShiftFromUrl() {
+      if (!shiftsLoaded || !reserveModal) return;
+      if (reserveModal.classList.contains('is-open')) return;
       const shiftId = getShiftIdFromUrl();
       if (!shiftId) return;
       const shift = findShiftById(shiftId);
@@ -1400,15 +1461,30 @@
     }
 
     function collectUtm() {
-      const params = new URLSearchParams(window.location.search);
       const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
       const utm = {};
-      keys.forEach((key) => {
-        const value = params.get(key);
-        if (value) utm[key] = value;
+      getSearchParamSources().forEach((search) => {
+        const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
+        keys.forEach((key) => {
+          if (!utm[key]) {
+            const value = params.get(key);
+            if (value) utm[key] = value;
+          }
+        });
       });
       return utm;
     }
+
+    window.addEventListener('message', (event) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== 'object') return;
+      const type = payload.type || payload.event;
+      if (type !== 'raduga-set-shift' && type !== 'raduga:shift') return;
+      const shiftId = payload.shift || payload.shiftId || payload.id;
+      if (!shiftId) return;
+      shiftFromPostMessage = String(shiftId);
+      tryOpenShiftFromUrl();
+    });
 
     const YM_COUNTER_ID = 109401746;
 
@@ -1582,6 +1658,8 @@
         submitButton.disabled = false;
       }
     });
+
+    window.addEventListener('load', () => tryOpenShiftFromUrl());
   </script>
 </body>
 </html>
