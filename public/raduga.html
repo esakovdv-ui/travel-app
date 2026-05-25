@@ -332,6 +332,18 @@
       overflow: hidden;
       flex-shrink: 0;
     }
+    .card-img.reserve-btn {
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+    }
+    .card-img.reserve-btn:focus-visible {
+      outline: 2px solid var(--orange);
+      outline-offset: -2px;
+    }
     .card-img img {
       width: 100%;
       height: 100%;
@@ -1079,10 +1091,10 @@
           : '<span class="card-badge">Мест ограничено</span>';
         return `
           <article class="card">
-            <div class="card-img">
-              <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+            <button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
+              <img src="${shift.image}" alt="" loading="lazy">
               ${cardBadge}
-            </div>
+            </button>
             <div class="card-body">
               <h3>${shift.title}</h3>
               <div class="card-meta">
