@@ -38,6 +38,18 @@ pm2 restart all
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
 - `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
+### Радуга на online.mosgortur.ru (iframe)
+
+Страница `https://online.mosgortur.ru/new/raduga` встраивает `https://motrip.ru/raduga` в iframe **без query** и с `referrerpolicy="strict-origin-when-cross-origin"`, поэтому `?shift=` из адреса mosgortur не попадает в лендинг.
+
+На **родительской** странице mosgortur нужно подключить (в `index.html` SPA или GTM):
+
+```html
+<script src="https://motrip.ru/raduga-parent-bridge.js" defer></script>
+```
+
+Скрипт прокидывает `shift`, UTM и `clckid` в `iframe.src`. Альтернатива в их Vue-компоненте `Raduga`: динамический `:src="'https://motrip.ru/raduga' + location.search"`.
+
 ## История релизов
 
 | Коммит | Описание |

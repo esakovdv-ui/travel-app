@@ -16,6 +16,21 @@
   </script>
   <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
   <!-- /Yandex.Metrika counter -->
+  <script>
+    (function () {
+      if (window.parent === window) return;
+      var request = { type: 'raduga-request-shift', source: 'motrip-raduga' };
+      function ask() {
+        try { window.parent.postMessage(request, '*'); } catch (_) {}
+      }
+      ask();
+      var n = 0;
+      var timer = setInterval(function () {
+        ask();
+        if (++n >= 50) clearInterval(timer);
+      }, 200);
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="192x192" href="https://online.mosgortur.ru/new/favicon/android-icon-192x192.png">
   <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="https://online.mosgortur.ru/new/favicon/favicon-96x96.png">
@@ -1371,6 +1386,11 @@
 
     let shiftsLoaded = false;
     let shiftFromPostMessage = null;
+    const RADUGA_PARENT_ORIGINS = new Set([
+      'https://online.mosgortur.ru',
+      'https://mosgortur.ru',
+      'https://www.mosgortur.ru',
+    ]);
 
     function parseShiftFromSearch(search) {
       if (!search) return null;
@@ -1404,11 +1424,25 @@
       return sources;
     }
 
+    function getShiftFromWindowName() {
+      const name = window.name || '';
+      if (!name) return null;
+      if (name.startsWith('shift:')) return name.slice(6).split(/[&#]/)[0] || null;
+      if (name.includes('shift=')) {
+        const query = name.startsWith('?') ? name : (name.includes('?') ? name.slice(name.indexOf('?')) : `?${name}`);
+        return parseShiftFromSearch(query);
+      }
+      return null;
+    }
+
     function getShiftIdFromUrl() {
       for (const search of getSearchParamSources()) {
         const id = parseShiftFromSearch(search);
         if (id) return id;
       }
+
+      const fromName = getShiftFromWindowName();
+      if (fromName) return fromName;
 
       const hash = window.location.hash.replace(/^#/, '');
       if (hash) {
@@ -1476,6 +1510,7 @@
     }
 
     window.addEventListener('message', (event) => {
+      if (!RADUGA_PARENT_ORIGINS.has(event.origin)) return;
       const payload = event.data;
       if (!payload || typeof payload !== 'object') return;
       const type = payload.type || payload.event;
