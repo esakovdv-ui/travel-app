@@ -1378,6 +1378,21 @@
       return utm;
     }
 
+    const YM_COUNTER_ID = 109401746;
+
+    function reachRadugaGoal(goal) {
+      if (typeof ym !== 'function') return;
+      ym(YM_COUNTER_ID, 'reachGoal', goal);
+    }
+
+    function trackRadugaBookingClick() {
+      reachRadugaGoal('raduga_booking_click');
+    }
+
+    function trackRadugaBookingSubmit() {
+      reachRadugaGoal('raduga_booking_submit');
+    }
+
     async function submitRadugaLead({ name, phone, shift, source, website = '' }) {
       const response = await fetch('/api/raduga-lead', {
         method: 'POST',
@@ -1439,6 +1454,7 @@
       const button = event.target.closest('.reserve-btn');
       if (!button) return;
       event.preventDefault();
+      trackRadugaBookingClick();
       const picked = findShiftById(button.dataset.shiftId);
       if (picked) openReserveModal(picked);
     });
@@ -1470,6 +1486,7 @@
           source: 'popup',
           website: document.getElementById('modal-website').value,
         });
+        trackRadugaBookingSubmit();
         modalFormBody.classList.add('is-hidden');
         modalSuccess.classList.add('is-visible');
         modalName.value = '';
@@ -1520,6 +1537,7 @@
           source: 'landing',
           website: document.getElementById('website').value,
         });
+        trackRadugaBookingSubmit();
         setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
         landingForm.name.value = '';
         landingPhoneCtrl.reset();
