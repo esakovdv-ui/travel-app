@@ -21,6 +21,7 @@
       if (window.parent === window) return;
       var request = { type: 'raduga-request-shift', source: 'motrip-raduga' };
       function ask() {
+        if (window.__radugaSuppressShiftAutoOpen) return;
         try { window.parent.postMessage(request, '*'); } catch (_) {}
       }
       ask();
@@ -1440,6 +1441,7 @@
 
     let shiftsLoaded = false;
     let shiftFromPostMessage = null;
+    let suppressShiftAutoOpen = false;
     const RADUGA_PARENT_ORIGINS = new Set([
       'https://online.mosgortur.ru',
       'https://mosgortur.ru',
@@ -1537,7 +1539,17 @@
       });
     }
 
+    function suppressShiftDeepLinkAutoOpen() {
+      suppressShiftAutoOpen = true;
+      window.__radugaSuppressShiftAutoOpen = true;
+      shiftFromPostMessage = null;
+      try {
+        window.name = '';
+      } catch (_) {}
+    }
+
     function tryOpenShiftFromUrl() {
+      if (suppressShiftAutoOpen) return;
       if (!shiftsLoaded || !reserveModal) return;
       if (reserveModal.classList.contains('is-open')) return;
       const shiftId = getShiftIdFromUrl();
@@ -1564,6 +1576,7 @@
     }
 
     window.addEventListener('message', (event) => {
+      if (suppressShiftAutoOpen) return;
       if (!RADUGA_PARENT_ORIGINS.has(event.origin)) return;
       const payload = event.data;
       if (!payload || typeof payload !== 'object') return;
@@ -1636,9 +1649,11 @@
     }
 
     function closeReserveModal(clearShift) {
+      const wasOpen = reserveModal.classList.contains('is-open');
       reserveModal.classList.remove('is-open');
       reserveModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
+      if (wasOpen) suppressShiftDeepLinkAutoOpen();
       clearShiftFromUrl();
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
