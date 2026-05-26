@@ -356,6 +356,7 @@
       left: 12px;
       top: 12px;
       z-index: 1;
+      max-width: calc(100% - 24px);
       padding: 6px 11px;
       border-radius: 999px;
       background: #fff;
@@ -365,6 +366,16 @@
       letter-spacing: -.01em;
       line-height: 1.2;
       box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
+      pointer-events: none;
+    }
+    .card-badge--sm {
+      font-size: 10px;
+      padding: 5px 9px;
+    }
+    .card-badge--xs {
+      font-size: 9px;
+      padding: 5px 8px;
+      letter-spacing: -.02em;
     }
     .card-body {
       padding: 20px;
@@ -801,6 +812,13 @@
       .time-num { font-size: 20px; }
       .time-box { min-height: 68px; padding: 12px 4px; }
       .card-img { height: 210px; }
+      .card-badge {
+        left: 10px;
+        top: 10px;
+        max-width: calc(100% - 20px);
+      }
+      .card-badge--sm { font-size: 9px; }
+      .card-badge--xs { font-size: 8px; padding: 4px 7px; }
       .card-body { padding: 18px; gap: 10px; }
       .card h3 { font-size: 20px; }
       .price { font-size: 26px; }
@@ -1083,12 +1101,36 @@
     const iconCalendar = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z"/></svg>';
     const iconAge = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-6 1.79-6 4v2h12v-2c0-2.21-2.69-4-6-4Z"/></svg>';
 
+    const CARD_BADGE_LABELS = [
+      'Остались последние места',
+      'Набор почти закрыт',
+      'Места заканчиваются',
+      'Идет активное бронирование',
+      'Смена быстро заполняется',
+      'Высокий спрос на смену',
+      'Свободных мест почти нет',
+      'Успейте забронировать',
+      'Бронирования идут каждый день',
+      'Осталось несколько мест',
+    ];
+
+    function cardBadgeSizeClass(label) {
+      const len = label.length;
+      if (len >= 28) return 'card-badge--xs';
+      if (len >= 22) return 'card-badge--sm';
+      return '';
+    }
+
+    function cardBadgeHtml(index) {
+      const label = CARD_BADGE_LABELS[index % CARD_BADGE_LABELS.length];
+      const sizeClass = cardBadgeSizeClass(label);
+      return `<span class="card-badge${sizeClass ? ` ${sizeClass}` : ''}">${label}</span>`;
+    }
+
     function renderShifts() {
       shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
       shiftGrid.innerHTML = shifts.map((shift, index) => {
-        const cardBadge = index === 0
-          ? '<span class="card-badge">Осталось мало мест</span>'
-          : '<span class="card-badge">Мест ограничено</span>';
+        const cardBadge = cardBadgeHtml(index);
         return `
           <article class="card">
             <button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
