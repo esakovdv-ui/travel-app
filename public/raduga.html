@@ -1690,7 +1690,7 @@
         modalSuccess.classList.add('is-visible');
         modalName.value = '';
         modalPhoneCtrl.reset();
-        setTimeout(() => closeReserveModal(true), 1800);
+        setTimeout(() => closeReserveModal(true), 15000);
       } catch (error) {
         setFormNote(modalFormNote, error.message, true);
         modalSubmit.disabled = false;
