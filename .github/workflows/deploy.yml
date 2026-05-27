@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/dima-auth
+      - feature/arthur
   workflow_dispatch:
 
 jobs:
