@@ -104,7 +104,10 @@ async function parseUploadError(response: Response) {
         ? 'server'
         : 'unknown';
 
-  const details = `Тип: ${kind}. Статус: ${response.status}. Причина: ${apiMessage}`;
+  let details = `Тип: ${kind}. Статус: ${response.status}. Причина: ${apiMessage}`;
+  if (response.status === 413) {
+    details = 'Тип: validation. Статус: 413. Причина: файл слишком большой для сервера. Попробуйте JPG/WebP меньшего размера (рекомендуется до 1 МБ).';
+  }
 
   return { kind, status: response.status, details };
 }
@@ -252,6 +255,9 @@ export function VlasevoAdminClient() {
         data: { index, shiftId: shifts[index]?.id || null, fileType: file.type, fileSize: file.size },
       });
       // #endregion
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Тип: validation. Статус: client-check. Причина: файл больше 5 МБ, загрузка запрещена до отправки.');
+      }
       const formData = new FormData();
       formData.append('password', password);
       formData.append('shiftId', shifts[index]?.id || makeId());
