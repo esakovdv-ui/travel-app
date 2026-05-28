@@ -16,6 +16,8 @@ type VlasevoShift = {
 };
 
 const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
+const DEBUG_ENDPOINT = 'http://127.0.0.1:7452/ingest/559fd227-ad27-4091-a3b1-b6f5ed56ddbf';
+const DEBUG_SESSION_ID = '6bb749';
 
 const blankShift: VlasevoShift = {
   id: '',
@@ -41,6 +43,27 @@ function normalizeShift(shift: VlasevoShift): VlasevoShift {
     price: Number(shift.price) || 0,
     promoAccentText: shift.promoAccentText?.trim() || DEFAULT_PROMO_ACCENT_TEXT,
   };
+}
+
+function debugLog(payload: {
+  runId: string;
+  hypothesisId: string;
+  location: string;
+  message: string;
+  data: Record<string, unknown>;
+}) {
+  fetch(DEBUG_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Debug-Session-Id': DEBUG_SESSION_ID,
+    },
+    body: JSON.stringify({
+      sessionId: DEBUG_SESSION_ID,
+      ...payload,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
 }
 
 export function VlasevoAdminClient() {
@@ -123,6 +146,17 @@ export function VlasevoAdminClient() {
   }
 
   function updateShift(index: number, patch: Partial<VlasevoShift>) {
+    if ('image' in patch) {
+      // #region agent log
+      debugLog({
+        runId: 'pre-fix',
+        hypothesisId: 'H2',
+        location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:updateShift',
+        message: 'Applying image patch to local shift state',
+        data: { index, nextImage: patch.image ?? null },
+      });
+      // #endregion
+    }
     setShifts((current) => current.map((shift, shiftIndex) => (
       shiftIndex === index ? { ...shift, ...patch } : shift
     )));
@@ -136,6 +170,28 @@ export function VlasevoAdminClient() {
     setShifts((current) => current.filter((_, shiftIndex) => shiftIndex !== index));
   }
 
+  async function persistShifts(nextShifts: VlasevoShift[]) {
+    const response = await fetch('/api/vlasevo-shifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, shifts: nextShifts.map(normalizeShift) }),
+    });
+    const data = await response.json();
+
+    // #region agent log
+    debugLog({
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:persistShifts',
+      message: 'Persist shifts response received',
+      data: { ok: response.ok, status: response.status, error: data?.error ?? null },
+    });
+    // #endregion
+
+    if (!response.ok) throw new Error(data.error || 'Не удалось сохранить смены');
+    return data.shifts as VlasevoShift[];
+  }
+
   async function uploadImage(index: number, file: File | null) {
     if (!file) return;
 
@@ -144,6 +200,15 @@ export function VlasevoAdminClient() {
     setError('');
 
     try {
+      // #region agent log
+      debugLog({
+        runId: 'pre-fix',
+        hypothesisId: 'H1',
+        location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:uploadImage:beforeFetch',
+        message: 'Starting image upload request',
+        data: { index, shiftId: shifts[index]?.id || null, fileType: file.type, fileSize: file.size },
+      });
+      // #endregion
       const formData = new FormData();
       formData.append('password', password);
       formData.append('shiftId', shifts[index]?.id || makeId());
@@ -154,10 +219,24 @@ export function VlasevoAdminClient() {
         body: formData,
       });
       const data = await response.json();
+      // #region agent log
+      debugLog({
+        runId: 'pre-fix',
+        hypothesisId: 'H1',
+        location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:uploadImage:afterFetch',
+        message: 'Image upload response received',
+        data: { ok: response.ok, status: response.status, hasUrl: Boolean(data?.url), error: data?.error ?? null },
+      });
+      // #endregion
       if (!response.ok) throw new Error(data.error || 'Не удалось загрузить изображение');
 
-      updateShift(index, { image: data.url });
-      setStatus('Изображение загружено. Не забудьте сохранить смены.');
+      const nextShifts = shifts.map((shift, shiftIndex) => (
+        shiftIndex === index ? { ...shift, image: data.url } : shift
+      ));
+      setShifts(nextShifts);
+      const persistedShifts = await persistShifts(nextShifts);
+      setShifts(persistedShifts);
+      setStatus('Изображение загружено и сохранено. Лендинг можно обновить для проверки.');
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
     } finally {
@@ -171,14 +250,17 @@ export function VlasevoAdminClient() {
     setError('');
 
     try {
-      const response = await fetch('/api/vlasevo-shifts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, shifts: shifts.map(normalizeShift) }),
+      // #region agent log
+      debugLog({
+        runId: 'pre-fix',
+        hypothesisId: 'H3',
+        location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:save:beforeFetch',
+        message: 'Starting shifts save request',
+        data: { shiftsCount: shifts.length, sampleImage: shifts[0]?.image ?? null },
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Не удалось сохранить смены');
-      setShifts(data.shifts);
+      // #endregion
+      const persistedShifts = await persistShifts(shifts);
+      setShifts(persistedShifts);
       setStatus('Смены сохранены. Лендинг обновится при следующей загрузке страницы.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Не удалось сохранить смены');
