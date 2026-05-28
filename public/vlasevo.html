@@ -137,6 +137,7 @@
     }
     .card-badge { position: absolute; left: 10px; top: 10px; background: #fff; color: var(--orange-dark); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; }
     .card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px; }
+    .card-body.sold-out { opacity: .55; }
     .card h3 { margin: 0; font-size: 24px; line-height: 1.1; }
     .meta { color: #475569; font-weight: 700; font-size: 14px; }
     .promo-accent { background: var(--green-soft); color: var(--green); border-radius: 10px; padding: 8px 10px; font-weight: 800; font-size: 13px; margin: 0; }
@@ -316,9 +317,9 @@
           <div class="card-img ${shift.isSoldOut ? 'sold-out' : ''}">
             <img src="${shift.image}" alt="${shift.title}" loading="lazy">
             <span class="card-badge">${shift.specialTermsText || 'Спецусловия до 7 июня'}</span>
-            ${shift.isSoldOut ? '<span class="sold-out-overlay">Мест нет</span>' : ''}
+            ${shift.isSoldOut ? '<span class="sold-out-overlay">Места закончились</span>' : ''}
           </div>
-          <div class="card-body">
+          <div class="card-body ${shift.isSoldOut ? 'sold-out' : ''}">
             <h3>${shift.title}</h3>
             <div class="meta">Даты: ${shift.dates}</div>
             <div class="meta">Длительность: ${shift.duration}</div>
