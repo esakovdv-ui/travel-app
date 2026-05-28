@@ -38,11 +38,36 @@
     .btn { border: 0; border-radius: 12px; min-height: 44px; padding: 10px 18px; font-weight: 900; cursor: pointer; }
     .btn-primary { background: conic-gradient(from -3.29deg at 100% -13%, #fc0, #f60 360deg); color: #fff; }
     .btn-secondary { background: #fff; color: var(--orange); outline: 1px solid rgba(255,133,0,.35); }
-    .chip { display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; background: #fff0e3; color: var(--orange-dark); font-size: 14px; font-weight: 800; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: #216e1f;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      box-shadow: 0 8px 20px rgba(67, 155, 49, .2);
+    }
+    .chip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .55);
+      font-size: 15px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
     .hero { padding: 28px 0 18px; }
     .hero-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
     .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 440px; display: flex; flex-direction: column; justify-content: space-between; }
-    .hero-main h1 { margin: 14px 0 0; font-size: clamp(34px, 4vw, 58px); line-height: 1.04; letter-spacing: -.03em; }
+    .hero-main h1 { margin: 8px 0 0; font-size: clamp(34px, 4vw, 58px); line-height: 1.04; letter-spacing: -.03em; }
     .lead { margin-top: 18px; color: #334155; max-width: 680px; font-size: clamp(18px,2vw,22px); font-weight: 700; line-height: 1.5; }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
     .hero-photo img { width: 100%; height: 100%; min-height: 440px; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -95,6 +120,17 @@
       .grid { grid-template-columns: 1fr; }
       .hero-photo img { min-height: 280px; }
       .hero-actions .btn { width: 100%; }
+      .chip {
+        width: fit-content;
+        max-width: 100%;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .chip-icon {
+        width: 22px;
+        height: 22px;
+        font-size: 14px;
+      }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
     }
@@ -107,7 +143,7 @@
         <div class="hero-grid">
           <div class="hero-main panel">
             <div>
-              <span class="chip promo-accent">Акция ко Дню защиты детей</span>
+              <span class="chip promo-accent"><span class="chip-icon" aria-hidden="true">🎈</span>Акция ко Дню защиты детей · спецусловия до 7 июня</span>
               <h1>Летние смены в лагере «Власьево»<br>по специальной цене</h1>
               <p class="lead">До 7 июня действуют специальные условия раннего бронирования. Выберите летнюю смену для ребенка по выгодной цене.</p>
             </div>
