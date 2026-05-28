@@ -298,7 +298,7 @@
             <h3>${shift.title}</h3>
             <div class="meta">Даты: ${shift.dates}</div>
             <div class="meta">Длительность: ${shift.duration}</div>
-            <p class="promo-accent">Летние смены по специальной цене</p>
+            <p class="promo-accent">${shift.promoAccentText || 'Летние смены по специальной цене'}</p>
             <div class="price-row">
               <span class="price">${money.format(shift.price)} ₽</span>
               <span class="old-price">${money.format(shift.oldPrice)} ₽</span>

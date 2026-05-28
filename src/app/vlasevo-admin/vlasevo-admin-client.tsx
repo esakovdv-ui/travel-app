@@ -12,7 +12,10 @@ type VlasevoShift = {
   price: number;
   image: string;
   url: string;
+  promoAccentText: string;
 };
+
+const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
 
 const blankShift: VlasevoShift = {
   id: '',
@@ -23,6 +26,7 @@ const blankShift: VlasevoShift = {
   price: 0,
   image: '/raduga-hero.png',
   url: '',
+  promoAccentText: DEFAULT_PROMO_ACCENT_TEXT,
 };
 
 function makeId() {
@@ -35,6 +39,7 @@ function normalizeShift(shift: VlasevoShift): VlasevoShift {
     id: shift.id || makeId(),
     oldPrice: Number(shift.oldPrice) || 0,
     price: Number(shift.price) || 0,
+    promoAccentText: shift.promoAccentText?.trim() || DEFAULT_PROMO_ACCENT_TEXT,
   };
 }
 
@@ -77,7 +82,13 @@ export function VlasevoAdminClient() {
         const response = await fetch('/api/vlasevo-shifts', { cache: 'no-store' });
         if (!response.ok) throw new Error('Не удалось загрузить смены');
         const data = await response.json();
-        if (!ignore) setShifts(data);
+        if (!ignore) {
+          setShifts(data.map((shift: Partial<VlasevoShift>) => ({
+            ...blankShift,
+            ...shift,
+            promoAccentText: shift.promoAccentText || DEFAULT_PROMO_ACCENT_TEXT,
+          })));
+        }
       } catch (loadError) {
         if (!ignore) setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить смены');
       } finally {
@@ -244,6 +255,10 @@ export function VlasevoAdminClient() {
                     <div className={styles.field}>
                       <label>Длительность</label>
                       <input className={styles.input} value={shift.duration} onChange={(event) => updateShift(index, { duration: event.target.value })} />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Текст плашки</label>
+                      <input className={styles.input} value={shift.promoAccentText} onChange={(event) => updateShift(index, { promoAccentText: event.target.value })} />
                     </div>
                     <div className={styles.field}>
                       <label>Старая цена</label>

@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const ADMIN_PASSWORD = process.env.VLASEVO_ADMIN_PASSWORD ?? 'vlasevo2026';
 const fallbackShiftsPath = path.join(process.cwd(), 'src/data/vlasevo-shifts.json');
 const runtimeShiftsPath = process.env.VLASEVO_SHIFTS_PATH ?? path.join(process.cwd(), 'storage/vlasevo-shifts.json');
+const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
 
 const shiftSchema = z.object({
   id: z.string().min(1),
@@ -18,6 +19,7 @@ const shiftSchema = z.object({
   price: z.coerce.number().nonnegative(),
   image: z.string().min(1),
   url: z.string().url(),
+  promoAccentText: z.string().optional().default(DEFAULT_PROMO_ACCENT_TEXT),
 });
 
 const payloadSchema = z.object({
