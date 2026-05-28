@@ -72,6 +72,63 @@ type UploadErrorInfo = {
   details: string;
 };
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const TARGET_UPLOAD_BYTES = 1 * 1024 * 1024;
+const MAX_IMAGE_SIDE = 1920;
+
+function readImageDimensions(file: File) {
+  return new Promise<{ width: number; height: number; image: HTMLImageElement }>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      resolve({ width: image.naturalWidth, height: image.naturalHeight, image });
+      URL.revokeObjectURL(url);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Не удалось прочитать изображение.'));
+    };
+    image.src = url;
+  });
+}
+
+async function maybeCompressImage(file: File) {
+  if (file.size <= TARGET_UPLOAD_BYTES) {
+    return { file, compressed: false };
+  }
+
+  const { width, height, image } = await readImageDimensions(file);
+  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(width, height));
+  const targetWidth = Math.max(1, Math.round(width * scale));
+  const targetHeight = Math.max(1, Math.round(height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    return { file, compressed: false };
+  }
+
+  context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+  const qualities = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46];
+  for (const quality of qualities) {
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((result) => resolve(result), 'image/webp', quality);
+    });
+    if (!blob) continue;
+
+    const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
+    if (compressed.size <= TARGET_UPLOAD_BYTES || compressed.size < file.size) {
+      return { file: compressed, compressed: true };
+    }
+  }
+
+  return { file, compressed: false };
+}
+
 async function parseUploadError(response: Response) {
   let payload: unknown = null;
   let fallbackMessage = `HTTP ${response.status}`;
@@ -246,22 +303,27 @@ export function VlasevoAdminClient() {
     setError('');
 
     try {
+      const prepared = await maybeCompressImage(file);
+      const uploadFile = prepared.file;
+      if (prepared.compressed) {
+        setStatus('Изображение автоматически сжато перед загрузкой.');
+      }
       // #region agent log
       debugLog({
         runId: 'pre-fix',
         hypothesisId: 'H1',
         location: 'src/app/vlasevo-admin/vlasevo-admin-client.tsx:uploadImage:beforeFetch',
         message: 'Starting image upload request',
-        data: { index, shiftId: shifts[index]?.id || null, fileType: file.type, fileSize: file.size },
+        data: { index, shiftId: shifts[index]?.id || null, fileType: uploadFile.type, fileSize: uploadFile.size },
       });
       // #endregion
-      if (file.size > 5 * 1024 * 1024) {
+      if (uploadFile.size > MAX_UPLOAD_BYTES) {
         throw new Error('Тип: validation. Статус: client-check. Причина: файл больше 5 МБ, загрузка запрещена до отправки.');
       }
       const formData = new FormData();
       formData.append('password', password);
       formData.append('shiftId', shifts[index]?.id || makeId());
-      formData.append('file', file);
+      formData.append('file', uploadFile);
 
       const response = await fetch('/api/vlasevo-shift-images', {
         method: 'POST',
