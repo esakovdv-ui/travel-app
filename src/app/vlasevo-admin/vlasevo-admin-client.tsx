@@ -197,7 +197,6 @@ export function VlasevoAdminClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
@@ -309,6 +308,14 @@ export function VlasevoAdminClient() {
       return next;
     });
     setStatus('Порядок смен обновлен. Нажмите "Сохранить", чтобы применить на лендинге.');
+  }
+
+  function moveShiftUp(index: number) {
+    moveShift(index, index - 1);
+  }
+
+  function moveShiftDown(index: number) {
+    moveShift(index, index + 1);
   }
 
   async function persistShifts(nextShifts: VlasevoShift[]) {
@@ -478,21 +485,28 @@ export function VlasevoAdminClient() {
           ) : (
             <div className={styles.shiftList}>
               {shifts.map((shift, index) => (
-                <article
-                  className={styles.shiftCard}
-                  key={shift.id || index}
-                  draggable
-                  onDragStart={() => setDragIndex(index)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={() => {
-                    if (dragIndex !== null) moveShift(dragIndex, index);
-                    setDragIndex(null);
-                  }}
-                  onDragEnd={() => setDragIndex(null)}
-                >
+                <article className={styles.shiftCard} key={shift.id || index}>
                   <div className={styles.shiftHeader}>
                     <strong>{shift.title || `Новая смена ${index + 1}`}</strong>
-                    <button className={styles.dangerButton} type="button" onClick={() => removeShift(index)}>Удалить</button>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.secondaryButton}
+                        type="button"
+                        onClick={() => moveShiftUp(index)}
+                        disabled={index === 0}
+                      >
+                        Вверх
+                      </button>
+                      <button
+                        className={styles.secondaryButton}
+                        type="button"
+                        onClick={() => moveShiftDown(index)}
+                        disabled={index === shifts.length - 1}
+                      >
+                        Вниз
+                      </button>
+                      <button className={styles.dangerButton} type="button" onClick={() => removeShift(index)}>Удалить</button>
+                    </div>
                   </div>
                   <div className={styles.grid}>
                     <div className={styles.field}>
