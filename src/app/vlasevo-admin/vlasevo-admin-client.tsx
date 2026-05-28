@@ -72,7 +72,6 @@ type UploadErrorInfo = {
   details: string;
 };
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const TARGET_UPLOAD_BYTES = 1 * 1024 * 1024;
 const MAX_IMAGE_SIDE = 1920;
 
@@ -94,39 +93,53 @@ function readImageDimensions(file: File) {
 
 async function maybeCompressImage(file: File) {
   if (file.size <= TARGET_UPLOAD_BYTES) {
-    return { file, compressed: false };
+    return { file, compressed: false, originalSize: file.size };
   }
 
   const { width, height, image } = await readImageDimensions(file);
-  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(width, height));
-  const targetWidth = Math.max(1, Math.round(width * scale));
-  const targetHeight = Math.max(1, Math.round(height * scale));
-
   const canvas = document.createElement('canvas');
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
   const context = canvas.getContext('2d');
 
   if (!context) {
-    return { file, compressed: false };
+    return { file, compressed: false, originalSize: file.size };
   }
 
-  context.drawImage(image, 0, 0, targetWidth, targetHeight);
+  const scales = [1, 0.85, 0.7, 0.6, 0.5, 0.4, 0.3];
+  const qualities = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46, 0.38];
+  let bestFile: File | null = null;
 
-  const qualities = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46];
-  for (const quality of qualities) {
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((result) => resolve(result), 'image/webp', quality);
-    });
-    if (!blob) continue;
+  for (const resizeRatio of scales) {
+    const baseScale = Math.min(1, MAX_IMAGE_SIDE / Math.max(width, height));
+    const finalScale = baseScale * resizeRatio;
+    const targetWidth = Math.max(1, Math.round(width * finalScale));
+    const targetHeight = Math.max(1, Math.round(height * finalScale));
 
-    const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
-    if (compressed.size <= TARGET_UPLOAD_BYTES || compressed.size < file.size) {
-      return { file: compressed, compressed: true };
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    context.clearRect(0, 0, targetWidth, targetHeight);
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    for (const quality of qualities) {
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((result) => resolve(result), 'image/webp', quality);
+      });
+      if (!blob) continue;
+
+      const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
+      if (!bestFile || compressed.size < bestFile.size) {
+        bestFile = compressed;
+      }
+      if (compressed.size <= TARGET_UPLOAD_BYTES) {
+        return { file: compressed, compressed: true, originalSize: file.size };
+      }
     }
   }
 
-  return { file, compressed: false };
+  if (bestFile && bestFile.size < file.size) {
+    return { file: bestFile, compressed: true, originalSize: file.size };
+  }
+
+  return { file, compressed: false, originalSize: file.size };
 }
 
 async function parseUploadError(response: Response) {
@@ -306,7 +319,9 @@ export function VlasevoAdminClient() {
       const prepared = await maybeCompressImage(file);
       const uploadFile = prepared.file;
       if (prepared.compressed) {
-        setStatus('Изображение автоматически сжато перед загрузкой.');
+        const originalMb = (prepared.originalSize / (1024 * 1024)).toFixed(2);
+        const uploadedMb = (uploadFile.size / (1024 * 1024)).toFixed(2);
+        setStatus(`Изображение автоматически сжато: ${originalMb} МБ -> ${uploadedMb} МБ.`);
       }
       // #region agent log
       debugLog({
@@ -317,9 +332,6 @@ export function VlasevoAdminClient() {
         data: { index, shiftId: shifts[index]?.id || null, fileType: uploadFile.type, fileSize: uploadFile.size },
       });
       // #endregion
-      if (uploadFile.size > MAX_UPLOAD_BYTES) {
-        throw new Error('Тип: validation. Статус: client-check. Причина: файл больше 5 МБ, загрузка запрещена до отправки.');
-      }
       const formData = new FormData();
       formData.append('password', password);
       formData.append('shiftId', shifts[index]?.id || makeId());
@@ -489,7 +501,7 @@ export function VlasevoAdminClient() {
                         disabled={uploadingIndex === index}
                       />
                       <span className={styles.hint}>
-                        {uploadingIndex === index ? 'Загружаю изображение...' : 'Можно вставить ссылку вручную или загрузить JPG, PNG, WebP до 5 МБ.'}
+                        {uploadingIndex === index ? 'Загружаю изображение...' : 'Можно загрузить JPG, PNG, WebP любого размера: файл автоматически сожмется перед отправкой.'}
                       </span>
                     </div>
                   </div>
