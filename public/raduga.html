@@ -103,6 +103,9 @@
       font-size: 16px;
       line-height: 1.45;
     }
+    body.is-campaign-expired {
+      overflow: hidden !important;
+    }
     a { color: inherit; text-decoration: none; }
     button, input, select { font: inherit; }
     img { display: block; max-width: 100%; }
@@ -763,6 +766,55 @@
       display: none;
     }
 
+    .campaign-expired-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, .62);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .campaign-expired-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .campaign-expired-modal {
+      width: min(100%, 640px);
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .22);
+      padding: clamp(22px, 4vw, 34px);
+      text-align: center;
+    }
+    .campaign-expired-modal h2 {
+      margin: 0 0 14px;
+      font-size: clamp(28px, 4.3vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      font-weight: 900;
+    }
+    .campaign-expired-modal p {
+      margin: 0 auto 22px;
+      max-width: 560px;
+      color: #475569;
+      font-size: clamp(15px, 2.2vw, 19px);
+      line-height: 1.5;
+      font-weight: 700;
+    }
+    .campaign-expired-modal .btn {
+      min-height: 48px;
+      width: min(100%, 320px);
+      font-size: 16px;
+      margin: 0 auto;
+    }
+
     @media (max-width: 980px) {
       .hero-grid,
       .lead-block {
@@ -824,6 +876,10 @@
       .card h3 { font-size: 20px; }
       .price { font-size: 26px; }
       .card .btn.reserve-btn { min-height: 48px; }
+      .campaign-expired-overlay { padding: 16px; }
+      .campaign-expired-modal { border-radius: 20px; }
+      .campaign-expired-modal p { margin-bottom: 18px; }
+      .campaign-expired-modal .btn { width: 100%; }
     }
   </style>
 </head>
@@ -1010,6 +1066,14 @@
     </div>
   </div>
 
+  <div class="campaign-expired-overlay" id="campaign-expired-overlay" aria-hidden="true">
+    <div class="campaign-expired-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-expired-title">
+      <h2 id="campaign-expired-title">Акция в лагере «Радуга» завершилась</h2>
+      <p>Но ко Дню защиты детей действует новая акция на летние смены в детском оздоровительном лагере «Власьево». Вы можете выбрать программу и забронировать отдых ребенка по специальной цене.</p>
+      <a class="btn" href="https://online.mosgortur.ru/new/vlasevo">Перейти к акции</a>
+    </div>
+  </div>
+
   <script>
     let shifts = [
       {
@@ -1189,6 +1253,7 @@
     const modalFormNote = document.getElementById('modal-form-note');
     const modalSubmit = document.getElementById('modal-submit');
     const modalClose = document.getElementById('modal-close');
+    const campaignExpiredOverlay = document.getElementById('campaign-expired-overlay');
     const landingForm = document.getElementById('form');
     const landingFormNote = document.getElementById('form-note');
     const landingPhone = document.getElementById('phone');
@@ -1430,6 +1495,7 @@
 
     const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
     const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
+    let isCampaignExpired = false;
 
     function formatShiftLabel(shift) {
       return `${shift.title} — ${shift.dates}`;
@@ -1635,6 +1701,7 @@
     }
 
     function openReserveModal(shift) {
+      if (isCampaignExpired) return;
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
@@ -1652,7 +1719,7 @@
       const wasOpen = reserveModal.classList.contains('is-open');
       reserveModal.classList.remove('is-open');
       reserveModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
+      document.body.style.overflow = isCampaignExpired ? 'hidden' : '';
       if (wasOpen) suppressShiftDeepLinkAutoOpen();
       clearShiftFromUrl();
       modalSuccess.classList.remove('is-visible');
@@ -1667,6 +1734,7 @@
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');
       if (!button) return;
+      if (isCampaignExpired) return;
       event.preventDefault();
       trackRadugaBookingClick();
       const picked = findShiftById(button.dataset.shiftId);
@@ -1723,15 +1791,40 @@
     }
 
     function tick() {
-      const diff = Math.max(0, target - Date.now());
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        daysEl.textContent = '00';
+        hoursEl.textContent = '00';
+        minutesEl.textContent = '00';
+        secondsEl.textContent = '00';
+        activateCampaignExpiredState();
+        return false;
+      }
       daysEl.textContent = pad(Math.floor(diff / 86400000));
       hoursEl.textContent = pad(Math.floor((diff % 86400000) / 3600000));
       minutesEl.textContent = pad(Math.floor((diff % 3600000) / 60000));
       secondsEl.textContent = pad(Math.floor((diff % 60000) / 1000));
+      return true;
     }
 
-    tick();
-    setInterval(tick, 1000);
+    function activateCampaignExpiredState() {
+      if (isCampaignExpired) return;
+      isCampaignExpired = true;
+      if (reserveModal.classList.contains('is-open')) {
+        closeReserveModal(true);
+      }
+      campaignExpiredOverlay.classList.add('is-open');
+      campaignExpiredOverlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-campaign-expired');
+      document.body.style.overflow = 'hidden';
+    }
+
+    if (!tick()) {
+      activateCampaignExpiredState();
+    }
+    const countdownTimer = setInterval(() => {
+      if (!tick()) clearInterval(countdownTimer);
+    }, 1000);
 
     landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
