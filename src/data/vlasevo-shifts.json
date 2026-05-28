@@ -1,0 +1,82 @@
+[
+  {
+    "id": "dream-14-23",
+    "title": "Смена «Время мечтать»",
+    "dates": "14.07–23.07",
+    "duration": "10 дней",
+    "oldPrice": 52000,
+    "price": 49400,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002720&date=14.07.26&duration=10&hotelScheme=1_9_9869_2502_1_0_10&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_9&currency=RUB"
+  },
+  {
+    "id": "dream-14-03",
+    "title": "Смена «Время мечтать»",
+    "dates": "14.07–03.08",
+    "duration": "21 день",
+    "oldPrice": 97000,
+    "price": 92150,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002720&date=14.07.26&duration=21&hotelScheme=1_20_9869_2502_1_0_21&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_20&currency=RUB"
+  },
+  {
+    "id": "talents-25-03",
+    "title": "Смена «Время талантов»",
+    "dates": "25.07–03.08",
+    "duration": "10 дней",
+    "oldPrice": 52000,
+    "price": 49400,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002721&date=25.07.26&duration=10&hotelScheme=1_9_9869_2502_1_0_10&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_9&currency=RUB"
+  },
+  {
+    "id": "records-05-12",
+    "title": "Смена «Время рекордов»",
+    "dates": "05.08–12.08",
+    "duration": "8 дней",
+    "oldPrice": 42000,
+    "price": 39900,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002699&date=05.08.26&duration=8&hotelScheme=1_7_9869_2502_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_7&currency=RUB"
+  },
+  {
+    "id": "records-05-21",
+    "title": "Смена «Время рекордов»",
+    "dates": "05.08–21.08",
+    "duration": "17 дней",
+    "oldPrice": 80000,
+    "price": 76000,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002699&date=05.08.26&duration=17&hotelScheme=1_16_9869_2502_1_0_17&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_16&currency=RUB"
+  },
+  {
+    "id": "balance-14-21",
+    "title": "Смена «Время баланса»",
+    "dates": "14.08–21.08",
+    "duration": "8 дней",
+    "oldPrice": 42000,
+    "price": 39900,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002700&date=14.08.26&duration=8&hotelScheme=1_7_9869_2502_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_7&currency=RUB"
+  },
+  {
+    "id": "balance-14-30",
+    "title": "Смена «Время баланса»",
+    "dates": "14.08–30.08",
+    "duration": "17 дней",
+    "oldPrice": 80000,
+    "price": 76000,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002700&date=14.08.26&duration=17&hotelScheme=1_16_9869_2502_1_0_17&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_16&currency=RUB"
+  },
+  {
+    "id": "together-23-30",
+    "title": "Смена «Время быть вместе»",
+    "dates": "23.08–30.08",
+    "duration": "8 дней",
+    "oldPrice": 42000,
+    "price": 39900,
+    "image": "/raduga-hero.png",
+    "url": "https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002701&date=23.08.26&duration=8&hotelScheme=1_7_9869_2502_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_9869_9767937_41_460_883_2502_1_1_7&currency=RUB"
+  }
+]

@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         source: '/raduga',
         destination: '/raduga.html',
       },
+      {
+        source: '/vlasevo',
+        destination: '/vlasevo.html',
+      },
     ];
   },
   typescript: {
