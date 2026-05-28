@@ -66,6 +66,49 @@ function debugLog(payload: {
   }).catch(() => {});
 }
 
+type UploadErrorInfo = {
+  kind: 'auth' | 'validation' | 'server' | 'network' | 'unknown';
+  status?: number;
+  details: string;
+};
+
+async function parseUploadError(response: Response) {
+  let payload: unknown = null;
+  let fallbackMessage = `HTTP ${response.status}`;
+
+  try {
+    payload = await response.json();
+  } catch {
+    try {
+      const text = await response.text();
+      if (text.trim()) fallbackMessage = text.trim();
+    } catch {
+      // ignore
+    }
+  }
+
+  const apiMessage = (
+    payload
+    && typeof payload === 'object'
+    && 'error' in payload
+    && typeof (payload as { error?: unknown }).error === 'string'
+  )
+    ? (payload as { error: string }).error
+    : fallbackMessage;
+
+  const kind: UploadErrorInfo['kind'] = response.status === 401
+    ? 'auth'
+    : response.status >= 400 && response.status < 500
+      ? 'validation'
+      : response.status >= 500
+        ? 'server'
+        : 'unknown';
+
+  const details = `Тип: ${kind}. Статус: ${response.status}. Причина: ${apiMessage}`;
+
+  return { kind, status: response.status, details };
+}
+
 export function VlasevoAdminClient() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
@@ -218,6 +261,10 @@ export function VlasevoAdminClient() {
         method: 'POST',
         body: formData,
       });
+      if (!response.ok) {
+        const info = await parseUploadError(response);
+        throw new Error(info.details);
+      }
       const data = await response.json();
       // #region agent log
       debugLog({
@@ -228,7 +275,9 @@ export function VlasevoAdminClient() {
         data: { ok: response.ok, status: response.status, hasUrl: Boolean(data?.url), error: data?.error ?? null },
       });
       // #endregion
-      if (!response.ok) throw new Error(data.error || 'Не удалось загрузить изображение');
+      if (!data?.url || typeof data.url !== 'string') {
+        throw new Error('Тип: unknown. Статус: 200. Причина: сервер не вернул URL изображения.');
+      }
 
       const nextShifts = shifts.map((shift, shiftIndex) => (
         shiftIndex === index ? { ...shift, image: data.url } : shift
@@ -238,7 +287,11 @@ export function VlasevoAdminClient() {
       setShifts(persistedShifts);
       setStatus('Изображение загружено и сохранено. Лендинг можно обновить для проверки.');
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Не удалось загрузить изображение');
+      const message = uploadError instanceof Error
+        ? uploadError.message
+        : 'Тип: unknown. Причина: не удалось загрузить изображение.';
+      setError(message);
+      window.alert(`Ошибка загрузки изображения.\n${message}`);
     } finally {
       setUploadingIndex(null);
     }
