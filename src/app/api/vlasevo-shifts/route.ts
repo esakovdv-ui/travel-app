@@ -9,6 +9,7 @@ const ADMIN_PASSWORD = process.env.VLASEVO_ADMIN_PASSWORD ?? 'vlasevo2026';
 const fallbackShiftsPath = path.join(process.cwd(), 'src/data/vlasevo-shifts.json');
 const runtimeShiftsPath = process.env.VLASEVO_SHIFTS_PATH ?? path.join(process.cwd(), 'storage/vlasevo-shifts.json');
 const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
+const DEFAULT_SPECIAL_TERMS_TEXT = 'Спецусловия до 7 июня';
 const DEBUG_ENDPOINT = 'http://127.0.0.1:7452/ingest/559fd227-ad27-4091-a3b1-b6f5ed56ddbf';
 const DEBUG_SESSION_ID = '6bb749';
 
@@ -22,6 +23,7 @@ const shiftSchema = z.object({
   image: z.string().min(1),
   url: z.string().url(),
   promoAccentText: z.string().optional().default(DEFAULT_PROMO_ACCENT_TEXT),
+  specialTermsText: z.string().optional().default(DEFAULT_SPECIAL_TERMS_TEXT),
 });
 
 const payloadSchema = z.object({

@@ -13,9 +13,11 @@ type VlasevoShift = {
   image: string;
   url: string;
   promoAccentText: string;
+  specialTermsText: string;
 };
 
 const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
+const DEFAULT_SPECIAL_TERMS_TEXT = 'Спецусловия до 7 июня';
 const DEBUG_ENDPOINT = 'http://127.0.0.1:7452/ingest/559fd227-ad27-4091-a3b1-b6f5ed56ddbf';
 const DEBUG_SESSION_ID = '6bb749';
 
@@ -29,6 +31,7 @@ const blankShift: VlasevoShift = {
   image: '/raduga-hero.png',
   url: '',
   promoAccentText: DEFAULT_PROMO_ACCENT_TEXT,
+  specialTermsText: DEFAULT_SPECIAL_TERMS_TEXT,
 };
 
 function makeId() {
@@ -42,6 +45,7 @@ function normalizeShift(shift: VlasevoShift): VlasevoShift {
     oldPrice: Number(shift.oldPrice) || 0,
     price: Number(shift.price) || 0,
     promoAccentText: shift.promoAccentText?.trim() || DEFAULT_PROMO_ACCENT_TEXT,
+    specialTermsText: shift.specialTermsText?.trim() || DEFAULT_SPECIAL_TERMS_TEXT,
   };
 }
 
@@ -226,6 +230,7 @@ export function VlasevoAdminClient() {
             ...blankShift,
             ...shift,
             promoAccentText: shift.promoAccentText || DEFAULT_PROMO_ACCENT_TEXT,
+            specialTermsText: shift.specialTermsText || DEFAULT_SPECIAL_TERMS_TEXT,
           })));
         }
       } catch (loadError) {
@@ -474,6 +479,10 @@ export function VlasevoAdminClient() {
                     <div className={styles.field}>
                       <label>Текст плашки</label>
                       <input className={styles.input} value={shift.promoAccentText} onChange={(event) => updateShift(index, { promoAccentText: event.target.value })} />
+                    </div>
+                    <div className={styles.field}>
+                      <label>Текст спецусловий</label>
+                      <input className={styles.input} value={shift.specialTermsText} onChange={(event) => updateShift(index, { specialTermsText: event.target.value })} />
                     </div>
                     <div className={styles.field}>
                       <label>Старая цена</label>
