@@ -66,6 +66,15 @@
       background: var(--orange);
       color: #fff;
     }
+    .btn[disabled],
+    .btn-disabled {
+      background: #b6bcc6 !important;
+      color: #fff !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      outline: 0 !important;
+      pointer-events: none;
+    }
     .chip {
       display: inline-flex;
       align-items: center;
@@ -112,6 +121,20 @@
     .card { overflow: hidden; border-radius: 20px; border: 1px solid rgba(0,0,0,.06); background: #fff; display: flex; flex-direction: column; }
     .card-img { height: 220px; position: relative; background: #eceef0; }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
+    .sold-out-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, .25);
+      color: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
     .card-badge { position: absolute; left: 10px; top: 10px; background: #fff; color: var(--orange-dark); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; }
     .card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px; }
     .card h3 { margin: 0; font-size: 24px; line-height: 1.1; }
@@ -290,9 +313,10 @@
       const saving = Math.max(0, Number(shift.oldPrice) - Number(shift.price));
       return `
         <article class="card">
-          <div class="card-img">
+          <div class="card-img ${shift.isSoldOut ? 'sold-out' : ''}">
             <img src="${shift.image}" alt="${shift.title}" loading="lazy">
             <span class="card-badge">${shift.specialTermsText || 'Спецусловия до 7 июня'}</span>
+            ${shift.isSoldOut ? '<span class="sold-out-overlay">Мест нет</span>' : ''}
           </div>
           <div class="card-body">
             <h3>${shift.title}</h3>
@@ -304,8 +328,12 @@
               <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
             </div>
             <div class="saving">Экономия ${money.format(saving)} ₽</div>
-            <a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>
-            <a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>
+            ${shift.isSoldOut
+              ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
+              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
+            ${shift.isSoldOut
+              ? '<span class="btn btn-secondary btn-disabled cta-neutral hidden" aria-disabled="true">Мест нет</span>'
+              : `<a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
           </div>
         </article>
       `;

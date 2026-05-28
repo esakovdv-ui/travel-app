@@ -14,10 +14,12 @@ type VlasevoShift = {
   url: string;
   promoAccentText: string;
   specialTermsText: string;
+  isSoldOut: boolean;
 };
 
 const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
 const DEFAULT_SPECIAL_TERMS_TEXT = 'Спецусловия до 7 июня';
+const DEFAULT_IS_SOLD_OUT = false;
 const DEBUG_ENDPOINT = 'http://127.0.0.1:7452/ingest/559fd227-ad27-4091-a3b1-b6f5ed56ddbf';
 const DEBUG_SESSION_ID = '6bb749';
 
@@ -32,6 +34,7 @@ const blankShift: VlasevoShift = {
   url: '',
   promoAccentText: DEFAULT_PROMO_ACCENT_TEXT,
   specialTermsText: DEFAULT_SPECIAL_TERMS_TEXT,
+  isSoldOut: DEFAULT_IS_SOLD_OUT,
 };
 
 function makeId() {
@@ -46,6 +49,7 @@ function normalizeShift(shift: VlasevoShift): VlasevoShift {
     price: Number(shift.price) || 0,
     promoAccentText: shift.promoAccentText?.trim() || DEFAULT_PROMO_ACCENT_TEXT,
     specialTermsText: shift.specialTermsText?.trim() || DEFAULT_SPECIAL_TERMS_TEXT,
+    isSoldOut: Boolean(shift.isSoldOut),
   };
 }
 
@@ -193,6 +197,7 @@ export function VlasevoAdminClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
@@ -231,6 +236,7 @@ export function VlasevoAdminClient() {
             ...shift,
             promoAccentText: shift.promoAccentText || DEFAULT_PROMO_ACCENT_TEXT,
             specialTermsText: shift.specialTermsText || DEFAULT_SPECIAL_TERMS_TEXT,
+            isSoldOut: Boolean(shift.isSoldOut),
           })));
         }
       } catch (loadError) {
@@ -289,6 +295,20 @@ export function VlasevoAdminClient() {
 
   function removeShift(index: number) {
     setShifts((current) => current.filter((_, shiftIndex) => shiftIndex !== index));
+  }
+
+  function moveShift(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return;
+    setShifts((current) => {
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= current.length || toIndex >= current.length) {
+        return current;
+      }
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+    setStatus('Порядок смен обновлен. Нажмите "Сохранить", чтобы применить на лендинге.');
   }
 
   async function persistShifts(nextShifts: VlasevoShift[]) {
@@ -458,7 +478,18 @@ export function VlasevoAdminClient() {
           ) : (
             <div className={styles.shiftList}>
               {shifts.map((shift, index) => (
-                <article className={styles.shiftCard} key={shift.id || index}>
+                <article
+                  className={styles.shiftCard}
+                  key={shift.id || index}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex !== null) moveShift(dragIndex, index);
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                >
                   <div className={styles.shiftHeader}>
                     <strong>{shift.title || `Новая смена ${index + 1}`}</strong>
                     <button className={styles.dangerButton} type="button" onClick={() => removeShift(index)}>Удалить</button>
@@ -483,6 +514,16 @@ export function VlasevoAdminClient() {
                     <div className={styles.field}>
                       <label>Текст спецусловий</label>
                       <input className={styles.input} value={shift.specialTermsText} onChange={(event) => updateShift(index, { specialTermsText: event.target.value })} />
+                    </div>
+                    <div className={styles.field}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="checkbox"
+                          checked={shift.isSoldOut}
+                          onChange={(event) => updateShift(index, { isSoldOut: event.target.checked })}
+                        />
+                        Смена выкуплена (мест нет)
+                      </label>
                     </div>
                     <div className={styles.field}>
                       <label>Старая цена</label>
