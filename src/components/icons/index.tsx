@@ -61,4 +61,5 @@ export {
   ChatCircleIcon,
   SignOutIcon,
   ShieldCheckIcon,
+  BookOpenIcon,
 } from '@phosphor-icons/react';

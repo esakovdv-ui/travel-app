@@ -1,6 +1,6 @@
 import { BookingConflictError, DuplicateRegistrationError } from './errors';
 import { logEvent } from './logger';
-import { mockBookings, mockPackages, mockReviews } from './mock-data';
+import { mockBookings, mockGalleryPhotos, mockPackages, mockReviews, mockStories, mockStoryTags } from './mock-data';
 import { filterPackages, slugify } from './utils';
 import { query, queryOne } from './db';
 import type {
@@ -8,6 +8,9 @@ import type {
   AppUser,
   Booking,
   PackageFilters,
+  Story,
+  StoryStatus,
+  StoryTag,
   TravelReview,
   TravelReviewStatus
 } from '@/types/travel';
@@ -265,3 +268,123 @@ export async function listAllBookings(): Promise<Booking[]> {
 
 // mock для обратной совместимости (использовался в старом коде)
 export { mockBookings };
+
+// ─── Story tags (mock) ───────────────────────────────────────────────────────
+
+function resolveStoryTag(story: Story): Story {
+  if (!story.pubTagId) return story;
+  const tag = mockStoryTags.find((t) => t.id === story.pubTagId);
+  return tag ? { ...story, pubTag: tag.label } : story;
+}
+
+export function listTags(opts?: { onlyWithStories?: boolean }): StoryTag[] {
+  const tags = mockStoryTags.map((t) => ({
+    ...t,
+    storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length,
+  })).sort((a, b) => a.position - b.position);
+  return opts?.onlyWithStories ? tags.filter((t) => t.storiesCount > 0) : tags;
+}
+
+export function getTagById(id: string): StoryTag | null {
+  const t = mockStoryTags.find((t) => t.id === id);
+  if (!t) return null;
+  return { ...t, storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length };
+}
+
+export function getTagBySlug(slug: string): StoryTag | null {
+  const t = mockStoryTags.find((t) => t.slug === slug);
+  if (!t) return null;
+  return { ...t, storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length };
+}
+
+export function updateTagLabel(id: string, label: string): StoryTag | null {
+  const t = mockStoryTags.find((t) => t.id === id);
+  if (!t) return null;
+  t.label = label;
+  mockStories.forEach((s) => {
+    if (s.pubTagId === id) s.pubTag = label;
+  });
+  return getTagById(id);
+}
+
+// ─── Stories (mock) ──────────────────────────────────────────────────────────
+
+export async function listPublishedStories(tag?: string): Promise<Story[]> {
+  const published = mockStories.filter((s) => s.status === 'published').map(resolveStoryTag);
+  if (!tag || tag === 'Все') return published;
+  return published.filter((s) => s.pubTag === tag);
+}
+
+export function listStoriesPaginated(opts: {
+  offset: number;
+  limit: number;
+  tagSlug?: string;
+  status?: StoryStatus;
+}): { stories: Story[]; total: number; hasMore: boolean } {
+  const status = opts.status ?? 'published';
+  let pool = mockStories.filter((s) => s.status === status).map(resolveStoryTag);
+  if (opts.tagSlug) {
+    const tag = mockStoryTags.find((t) => t.slug === opts.tagSlug);
+    if (tag) pool = pool.filter((s) => s.pubTagId === tag.id);
+    else pool = [];
+  }
+  const total = pool.length;
+  const stories = pool.slice(opts.offset, opts.offset + opts.limit);
+  return { stories, total, hasMore: opts.offset + opts.limit < total };
+}
+
+export async function listAllStories(): Promise<Story[]> {
+  return [...mockStories].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+}
+
+export async function getStoryById(id: string): Promise<Story | null> {
+  return mockStories.find((s) => s.id === id) ?? null;
+}
+
+export async function createStory(story: Story): Promise<Story> {
+  mockStories.unshift(story);
+  logEvent('info', 'story.submitted', { storyId: story.id, object: story.rawObject });
+  return story;
+}
+
+export async function publishStory(
+  id: string,
+  fields: { pubTitle: string; pubQuote: string; pubTagId: string; pubObjectUrl: string }
+): Promise<Story | null> {
+  const story = mockStories.find((s) => s.id === id);
+  if (!story) return null;
+  const tag = mockStoryTags.find((t) => t.id === fields.pubTagId);
+  story.status = 'published';
+  story.publishedAt = new Date().toISOString();
+  story.pubTitle = fields.pubTitle;
+  story.pubQuote = fields.pubQuote;
+  story.pubTagId = fields.pubTagId;
+  story.pubTag = tag?.label ?? null;
+  story.pubObjectUrl = fields.pubObjectUrl || null;
+  logEvent('info', 'story.published', { storyId: id });
+  return story;
+}
+
+export async function rejectStory(id: string, reason?: string): Promise<Story | null> {
+  const story = mockStories.find((s) => s.id === id);
+  if (!story) return null;
+  story.status = 'rejected';
+  story.rejectedAt = new Date().toISOString();
+  story.rejectionReason = reason ?? null;
+  logEvent('info', 'story.rejected', { storyId: id });
+  return story;
+}
+
+export function getGalleryPhotos() {
+  return mockGalleryPhotos;
+}
+
+export function getPublishedManagers(): { managerName: string; objectName: string; quote: string }[] {
+  return mockStories
+    .filter((s) => s.status === 'published' && s.rawManager)
+    .map((s) => ({
+      managerName: s.rawManager,
+      objectName: s.rawObject,
+      quote: s.pubQuote ?? '',
+    }));
+}
