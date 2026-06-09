@@ -23,6 +23,35 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
   rejected: 'Отклонён'
 };
 
+export const STORY_STATUS_LABELS: Record<string, string> = {
+  new: 'Новая',
+  published: 'Опубликована',
+  rejected: 'Отклонена',
+};
+
+export const STORY_TAGS = ['Все', 'Семейный отдых', 'Чёрное море', 'Wellness', 'Сочи', 'ДОЛ'];
+
+export const STORIES_RAFFLE_ENABLED = true;
+
+export const STORIES_RAFFLE_CONFIG = {
+  emoji: '🧳',
+  prizeName: 'Дорожный чемодан Samsonite',
+  drawDate: '30 июня 2026',
+  chips: ['🧳 Дорожный чемодан', '🎒 Travel-набор', '🎫 Промокод на тур'],
+};
+
+export const MOSGORTUR_OBJECTS = [
+  'Пансионат «Чайка», Анапа',
+  'Санаторий «Дюны», Анапа',
+  'Санаторий «Горный воздух», Сочи',
+  'Пансионат «Морской прибой», Туапсе',
+  'База отдыха «Берёзовая роща»',
+  'Центр отдыха «Сосновый бор»',
+  'Гостиница «Прибой», Геленджик',
+  'ДОЛ «Орлёнок»',
+  'Другой объект (указать в истории)',
+];
+
 export const HOME_THEMATIC_COLLECTIONS = [
   {
     title: 'Спокойный пляжный отдых',

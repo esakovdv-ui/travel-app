@@ -1,0 +1,222 @@
+.section {
+  background: var(--c-bg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.title {
+  color: var(--c-text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.filterPill {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  color: var(--c-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  font-family: var(--font-body);
+}
+
+.filterPill:hover {
+  border-color: var(--c-blue);
+  color: var(--c-blue);
+}
+
+.filterPillActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #ffffff;
+}
+
+.filterPillActive:hover {
+  background: var(--c-blue-hover);
+  border-color: var(--c-blue-hover);
+  color: #ffffff;
+}
+
+.empty {
+  color: var(--c-text-muted);
+  padding: 32px 0;
+  font-size: 0.92rem;
+}
+
+/* Carousel — scroll-snap, no JS library */
+.carousel {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
+  /* hide scrollbar */
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+
+/* ─── Card ─── */
+.card {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+.cardPhoto {
+  position: relative;
+  height: 220px;
+  flex-shrink: 0;
+}
+
+.cardTag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ffffff;
+  color: var(--c-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-xs);
+}
+
+.cardBody {
+  padding: 18px 20px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardObject {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-red);
+}
+
+.cardTitle {
+  font-family: var(--font-unbounded), 'Unbounded', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+}
+
+.cardQuote {
+  font-size: 0.84rem;
+  font-style: italic;
+  color: var(--c-text-muted);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 18px;
+  border-top: 1px solid var(--c-border);
+  gap: 8px;
+}
+
+.cardAuthor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cardAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--c-blue-subtle);
+  border: 1.5px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  flex-shrink: 0;
+}
+
+.cardAuthorName {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardPeriod {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardArrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-red);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.cardArrow:hover {
+  background: var(--c-red-hover);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .card { flex: 0 0 280px; }
+}
+
+@media (max-width: 600px) {
+  .card { flex: 0 0 88vw; }
+}

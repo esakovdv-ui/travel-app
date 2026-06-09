@@ -1,6 +1,6 @@
 import { BookingConflictError, DuplicateRegistrationError } from './errors';
 import { logEvent } from './logger';
-import { mockBookings, mockPackages, mockReviews } from './mock-data';
+import { mockBookings, mockGalleryPhotos, mockPackages, mockReviews, mockStories } from './mock-data';
 import { filterPackages, slugify } from './utils';
 import { query, queryOne } from './db';
 import type {
@@ -8,6 +8,8 @@ import type {
   AppUser,
   Booking,
   PackageFilters,
+  Story,
+  StoryStatus,
   TravelReview,
   TravelReviewStatus
 } from '@/types/travel';
@@ -265,3 +267,65 @@ export async function listAllBookings(): Promise<Booking[]> {
 
 // mock для обратной совместимости (использовался в старом коде)
 export { mockBookings };
+
+// ─── Stories (mock) ──────────────────────────────────────────────────────────
+
+export async function listPublishedStories(tag?: string): Promise<Story[]> {
+  const published = mockStories.filter((s) => s.status === 'published');
+  if (!tag || tag === 'Все') return published;
+  return published.filter((s) => s.pubTag === tag);
+}
+
+export async function listAllStories(): Promise<Story[]> {
+  return [...mockStories].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+}
+
+export async function getStoryById(id: string): Promise<Story | null> {
+  return mockStories.find((s) => s.id === id) ?? null;
+}
+
+export async function createStory(story: Story): Promise<Story> {
+  mockStories.unshift(story);
+  logEvent('info', 'story.submitted', { storyId: story.id, object: story.rawObject });
+  return story;
+}
+
+export async function publishStory(
+  id: string,
+  fields: { pubTitle: string; pubQuote: string; pubTag: string; pubObjectUrl: string }
+): Promise<Story | null> {
+  const story = mockStories.find((s) => s.id === id);
+  if (!story) return null;
+  story.status = 'published';
+  story.publishedAt = new Date().toISOString();
+  story.pubTitle = fields.pubTitle;
+  story.pubQuote = fields.pubQuote;
+  story.pubTag = fields.pubTag;
+  story.pubObjectUrl = fields.pubObjectUrl || null;
+  logEvent('info', 'story.published', { storyId: id });
+  return story;
+}
+
+export async function rejectStory(id: string, reason?: string): Promise<Story | null> {
+  const story = mockStories.find((s) => s.id === id);
+  if (!story) return null;
+  story.status = 'rejected';
+  story.rejectedAt = new Date().toISOString();
+  story.rejectionReason = reason ?? null;
+  logEvent('info', 'story.rejected', { storyId: id });
+  return story;
+}
+
+export function getGalleryPhotos() {
+  return mockGalleryPhotos;
+}
+
+export function getPublishedManagers(): { managerName: string; objectName: string; quote: string }[] {
+  return mockStories
+    .filter((s) => s.status === 'published' && s.rawManager)
+    .map((s) => ({
+      managerName: s.rawManager,
+      objectName: s.rawObject,
+      quote: s.pubQuote ?? '',
+    }));
+}
