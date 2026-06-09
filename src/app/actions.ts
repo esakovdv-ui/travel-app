@@ -261,6 +261,7 @@ export async function submitStoryAction(
       pubTitle: null,
       pubQuote: null,
       pubTag: null,
+      pubTagId: null,
       pubObjectUrl: null,
     });
 
@@ -275,17 +276,36 @@ export async function publishStoryAction(formData: FormData) {
   const id = String(formData.get('storyId') ?? '');
   const pubTitle = String(formData.get('pubTitle') ?? '').trim();
   const pubQuote = String(formData.get('pubQuote') ?? '').trim();
-  const pubTag = String(formData.get('pubTag') ?? '').trim();
+  const pubTagId = String(formData.get('pubTagId') ?? '').trim();
   const pubObjectUrl = String(formData.get('pubObjectUrl') ?? '').trim();
 
-  if (!id || !pubTitle || !pubQuote || !pubTag) {
+  if (!id || !pubTitle || !pubQuote || !pubTagId) {
     redirect(`/admin/stories/${id}?status=invalid`);
   }
 
-  await publishStory(id, { pubTitle, pubQuote, pubTag, pubObjectUrl });
+  await publishStory(id, { pubTitle, pubQuote, pubTagId, pubObjectUrl });
   revalidatePath('/admin/stories');
   revalidatePath('/stories');
   redirect(`/admin/stories/${id}?status=published`);
+}
+
+export async function renameTagAction(
+  formData: FormData
+): Promise<{ error?: string }> {
+  const id = String(formData.get('tagId') ?? '').trim();
+  const label = String(formData.get('label') ?? '').trim();
+
+  if (!id || !label || label.length > 40) {
+    return { error: 'Название тега не может быть пустым или длиннее 40 символов' };
+  }
+
+  const { updateTagLabel } = await import('@/lib/repositories');
+  const tag = updateTagLabel(id, label);
+  if (!tag) return { error: 'Тег не найден' };
+
+  revalidatePath('/admin/story-tags');
+  revalidatePath('/stories');
+  return {};
 }
 
 export async function rejectStoryAction(formData: FormData) {

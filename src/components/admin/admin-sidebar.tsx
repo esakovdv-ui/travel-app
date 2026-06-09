@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SquaresFourIcon, SuitcaseIcon, ChatCircleIcon, ArrowSquareOutIcon, ListIcon, TagIcon, BookOpenIcon } from '@/components/icons';
+import { SquaresFourIcon, ChatCircleIcon, ArrowSquareOutIcon, ListIcon, TagIcon, BookOpenIcon } from '@/components/icons';
 import styles from './admin-sidebar.module.css';
 
 const NAV_ITEMS = [
   { label: 'Обзор',         href: '/admin',                  icon: <SquaresFourIcon weight="light" size={18} /> },
-  { label: 'Туры',          href: '/admin/packages',          icon: <SuitcaseIcon    weight="light" size={18} /> },
   { label: 'Отзывы',        href: '/admin/reviews',           icon: <ChatCircleIcon  weight="light" size={18} /> },
   { label: 'Истории',       href: '/admin/stories',           icon: <BookOpenIcon    weight="light" size={18} /> },
+  { label: 'Теги историй',  href: '/admin/story-tags',        icon: <TagIcon         weight="light" size={18} /> },
   { label: 'Теги поиска',   href: '/admin/search-tags',       icon: <TagIcon         weight="light" size={18} /> },
   { label: 'Подборки',      href: '/admin/thematic-rows',     icon: <ListIcon        weight="light" size={18} /> },
 ];

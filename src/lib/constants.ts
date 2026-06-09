@@ -29,7 +29,6 @@ export const STORY_STATUS_LABELS: Record<string, string> = {
   rejected: 'Отклонена',
 };
 
-export const STORY_TAGS = ['Все', 'Семейный отдых', 'Чёрное море', 'Wellness', 'Сочи', 'ДОЛ'];
 
 export const STORIES_RAFFLE_ENABLED = true;
 

@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getStoryById } from '@/lib/repositories';
+import { getStoryById, listTags } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
-import { STORY_TAGS } from '@/lib/constants';
 import { publishStoryAction, rejectStoryAction } from '@/app/actions';
 import styles from '../../admin.module.css';
 import detailStyles from './story-detail.module.css';
@@ -19,7 +18,7 @@ export default async function AdminStoryDetailPage({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const story = await getStoryById(id);
+  const [story, tags] = await Promise.all([getStoryById(id), Promise.resolve(listTags())]);
   if (!story) notFound();
 
   const isPublished = story.status === 'published';
@@ -173,15 +172,15 @@ export default async function AdminStoryDetailPage({
                       Тег категории *
                     </label>
                     <select
-                      id="pubTag"
-                      name="pubTag"
+                      id="pubTagId"
+                      name="pubTagId"
                       className="select"
-                      defaultValue={story.pubTag ?? ''}
+                      defaultValue={story.pubTagId ?? ''}
                       required
                     >
                       <option value="">Выберите тег…</option>
-                      {STORY_TAGS.filter((t) => t !== 'Все').map((tag) => (
-                        <option key={tag} value={tag}>{tag}</option>
+                      {tags.map((tag) => (
+                        <option key={tag.id} value={tag.id}>{tag.label}</option>
                       ))}
                     </select>
                   </div>

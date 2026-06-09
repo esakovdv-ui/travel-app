@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { buildMetadata } from '@/lib/seo';
-import { listPublishedStories, getGalleryPhotos, getPublishedManagers } from '@/lib/repositories';
+import { listStoriesPaginated, listTags, getGalleryPhotos, getPublishedManagers } from '@/lib/repositories';
 import { STORIES_RAFFLE_ENABLED, STORIES_RAFFLE_CONFIG } from '@/lib/constants';
 import { StoriesSection } from '@/components/stories/stories-section';
 import { StoryForm } from '@/components/stories/story-form';
@@ -9,14 +9,15 @@ import styles from './stories.module.css';
 
 export const metadata = buildMetadata({
   title: 'Истории путешествий',
-  description: 'Живые впечатления клиентов МосГорТур — отзывы, фото и истории, которые помогают выбрать отдых.',
+  description: 'Живые впечатления клиентов Мои путешествия — отзывы, фото и истории, которые помогают выбрать отдых.',
 });
 
 export default async function StoriesPage() {
-  const [stories, gallery, managers] = await Promise.all([
-    listPublishedStories(),
+  const [{ stories: initialStories, total }, gallery, managers, tags] = await Promise.all([
+    Promise.resolve(listStoriesPaginated({ offset: 0, limit: 8 })),
     Promise.resolve(getGalleryPhotos()),
     Promise.resolve(getPublishedManagers()),
+    Promise.resolve(listTags({ onlyWithStories: true })),
   ]);
 
   return (
@@ -69,14 +70,14 @@ export default async function StoriesPage() {
         </div>
       </section>
 
-      {/* ─── Stories carousel (client) ─── */}
-      <StoriesSection stories={stories} />
+      {/* ─── Stories section (client, with load more) ─── */}
+      <StoriesSection initialStories={initialStories} total={total} tags={tags} />
 
       {/* ─── Managers ─── */}
       {managers.length > 0 && (
         <section className={`section ${styles.managersSection}`}>
           <div className="shell">
-            <p className="eyebrow" style={{ marginBottom: 8 }}>Команда МосГорТур</p>
+            <p className="eyebrow" style={{ marginBottom: 8 }}>Команда Мои путешествия</p>
             <h2 className={`section-title ${styles.managersTitle}`}>Кто помог организовать поездку</h2>
             <div className={styles.managersGrid}>
               {managers.map((m, i) => (
@@ -134,7 +135,7 @@ export default async function StoriesPage() {
           <div className="shell">
             <div className={styles.trustCard}>
               <div className={styles.trustLeft}>
-                <span className={styles.trustTag}>МГТ.Доверие</span>
+                <span className={styles.trustTag}>Мои путешествия.Доверие</span>
                 <h2 className={styles.trustTitle}>
                   Поделитесь историей — участвуйте в розыгрыше
                 </h2>
