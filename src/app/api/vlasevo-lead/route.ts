@@ -35,7 +35,7 @@ async function bitrixCall<T = unknown>(method: string, payload: Record<string, u
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.error) {
-    console.error(`raduga-lead: ${method} failed`, data);
+    console.error(`vlasevo-lead: ${method} failed`, data);
     throw new Error('bitrix_error');
   }
   return data.result as T;
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     }
 
     const dealFields: Record<string, unknown> = {
-      TITLE: `Заявка с лендинга «Радуга» — ${name}`,
+      TITLE: `Заявка с лендинга «Власьево» — ${name}`,
       CATEGORY_ID: DEAL_CATEGORY_ID,
       STAGE_ID: DEAL_STAGE_ID,
       TYPE_ID: '1',
