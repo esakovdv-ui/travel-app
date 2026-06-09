@@ -8,6 +8,7 @@ import { buildMetadata } from '@/lib/seo';
 import { AppProvider } from '@/context/app-context';
 import { APP_NAME } from '@/lib/constants';
 import { getSession } from '@/lib/session';
+import { YandexMetrika } from '@/components/analytics/yandex-metrika';
 
 const manrope = Manrope({
   subsets: ['latin', 'cyrillic'],
@@ -39,6 +40,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ru">
+      <head>
+        <YandexMetrika />
+      </head>
       <body className={`${manrope.variable} ${unbounded.variable}`}>
         <AppProvider initialPackages={packages}>
           <SiteHeader initialUser={initialUser} />

@@ -3,6 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
+
+    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
+  <script>
+    (function () {
+      if (window.parent === window) return;
+      var request = { type: 'raduga-request-shift', source: 'motrip-raduga' };
+      function ask() {
+        if (window.__radugaSuppressShiftAutoOpen) return;
+        try { window.parent.postMessage(request, '*'); } catch (_) {}
+      }
+      ask();
+      var n = 0;
+      var timer = setInterval(function () {
+        ask();
+        if (++n >= 50) clearInterval(timer);
+      }, 200);
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="192x192" href="https://online.mosgortur.ru/new/favicon/android-icon-192x192.png">
   <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="https://online.mosgortur.ru/new/favicon/favicon-96x96.png">
@@ -21,7 +50,7 @@
 
   <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js" async defer></script>
   <title>Поиск туров</title>
-  <meta name="description" content="Смены в детский лагерь «Радуга» в Одинцовском районе. Акция ко Дню защиты детей действует до 1 июня 2026.">
+  <meta name="description" content="Летние смены в детский лагерь «Радуга» в Одинцовском районе. Специальные условия на отдельные смены до 1 июня 2026.">
   <link rel="stylesheet" crossorigin href="https://online.mosgortur.ru/new/assets/index-CRg1FWTQ.css">
   <style>
     @font-face {
@@ -73,6 +102,9 @@
       color: var(--text);
       font-size: 16px;
       line-height: 1.45;
+    }
+    body.is-campaign-expired {
+      overflow: hidden !important;
     }
     a { color: inherit; text-decoration: none; }
     button, input, select { font: inherit; }
@@ -287,82 +319,143 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 18px;
+      align-items: stretch;
     }
     .card {
       display: flex;
       flex-direction: column;
+      height: 100%;
       overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 0, 0, .06);
     }
     .card-img {
-      height: 168px;
-      background: var(--panel);
+      height: 230px;
+      background: #eef1f4;
       position: relative;
       overflow: hidden;
+      flex-shrink: 0;
+    }
+    .card-img.reserve-btn {
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+    }
+    .card-img.reserve-btn:focus-visible {
+      outline: 2px solid var(--orange);
+      outline-offset: -2px;
     }
     .card-img img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      padding: 10px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
     }
     .card-badge {
       position: absolute;
       left: 12px;
       top: 12px;
-      padding: 6px 10px;
+      z-index: 1;
+      max-width: calc(100% - 24px);
+      padding: 6px 11px;
       border-radius: 999px;
       background: #fff;
-      color: var(--orange);
-      font-size: 12px;
+      color: var(--orange-dark);
+      font-size: 11px;
       font-weight: 900;
-      box-shadow: 0 6px 18px rgba(0,0,0,.08);
+      letter-spacing: -.01em;
+      line-height: 1.2;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
+      pointer-events: none;
+    }
+    .card-badge--sm {
+      font-size: 10px;
+      padding: 5px 9px;
+    }
+    .card-badge--xs {
+      font-size: 9px;
+      padding: 5px 8px;
+      letter-spacing: -.02em;
     }
     .card-body {
-      padding: 18px;
+      padding: 20px;
       display: flex;
       flex: 1;
       flex-direction: column;
       gap: 12px;
+      min-height: 0;
     }
     .card h3 {
       margin: 0;
-      font-size: 24px;
-      line-height: 1.08;
+      font-size: 22px;
+      line-height: 1.15;
       font-weight: 900;
       letter-spacing: -.025em;
+      color: var(--text);
     }
-    .meta {
+    .card-meta {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 8px;
     }
-    .meta span {
-      padding: 7px 10px;
+    .card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .card-meta-item svg {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .card-promo {
+      margin: 0;
+      padding: 8px 10px;
       border-radius: 10px;
-      background: var(--panel);
-      color: #2d2d2d;
+      background: var(--green-soft);
+      color: var(--green);
       font-size: 13px;
       font-weight: 800;
+      line-height: 1.3;
     }
     .price-row {
-      margin-top: auto;
       display: flex;
       align-items: baseline;
-      gap: 10px;
       flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2px;
     }
     .price {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 900;
+      letter-spacing: -.02em;
+      color: var(--text);
+      line-height: 1;
     }
     .old-price {
+      font-size: 16px;
       color: var(--muted);
-      font-weight: 800;
+      font-weight: 700;
       text-decoration: line-through;
+      line-height: 1;
     }
-    .card .btn {
+    .card .btn.reserve-btn {
       width: 100%;
-      margin-top: 4px;
+      min-height: 50px;
+      margin-top: auto;
+      padding-top: 12px;
+      padding-bottom: 12px;
+      border-radius: 14px;
+      font-size: 15px;
     }
 
     .info-grid {
@@ -401,6 +494,114 @@
       color: inherit;
       font-weight: 700;
       opacity: .88;
+    }
+
+    .camp-about {
+      position: relative;
+      overflow: hidden;
+    }
+    .camp-about .container {
+      position: relative;
+      z-index: 1;
+    }
+    .camp-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    .camp-card {
+      min-height: 280px;
+      padding: 24px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, .07);
+      border: 1px solid rgba(0, 0, 0, .04);
+    }
+    .camp-card h3 {
+      margin: 0 0 14px;
+      font-size: clamp(22px, 2vw, 28px);
+      line-height: 1.08;
+      letter-spacing: -.025em;
+      font-weight: 900;
+    }
+    .camp-card p {
+      margin: 0;
+      color: #334155;
+      font-size: 16px;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+    .camp-card .note {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 800;
+    }
+    .camp-card ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .camp-card li {
+      position: relative;
+      margin-top: 10px;
+      padding-left: 20px;
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.42;
+      font-weight: 800;
+    }
+    .camp-card li:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .58em;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 0 4px #fff0e3;
+    }
+    .camp-decor {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .camp-decor.cross {
+      right: 7%;
+      top: 6px;
+      width: 42px;
+      height: 42px;
+      color: #8a2cff;
+      transform: rotate(12deg);
+    }
+    .camp-decor.bolt {
+      left: 2%;
+      top: 110px;
+      width: 46px;
+      height: 64px;
+      color: #ffcc00;
+      transform: rotate(-12deg);
+    }
+    .camp-decor.blob {
+      right: -16px;
+      bottom: 18px;
+      width: 96px;
+      height: 74px;
+      color: #32c8ff;
+      opacity: .55;
+    }
+    .camp-decor.heart {
+      left: 9%;
+      bottom: 4px;
+      width: 44px;
+      height: 44px;
+      color: #ff4f93;
+      transform: rotate(-8deg);
     }
 
     .urgency {
@@ -468,6 +669,151 @@
       font-size: 14px;
       font-weight: 900;
     }
+    .form-note.is-error {
+      color: #c62828;
+    }
+    .field-error {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c62828;
+    }
+    .field-error.is-visible {
+      display: block;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .52);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .modal-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      position: relative;
+      width: min(100%, 440px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 24px 22px 22px;
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .18);
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-close:hover {
+      background: #ffe8d4;
+      color: var(--orange-dark);
+    }
+    .modal h2 {
+      margin: 0 32px 8px 0;
+      font-size: clamp(24px, 4vw, 30px);
+      line-height: 1.1;
+      letter-spacing: -.03em;
+    }
+    .modal-lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal .field input[readonly] {
+      background: #fff;
+      color: var(--text);
+      cursor: default;
+      outline-color: var(--line);
+    }
+    .modal-success {
+      display: none;
+      padding: 8px 0 4px;
+    }
+    .modal-success.is-visible {
+      display: block;
+    }
+    .modal-success p {
+      margin: 0;
+      color: var(--green);
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .modal-form-body.is-hidden {
+      display: none;
+    }
+
+    .campaign-expired-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, .62);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .campaign-expired-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .campaign-expired-modal {
+      width: min(100%, 640px);
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .22);
+      padding: clamp(22px, 4vw, 34px);
+      text-align: center;
+    }
+    .campaign-expired-modal h2 {
+      margin: 0 0 14px;
+      font-size: clamp(28px, 4.3vw, 42px);
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      font-weight: 900;
+    }
+    .campaign-expired-modal p {
+      margin: 0 auto 22px;
+      max-width: 560px;
+      color: #475569;
+      font-size: clamp(15px, 2.2vw, 19px);
+      line-height: 1.5;
+      font-weight: 700;
+    }
+    .campaign-expired-modal .btn {
+      min-height: 48px;
+      width: min(100%, 320px);
+      font-size: 16px;
+      margin: 0 auto;
+    }
 
     @media (max-width: 980px) {
       .hero-grid,
@@ -483,6 +829,9 @@
       .grid,
       .info-grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+      .camp-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .urgency {
         grid-template-columns: 1fr;
@@ -500,12 +849,37 @@
       .info-grid {
         grid-template-columns: 1fr;
       }
+      .camp-cards {
+        grid-template-columns: 1fr;
+      }
+      .camp-card {
+        min-height: 0;
+        padding: 20px;
+      }
+      .camp-decor {
+        display: none;
+      }
       .section-head { display: block; }
       .section-text { margin-top: 10px; }
       .timer { gap: 6px; }
       .time-num { font-size: 20px; }
       .time-box { min-height: 68px; padding: 12px 4px; }
-      .card-img { height: 150px; }
+      .card-img { height: 210px; }
+      .card-badge {
+        left: 10px;
+        top: 10px;
+        max-width: calc(100% - 20px);
+      }
+      .card-badge--sm { font-size: 9px; }
+      .card-badge--xs { font-size: 8px; padding: 4px 7px; }
+      .card-body { padding: 18px; gap: 10px; }
+      .card h3 { font-size: 20px; }
+      .price { font-size: 26px; }
+      .card .btn.reserve-btn { min-height: 48px; }
+      .campaign-expired-overlay { padding: 16px; }
+      .campaign-expired-modal { border-radius: 20px; }
+      .campaign-expired-modal p { margin-bottom: 18px; }
+      .campaign-expired-modal .btn { width: 100%; }
     }
   </style>
 </head>
@@ -517,12 +891,12 @@
           <div class="hero-main">
             <div>
               <div class="chips">
-                <span class="chip orange">Акция до 1 июня</span>
+                <span class="chip orange">Специальные условия до 1 июня</span>
                 <span class="chip green">Места ограничены</span>
                 <span class="chip">7–17 лет</span>
               </div>
               <h1>Успейте забронировать<br>смену в “Радуге”</h1>
-              <p class="lead">До 1 июня действуют специальные условия на летние смены</p>
+              <p class="lead">До 1 июня доступны специальные условия на летние смены. С 1 июня предложение станет доступно всем клиентам.</p>
             </div>
             <div class="hero-actions">
               <a class="btn" href="#shifts">Смотреть смены</a>
@@ -538,7 +912,7 @@
         </div>
 
         <div class="timer-panel">
-          <h2>До окончания акции</h2>
+          <h2>Специальные условия действуют еще</h2>
           <div class="timer" aria-live="polite">
             <div class="time-box"><span class="time-num" id="days">00</span><span class="time-label">дней</span></div>
             <div class="time-box"><span class="time-num" id="hours">00</span><span class="time-label">часов</span></div>
@@ -553,27 +927,58 @@
       <div class="container">
         <div class="section-head">
           <h2 class="section-title">Доступные смены</h2>
-          <p class="section-text">Цены и остатки мест указаны для акции. Все данные по местам лежат в JS-массиве и быстро меняются.</p>
         </div>
         <div class="grid" id="shift-grid"></div>
       </div>
     </section>
 
-    <section id="about">
+    <section id="about" class="camp-about">
       <div class="container">
         <div class="section-head">
-          <h2 class="section-title">Что входит</h2>
-          <p class="section-text">Круглогодичный современный лагерь под управлением МОСГОРТУРа, в Одинцовском городском округе.</p>
+          <h2 class="section-title">О детском оздоровительном лагере «Радуга»</h2>
+          <p class="section-text">Современное пространство для отдыха, развития и безопасного досуга детей.</p>
         </div>
-        <div class="info-grid">
-          <div class="info-card green"><strong>3–4 человека</strong><span>Проживание в комнатах комфортных одноэтажных домиков</span></div>
-          <div class="info-card blue"><strong>5-разовое питание</strong><span>Питание по сезонному меню</span></div>
-          <div class="info-card violet"><strong>Медицина 24/7</strong><span>Круглосуточная помощь на территории лагеря</span></div>
-          <div class="info-card gray"><strong>Топ-30</strong><span>По версии конкурса «Лучший детский лагерь России – 2025»</span></div>
-          <div class="info-card gray"><strong>Спорт</strong><span>Футбольное поле, площадки, спортивный зал</span></div>
-          <div class="info-card green"><strong>Творчество</strong><span>Танцевальный зал и хобби-центры</span></div>
-          <div class="info-card blue"><strong>МОСГОРТУР</strong><span>Организация и управление лагерем</span></div>
-          <div class="info-card violet"><strong>Подмосковье</strong><span>Одинцовский городской округ</span></div>
+        <svg class="camp-decor cross" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M20 4h8v16h16v8H28v16h-8V28H4v-8h16V4Z" fill="currentColor"/>
+        </svg>
+        <svg class="camp-decor bolt" viewBox="0 0 48 64" aria-hidden="true">
+          <path d="M31 2 6 35h17l-6 27 25-36H25L31 2Z" fill="currentColor"/>
+        </svg>
+        <svg class="camp-decor blob" viewBox="0 0 120 90" aria-hidden="true">
+          <path d="M11 49C5 23 31 3 59 8c30 5 57 27 51 51-5 22-37 28-63 24-19-3-32-15-36-34Z" fill="currentColor"/>
+        </svg>
+        <svg class="camp-decor heart" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 41S7 31 7 17.5C7 10.8 12.1 7 17.6 7c3.2 0 5.6 1.5 6.4 3.2C24.8 8.5 27.2 7 30.4 7 35.9 7 41 10.8 41 17.5 41 31 24 41 24 41Z" fill="currentColor"/>
+        </svg>
+        <div class="camp-cards">
+          <article class="camp-card">
+            <h3>Расположение</h3>
+            <p>Экологически чистый живописный район с сосновыми лесами</p>
+          </article>
+          <article class="camp-card">
+            <h3>Развитая обучающая и досуговая инфраструктура</h3>
+            <ul>
+              <li>хобби-центры</li>
+              <li>футбольное поле</li>
+              <li>танцевальный и спортивный залы</li>
+              <li>площадка для проведения зимних эстафет</li>
+              <li>спортивный и досуговый инвентарь</li>
+            </ul>
+          </article>
+          <article class="camp-card">
+            <h3>Территория 6 гектаров</h3>
+            <p>Максимальная вместимость до 211 человек</p>
+            <span class="note">(165 детей и 46 сопровождающих)</span>
+          </article>
+          <article class="camp-card">
+            <h3>Комфорт и безопасность</h3>
+            <ul>
+              <li>круглосуточное видеонаблюдение</li>
+              <li>современные системы пожарной безопасности</li>
+              <li>автономные системы тепло- и водоснабжения</li>
+              <li>5-ступенчатая очистка воды</li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
@@ -582,25 +987,10 @@
       <div class="container">
         <div class="urgency">
           <div>
-            <h2>Акция действует только до 1 июня</h2>
-            <p>После окончания акции стоимость может измениться, а места на популярных сменах могут закончиться.</p>
+            <h2>До 1 июня действуют специальные условия на отдельные смены</h2>
+            <p>С 1 июня предложение станет доступно всем клиентам, а количество свободных мест на популярных сменах может сократиться.</p>
           </div>
           <a class="btn" href="#lead-form">Оставить заявку</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="trust">
-      <div class="container">
-        <div class="section-head">
-          <h2 class="section-title">Безопасность и доверие</h2>
-          <p class="section-text">Ключевые факты с официальной страницы лагеря «Радуга».</p>
-        </div>
-        <div class="info-grid">
-          <div class="info-card green"><strong>Реестр</strong><span>Лагерь включён в реестр организаций отдыха детей и их оздоровления</span></div>
-          <div class="info-card blue"><strong>Видеонаблюдение</strong><span>Круглосуточное видеонаблюдение на территории</span></div>
-          <div class="info-card violet"><strong>Пожарная безопасность</strong><span>Современные системы пожарной безопасности</span></div>
-          <div class="info-card gray"><strong>Корпуса</strong><span>Комфортные одноэтажные домики с инфраструктурой для детей</span></div>
         </div>
       </div>
     </section>
@@ -613,7 +1003,7 @@
               <span class="chip orange">Финальный шаг</span>
               <span class="chip">Без оплаты на сайте</span>
             </div>
-            <h2 class="section-title">Выберите смену для ребенка уже сегодня</h2>
+            <h2 class="section-title">Успейте выбрать подходящую смену до 1 июня</h2>
             <p class="lead">Оставьте заявку — менеджер поможет подобрать подходящую смену и ответит на вопросы по датам, документам и размещению.</p>
           </div>
         </div>
@@ -624,7 +1014,8 @@
           </div>
           <div class="field">
             <label for="phone">Телефон</label>
-            <input id="phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error">
+            <p class="field-error" id="phone-error" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="shift">Выбранная смена</label>
@@ -632,7 +1023,7 @@
               <option value="">Выберите смену</option>
             </select>
           </div>
-          <div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">
+          <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
             <label for="website">Сайт</label>
             <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
           </div>
@@ -643,70 +1034,128 @@
     </section>
   </main>
 
+  <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">&times;</button>
+      <h2 id="modal-title">Забронировать смену</h2>
+      <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
+      <div class="modal-success" id="modal-success">
+        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+      </div>
+      <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
+        <div class="field">
+          <label for="modal-name">Имя</label>
+          <input id="modal-name" name="name" type="text" placeholder="Как к вам обращаться" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="modal-phone">Телефон</label>
+          <input id="modal-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="modal-phone-error">
+          <p class="field-error" id="modal-phone-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="modal-shift">Тип смены / выбранная смена</label>
+          <input id="modal-shift" name="shift" type="text" readonly required>
+        </div>
+        <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+          <label for="modal-website">Сайт</label>
+          <input id="modal-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
+        <p class="form-note" id="modal-form-note" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="campaign-expired-overlay" id="campaign-expired-overlay" aria-hidden="true">
+    <div class="campaign-expired-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-expired-title">
+      <h2 id="campaign-expired-title">Акция в лагере «Радуга» завершилась</h2>
+      <p>Но ко Дню защиты детей действует новая акция на летние смены в детском оздоровительном лагере «Власьево». Вы можете выбрать программу и забронировать отдых ребенка по специальной цене.</p>
+      <a class="btn" href="https://online.mosgortur.ru/new/vlasevo">Перейти к акции</a>
+    </div>
+  </div>
+
   <script>
-    const shifts = [
+    let shifts = [
       {
         id: 'dream-30-07',
         title: 'Время мечтать',
         dates: '30 июня – 7 июля',
-        price: 44000,
         oldPrice: 45000,
-        places: 9,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602229/602229.png?id=1778679934'
+        price: 41400,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602229/602229.png?id=1778679934',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002706&date=30.06.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
       },
       {
         id: 'records-09-16',
         title: 'Время рекордов',
         dates: '9–16 июля',
-        price: 44000,
         oldPrice: 45000,
-        places: 6,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602895/602895.png?id=1778744107'
-      },
-      {
-        id: 'dream-30-16',
-        title: 'Время мечтать',
-        dates: '30 июня – 16 июля',
-        price: 78500,
-        oldPrice: 82000,
-        places: 4,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/603009/603009.png?id=1778744242'
+        price: 41400,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602895/602895.png?id=1778744107',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
       },
       {
         id: 'records-09-26',
         title: 'Время рекордов',
         dates: '9–26 июля',
-        price: 83500,
         oldPrice: 86000,
-        places: 3,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604673/604673.png?id=1779257970'
+        price: 79120,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604673/604673.png?id=1779257970',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=18&hotelScheme=1_17_3339_830_1_0_18&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_17&currency=RUB'
+      },
+      {
+        id: 'trend-17-06',
+        title: 'Время быть в тренде',
+        dates: '17 июля – 6 августа',
+        oldPrice: 99000,
+        price: 91080,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=17.07.26&duration=21&hotelScheme=1_20_3339_830_1_0_21&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_20&currency=RUB'
       },
       {
         id: 'trend-18-26',
         title: 'Время быть в тренде',
         dates: '18–26 июля',
-        price: 48000,
         oldPrice: 50000,
-        places: 8,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602965/602965.png?id=1778744170'
+        price: 46000,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602965/602965.png?id=1778744170',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB'
       },
       {
         id: 'trend-18-05',
         title: 'Время быть в тренде',
         dates: '18 июля – 5 августа',
-        price: 87500,
         oldPrice: 90000,
-        places: 5,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977'
+        price: 82800,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=19&hotelScheme=1_18_3339_830_1_0_19&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_18&currency=RUB'
       },
       {
         id: 'talents-28-05',
         title: 'Время талантов',
         dates: '28 июля – 5 августа',
-        price: 48000,
         oldPrice: 50000,
-        places: 6,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602424/602424.png?id=1778680027'
+        price: 46000,
+        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602424/602424.png?id=1778680027',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002705&date=28.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB'
+      },
+      {
+        id: 'balance-29-05',
+        title: 'Время баланса',
+        dates: '29 августа – 5 сентября',
+        oldPrice: 40000,
+        price: 36800,
+        image: '/raduga-hero.png',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002709&date=29.08.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
+      },
+      {
+        id: 'together-24-31',
+        title: 'Время быть вместе',
+        dates: '24–31 октября',
+        oldPrice: 40500,
+        price: 37260,
+        image: '/raduga-hero.png',
+        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002710&date=24.10.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
       }
     ];
 
@@ -714,35 +1163,57 @@
     const shiftGrid = document.getElementById('shift-grid');
     const shiftSelect = document.getElementById('shift');
 
-    function placesWord(count) {
-      const last = count % 10;
-      const lastTwo = count % 100;
-      if (last === 1 && lastTwo !== 11) return 'место';
-      if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return 'места';
-      return 'мест';
+    const iconCalendar = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z"/></svg>';
+    const iconAge = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-6 1.79-6 4v2h12v-2c0-2.21-2.69-4-6-4Z"/></svg>';
+
+    const CARD_BADGE_LABELS = [
+      'Остались последние места',
+      'Набор почти закрыт',
+      'Места заканчиваются',
+      'Идет активное бронирование',
+      'Смена быстро заполняется',
+      'Высокий спрос на смену',
+      'Свободных мест почти нет',
+      'Успейте забронировать',
+      'Бронирования идут каждый день',
+      'Осталось несколько мест',
+    ];
+
+    function cardBadgeSizeClass(label) {
+      const len = label.length;
+      if (len >= 28) return 'card-badge--xs';
+      if (len >= 22) return 'card-badge--sm';
+      return '';
+    }
+
+    function cardBadgeHtml(index) {
+      const label = CARD_BADGE_LABELS[index % CARD_BADGE_LABELS.length];
+      const sizeClass = cardBadgeSizeClass(label);
+      return `<span class="card-badge${sizeClass ? ` ${sizeClass}` : ''}">${label}</span>`;
     }
 
     function renderShifts() {
-      shiftGrid.innerHTML = shifts.map((shift) => {
-        const badge = shift.places <= 4 ? 'Мест мало' : `Осталось ${shift.places} ${placesWord(shift.places)}`;
+      shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
+      shiftGrid.innerHTML = shifts.map((shift, index) => {
+        const cardBadge = cardBadgeHtml(index);
         return `
           <article class="card">
-            <div class="card-img">
-              <img src="${shift.image}" alt="${shift.title}" loading="lazy">
-              <span class="card-badge">${badge}</span>
-            </div>
+            <button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
+              <img src="${shift.image}" alt="" loading="lazy">
+              ${cardBadge}
+            </button>
             <div class="card-body">
               <h3>${shift.title}</h3>
-              <div class="meta">
-                <span>${shift.dates}</span>
-                <span>7–17 лет</span>
-                <span>Акция до 1 июня</span>
+              <div class="card-meta">
+                <span class="card-meta-item">${iconCalendar}${shift.dates}</span>
+                <span class="card-meta-item">${iconAge}7–17 лет</span>
               </div>
+              <p class="card-promo">Специальные условия до 1 июня</p>
               <div class="price-row">
                 <span class="price">${money.format(shift.price)} ₽</span>
                 <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
               </div>
-              <a class="btn reserve-btn" href="#lead-form" data-shift="${shift.id}">Забронировать</a>
+              <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>
             </div>
           </article>
         `;
@@ -751,21 +1222,565 @@
       shifts.forEach((shift) => {
         const option = document.createElement('option');
         option.value = `${shift.title} · ${shift.dates}`;
-        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.price)} ₽`;
+        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.price)} ₽ со скидкой`;
         shiftSelect.appendChild(option);
       });
     }
 
-    renderShifts();
+    async function loadShifts() {
+      try {
+        const response = await fetch('/api/raduga-shifts', { cache: 'no-store' });
+        if (response.ok) {
+          shifts = await response.json();
+        }
+      } catch (error) {
+        console.warn('Не удалось загрузить смены из админки', error);
+      }
+      renderShifts();
+      shiftsLoaded = true;
+      tryOpenShiftFromUrl();
+    }
+
+    loadShifts();
+
+    const reserveModal = document.getElementById('reserve-modal');
+    const modalForm = document.getElementById('modal-form');
+    const modalFormBody = modalForm;
+    const modalSuccess = document.getElementById('modal-success');
+    const modalName = document.getElementById('modal-name');
+    const modalPhone = document.getElementById('modal-phone');
+    const modalShift = document.getElementById('modal-shift');
+    const modalFormNote = document.getElementById('modal-form-note');
+    const modalSubmit = document.getElementById('modal-submit');
+    const modalClose = document.getElementById('modal-close');
+    const campaignExpiredOverlay = document.getElementById('campaign-expired-overlay');
+    const landingForm = document.getElementById('form');
+    const landingFormNote = document.getElementById('form-note');
+    const landingPhone = document.getElementById('phone');
+    const landingPhoneError = document.getElementById('phone-error');
+    const modalPhoneError = document.getElementById('modal-phone-error');
+
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) {
+        raw = raw.slice(1);
+      }
+      return raw.slice(0, 10);
+    }
+
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
+      return formatted.length;
+    }
+
+    function createPhoneMaskController(input, errorEl) {
+      let digits = '';
+      let skipKeydown = false;
+
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.classList.remove('is-visible');
+        input.removeAttribute('aria-invalid');
+      }
+
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        const cursor = cursorFromDigitIndex(formatted, index);
+        const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+        input.setSelectionRange(safeCursor, safeCursor);
+      }
+
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+        clearError();
+      }
+
+      function selectionDigitRange() {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) {
+          setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+        }
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) {
+          setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+        }
+      }
+
+      function handleKeydown(event) {
+        const { from, to } = selectionDigitRange();
+
+        if (event.key === 'Backspace') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (event.key === 'Delete') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
+          return;
+        }
+
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        render(digits.length);
+        if (!digits.length) {
+          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        if (!digits.length) {
+          input.value = '';
+        }
+      });
+
+      input.addEventListener('click', () => {
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+
+      input.addEventListener('beforeinput', (event) => {
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+
+        if (inputType === 'deleteContentBackward') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (inputType === 'deleteContentForward') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (
+          inputType === 'insertText'
+          || inputType === 'insertFromPaste'
+          || inputType === 'insertReplacementText'
+          || inputType === 'insertFromDrop'
+        ) {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) {
+            event.preventDefault();
+            return;
+          }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          insertAt(from, chunk);
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) {
+          skipKeydown = false;
+          return;
+        }
+        handleKeydown(event);
+      });
+
+      input.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, merged.length);
+      });
+
+      return {
+        getValue() {
+          return `+7${digits}`;
+        },
+        validate() {
+          if (digits.length !== 10) {
+            errorEl.textContent = 'Введите номер телефона полностью';
+            errorEl.classList.add('is-visible');
+            input.setAttribute('aria-invalid', 'true');
+            return false;
+          }
+          clearError();
+          return true;
+        },
+        reset() {
+          digits = '';
+          input.value = '';
+          clearError();
+        },
+        showMask() {
+          render(0);
+          input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        },
+      };
+    }
+
+    const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
+    const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
+    let isCampaignExpired = false;
+
+    function formatShiftLabel(shift) {
+      return `${shift.title} — ${shift.dates}`;
+    }
+
+    function findShiftById(id) {
+      return shifts.find((shift) => shift.id === id);
+    }
+
+    let shiftsLoaded = false;
+    let shiftFromPostMessage = null;
+    let suppressShiftAutoOpen = false;
+    const RADUGA_PARENT_ORIGINS = new Set([
+      'https://online.mosgortur.ru',
+      'https://mosgortur.ru',
+      'https://www.mosgortur.ru',
+    ]);
+
+    function parseShiftFromSearch(search) {
+      if (!search) return null;
+      const query = search.startsWith('?') ? search : `?${search}`;
+      const params = new URLSearchParams(query);
+      return params.get('shift') || params.get('shift_id');
+    }
+
+    function getAccessibleWindows() {
+      const wins = [window];
+      [window.parent, window.top].forEach((win) => {
+        if (!win || win === window || wins.includes(win)) return;
+        try {
+          void win.location.href;
+          wins.push(win);
+        } catch (_) {}
+      });
+      return wins;
+    }
+
+    function getSearchParamSources() {
+      const sources = [];
+      getAccessibleWindows().forEach((win) => {
+        sources.push(win.location.search);
+      });
+      if (document.referrer) {
+        try {
+          sources.push(new URL(document.referrer).search);
+        } catch (_) {}
+      }
+      return sources;
+    }
+
+    function getShiftFromWindowName() {
+      const name = window.name || '';
+      if (!name) return null;
+      if (name.startsWith('shift:')) return name.slice(6).split(/[&#]/)[0] || null;
+      if (name.includes('shift=')) {
+        const query = name.startsWith('?') ? name : (name.includes('?') ? name.slice(name.indexOf('?')) : `?${name}`);
+        return parseShiftFromSearch(query);
+      }
+      return null;
+    }
+
+    function getShiftIdFromUrl() {
+      for (const search of getSearchParamSources()) {
+        const id = parseShiftFromSearch(search);
+        if (id) return id;
+      }
+
+      const fromName = getShiftFromWindowName();
+      if (fromName) return fromName;
+
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash) {
+        const fromHash = parseShiftFromSearch(
+          hash.includes('=') ? (hash.startsWith('?') ? hash : `?${hash}`) : `?shift=${encodeURIComponent(hash)}`
+        );
+        if (fromHash) return fromHash;
+      }
+
+      return shiftFromPostMessage;
+    }
+
+    function replaceUrlInWindow(win, mutator) {
+      try {
+        const url = new URL(win.location.href);
+        mutator(url);
+        const query = url.searchParams.toString();
+        const next = `${url.pathname}${query ? `?${query}` : ''}${url.hash}`;
+        win.history.replaceState({ radugaShift: url.searchParams.get('shift') || null }, '', next);
+      } catch (_) {}
+    }
+
+    function setShiftInUrl(shiftId) {
+      if (!shiftId) return;
+      getAccessibleWindows().forEach((win) => {
+        replaceUrlInWindow(win, (url) => {
+          url.searchParams.set('shift', shiftId);
+        });
+      });
+    }
+
+    function clearShiftFromUrl() {
+      getAccessibleWindows().forEach((win) => {
+        replaceUrlInWindow(win, (url) => {
+          url.searchParams.delete('shift');
+          url.searchParams.delete('shift_id');
+        });
+      });
+    }
+
+    function suppressShiftDeepLinkAutoOpen() {
+      suppressShiftAutoOpen = true;
+      window.__radugaSuppressShiftAutoOpen = true;
+      shiftFromPostMessage = null;
+      try {
+        window.name = '';
+      } catch (_) {}
+    }
+
+    function tryOpenShiftFromUrl() {
+      if (suppressShiftAutoOpen) return;
+      if (!shiftsLoaded || !reserveModal) return;
+      if (reserveModal.classList.contains('is-open')) return;
+      const shiftId = getShiftIdFromUrl();
+      if (!shiftId) return;
+      const shift = findShiftById(shiftId);
+      if (!shift) return;
+      trackRadugaBookingClick();
+      openReserveModal(shift);
+    }
+
+    function collectUtm() {
+      const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+      const utm = {};
+      getSearchParamSources().forEach((search) => {
+        const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
+        keys.forEach((key) => {
+          if (!utm[key]) {
+            const value = params.get(key);
+            if (value) utm[key] = value;
+          }
+        });
+      });
+      return utm;
+    }
+
+    window.addEventListener('message', (event) => {
+      if (suppressShiftAutoOpen) return;
+      if (!RADUGA_PARENT_ORIGINS.has(event.origin)) return;
+      const payload = event.data;
+      if (!payload || typeof payload !== 'object') return;
+      const type = payload.type || payload.event;
+      if (type !== 'raduga-set-shift' && type !== 'raduga:shift') return;
+      const shiftId = payload.shift || payload.shiftId || payload.id;
+      if (!shiftId) return;
+      shiftFromPostMessage = String(shiftId);
+      tryOpenShiftFromUrl();
+    });
+
+    const YM_COUNTER_ID = 109401746;
+
+    function reachRadugaGoal(goal) {
+      if (typeof ym !== 'function') return;
+      ym(YM_COUNTER_ID, 'reachGoal', goal);
+    }
+
+    function trackRadugaBookingClick() {
+      reachRadugaGoal('raduga_booking_click');
+    }
+
+    function trackRadugaBookingSubmit() {
+      reachRadugaGoal('raduga_booking_submit');
+    }
+
+    async function submitRadugaLead({ name, phone, shift, source, website = '' }) {
+      const response = await fetch('/api/raduga-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          phone,
+          shift,
+          source,
+          website,
+          utm: collectUtm(),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        if (data.error === 'invalid_phone') {
+          throw new Error('Введите номер телефона полностью');
+        }
+        if (data.error === 'misconfigured') {
+          throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
+        }
+        throw new Error('Не удалось отправить заявку. Попробуйте позже.');
+      }
+      return data;
+    }
+
+    function setFormNote(element, message, isError) {
+      element.textContent = message;
+      element.classList.toggle('is-error', Boolean(isError));
+    }
+
+    function openReserveModal(shift) {
+      if (isCampaignExpired) return;
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      modalShift.value = formatShiftLabel(shift);
+      modalPhoneCtrl.reset();
+      setFormNote(modalFormNote, '', false);
+      modalSubmit.disabled = false;
+      reserveModal.classList.add('is-open');
+      reserveModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      setShiftInUrl(shift.id);
+      modalName.focus();
+    }
+
+    function closeReserveModal(clearShift) {
+      const wasOpen = reserveModal.classList.contains('is-open');
+      reserveModal.classList.remove('is-open');
+      reserveModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = isCampaignExpired ? 'hidden' : '';
+      if (wasOpen) suppressShiftDeepLinkAutoOpen();
+      clearShiftFromUrl();
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      if (clearShift) {
+        modalForm.reset();
+        modalShift.value = '';
+        modalPhoneCtrl.reset();
+      }
+    }
 
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');
       if (!button) return;
-      const picked = shifts.find((shift) => shift.id === button.dataset.shift);
-      if (picked) shiftSelect.value = `${picked.title} · ${picked.dates}`;
+      if (isCampaignExpired) return;
+      event.preventDefault();
+      trackRadugaBookingClick();
+      const picked = findShiftById(button.dataset.shiftId);
+      if (picked) openReserveModal(picked);
     });
 
-    const target = new Date('2026-06-01T23:59:00+03:00').getTime();
+    modalClose.addEventListener('click', () => closeReserveModal(true));
+    reserveModal.addEventListener('click', (event) => {
+      if (event.target === reserveModal) closeReserveModal(true);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && reserveModal.classList.contains('is-open')) {
+        closeReserveModal(true);
+      }
+    });
+
+    modalForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setFormNote(modalFormNote, '', false);
+      if (!modalPhoneCtrl.validate()) {
+        modalPhone.focus();
+        modalPhoneCtrl.showMask();
+        return;
+      }
+      modalSubmit.disabled = true;
+      try {
+        await submitRadugaLead({
+          name: modalName.value.trim(),
+          phone: modalPhoneCtrl.getValue(),
+          shift: modalShift.value.trim(),
+          source: 'popup',
+          website: document.getElementById('modal-website').value,
+        });
+        trackRadugaBookingSubmit();
+        modalFormBody.classList.add('is-hidden');
+        modalSuccess.classList.add('is-visible');
+        modalName.value = '';
+        modalPhoneCtrl.reset();
+        setTimeout(() => closeReserveModal(true), 15000);
+      } catch (error) {
+        setFormNote(modalFormNote, error.message, true);
+        modalSubmit.disabled = false;
+      }
+    });
+
+    const target = new Date('2026-05-31T23:59:00+03:00').getTime();
     const daysEl = document.getElementById('days');
     const hoursEl = document.getElementById('hours');
     const minutesEl = document.getElementById('minutes');
@@ -776,94 +1791,72 @@
     }
 
     function tick() {
-      const diff = Math.max(0, target - Date.now());
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        daysEl.textContent = '00';
+        hoursEl.textContent = '00';
+        minutesEl.textContent = '00';
+        secondsEl.textContent = '00';
+        activateCampaignExpiredState();
+        return false;
+      }
       daysEl.textContent = pad(Math.floor(diff / 86400000));
       hoursEl.textContent = pad(Math.floor((diff % 86400000) / 3600000));
       minutesEl.textContent = pad(Math.floor((diff % 3600000) / 60000));
       secondsEl.textContent = pad(Math.floor((diff % 60000) / 1000));
+      return true;
     }
 
-    tick();
-    setInterval(tick, 1000);
-
-    const phoneInput = document.getElementById('phone');
-
-    function formatPhone(raw) {
-      const digits = raw.replace(/\D/g, '');
-      let body = digits;
-      if (body.startsWith('7') || body.startsWith('8')) body = body.slice(1);
-      body = body.slice(0, 10);
-      if (!body) return '';
-      let out = '+7 (' + body.slice(0, 3);
-      if (body.length >= 3) out += ')';
-      if (body.length > 3) out += ' ' + body.slice(3, 6);
-      if (body.length > 6) out += '-' + body.slice(6, 8);
-      if (body.length > 8) out += '-' + body.slice(8, 10);
-      return out;
+    function activateCampaignExpiredState() {
+      if (isCampaignExpired) return;
+      isCampaignExpired = true;
+      if (reserveModal.classList.contains('is-open')) {
+        closeReserveModal(true);
+      }
+      campaignExpiredOverlay.classList.add('is-open');
+      campaignExpiredOverlay.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-campaign-expired');
+      document.body.style.overflow = 'hidden';
     }
 
-    phoneInput.addEventListener('focus', () => {
-      if (!phoneInput.value) phoneInput.value = '+7 (';
-    });
-    phoneInput.addEventListener('input', () => {
-      phoneInput.value = formatPhone(phoneInput.value);
-    });
-    phoneInput.addEventListener('blur', () => {
-      if (phoneInput.value === '+7 (' || phoneInput.value === '+7') phoneInput.value = '';
-    });
-
-    function collectUtm() {
-      const params = new URLSearchParams(window.location.search);
-      const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
-      const utm = {};
-      keys.forEach((key) => {
-        const value = params.get(key);
-        if (value) utm[key] = value;
-      });
-      return utm;
+    if (!tick()) {
+      activateCampaignExpiredState();
     }
+    const countdownTimer = setInterval(() => {
+      if (!tick()) clearInterval(countdownTimer);
+    }, 1000);
 
-    const leadForm = document.getElementById('form');
-    const leadNote = document.getElementById('form-note');
-    const leadSubmit = leadForm.querySelector('button[type="submit"]');
-
-    leadForm.addEventListener('submit', async (event) => {
+    landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const formData = new FormData(leadForm);
-      const payload = {
-        name: String(formData.get('name') || '').trim(),
-        phone: String(formData.get('phone') || '').trim(),
-        shift: String(formData.get('shift') || ''),
-        website: String(formData.get('website') || ''),
-        utm: collectUtm(),
-      };
-
-      leadSubmit.disabled = true;
-      leadNote.style.color = '';
-      leadNote.textContent = 'Отправляем...';
-
+      const submitButton = landingForm.querySelector('button[type="submit"]');
+      setFormNote(landingFormNote, '', false);
+      if (!landingPhoneCtrl.validate()) {
+        landingPhone.focus();
+        landingPhoneCtrl.showMask();
+        return;
+      }
+      submitButton.disabled = true;
       try {
-        const response = await fetch('/api/raduga-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+        await submitRadugaLead({
+          name: landingForm.name.value.trim(),
+          phone: landingPhoneCtrl.getValue(),
+          shift: shiftSelect.value.trim(),
+          source: 'landing',
+          website: document.getElementById('website').value,
         });
-        const data = await response.json().catch(() => ({}));
-        if (response.ok && data && data.ok) {
-          leadNote.style.color = 'var(--green)';
-          leadNote.textContent = 'Спасибо! Менеджер свяжется с вами в ближайшее время.';
-          leadForm.reset();
-        } else {
-          leadNote.style.color = '#c00';
-          leadNote.textContent = 'Не удалось отправить заявку. Пожалуйста, позвоните нам.';
-        }
-      } catch (e) {
-        leadNote.style.color = '#c00';
-        leadNote.textContent = 'Ошибка сети. Проверьте подключение и попробуйте снова.';
+        trackRadugaBookingSubmit();
+        setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+        landingForm.name.value = '';
+        landingPhoneCtrl.reset();
+        shiftSelect.value = '';
+      } catch (error) {
+        setFormNote(landingFormNote, error.message, true);
       } finally {
-        leadSubmit.disabled = false;
+        submitButton.disabled = false;
       }
     });
+
+    window.addEventListener('load', () => tryOpenShiftFromUrl());
   </script>
 </body>
 </html>

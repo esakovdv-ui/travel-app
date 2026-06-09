@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Летние смены в лагере «Власьево» — акция ко Дню защиты детей</title>
+  <meta name="description" content="Акция ко Дню защиты детей в лагере «Власьево»: специальные условия раннего бронирования до 7 июня 2026. Летние смены по специальной цене и экономия до 4 850 ₽.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://motrip.ru/vlasevo">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Летние смены в лагере «Власьево»">
+  <meta property="og:description" content="Специальные условия до 7 июня: акция ко Дню защиты детей и летние смены по специальной цене.">
+  <meta property="og:url" content="https://motrip.ru/vlasevo">
+  <meta property="og:image" content="https://motrip.ru/vlasevo-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Летние смены в лагере «Власьево»">
+  <meta name="twitter:description" content="Специальные условия до 7 июня: бронируйте летние смены по специальной цене.">
+  <meta name="twitter:image" content="https://motrip.ru/vlasevo-og.png">
+  <style>
+    :root {
+      --orange: #ff8500;
+      --orange-dark: #e65100;
+      --cream: #fff7f1;
+      --green-soft: #e8ffd4;
+      --green: #009b22;
+      --text: #111;
+      --muted: #667085;
+      --panel: #f4f4f5;
+      --white: #fff;
+      --radius: 24px;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .08);
+      --max: 1180px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Mulish, Arial, sans-serif; background: var(--cream); color: var(--text); }
+    .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    .panel { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: conic-gradient(from -3.29deg at 100% -13%, #fc0, #f60 360deg);
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(255, 133, 0, .22);
+    }
+    .btn:hover {
+      background: #fff;
+      color: var(--orange);
+      outline: 1px solid var(--orange);
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: var(--cream);
+      color: var(--orange);
+      outline: 1px solid rgba(255, 133, 0, .28);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: var(--orange);
+      color: #fff;
+    }
+    .btn[disabled],
+    .btn-disabled {
+      background: #b6bcc6 !important;
+      color: #fff !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      outline: 0 !important;
+      pointer-events: none;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: #216e1f;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      box-shadow: 0 8px 20px rgba(67, 155, 49, .2);
+    }
+    .chip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .55);
+      font-size: 15px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .hero { padding: 28px 0 18px; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
+    .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 440px; display: flex; flex-direction: column; justify-content: space-between; }
+    .hero-main h1 { margin: 8px 0 0; font-size: clamp(30px, 3.2vw, 46px); line-height: 1.1; letter-spacing: -.015em; max-width: none; }
+    .lead { margin-top: 18px; color: #334155; max-width: 680px; font-size: clamp(18px,2vw,22px); font-weight: 700; line-height: 1.5; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .hero-photo img { width: 100%; height: 100%; min-height: 440px; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .timer-panel { margin-top: 18px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: center; }
+    .timer-panel h2 { margin: 0; font-size: clamp(22px, 3vw, 34px); line-height: 1.08; }
+    .timer { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .time-box { border-radius: 14px; background: var(--panel); text-align: center; padding: 12px 6px; }
+    .time-num { display: block; font-size: clamp(24px,3vw,38px); color: var(--orange); font-weight: 900; }
+    .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
+    section { padding: 34px 0; }
+    .section-title { margin: 0 0 14px; font-size: clamp(28px, 3.5vw, 46px); line-height: 1.08; letter-spacing: -.02em; }
+    .section-text { margin: 0; color: var(--muted); font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .card { overflow: hidden; border-radius: 20px; border: 1px solid rgba(0,0,0,.06); background: #fff; display: flex; flex-direction: column; }
+    .card-img { height: 220px; position: relative; background: #eceef0; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
+    .sold-out-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, .25);
+      color: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .card-badge { position: absolute; left: 10px; top: 10px; background: #fff; color: var(--orange-dark); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; }
+    .card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px; }
+    .card-body.sold-out { opacity: .55; }
+    .card h3 { margin: 0; font-size: 24px; line-height: 1.1; }
+    .meta { color: #475569; font-weight: 700; font-size: 14px; }
+    .promo-accent { background: var(--green-soft); color: var(--green); border-radius: 10px; padding: 8px 10px; font-weight: 800; font-size: 13px; margin: 0; }
+    .price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .price { font-size: 30px; font-weight: 900; }
+    .old-price { color: var(--muted); text-decoration: line-through; font-weight: 700; }
+    .saving { font-size: 13px; color: #0c7a29; font-weight: 800; }
+    .urgency { padding: 22px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; }
+    .urgency h2 { margin: 0 0 6px; font-size: clamp(24px,3vw,36px); line-height: 1.1; }
+    .urgency p { margin: 0; color: var(--muted); font-weight: 700; }
+    .about-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+    .about-card { padding: 20px; }
+    .about-card h3 { margin: 0 0 10px; font-size: 24px; }
+    .about-card p { margin: 0; color: #334155; font-weight: 700; line-height: 1.45; }
+    .lead-block { display: grid; grid-template-columns: 1fr 420px; gap: 18px; align-items: start; }
+    .form-card { padding: 20px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); font-weight: 900; }
+    .field input, .field select { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--panel); padding: 0 12px; font-weight: 700; }
+    .form-note { min-height: 22px; margin: 10px 0 0; color: var(--green); font-size: 14px; font-weight: 900; }
+    .form-note.error { color: #c62828; }
+    .sticky-cta { position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 40; display: none; padding: 10px; border-radius: 14px; box-shadow: 0 14px 24px rgba(0,0,0,.14); background: rgba(255,255,255,.95); backdrop-filter: blur(3px); }
+    .sticky-cta .btn { width: 100%; }
+    .hidden { display: none !important; }
+    @media (max-width: 980px) {
+      .hero-grid, .lead-block, .timer-panel, .urgency { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2,1fr); }
+      .about-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .container { width: min(100% - 20px, var(--max)); }
+      .grid { grid-template-columns: 1fr; }
+      .hero-photo img { min-height: 280px; }
+      .hero-actions .btn { width: 100%; }
+      .chip {
+        width: fit-content;
+        max-width: 100%;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .chip-icon {
+        width: 22px;
+        height: 22px;
+        font-size: 14px;
+      }
+      .sticky-cta { display: block; }
+      body { padding-bottom: 86px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-main panel">
+            <div>
+              <span class="chip promo-accent"><span class="chip-icon" aria-hidden="true">🎈</span>Акция ко Дню защиты детей · спецусловия до 7 июня</span>
+              <h1>Летние смены в лагере «Власьево» по специальной цене</h1>
+              <p class="lead">До 7 июня действуют специальные условия раннего бронирования. Выберите летнюю смену для ребенка по выгодной цене.</p>
+            </div>
+            <div class="hero-actions">
+              <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
+              <a class="btn btn-secondary cta-primary" href="#lead-form">Забронировать</a>
+              <a class="btn btn-secondary cta-neutral hidden" href="#shifts">Выбрать смену</a>
+            </div>
+          </div>
+          <aside class="hero-photo">
+            <img src="/vlasevo-hero-final.png" alt="Лагерь Власьево">
+          </aside>
+        </div>
+        <div class="timer-panel panel promo-accent" id="timer-panel">
+          <h2>Специальные условия до 7 июня</h2>
+          <div class="timer" aria-live="polite">
+            <div class="time-box"><span class="time-num" id="days">00</span><span class="time-label">дней</span></div>
+            <div class="time-box"><span class="time-num" id="hours">00</span><span class="time-label">часов</span></div>
+            <div class="time-box"><span class="time-num" id="minutes">00</span><span class="time-label">минут</span></div>
+            <div class="time-box"><span class="time-num" id="seconds">00</span><span class="time-label">секунд</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="shifts">
+      <div class="container">
+        <h2 class="section-title">Летние смены по специальной цене</h2>
+        <div class="grid" id="shift-grid"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <div class="urgency panel promo-accent" id="urgency-block">
+          <div>
+            <h2>Специальные условия раннего бронирования до 7 июня</h2>
+            <p>Акция действует ограниченный период. После завершения акции лендинг продолжит работать в информационном формате.</p>
+          </div>
+          <a class="btn btn-primary cta-primary" href="#lead-form">Забронировать</a>
+          <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Получить консультацию</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="container">
+        <h2 class="section-title">О лагере «Власьево»</h2>
+        <div class="about-grid">
+          <article class="about-card panel">
+            <h3>Летняя атмосфера</h3>
+            <p>Современная программа отдыха и развития в живописной природной локации с акцентом на эмоции, дружбу и безопасность.</p>
+          </article>
+          <article class="about-card panel">
+            <h3>Развитие и досуг</h3>
+            <p>Творческие и спортивные активности, командные форматы, ежедневная программа и поддержка опытной команды лагеря.</p>
+          </article>
+          <article class="about-card panel">
+            <h3>Семейное доверие</h3>
+            <p>Понятные условия бронирования, прозрачная коммуникация и качественный сервис на всех этапах — от выбора смены до заезда.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="lead-form">
+      <div class="container lead-block">
+        <div class="hero-main panel">
+          <div>
+            <span class="chip">Без оплаты на сайте</span>
+            <h2 class="section-title">Успейте забронировать летний отдых ребенка</h2>
+            <p class="lead">Оставьте заявку, и менеджер поможет выбрать подходящую смену в «Власьево», расскажет о деталях программы и бронирования.</p>
+          </div>
+        </div>
+        <form class="form-card panel" id="form">
+          <div class="field">
+            <label for="name">Имя</label>
+            <input id="name" name="name" type="text" required>
+          </div>
+          <div class="field">
+            <label for="phone">Телефон</label>
+            <input id="phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required>
+          </div>
+          <div class="field">
+            <label for="shift">Смена</label>
+            <select id="shift" name="shift" required>
+              <option value="">Выберите смену</option>
+            </select>
+          </div>
+          <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+            <label for="website">Сайт</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <button class="btn btn-primary cta-primary" type="submit">Забронировать</button>
+          <button class="btn btn-secondary cta-neutral hidden" type="submit">Отправить заявку</button>
+          <p class="form-note" id="form-note" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div class="sticky-cta" id="sticky-cta">
+    <a class="btn btn-primary cta-primary" href="#lead-form">Забронировать</a>
+    <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Выбрать смену</a>
+  </div>
+
+  <script>
+    const money = new Intl.NumberFormat('ru-RU');
+    const shiftGrid = document.getElementById('shift-grid');
+    const shiftSelect = document.getElementById('shift');
+    const note = document.getElementById('form-note');
+
+    let shifts = [];
+
+    function shiftTemplate(shift) {
+      const saving = Math.max(0, Number(shift.oldPrice) - Number(shift.price));
+      return `
+        <article class="card">
+          <div class="card-img ${shift.isSoldOut ? 'sold-out' : ''}">
+            <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+            <span class="card-badge">${shift.specialTermsText || 'Спецусловия до 7 июня'}</span>
+            ${shift.isSoldOut ? '<span class="sold-out-overlay">Места закончились</span>' : ''}
+          </div>
+          <div class="card-body ${shift.isSoldOut ? 'sold-out' : ''}">
+            <h3>${shift.title}</h3>
+            <div class="meta">Даты: ${shift.dates}</div>
+            <div class="meta">Длительность: ${shift.duration}</div>
+            <p class="promo-accent">${shift.promoAccentText || 'Летние смены по специальной цене'}</p>
+            <div class="price-row">
+              <span class="price">${money.format(shift.price)} ₽</span>
+              <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
+            </div>
+            <div class="saving">Экономия ${money.format(saving)} ₽</div>
+            ${shift.isSoldOut
+              ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
+              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
+            ${shift.isSoldOut
+              ? '<span class="btn btn-secondary btn-disabled cta-neutral hidden" aria-disabled="true">Мест нет</span>'
+              : `<a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderShifts() {
+      shiftGrid.innerHTML = shifts.map(shiftTemplate).join('');
+      shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
+      shifts.forEach((shift) => {
+        const option = document.createElement('option');
+        option.value = `${shift.title} · ${shift.dates}`;
+        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.price)} ₽`;
+        shiftSelect.appendChild(option);
+      });
+    }
+
+    async function loadShifts() {
+      try {
+        const response = await fetch('/api/vlasevo-shifts', { cache: 'no-store' });
+        if (response.ok) shifts = await response.json();
+      } catch (error) {
+        console.warn('Не удалось загрузить смены', error);
+      }
+      renderShifts();
+    }
+
+    function setPromoExpiredState() {
+      document.querySelectorAll('.promo-accent').forEach((el) => el.classList.add('hidden'));
+      document.querySelectorAll('.cta-primary').forEach((el) => el.classList.add('hidden'));
+      document.querySelectorAll('.cta-neutral').forEach((el) => el.classList.remove('hidden'));
+    }
+
+    const target = new Date('2026-06-07T23:59:00+03:00').getTime();
+    const daysEl = document.getElementById('days');
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        daysEl.textContent = '00';
+        hoursEl.textContent = '00';
+        minutesEl.textContent = '00';
+        secondsEl.textContent = '00';
+        setPromoExpiredState();
+        return false;
+      }
+
+      daysEl.textContent = pad(Math.floor(diff / 86400000));
+      hoursEl.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+      minutesEl.textContent = pad(Math.floor((diff % 3600000) / 60000));
+      secondsEl.textContent = pad(Math.floor((diff % 60000) / 1000));
+      return true;
+    }
+
+    tick();
+    const timer = setInterval(() => {
+      if (!tick()) clearInterval(timer);
+    }, 1000);
+
+    function normalizePhone(input) {
+      const digits = String(input).replace(/\D/g, '');
+      if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) return `+7${digits.slice(1)}`;
+      if (digits.length === 10) return `+7${digits}`;
+      return null;
+    }
+
+    document.getElementById('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      note.classList.remove('error');
+      note.textContent = '';
+
+      const form = event.currentTarget;
+      const name = form.name.value.trim();
+      const shift = form.shift.value.trim();
+      const website = form.website.value;
+      const phone = normalizePhone(form.phone.value);
+
+      if (!name || !shift || !phone) {
+        note.classList.add('error');
+        note.textContent = 'Проверьте заполнение формы, включая телефон.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/vlasevo-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, shift, source: 'landing', website }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error('Не удалось отправить заявку');
+
+        note.textContent = 'Спасибо! Мы получили заявку и скоро свяжемся с вами.';
+        form.reset();
+      } catch (error) {
+        note.classList.add('error');
+        note.textContent = error instanceof Error ? error.message : 'Не удалось отправить заявку';
+      }
+    });
+
+    loadShifts();
+  </script>
+</body>
+</html>
