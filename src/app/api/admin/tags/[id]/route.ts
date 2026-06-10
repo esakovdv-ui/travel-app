@@ -13,7 +13,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Некорректное название тега (не пустое, до 40 символов)' }, { status: 400 });
   }
 
-  const tag = updateTagLabel(id, label);
+  const tag = await updateTagLabel(id, label);
   if (!tag) {
     return NextResponse.json({ error: 'Тег не найден' }, { status: 404 });
   }

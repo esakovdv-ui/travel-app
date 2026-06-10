@@ -16,8 +16,9 @@
 | Шрифты | Manrope (основной) + Unbounded (логотип) |
 | Карта | Leaflet + react-leaflet (тайлы CartoDB Voyager) |
 | PDF | Python 3 + ReportLab |
-| БД | PostgreSQL (подключена, таблицы users + bookings) |
+| БД | PostgreSQL 14 — users, bookings, stories, tags |
 | Auth | JWT в httpOnly cookie (собственная реализация) |
+| Аналитика | Яндекс.Метрика (`src/components/analytics/yandex-metrika.tsx`) |
 | Платежи | Т-Банк (не подключён) |
 | CRM | Битрикс24 (не подключён) |
 | Контент | Level Travel API v3.7 |
@@ -34,48 +35,53 @@
 | Главная | `/` | Работает — тематические подборки из LT API |
 | Поиск туров | `/tours` | Работает — реальные данные LT API, карта, фильтры |
 | Поиск отелей | `/hotels` | Работает — реальные данные LT API, карта, фильтры |
-| О сервисе | `/about` | Готова — hero, преимущества, как работает, направления, отзывы |
+| О сервисе | `/about` | Готова |
+| Истории путешествий | `/stories` | **Работает** — editorial grid, карусель, форма, PostgreSQL |
 | Страница тура/пакета | `/packages/[slug]` | Готова (mock-данные) |
 | Оформление заказа | `/checkout` | UI готов, не подключён к платёжке |
 | Личный кабинет | `/account` | **Работает** — реальные данные из БД, защищён middleware |
 | Вход | `/auth/login` | **Работает** — JWT авторизация, cookie |
 | Регистрация | `/auth/register` | **Работает** — сохранение в PostgreSQL |
 
+### Лендинги (`/public/`)
+
+| Лендинг | Путь | Статус |
+|---------|------|--------|
+| Власьево | `/vlasevo.html` | **Работает** — форма заявки, API смен, admin |
+| Радуга | `/raduga.html` | **Работает** — форма заявки, API смен, admin |
+
 ### Админка (`src/app/admin/`)
 
 | Страница | Путь | Статус |
 |----------|------|--------|
-| Дашборд | `/admin` | Готов (mock-данные, **не защищён паролем**) |
+| Дашборд | `/admin` | Готов (**не защищён паролем**) |
 | Управление пакетами | `/admin/packages` | Готов (mock-данные) |
 | Управление отзывами | `/admin/reviews` | Готов (mock-данные) |
-| Тематические подборки | `/admin/thematic-rows` | Готов |
+| Тематические подборки | `/admin/thematic-rows` | Работает |
+| Модерация историй | `/admin/stories` | **Работает** — реальная БД, публикация/отклонение |
+| Модерация историй (карточка) | `/admin/stories/[id]` | **Работает** |
+| Управление тегами | `/admin/story-tags` | Готов (Анна может переименовывать теги) |
+| Админка Власьево | `/vlasevo-admin` | Работает |
+| Админка Радуга | `/raduga-admin` | Работает |
 
 ### API (`src/app/api/`)
 
 | Роут | Метод | Что делает |
 |------|-------|-----------|
 | `/api/search` | GET | Поиск туров/отелей через Level Travel API |
-| `/api/me` | GET | Возвращает данные текущей сессии (force-dynamic) |
+| `/api/me` | GET | Возвращает данные текущей сессии |
 | `/api/generate-pdf` | POST | Генерация PDF путевого документа |
-
----
-
-## Авторизация и сессии
-
-- Регистрация/вход сохраняют пользователя в PostgreSQL
-- Пароль хешируется через SHA-256 (`src/lib/security.ts`)
-- После входа создаётся JWT-токен, сохраняется в `httpOnly` cookie `mt_session` на 30 дней
-- `src/lib/session.ts` — читает и верифицирует сессию на сервере
-- `src/middleware.ts` — защищает `/account`, редиректит на `/auth/login` без сессии
-- `src/components/layout/user-menu.tsx` — компонент в хедере: аватар + дропдаун (кабинет, настройки, выйти)
-- Сессия передаётся с сервера через `layout.tsx` → `SiteHeader` → `UserMenu` (без мигания)
-- `COOKIE_SECURE=true` в `.env` включает secure-флаг (нужен при HTTPS)
+| `/api/stories` | GET | Список опубликованных историй с пагинацией |
+| `/api/vlasevo-lead` | POST | Форма заявки Власьево |
+| `/api/vlasevo-shifts` | GET | Смены Власьево |
+| `/api/raduga-lead` | POST | Форма заявки Радуга |
+| `/api/raduga-shifts` | GET | Смены Радуга |
 
 ---
 
 ## База данных (PostgreSQL)
 
-**Сервер:** localhost:5432, БД `travel_db`, пользователь `travel_user`
+**Сервер:** `72.56.32.183`, порт `5432`, БД `travel_db`, пользователь `travel_user`
 
 **Таблицы:**
 
@@ -83,43 +89,104 @@
 users     — id, email, password_hash, first_name, last_name, role, created_at
 bookings  — id, user_id, package_id, customer_name, customer_email,
             travelers_count, travel_date, notes, status, created_at
+tags      — id, slug, label, position, created_at
+            (8 тегов: family, beach, mountains, wellness, active, camp, city, weekend)
+stories   — id, submitted_at, status, published_at, rejected_at, rejection_reason,
+            raw_author_name, raw_object, raw_period, raw_manager, raw_text, photos[],
+            pub_title, pub_quote, pub_tag_id → tags.id, pub_object_url
 ```
 
-**Миграция:** `scripts/migrate.sql` — запускать при первом деплое или смене схемы.
+**Миграции:**
+- `scripts/migrate.sql` — users, bookings
+- `scripts/migrate-stories.sql` — tags, stories (с seed тегов)
+
+**Подключение в коде:**
+- `src/lib/db.ts` — Pool из пакета `pg`
+- `src/lib/repositories.ts` — все функции работы с данными (реальный SQL)
+
+**Что ещё на mock-данных** (не трогать):
+- Пакеты туров (`mockPackages`)
+- Отзывы (`mockReviews`)
+- Фото галереи (`mockGalleryPhotos`)
+
+### Локальная разработка с БД — SSH-туннель
+
+```bash
+# Запускать в отдельном терминале
+ssh -L 5432:localhost:5432 root@72.56.32.183 -N
+```
+
+`.env.local` на локальной машине:
+```env
+DATABASE_URL=postgresql://travel_user:VD0HxTqhtaMyI4AdOcwNu8gAo@localhost:5432/travel_db
+```
 
 ---
 
-## Ключевые компоненты
+## Авторизация и сессии
 
-### Layout
-- **SiteHeader** — фиксированный хедер с 3 состояниями: expanded (поиск развёрнут), compact pill (при скролле), nav (прочие страницы). Читает сессию серверно и передаёт в `UserMenu`.
-- **UserMenu** — показывает кнопку «Войти» или аватар с дропдауном в зависимости от сессии. Получает `initialUser` с сервера.
-- **SiteFooter / ConditionalFooter** — скрывает футер на `/tours` и `/hotels` (fullscreen-режим с картой).
-
-### Поиск
-- **SearchBar** — единый компонент строки поиска. Два таба: «Отели» и «Туры» (с полем Откуда).
-- **DestinationSearch** — автокомплит по статической базе направлений
-- **DateRangePicker** — двойной календарь с диапазоном дат и гибкостью (±1 / ±2 дня). На мобиле — один месяц.
-
-### Страницы результатов (`/tours`, `/hotels`)
-- Fullscreen layout: сайдбар фильтров | список карточек | фиксированная карта
-- **HotelCard** — карточки `card` (вертикальные) и `row` (горизонтальные, Яндекс-стиль)
-- **FiltersPanel** — фильтры: цена, звёзды, рейтинг, питание, регион, пляж, мгновенное подтверждение
-- **HotelMap** — Leaflet карта с маркерами-ценниками, попапом по клику, FitBounds
+- Регистрация/вход сохраняют пользователя в PostgreSQL
+- Пароль хешируется через SHA-256 (`src/lib/security.ts`)
+- JWT-токен в `httpOnly` cookie `mt_session` на 30 дней
+- `src/lib/session.ts` — читает и верифицирует сессию на сервере
+- `src/middleware.ts` — защищает `/account`, редиректит на `/auth/login`
+- `COOKIE_SECURE=true` в `.env` включает secure-флаг (нужен при HTTPS)
 
 ---
 
-## Level Travel API (`src/lib/leveltravel.ts`)
+## Страница историй путешествий (`/stories`)
 
-Версия: `v3.7`. Флоу поиска:
+### Публичная часть
+- **Editorial grid** — 1 hero-карточка на всю ширину + 3 карточки в ряд под ней
+- **Карусель** — истории с 5-й, горизонтальный скролл
+- **Фильтры** — по тегам из БД, динамические
+- **Форма подачи** — поля: автор, объект (текст), история, менеджер, период, фото
 
+### Админка модерации (`/admin/stories`)
+- Очередь входящих историй со статусами `new / published / rejected`
+- При публикации Анна заполняет: заголовок, цитату, тег, ссылку на объект
+- Оригинальный текст клиента хранится отдельно, на сайт не выводится напрямую
+
+### Теги (`/admin/story-tags`)
+- Анна может переименовывать теги через inline-редактирование
+- `slug` не меняется — только `label`
+- При переименовании обновляется везде автоматически
+
+### Дизайн
+- Шрифты: Unbounded (заголовки) + Manrope (основной текст)
+- Цвета и радиусы — стандартная дизайн-система проекта
+
+---
+
+## Инфраструктура
+
+| Параметр | Значение |
+|---|---|
+| Сервер | 72.56.32.183 (Timeweb, Ubuntu 22.04) |
+| Пользователь | root |
+| Приложение | `/home/travel-app` |
+| Скрипт деплоя | `/home/deploy.sh` |
+| Деплой-команда | `ssh root@72.56.32.183 "bash /home/deploy.sh"` |
+| PM2 | `pm2 list` / `pm2 restart travel-app` |
+| PostgreSQL | `sudo -u postgres psql -d travel_db` |
+| GitHub | github.com/esakovdv-ui/travel-app |
+| CI/CD | GitHub Actions → `.github/workflows/deploy.yml` |
+| Ветки | `feature/dima`, `feature/arthur` → PR → `main` |
+
+### Скрипт деплоя `/home/deploy.sh`
+
+```bash
+git fetch origin
+git checkout main
+git reset --hard origin/main
+npm install
+npm run build
+pm2 restart travel-app
+# + прогрев кэша тематических блоков
 ```
-enqueueSearch() → pollUntilComplete() → getHotels()
-```
 
-- Формат дат: `DD.MM.YYYY`
-- `search_type`: `auto` → для РФ `hotel`, для других стран `package`
-- Координаты отеля: поля `lat` и `long` (не `lon`)
+> Важно: всегда `fetch → checkout main → reset --hard`.
+> Никогда не использовать `git pull` — накапливает расхождение веток.
 
 ---
 
@@ -138,30 +205,35 @@ enqueueSearch() → pollUntilComplete() → getHotels()
 
 ---
 
-## Инфраструктура
+## Level Travel API (`src/lib/leveltravel.ts`)
 
-| Параметр | Значение |
-|---|---|
-| Сервер | 72.56.32.183 (Timeweb, Ubuntu 22.04) |
-| Пользователь | root |
-| Приложение | `/home/travel-app` |
-| Скрипт деплоя | `/home/deploy.sh` |
-| PM2 | `pm2 list` / `pm2 restart travel-app` |
-| PostgreSQL | `sudo -u postgres psql -d travel_db` |
-| GitHub | github.com/esakovdv-ui/travel-app |
-| CI/CD | GitHub Actions → `.github/workflows/deploy.yml` |
-| Ветки | `feature/dima`, `feature/arthur` → PR → `main` |
+Версия: `v3.7`. Флоу поиска:
+
+```
+enqueueSearch() → pollUntilComplete() → getHotels()
+```
+
+- Формат дат: `DD.MM.YYYY`
+- `search_type`: `auto` → для РФ `hotel`, для других стран `package`
+- Координаты отеля: поля `lat` и `long` (не `lon`)
 
 ---
 
-## Переменные окружения (`.env`)
+## Переменные окружения
 
+**На сервере** (`/home/travel-app/.env`):
 ```env
 DATABASE_URL=postgresql://travel_user:...@localhost:5432/travel_db
-JWT_SECRET=...                        # минимум 32 символа
-COOKIE_SECURE=true                    # включить при HTTPS
-NEXT_PUBLIC_LT_PARTNER_TOKEN=...      # API-ключ Level Travel
-NEXT_PUBLIC_WL_BASE_URL=...           # Базовый URL white-label
+JWT_SECRET=...
+COOKIE_SECURE=true
+NEXT_PUBLIC_LT_PARTNER_TOKEN=...
+NEXT_PUBLIC_WL_BASE_URL=...
+```
+
+**Локально** (`.env.local`, не коммитить):
+```env
+DATABASE_URL=postgresql://travel_user:...@localhost:5432/travel_db
+NEXT_PUBLIC_LT_PARTNER_TOKEN=...
 ```
 
 ---
@@ -169,43 +241,50 @@ NEXT_PUBLIC_WL_BASE_URL=...           # Базовый URL white-label
 ## Правила работы команды
 
 - Каждый работает в своей ветке: `feature/dima` или `feature/arthur`
-- Изменения попадают в `main` только через Pull Request
+- Изменения в `main` только через Pull Request
 - Прямой пуш в `main` запрещён (branch protection)
-- После мержа PR GitHub Actions автоматически деплоит на сервер
+- После мержа PR — деплой вручную: `ssh root@72.56.32.183 "bash /home/deploy.sh"`
+- Коммиты на русском, понятно: «Добавил фильтр по тегам», а не «fix»
 
 ---
 
 ## Changelog
 
+### Июнь 2026 — Истории путешествий, лендинги, инфра
+- [x] Страница `/stories` — editorial grid, карусель, фильтры по тегам, галерея
+- [x] Форма подачи истории с загрузкой фото
+- [x] Админка модерации `/admin/stories` — очередь, публикация, отклонение
+- [x] Управление тегами `/admin/story-tags` — переименование через UI
+- [x] PostgreSQL: таблицы `tags` (8 тегов) и `stories`
+- [x] `src/lib/repositories.ts` переведён с mock на реальный SQL
+- [x] Лендинги Власьево и Радуга перенесены в `main`
+- [x] Яндекс.Метрика подключена
+- [x] `deploy.sh` исправлен: `fetch → checkout main → reset --hard`
+- [x] Расхождение веток `feature/dima-auth` / `main` устранено
+
 ### Апрель 2026 — Авторизация, личный кабинет, страница «О сервисе»
 - [x] PostgreSQL подключена (таблицы users, bookings)
 - [x] Регистрация и вход с хешированием пароля и JWT cookie
-- [x] Личный кабинет показывает реальные данные пользователя и бронирования
-- [x] Middleware защищает `/account` — редирект на логин без сессии
-- [x] Хедер показывает аватар и дропдаун для авторизованного пользователя
-- [x] Сессия передаётся с сервера (без мигания кнопки «Войти»)
-- [x] Все ошибки валидации и авторизации на русском языке
-- [x] Кнопка «Выйти» в кабинете и в дропдауне хедера
-- [x] Создана страница `/about` — hero, преимущества, как работает, направления, отзывы, CTA
+- [x] Личный кабинет — реальные данные из БД, защищён middleware
+- [x] Хедер с аватаром и дропдауном для авторизованного пользователя
+- [x] Страница `/about`
 
 ### Март 2026 — Поиск, карта, мобильная адаптация, CI/CD
-- [x] Интеграция с Level Travel API — реальные данные на `/tours` и `/hotels`
-- [x] Фильтрация результатов на клиенте (цена, звёзды, рейтинг, питание, регион, пляж)
-- [x] Leaflet карта с маркерами-ценниками, FitBounds, попап при клике
+- [x] Интеграция с Level Travel API
+- [x] Leaflet карта с маркерами-ценниками
 - [x] Fullscreen layout на `/tours` и `/hotels`
-- [x] Мобильная адаптация поиска: одна строка, один месяц в календаре
-- [x] Деплой на VPS, Nginx + PM2, GitHub Actions CI/CD
-- [x] Ветки и PR-процесс, защита main
+- [x] Деплой на VPS, PM2, GitHub Actions CI/CD
 
 ---
 
-## Roadmap (не реализовано)
+## Roadmap
 
-- [ ] Защита админки паролем (сейчас открыта всем)
+- [ ] Защита админки паролем
 - [ ] Домен + SSL / HTTPS
-- [ ] Кнопки категорий на главной (Жаркие страны, Пляжи и т.д.) — реальный поиск по странам
+- [ ] Email-уведомления (в т.ч. Анне при новой истории)
+- [ ] Load more для историй (кнопка «Показать ещё 6»)
 - [ ] Платёжная система (Т-Банк)
 - [ ] Интеграция с Битрикс24
-- [ ] Email-уведомления
-- [ ] PDF путевого документа — триггер из кабинета или по статусу брони
 - [ ] Страница деталей тура с реальными данными из LT API
+- [ ] Пакеты туров и отзывы — перевод с mock на PostgreSQL
+- [ ] bitrix-deal-chat (Битрикс24 фича) — проверить статус и обновить
