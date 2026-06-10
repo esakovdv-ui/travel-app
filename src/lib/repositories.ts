@@ -1,6 +1,6 @@
 import { BookingConflictError, DuplicateRegistrationError } from './errors';
 import { logEvent } from './logger';
-import { mockBookings, mockGalleryPhotos, mockPackages, mockReviews, mockStories, mockStoryTags } from './mock-data';
+import { mockBookings, mockGalleryPhotos, mockPackages, mockReviews } from './mock-data';
 import { filterPackages, slugify } from './utils';
 import { query, queryOne } from './db';
 import type {
@@ -269,80 +269,164 @@ export async function listAllBookings(): Promise<Booking[]> {
 // mock для обратной совместимости (использовался в старом коде)
 export { mockBookings };
 
-// ─── Story tags (mock) ───────────────────────────────────────────────────────
+// ─── Story tags (PostgreSQL) ─────────────────────────────────────────────────
 
-function resolveStoryTag(story: Story): Story {
-  if (!story.pubTagId) return story;
-  const tag = mockStoryTags.find((t) => t.id === story.pubTagId);
-  return tag ? { ...story, pubTag: tag.label } : story;
+interface TagRow {
+  id: string;
+  slug: string;
+  label: string;
+  position: number;
+  stories_count: string;
 }
 
-export function listTags(opts?: { onlyWithStories?: boolean }): StoryTag[] {
-  const tags = mockStoryTags.map((t) => ({
-    ...t,
-    storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length,
-  })).sort((a, b) => a.position - b.position);
+function rowToTag(row: TagRow): StoryTag {
+  return {
+    id: row.id,
+    slug: row.slug,
+    label: row.label,
+    position: row.position,
+    storiesCount: Number(row.stories_count),
+  };
+}
+
+const TAG_SELECT = `
+  SELECT t.id, t.slug, t.label, t.position,
+         COUNT(s.id) FILTER (WHERE s.status = 'published') AS stories_count
+  FROM tags t
+  LEFT JOIN stories s ON s.pub_tag_id = t.id
+`;
+
+export async function listTags(opts?: { onlyWithStories?: boolean }): Promise<StoryTag[]> {
+  const rows = await query<TagRow>(`${TAG_SELECT} GROUP BY t.id ORDER BY t.position ASC`);
+  const tags = rows.map(rowToTag);
   return opts?.onlyWithStories ? tags.filter((t) => t.storiesCount > 0) : tags;
 }
 
-export function getTagById(id: string): StoryTag | null {
-  const t = mockStoryTags.find((t) => t.id === id);
-  if (!t) return null;
-  return { ...t, storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length };
+export async function getTagById(id: string): Promise<StoryTag | null> {
+  const row = await queryOne<TagRow>(`${TAG_SELECT} WHERE t.id = $1 GROUP BY t.id`, [id]);
+  return row ? rowToTag(row) : null;
 }
 
-export function getTagBySlug(slug: string): StoryTag | null {
-  const t = mockStoryTags.find((t) => t.slug === slug);
-  if (!t) return null;
-  return { ...t, storiesCount: mockStories.filter((s) => s.status === 'published' && s.pubTagId === t.id).length };
+export async function getTagBySlug(slug: string): Promise<StoryTag | null> {
+  const row = await queryOne<TagRow>(`${TAG_SELECT} WHERE t.slug = $1 GROUP BY t.id`, [slug]);
+  return row ? rowToTag(row) : null;
 }
 
-export function updateTagLabel(id: string, label: string): StoryTag | null {
-  const t = mockStoryTags.find((t) => t.id === id);
-  if (!t) return null;
-  t.label = label;
-  mockStories.forEach((s) => {
-    if (s.pubTagId === id) s.pubTag = label;
-  });
-  return getTagById(id);
+export async function updateTagLabel(id: string, label: string): Promise<StoryTag | null> {
+  const row = await queryOne<TagRow>(
+    `UPDATE tags SET label = $2 WHERE id = $1
+     RETURNING id, slug, label, position,
+       (SELECT COUNT(*) FROM stories WHERE pub_tag_id = $1 AND status = 'published') AS stories_count`,
+    [id, label]
+  );
+  return row ? rowToTag(row) : null;
 }
 
-// ─── Stories (mock) ──────────────────────────────────────────────────────────
+// ─── Stories (PostgreSQL) ────────────────────────────────────────────────────
 
-export async function listPublishedStories(tag?: string): Promise<Story[]> {
-  const published = mockStories.filter((s) => s.status === 'published').map(resolveStoryTag);
-  if (!tag || tag === 'Все') return published;
-  return published.filter((s) => s.pubTag === tag);
+interface StoryRow {
+  id: string;
+  submitted_at: Date;
+  status: string;
+  published_at: Date | null;
+  rejected_at: Date | null;
+  rejection_reason: string | null;
+  raw_author_name: string;
+  raw_object: string;
+  raw_period: string | null;
+  raw_manager: string | null;
+  raw_text: string;
+  photos: string[];
+  pub_title: string | null;
+  pub_quote: string | null;
+  pub_tag_id: string | null;
+  pub_object_url: string | null;
+  tag_label: string | null;
 }
 
-export function listStoriesPaginated(opts: {
+function rowToStory(row: StoryRow): Story {
+  return {
+    id: row.id,
+    submittedAt: row.submitted_at instanceof Date ? row.submitted_at.toISOString() : String(row.submitted_at),
+    status: row.status as StoryStatus,
+    publishedAt: row.published_at ? row.published_at.toISOString() : null,
+    rejectedAt: row.rejected_at ? row.rejected_at.toISOString() : null,
+    rejectionReason: row.rejection_reason,
+    rawAuthorName: row.raw_author_name,
+    rawObject: row.raw_object,
+    rawPeriod: row.raw_period ?? '',
+    rawManager: row.raw_manager ?? '',
+    rawText: row.raw_text,
+    photos: row.photos ?? [],
+    pubTitle: row.pub_title,
+    pubQuote: row.pub_quote,
+    pubTagId: row.pub_tag_id,
+    pubTag: row.tag_label,
+    pubObjectUrl: row.pub_object_url,
+  };
+}
+
+const STORY_SELECT = `
+  SELECT s.*, t.label AS tag_label
+  FROM stories s
+  LEFT JOIN tags t ON s.pub_tag_id = t.id
+`;
+
+export async function listStoriesPaginated(opts: {
   offset: number;
   limit: number;
   tagSlug?: string;
   status?: StoryStatus;
-}): { stories: Story[]; total: number; hasMore: boolean } {
+}): Promise<{ stories: Story[]; total: number; hasMore: boolean }> {
   const status = opts.status ?? 'published';
-  let pool = mockStories.filter((s) => s.status === status).map(resolveStoryTag);
+  const params: unknown[] = [status, opts.limit, opts.offset];
+  let where = 'WHERE s.status = $1';
+
   if (opts.tagSlug) {
-    const tag = mockStoryTags.find((t) => t.slug === opts.tagSlug);
-    if (tag) pool = pool.filter((s) => s.pubTagId === tag.id);
-    else pool = [];
+    where += ' AND t.slug = $4';
+    params.push(opts.tagSlug);
   }
-  const total = pool.length;
-  const stories = pool.slice(opts.offset, opts.offset + opts.limit);
-  return { stories, total, hasMore: opts.offset + opts.limit < total };
+
+  const [rows, countRows] = await Promise.all([
+    query<StoryRow>(
+      `${STORY_SELECT} ${where} ORDER BY s.submitted_at DESC LIMIT $2 OFFSET $3`,
+      params
+    ),
+    query<{ count: string }>(
+      `SELECT COUNT(*) AS count FROM stories s LEFT JOIN tags t ON s.pub_tag_id = t.id ${where}`,
+      [status, ...(opts.tagSlug ? [opts.tagSlug] : [])]
+    ),
+  ]);
+
+  const total = Number(countRows[0]?.count ?? 0);
+  return { stories: rows.map(rowToStory), total, hasMore: opts.offset + opts.limit < total };
 }
 
 export async function listAllStories(): Promise<Story[]> {
-  return [...mockStories].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+  const rows = await query<StoryRow>(`${STORY_SELECT} ORDER BY s.submitted_at DESC`);
+  return rows.map(rowToStory);
 }
 
 export async function getStoryById(id: string): Promise<Story | null> {
-  return mockStories.find((s) => s.id === id) ?? null;
+  const row = await queryOne<StoryRow>(`${STORY_SELECT} WHERE s.id = $1`, [id]);
+  return row ? rowToStory(row) : null;
 }
 
 export async function createStory(story: Story): Promise<Story> {
-  mockStories.unshift(story);
+  await query(
+    `INSERT INTO stories
+       (id, status, raw_author_name, raw_object, raw_period, raw_manager, raw_text, photos)
+     VALUES ($1, 'new', $2, $3, $4, $5, $6, $7)`,
+    [
+      story.id,
+      story.rawAuthorName,
+      story.rawObject,
+      story.rawPeriod || null,
+      story.rawManager || null,
+      story.rawText,
+      story.photos,
+    ]
+  );
   logEvent('info', 'story.submitted', { storyId: story.id, object: story.rawObject });
   return story;
 }
@@ -351,40 +435,53 @@ export async function publishStory(
   id: string,
   fields: { pubTitle: string; pubQuote: string; pubTagId: string; pubObjectUrl: string }
 ): Promise<Story | null> {
-  const story = mockStories.find((s) => s.id === id);
-  if (!story) return null;
-  const tag = mockStoryTags.find((t) => t.id === fields.pubTagId);
-  story.status = 'published';
-  story.publishedAt = new Date().toISOString();
-  story.pubTitle = fields.pubTitle;
-  story.pubQuote = fields.pubQuote;
-  story.pubTagId = fields.pubTagId;
-  story.pubTag = tag?.label ?? null;
-  story.pubObjectUrl = fields.pubObjectUrl || null;
+  const row = await queryOne<StoryRow>(
+    `UPDATE stories SET
+       status = 'published',
+       published_at = now(),
+       pub_title = $2,
+       pub_quote = $3,
+       pub_tag_id = $4,
+       pub_object_url = NULLIF($5, '')
+     WHERE id = $1
+     RETURNING *`,
+    [id, fields.pubTitle, fields.pubQuote, fields.pubTagId, fields.pubObjectUrl]
+  );
+  if (!row) return null;
+  const tag = await queryOne<{ label: string }>('SELECT label FROM tags WHERE id = $1', [fields.pubTagId]);
   logEvent('info', 'story.published', { storyId: id });
-  return story;
+  return rowToStory({ ...row, tag_label: tag?.label ?? null });
 }
 
 export async function rejectStory(id: string, reason?: string): Promise<Story | null> {
-  const story = mockStories.find((s) => s.id === id);
-  if (!story) return null;
-  story.status = 'rejected';
-  story.rejectedAt = new Date().toISOString();
-  story.rejectionReason = reason ?? null;
+  const row = await queryOne<StoryRow>(
+    `UPDATE stories SET
+       status = 'rejected',
+       rejected_at = now(),
+       rejection_reason = NULLIF($2, '')
+     WHERE id = $1
+     RETURNING *`,
+    [id, reason ?? '']
+  );
+  if (!row) return null;
   logEvent('info', 'story.rejected', { storyId: id });
-  return story;
+  return rowToStory({ ...row, tag_label: null });
 }
 
 export function getGalleryPhotos() {
   return mockGalleryPhotos;
 }
 
-export function getPublishedManagers(): { managerName: string; objectName: string; quote: string }[] {
-  return mockStories
-    .filter((s) => s.status === 'published' && s.rawManager)
-    .map((s) => ({
-      managerName: s.rawManager,
-      objectName: s.rawObject,
-      quote: s.pubQuote ?? '',
-    }));
+export async function getPublishedManagers(): Promise<{ managerName: string; objectName: string; quote: string }[]> {
+  const rows = await query<{ raw_manager: string; raw_object: string; pub_quote: string | null }>(
+    `SELECT raw_manager, raw_object, pub_quote
+     FROM stories
+     WHERE status = 'published' AND raw_manager IS NOT NULL AND raw_manager != ''
+     ORDER BY published_at DESC`
+  );
+  return rows.map((r) => ({
+    managerName: r.raw_manager,
+    objectName: r.raw_object,
+    quote: r.pub_quote ?? '',
+  }));
 }
