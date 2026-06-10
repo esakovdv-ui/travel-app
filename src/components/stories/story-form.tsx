@@ -27,8 +27,7 @@ export function StoryForm() {
             <span className={styles.successIcon}>✓</span>
             <h2 className={styles.successTitle}>История отправлена!</h2>
             <p className={styles.successText}>
-              Спасибо за доверие. Анна Бочкова рассмотрит вашу историю
-              и опубликует её в ближайшее время.
+              Спасибо! Мы прочитаем вашу историю и опубликуем её в ближайшее время.
             </p>
           </div>
         </div>
