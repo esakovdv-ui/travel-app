@@ -7,7 +7,7 @@ import { TagsManager } from './tags-manager';
 export const metadata = buildMetadata({ title: 'Теги историй' });
 
 export default async function StoryTagsPage() {
-  const tags = listTags();
+  const tags = await listTags();
 
   return (
     <div className={styles.page}>

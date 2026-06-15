@@ -300,7 +300,7 @@ export async function renameTagAction(
   }
 
   const { updateTagLabel } = await import('@/lib/repositories');
-  const tag = updateTagLabel(id, label);
+  const tag = await updateTagLabel(id, label);
   if (!tag) return { error: 'Тег не найден' };
 
   revalidatePath('/admin/story-tags');

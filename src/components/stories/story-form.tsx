@@ -2,7 +2,6 @@
 
 import { useActionState, useRef, useState } from 'react';
 import { submitStoryAction, type StoryFormState } from '@/app/actions';
-import { MOSGORTUR_OBJECTS } from '@/lib/constants';
 import styles from './story-form.module.css';
 
 export function StoryForm() {
@@ -74,12 +73,13 @@ export function StoryForm() {
               <label className={styles.label} htmlFor="object">
                 Объект или тур <span className={styles.req}>*</span>
               </label>
-              <select id="object" name="object" className={`select ${styles.input}`} required>
-                <option value="">Выберите объект…</option>
-                {MOSGORTUR_OBJECTS.map((obj) => (
-                  <option key={obj} value={obj}>{obj}</option>
-                ))}
-              </select>
+              <input
+                id="object"
+                name="object"
+                className={`input ${styles.input}`}
+                placeholder="Отель, город или страна"
+                required
+              />
             </div>
 
             <div className={`field ${styles.fullWidth}`}>
@@ -181,7 +181,7 @@ export function StoryForm() {
             <p className={styles.consent}>
               Нажимая кнопку, вы соглашаетесь с{' '}
               <a
-                href="https://mosgortur.dev/new/mytrip"
+                href="https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_обработку_персональных_данных_в_сети_Интернет.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.consentLink}
