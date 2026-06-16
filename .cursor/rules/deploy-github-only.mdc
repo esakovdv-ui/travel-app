@@ -1,0 +1,26 @@
+---
+description: Деплой travel-app только через GitHub Actions, без прямого SSH на VPS
+alwaysApply: true
+---
+
+# Деплой: только через GitHub
+
+**Никогда** не деплоить на VPS напрямую (`ssh root@72.56.32.183`, ручной `git pull` / `pm2` на сервере). SSH-ключ на машине пользователя может отсутствовать — это нормально.
+
+## Как выкатывать изменения
+
+1. Закоммитить и **push** в ветку, для которой настроен workflow:
+   - `main`
+   - `feature/dima-auth`
+   - `feature/arthur`
+2. GitHub Actions workflow **Deploy to production** (`.github/workflows/deploy.yml`) сам подключается к серверу через секрет `SSH_PRIVATE_KEY` и выполняет деплой.
+3. После push проверить статус: `gh run list --branch <ветка> --limit 3` или вкладка Actions в репозитории.
+4. При падении workflow — чинить workflow/код и **повторный push** (или попросить пользователя Re-run в GitHub UI). Не обходить через SSH.
+
+## Что делает workflow на сервере
+
+В `/home/travel-app`: `git fetch` + checkout ветки → `npm install` → `npm run build` → `pm2 restart travel-app` → прогрев thematic-rows API.
+
+## Ручной деплой на сервере
+
+Только для человека в экстренных случаях. Агент **не использует**.

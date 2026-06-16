@@ -10,14 +10,19 @@
 
 ## Деплой
 
-### Автоматический (GitHub Actions)
-- Триггер: push в ветки `main` или `feature/dima-auth`
-- Также: `workflow_dispatch` (ручной запуск)
-- Конфиг: `.github/workflows/deploy.yml`
-- Подключение: SSH на VPS, в `/home/travel-app` выполняется `git fetch` + checkout ветки из push, `npm install`, `npm run build`, `pm2 restart travel-app`, прогрев thematic-rows API
-- Секрет: `SSH_PRIVATE_KEY`
+### Единственный способ для агента и CI: GitHub Actions
 
-### Ручной деплой
+**Выкат только через push в GitHub** — не через прямой SSH с локальной машины.
+
+- Триггер: **push** в ветки `main`, `feature/dima-auth` или `feature/arthur`
+- Также: **workflow_dispatch** (ручной запуск в GitHub → Actions → Deploy to production)
+- Конфиг: `.github/workflows/deploy.yml`
+- На сервере (через секрет `SSH_PRIVATE_KEY`): в `/home/travel-app` — `git fetch` + checkout ветки из push, `npm install`, `npm run build`, `pm2 restart travel-app`, прогрев thematic-rows API
+- Проверка после push: `gh run list --branch <ветка> --limit 3`
+
+### Ручной деплой на VPS (только человек, не агент)
+
+Экстренный вариант при недоступности GitHub Actions:
 ```bash
 git pull origin <branch>
 npm run build
