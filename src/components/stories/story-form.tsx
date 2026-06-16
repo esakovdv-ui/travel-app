@@ -19,6 +19,14 @@ export function StoryForm() {
     setPreviews((prev) => [...prev, ...urls].slice(0, 5));
   }
 
+  function assignFilesToInput(dropped: FileList) {
+    const dt = new DataTransfer();
+    const existing = fileInputRef.current?.files;
+    if (existing) Array.from(existing).forEach((f) => dt.items.add(f));
+    Array.from(dropped).forEach((f) => dt.items.add(f));
+    if (fileInputRef.current) fileInputRef.current.files = dt.files;
+  }
+
   if (state?.success) {
     return (
       <section id="form" className={styles.section}>
@@ -136,6 +144,7 @@ export function StoryForm() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setDragging(false);
+                  assignFilesToInput(e.dataTransfer.files);
                   handleFiles(e.dataTransfer.files);
                 }}
               >

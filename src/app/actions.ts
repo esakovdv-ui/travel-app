@@ -9,7 +9,7 @@ import { createJwtToken } from '@/lib/jwt';
 import { SESSION_COOKIE, JWT_SECRET } from '@/lib/session';
 import {
   createBooking, createReview, createStory, findUserByEmail, importStories,
-  publishStory, rejectStory, registerUser, updateReviewStatus, upsertPackage,
+  publishStory, rejectStory, revertStory, registerUser, updateReviewStatus, upsertPackage,
 } from '@/lib/repositories';
 import { hashPassword, verifyPassword } from '@/lib/security';
 import { bookingSchema, loginSchema, packageSchema, registrationSchema, reviewSchema } from '@/lib/validation';
@@ -345,7 +345,7 @@ export async function importStoriesAction(
     if (parsed.candidates.length === 0) {
       return {
         success: false,
-        error: 'В файле не найдено подходящих строк (согласие на публикацию = «Да» и заполненный отзыв).',
+        error: 'В файле не найдено подходящих строк (согласие на публикацию = «Есть» и заполненный отзыв).',
       };
     }
 
@@ -379,4 +379,14 @@ export async function rejectStoryAction(formData: FormData) {
   await rejectStory(id, reason || undefined);
   revalidatePath('/admin/stories');
   redirect(`/admin/stories/${id}?status=rejected`);
+}
+
+export async function revertStoryAction(formData: FormData) {
+  const id = String(formData.get('storyId') ?? '');
+  if (!id) redirect('/admin/stories?status=invalid');
+
+  await revertStory(id);
+  revalidatePath('/admin/stories');
+  revalidatePath('/stories');
+  redirect(`/admin/stories/${id}?status=reverted`);
 }

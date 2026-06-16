@@ -497,6 +497,17 @@ export async function rejectStory(id: string, reason?: string): Promise<Story | 
   return rowToStory({ ...row, tag_label: null });
 }
 
+export async function revertStory(id: string): Promise<Story | null> {
+  const row = await queryOne<StoryRow>(
+    `UPDATE stories SET status = 'new', published_at = NULL, rejected_at = NULL, rejection_reason = NULL
+     WHERE id = $1 RETURNING *`,
+    [id]
+  );
+  if (!row) return null;
+  logEvent('info', 'story.reverted', { storyId: id });
+  return rowToStory({ ...row, tag_label: null });
+}
+
 export function getGalleryPhotos() {
   return mockGalleryPhotos;
 }
