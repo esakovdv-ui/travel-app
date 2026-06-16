@@ -197,7 +197,7 @@
             <div>
               <span class="chip promo-accent"><span class="chip-icon" aria-hidden="true">🎈</span>Акция ко Дню защиты детей · спецусловия до 7 июня</span>
               <h1>Летние смены в лагере «Власьево» по специальной цене</h1>
-              <p class="lead">До 7 июня действуют специальные условия раннего бронирования. Выберите летнюю смену для ребенка по выгодной цене.</p>
+              <p class="lead">Летние смены для детей по специальной цене. Выберите подходящую программу и подарите ребенку незабываемые каникулы.</p>
             </div>
             <div class="hero-actions">
               <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
@@ -331,10 +331,8 @@
             <div class="saving">Экономия ${money.format(saving)} ₽</div>
             ${shift.isSoldOut
               ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
-            ${shift.isSoldOut
-              ? '<span class="btn btn-secondary btn-disabled cta-neutral hidden" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
+              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>
+            <a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
           </div>
         </article>
       `;
