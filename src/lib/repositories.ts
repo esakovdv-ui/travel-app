@@ -453,6 +453,35 @@ export async function publishStory(
   return rowToStory({ ...row, tag_label: tag?.label ?? null });
 }
 
+export async function importStories(
+  candidates: {
+    rawAuthorName: string;
+    rawObject: string;
+    rawPeriod: string;
+    rawManager: string;
+    rawText: string;
+    sourceOrderId: string;
+  }[]
+): Promise<{ imported: number; duplicates: number }> {
+  let imported = 0;
+
+  for (const c of candidates) {
+    const row = await queryOne<{ id: string }>(
+      `INSERT INTO stories
+         (id, status, raw_author_name, raw_object, raw_period, raw_manager, raw_text, photos, source_order_id)
+       VALUES (gen_random_uuid()::text, 'new', $1, $2, $3, $4, $5, '{}', $6)
+       ON CONFLICT (source_order_id) WHERE source_order_id IS NOT NULL DO NOTHING
+       RETURNING id`,
+      [c.rawAuthorName, c.rawObject, c.rawPeriod || null, c.rawManager || null, c.rawText, c.sourceOrderId]
+    );
+    if (row) imported++;
+  }
+
+  const duplicates = candidates.length - imported;
+  if (imported > 0) logEvent('info', 'stories.imported', { imported, duplicates });
+  return { imported, duplicates };
+}
+
 export async function rejectStory(id: string, reason?: string): Promise<Story | null> {
   const row = await queryOne<StoryRow>(
     `UPDATE stories SET
