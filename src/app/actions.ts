@@ -8,12 +8,13 @@ import path from 'path';
 import { createJwtToken } from '@/lib/jwt';
 import { SESSION_COOKIE, JWT_SECRET } from '@/lib/session';
 import {
-  createBooking, createReview, createStory, findUserByEmail,
+  createBooking, createReview, createStory, findUserByEmail, importStories,
   publishStory, rejectStory, registerUser, updateReviewStatus, upsertPackage,
 } from '@/lib/repositories';
 import { hashPassword, verifyPassword } from '@/lib/security';
 import { bookingSchema, loginSchema, packageSchema, registrationSchema, reviewSchema } from '@/lib/validation';
 import { AppError } from '@/lib/errors';
+import { parseStoriesWorkbook } from '@/lib/story-import';
 import { ZodError } from 'zod';
 import type { TravelReviewStatus } from '@/types/travel';
 
@@ -306,6 +307,67 @@ export async function renameTagAction(
   revalidatePath('/admin/story-tags');
   revalidatePath('/stories');
   return {};
+}
+
+export type ImportStoriesState =
+  | null
+  | {
+      success: true;
+      stats: {
+        totalRows: number;
+        qualified: number;
+        imported: number;
+        duplicates: number;
+        skippedNoConsent: number;
+        skippedEmptyText: number;
+        skippedMissingFields: number;
+      };
+    }
+  | { success: false; error: string };
+
+export async function importStoriesAction(
+  _prev: ImportStoriesState,
+  formData: FormData
+): Promise<ImportStoriesState> {
+  const file = formData.get('file') as File | null;
+
+  if (!file || !file.size) {
+    return { success: false, error: 'Выберите файл Excel (.xlsx) с данными опроса.' };
+  }
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    return { success: false, error: 'Поддерживается только формат .xlsx.' };
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const parsed = parseStoriesWorkbook(buffer);
+
+    if (parsed.candidates.length === 0) {
+      return {
+        success: false,
+        error: 'В файле не найдено подходящих строк (согласие на публикацию = «Да» и заполненный отзыв).',
+      };
+    }
+
+    const { imported, duplicates } = await importStories(parsed.candidates);
+
+    revalidatePath('/admin/stories');
+
+    return {
+      success: true,
+      stats: {
+        totalRows: parsed.totalRows,
+        qualified: parsed.candidates.length,
+        imported,
+        duplicates,
+        skippedNoConsent: parsed.skippedNoConsent,
+        skippedEmptyText: parsed.skippedEmptyText,
+        skippedMissingFields: parsed.skippedMissingFields,
+      },
+    };
+  } catch {
+    return { success: false, error: 'Не удалось разобрать файл. Проверьте, что это корректный экспорт опроса.' };
+  }
 }
 
 export async function rejectStoryAction(formData: FormData) {

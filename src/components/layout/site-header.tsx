@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BrandLogo } from './brand-logo';
 import {
   MagnifyingGlassIcon, ListIcon, XIcon,
-  BuildingsIcon, AirplaneTakeoffIcon,
+  BuildingsIcon, AirplaneTakeoffIcon, BookOpenIcon,
 } from '@/components/icons';
 import { SearchBar, SearchBarValues, SearchBarSnapshot, SearchTab } from '@/components/ui/search-bar';
 import { UserMenu, UserMenuUser } from './user-menu';
@@ -186,6 +186,15 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
                   </span>
                 </button>
               ))}
+              {isHome && (
+                <Link href="/stories" className={`${styles.headerTab} ${styles.headerTabStories}`}>
+                  <span className={styles.headerTabIcon}><BookOpenIcon weight="light" size={16} /></span>
+                  <span className={styles.headerTabText}>
+                    <span className={styles.headerTabLabel}>Истории</span>
+                    <span className={styles.headerTabHint}>Опыт путешественников</span>
+                  </span>
+                </Link>
+              )}
             </div>
           )}
 

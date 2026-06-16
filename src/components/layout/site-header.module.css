@@ -122,6 +122,27 @@
   line-height: 1.2;
 }
 
+/* Истории — выделена красным, ведёт на отдельную страницу, а не переключает поиск */
+.headerTabStories {
+  background: var(--c-red-subtle);
+  color: var(--c-red);
+}
+
+.headerTabStories .headerTabHint {
+  color: var(--c-red);
+  opacity: 0.7;
+}
+
+.headerTabStories:hover {
+  background: var(--c-red);
+  color: #fff;
+}
+
+.headerTabStories:hover .headerTabHint {
+  color: #fff;
+  opacity: 0.85;
+}
+
 /* Compact pill (scrolled) */
 .compactPill {
   display: inline-flex;

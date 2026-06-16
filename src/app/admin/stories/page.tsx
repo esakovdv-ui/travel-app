@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { listAllStories } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
-import { STORY_STATUS_LABELS, STORY_TAGS } from '@/lib/constants';
+import { STORY_STATUS_LABELS } from '@/lib/constants';
 import styles from '../admin.module.css';
 import pageStyles from './stories-admin.module.css';
 
@@ -32,14 +32,19 @@ export default async function AdminStoriesPage({
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.pageTitle}>
-          <span className={styles.pageTitleAccent} aria-hidden="true" />
-          Истории путешествий
-        </h1>
-        <p className={styles.pageSubtitle}>
-          Всего: {counts.all} · На модерации: {counts.new}
-        </p>
+      <div className={styles.header} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
+        <div>
+          <h1 className={styles.pageTitle}>
+            <span className={styles.pageTitleAccent} aria-hidden="true" />
+            Истории путешествий
+          </h1>
+          <p className={styles.pageSubtitle}>
+            Всего: {counts.all} · На модерации: {counts.new}
+          </p>
+        </div>
+        <Link href="/admin/stories/import" className="btn btn-secondary btn-sm">
+          Импорт из опроса
+        </Link>
       </div>
 
       {/* Status tabs */}
