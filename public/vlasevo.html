@@ -331,10 +331,8 @@
             <div class="saving">Экономия ${money.format(saving)} ₽</div>
             ${shift.isSoldOut
               ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
-            ${shift.isSoldOut
-              ? '<span class="btn btn-secondary btn-disabled cta-neutral hidden" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
+              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>
+            <a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
           </div>
         </article>
       `;
