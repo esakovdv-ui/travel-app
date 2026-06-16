@@ -19,7 +19,9 @@ alwaysApply: true
 
 ## Что делает workflow на сервере
 
-В `/home/travel-app`: `git fetch` + checkout ветки → `npm install` → `npm run build` → `pm2 restart travel-app` → прогрев thematic-rows API.
+Вызывается **`/home/deploy.sh`**: `git fetch` → `checkout main` → `reset --hard origin/main` → `npm install` → `npm run build` → `pm2 restart travel-app` → прогрев thematic-rows API.
+
+На **motrip.ru** оказывается только код из **`main`**. Чтобы выкатить feature-ветку — сначала PR/merge в `main`.
 
 ## Ручной деплой на сервере
 

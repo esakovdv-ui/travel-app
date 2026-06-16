@@ -1,0 +1,479 @@
+.section {
+  background: var(--c-bg);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.title {
+  color: var(--c-text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.filterPill {
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  color: var(--c-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  font-family: var(--font-body);
+}
+
+.filterPill:hover {
+  border-color: var(--c-blue);
+  color: var(--c-blue);
+}
+
+.filterPillActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #ffffff;
+}
+
+.filterPillActive:hover {
+  background: var(--c-blue-hover);
+  border-color: var(--c-blue-hover);
+  color: #ffffff;
+}
+
+.empty {
+  color: var(--c-text-muted);
+  padding: 32px 0;
+  font-size: 0.92rem;
+}
+
+/* ─── Editorial grid ─── */
+.editorial {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 2rem;
+}
+
+/* Hero card — full width, first row */
+.heroCard {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.25s ease;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.heroCard:hover {
+  box-shadow: 0 12px 32px rgba(12, 36, 97, 0.18);
+}
+
+/* Photo container — holds overlay and absolute text on desktop */
+.heroPhotoWrap {
+  position: relative;
+  height: 480px;
+  flex-shrink: 0;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  z-index: 1;
+}
+
+.heroObject {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #FFD600;
+}
+
+.heroTag {
+  position: absolute;
+  top: 36px;
+  left: 14px;
+  z-index: 2;
+  background: #ffffff;
+  color: var(--c-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-xs);
+}
+
+.heroContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  z-index: 2;
+}
+
+.heroTitle {
+  font-family: var(--font-unbounded), 'Unbounded', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.heroQuote {
+  font-size: 0.84rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 14px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.heroFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.heroText {
+  color: #ffffff !important;
+}
+
+.heroTextMuted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.heroAvatar {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* Mobile body — hidden on desktop, shown on mobile */
+.heroMobileBody {
+  display: none;
+}
+
+/* Second row — 3 cards in asymmetric grid */
+.editorialRow {
+  display: grid;
+  grid-template-columns: 45fr 30fr 25fr;
+  gap: 16px;
+}
+
+.editorialRow .card {
+  flex: unset;
+  scroll-snap-align: unset;
+}
+
+.editorialRow .cardPhoto {
+  height: 160px;
+}
+
+/* ─── Carousel section ─── */
+.carouselSection {
+  margin-top: 0.5rem;
+}
+
+.carouselTitle {
+  font-family: var(--font-unbounded), 'Unbounded', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+
+/* Carousel — scroll-snap, no JS library */
+.carousel {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+
+/* ─── Card ─── */
+.card {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: none;
+  box-shadow: 0 12px 32px rgba(12, 36, 97, 0.18);
+}
+
+.cardPhoto {
+  position: relative;
+  height: 220px;
+  flex-shrink: 0;
+}
+
+.cardTag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ffffff;
+  color: var(--c-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-xs);
+}
+
+.cardBody {
+  padding: 18px 20px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardObject {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-red);
+}
+
+.cardTitle {
+  font-family: var(--font-unbounded), 'Unbounded', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+}
+
+.cardQuote {
+  font-size: 0.84rem;
+  font-style: italic;
+  color: var(--c-text-muted);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 18px;
+  border-top: 1px solid var(--c-border);
+  gap: 8px;
+}
+
+.cardAuthor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cardAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--c-blue-subtle);
+  border: 1.5px solid var(--c-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  flex-shrink: 0;
+}
+
+.cardAuthorName {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardPeriod {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardArrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c-red);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.cardArrow:hover {
+  background: var(--c-red-hover);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .editorial {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: unset;
+    grid-template-rows: unset;
+  }
+
+  .heroPhotoWrap {
+    height: 320px;
+  }
+
+  /* Overlay скрываем — на мобиле текст под фото */
+  .heroOverlay,
+  .heroContent,
+  .heroObject,
+  .heroTag {
+    display: none;
+  }
+
+  /* Показываем обычный текстовый блок снизу */
+  .heroMobileBody {
+    display: block;
+  }
+
+  /* Вторая строка → одна колонка */
+  .editorialRow {
+    grid-template-columns: 1fr;
+  }
+
+  .editorialRow .cardPhoto {
+    height: 220px;
+  }
+
+  .card { flex: 0 0 280px; }
+}
+
+@media (max-width: 600px) {
+  .card { flex: 0 0 88vw; }
+}
+
+/* ─── Appended grid (after load more) ─── */
+.appendedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.appendedGrid .card {
+  flex: unset;
+  scroll-snap-align: unset;
+}
+
+@media (max-width: 900px) {
+  .appendedGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .appendedGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Load more ─── */
+.loadMore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 40px;
+}
+
+.loadMoreBtn {
+  background: transparent;
+  border: 1.5px solid var(--c-blue);
+  color: var(--c-blue);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 12px 32px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  font-family: var(--font-body);
+}
+
+.loadMoreBtn:hover:not(:disabled) {
+  background: var(--c-blue);
+  color: #ffffff;
+}
+
+.loadMoreBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.loadMoreHint {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+}
+
+.allShown {
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: 0.88rem;
+  margin-top: 40px;
+}

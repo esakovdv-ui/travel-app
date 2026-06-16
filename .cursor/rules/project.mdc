@@ -4,5 +4,6 @@ GitHub: https://github.com/esakovdv-ui/travel-app
 
 - Default branch for deploy: `main`; feature branches `feature/dima-auth`, `feature/arthur` also trigger CI deploy.
 - **Deploy only via GitHub Actions** (commit + push). Never SSH to VPS directly. See `.cursor/rules/deploy-github-only.mdc`.
+- Production checkout is always `main` via `/home/deploy.sh` on the server — merge to `main` before expecting changes on motrip.ru.
 - Stack: Next.js, TypeScript. Env: `.env.local` (never commit).
 - Run locally: `npm install` then `npm run dev`.

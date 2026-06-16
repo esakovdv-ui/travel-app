@@ -81,3 +81,33 @@ export type AdminPackageFormValues = {
   tags: string[];
   isFeatured: boolean;
 };
+
+export type StoryTag = {
+  id: string;
+  slug: string;
+  label: string;
+  position: number;
+  storiesCount: number;
+};
+
+export type StoryStatus = 'new' | 'published' | 'rejected';
+
+export type Story = {
+  id: string;
+  submittedAt: string;
+  status: StoryStatus;
+  publishedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
+  rawAuthorName: string;
+  rawObject: string;
+  rawPeriod: string;
+  rawManager: string;
+  rawText: string;
+  photos: string[];
+  pubTitle: string | null;
+  pubQuote: string | null;
+  pubTag: string | null;
+  pubTagId: string | null;
+  pubObjectUrl: string | null;
+};

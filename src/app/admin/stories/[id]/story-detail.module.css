@@ -1,0 +1,83 @@
+.rawPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dlRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--c-border);
+  padding-bottom: 10px;
+}
+
+.dlRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dlRow dt {
+  font-weight: 700;
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-top: 2px;
+}
+
+.dlRow dd {
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+.ddRed {
+  color: var(--c-red) !important;
+}
+
+.rawText {
+  font-size: 0.9rem;
+  color: var(--c-text);
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.photoLink {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: opacity var(--transition);
+}
+.photoLink:hover { opacity: 0.85; }
+
+.moderForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-text);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hint {
+  font-weight: 400;
+  color: var(--c-text-muted);
+}
