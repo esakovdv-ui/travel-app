@@ -14,8 +14,30 @@ jobs:
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          BITRIX_DOMAIN: ${{ secrets.BITRIX_DOMAIN }}
+          WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
         with:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: /home/deploy.sh
+          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN
+          script: |
+            set -e
+            ENV_FILE=/home/travel-app/.env.local
+            touch "$ENV_FILE"
+            set_env_var() {
+              key="$1"
+              val="$2"
+              if [ -z "$val" ]; then
+                return 0
+              fi
+              if grep -q "^${key}=" "$ENV_FILE"; then
+                sed -i.bak "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+              else
+                printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
+              fi
+            }
+            set_env_var BITRIX_DOMAIN "$BITRIX_DOMAIN"
+            set_env_var WEBHOOK_TOKEN "$WEBHOOK_TOKEN"
+            /home/deploy.sh
