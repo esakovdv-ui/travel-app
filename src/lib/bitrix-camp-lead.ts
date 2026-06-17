@@ -56,8 +56,11 @@ async function bitrixCall<T = unknown>(
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.error) {
+    const bitrixError = typeof data?.error === 'string' ? data.error : 'unknown';
+    const bitrixDescription =
+      typeof data?.error_description === 'string' ? data.error_description : '';
     console.error(`${logPrefix}: ${method} failed`, data);
-    throw new Error('bitrix_error');
+    throw new Error(`bitrix_error:${bitrixError}:${bitrixDescription}`.slice(0, 240));
   }
   return data.result as T;
 }
