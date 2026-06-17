@@ -62,6 +62,23 @@ async function bitrixCall<T = unknown>(
   return data.result as T;
 }
 
+async function findContactByPhoneList(logPrefix: string, phone: string): Promise<number | null> {
+  for (const value of phoneLookupValues(phone)) {
+    try {
+      const result = await bitrixCall<Array<{ ID?: string | number }>>(logPrefix, 'crm.contact.list', {
+        filter: { PHONE: value },
+        select: ['ID'],
+      });
+      const rawId = result?.[0]?.ID;
+      const id = typeof rawId === 'number' ? rawId : Number(rawId);
+      if (Number.isFinite(id) && id > 0) return id;
+    } catch (error) {
+      console.warn(`${logPrefix}: contact list lookup failed for ${value}`, error);
+    }
+  }
+  return null;
+}
+
 async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
   for (const value of phoneLookupValues(phone)) {
     try {
@@ -76,7 +93,32 @@ async function findContactByPhone(logPrefix: string, phone: string): Promise<num
       console.warn(`${logPrefix}: duplicate lookup failed for ${value}`, error);
     }
   }
-  return null;
+  return findContactByPhoneList(logPrefix, phone);
+}
+
+async function resolveContactId(
+  logPrefix: string,
+  name: string,
+  phone: string
+): Promise<{ contactId: number; contactCreated: boolean }> {
+  const existingId = await findContactByPhone(logPrefix, phone);
+  if (existingId) return { contactId: existingId, contactCreated: false };
+
+  try {
+    const contactId = await bitrixCall<number>(logPrefix, 'crm.contact.add', {
+      fields: {
+        NAME: name,
+        PHONE: [{ VALUE: phone, VALUE_TYPE: 'WORK' }],
+        SOURCE_ID: 'WEBFORM',
+        ASSIGNED_BY_ID,
+      },
+    });
+    return { contactId, contactCreated: true };
+  } catch (error) {
+    const fallbackId = await findContactByPhone(logPrefix, phone);
+    if (fallbackId) return { contactId: fallbackId, contactCreated: false };
+    throw error;
+  }
 }
 
 export function parseLeadUtm(raw: unknown): UtmFields {
@@ -123,20 +165,7 @@ export async function submitCampLead({
   const comments = commentLines.join('\n');
   const landingTitle = LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo;
 
-  let contactId = await findContactByPhone(logPrefix, phone);
-  let contactCreated = false;
-  if (!contactId) {
-    contactId = await bitrixCall<number>(logPrefix, 'crm.contact.add', {
-      fields: {
-        NAME: name,
-        PHONE: [{ VALUE: phone, VALUE_TYPE: 'WORK' }],
-        SOURCE_ID: 'WEBFORM',
-        ASSIGNED_BY_ID,
-        OPENED: 'Y',
-      },
-    });
-    contactCreated = true;
-  }
+  const { contactId, contactCreated } = await resolveContactId(logPrefix, name, phone);
 
   const dealFields: Record<string, unknown> = {
     TITLE: `Заявка с лендинга «${landingTitle}» — ${name}`,
@@ -146,7 +175,6 @@ export async function submitCampLead({
     CONTACT_ID: contactId,
     SOURCE_ID: 'WEBFORM',
     ASSIGNED_BY_ID,
-    OPENED: 'Y',
     COMMENTS: comments,
   };
   if (utm.utm_source) dealFields.UTM_SOURCE = utm.utm_source;
