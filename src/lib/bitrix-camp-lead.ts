@@ -40,6 +40,13 @@ function phoneLookupValues(phone: string): string[] {
   return [...new Set([phone, `+7${national}`, national, `8${national}`, digits].filter(Boolean))];
 }
 
+function buildBitrixUrl(domain: string, token: string, method: string): string {
+  const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  const cleanToken = token.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  const cleanMethod = method.replace(/^\/+/, '').replace(/\.json$/i, '');
+  return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
+}
+
 async function bitrixCall<T = unknown>(
   logPrefix: string,
   method: string,
@@ -48,7 +55,7 @@ async function bitrixCall<T = unknown>(
   const domain = process.env.BITRIX_DOMAIN;
   const token = process.env.WEBHOOK_TOKEN;
   if (!domain || !token) throw new Error('misconfigured');
-  const url = `https://${domain}/rest/${token}${method}.json`;
+  const url = buildBitrixUrl(domain, token, method);
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
