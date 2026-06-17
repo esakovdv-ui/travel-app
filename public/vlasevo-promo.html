@@ -262,6 +262,7 @@
     .field input, .field select { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--panel); padding: 0 12px; font-weight: 700; }
     .form-note { min-height: 22px; margin: 10px 0 0; color: var(--green); font-size: 14px; font-weight: 900; }
     .form-note.error { color: #c62828; }
+    .form-note.is-error { color: #c62828; }
     .field-error {
       display: none;
       margin: 6px 0 0;
@@ -471,7 +472,8 @@
           </div>
           <div class="field">
             <label for="phone">Телефон</label>
-            <input id="phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error" required>
+            <p class="field-error" id="phone-error" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="shift">Смена</label>
@@ -534,6 +536,9 @@
     const shiftGrid = document.getElementById('shift-grid');
     const shiftSelect = document.getElementById('shift');
     const note = document.getElementById('form-note');
+    const landingForm = document.getElementById('form');
+    const landingPhone = document.getElementById('phone');
+    const landingPhoneError = document.getElementById('phone-error');
 
     let shifts = [];
 
@@ -814,9 +819,10 @@
     }
 
     const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
+    const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
 
     function formatShiftLabel(shift) {
-      return `${shift.title} — ${shift.dates} · ${money.format(shift.displayPrice)} ₽`;
+      return `${shift.title} — ${shift.dates}`;
     }
 
     function findShiftById(id) {
@@ -826,10 +832,20 @@
     function collectUtm() {
       const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
       const utm = {};
-      const params = new URLSearchParams(window.location.search);
-      keys.forEach((key) => {
-        const value = params.get(key);
-        if (value) utm[key] = value;
+      const sources = [window.location.search];
+      if (document.referrer) {
+        try {
+          sources.push(new URL(document.referrer).search);
+        } catch (_) {}
+      }
+      sources.forEach((search) => {
+        const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
+        keys.forEach((key) => {
+          if (!utm[key]) {
+            const value = params.get(key);
+            if (value) utm[key] = value;
+          }
+        });
       });
       return utm;
     }
@@ -837,13 +853,22 @@
     function setFormNote(element, message, isError) {
       element.textContent = message;
       element.classList.toggle('error', Boolean(isError));
+      element.classList.toggle('is-error', Boolean(isError));
     }
 
     async function submitVlasevoLead({ name, phone, shift, source, website = '' }) {
       const response = await fetch('/api/vlasevo-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, shift, source, website, utm: collectUtm() }),
+        body: JSON.stringify({
+          name,
+          phone,
+          shift,
+          source,
+          website,
+          landing: 'vlasevo-promo',
+          utm: collectUtm(),
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
@@ -980,37 +1005,32 @@
       if (!tick()) clearInterval(timer);
     }, 1000);
 
-    function normalizePhone(input) {
-      const digits = String(input).replace(/\D/g, '');
-      if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) return `+7${digits.slice(1)}`;
-      if (digits.length === 10) return `+7${digits}`;
-      return null;
-    }
-
-    document.getElementById('form').addEventListener('submit', async (event) => {
+    landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      note.classList.remove('error');
-      note.textContent = '';
-
-      const form = event.currentTarget;
-      const name = form.name.value.trim();
-      const shift = form.shift.value.trim();
-      const website = form.website.value;
-      const phone = normalizePhone(form.phone.value);
-
-      if (!name || !shift || !phone) {
-        note.classList.add('error');
-        note.textContent = 'Проверьте заполнение формы, включая телефон.';
+      const submitButton = landingForm.querySelector('button[type="submit"]');
+      setFormNote(note, '', false);
+      if (!landingPhoneCtrl.validate()) {
+        landingPhone.focus();
+        landingPhoneCtrl.showMask();
         return;
       }
-
+      if (submitButton) submitButton.disabled = true;
       try {
-        await submitVlasevoLead({ name, phone, shift, source: 'landing', website });
-        note.textContent = 'Спасибо! Мы получили заявку и скоро свяжемся с вами.';
-        form.reset();
+        await submitVlasevoLead({
+          name: landingForm.name.value.trim(),
+          phone: landingPhoneCtrl.getValue(),
+          shift: shiftSelect.value.trim(),
+          source: 'landing',
+          website: document.getElementById('website').value,
+        });
+        setFormNote(note, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+        landingForm.name.value = '';
+        landingPhoneCtrl.reset();
+        shiftSelect.value = '';
       } catch (error) {
-        note.classList.add('error');
-        note.textContent = error instanceof Error ? error.message : 'Не удалось отправить заявку';
+        setFormNote(note, error instanceof Error ? error.message : 'Не удалось отправить заявку', true);
+      } finally {
+        if (submitButton) submitButton.disabled = false;
       }
     });
 
