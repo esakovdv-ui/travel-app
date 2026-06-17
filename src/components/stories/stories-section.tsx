@@ -148,7 +148,7 @@ export function StoriesSection({ initialStories, total: initialTotal, tags }: Pr
 
 function HeroCard({ story }: { story: Story }) {
   const photo = story.photos[0] ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
-  const href  = story.pubObjectUrl ?? '#';
+  const href  = story.pubObjectUrl;
 
   return (
     <article className={styles.heroCard}>
@@ -170,7 +170,7 @@ function HeroCard({ story }: { story: Story }) {
                 <span className={`${styles.cardPeriod} ${styles.heroTextMuted}`}>{story.rawPeriod}</span>
               </div>
             </div>
-            <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>
+            {href && <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>}
           </div>
         </div>
       </div>
@@ -188,7 +188,7 @@ function HeroCard({ story }: { story: Story }) {
               <span className={styles.cardPeriod}>{story.rawPeriod}</span>
             </div>
           </div>
-          <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>
+          {href && <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>}
         </div>
       </div>
     </article>
@@ -197,7 +197,7 @@ function HeroCard({ story }: { story: Story }) {
 
 function StoryCard({ story }: { story: Story }) {
   const photo = story.photos[0] ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80';
-  const href  = story.pubObjectUrl ?? '#';
+  const href  = story.pubObjectUrl;
 
   return (
     <article className={styles.card}>
@@ -218,7 +218,7 @@ function StoryCard({ story }: { story: Story }) {
             <span className={styles.cardPeriod}>{story.rawPeriod}</span>
           </div>
         </div>
-        <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>
+        {href && <Link href={href} className={styles.cardArrow} aria-label="Перейти к объекту">→</Link>}
       </div>
     </article>
   );

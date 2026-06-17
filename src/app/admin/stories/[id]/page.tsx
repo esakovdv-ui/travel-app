@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getStoryById, listTags } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
-import { publishStoryAction, rejectStoryAction } from '@/app/actions';
+import { publishStoryAction, rejectStoryAction, revertStoryAction } from '@/app/actions';
 import styles from '../../admin.module.css';
 import detailStyles from './story-detail.module.css';
 
@@ -47,6 +47,11 @@ export default async function AdminStoryDetailPage({
       {sp.status === 'rejected' && (
         <div className={`${styles.notice} ${styles.noticeError}`}>
           История отклонена.
+        </div>
+      )}
+      {sp.status === 'reverted' && (
+        <div className={`${styles.notice} ${styles.noticeSuccess}`}>
+          История возвращена на модерацию.
         </div>
       )}
       {sp.status === 'invalid' && (
@@ -254,6 +259,12 @@ export default async function AdminStoryDetailPage({
               ) : (
                 <p className={detailStyles.hint}>История отклонена и не отображается на сайте.</p>
               )}
+              <form action={revertStoryAction} style={{ marginTop: 16 }}>
+                <input type="hidden" name="storyId" value={story.id} />
+                <button type="submit" className="btn btn-ghost btn-sm">
+                  Отозвать на модерацию
+                </button>
+              </form>
             </div>
           )}
         </div>

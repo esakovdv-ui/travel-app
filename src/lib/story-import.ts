@@ -69,7 +69,10 @@ export function parseStoriesWorkbook(buffer: Buffer): ImportParseResult {
 
   const colOrderId = findColumnIndex(headers, [(h) => h.includes('заявка')]);
   const colConsent = findColumnIndex(headers, [(h) => h.includes('согласие') && h.includes('публикац')]);
-  const colText = findColumnIndex(headers, [(h) => h.includes('расскажите')]);
+  const colText = findColumnIndex(headers, [
+    (h) => h.includes('расскажите') && !h.includes('менеджер') && !h.includes('сотрудник'),
+    (h) => h.includes('расскажите'),
+  ]);
   const colCustomer = findColumnIndex(headers, [(h) => h.includes('заказчик')]);
   const colObject = findColumnIndex(headers, [
     (h) => h === 'место отдыха',
@@ -96,7 +99,7 @@ export function parseStoriesWorkbook(buffer: Buffer): ImportParseResult {
     const object = cell(row as unknown[], colObject);
     const orderId = cell(row as unknown[], colOrderId);
 
-    if (consent !== 'Да') { skippedNoConsent++; continue; }
+    if (consent !== 'Есть') { skippedNoConsent++; continue; }
     if (!text) { skippedEmptyText++; continue; }
     if (!customer || !object || !orderId) { skippedMissingFields++; continue; }
 
