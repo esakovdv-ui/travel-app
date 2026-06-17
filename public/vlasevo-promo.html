@@ -145,8 +145,22 @@
       border: 3px solid var(--promo-orange);
       box-shadow: 0 0 0 4px rgba(255, 87, 34, .14), 0 16px 36px rgba(229, 57, 53, .16);
     }
-    .card-img { height: 220px; position: relative; background: #eceef0; }
+    .card-img { height: 220px; position: relative; background: #eceef0; overflow: hidden; }
+    .card-img.reserve-btn {
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      display: block;
+    }
+    .card-img.reserve-btn:focus-visible {
+      outline: 2px solid var(--promo-orange);
+      outline-offset: -2px;
+    }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card .btn.reserve-btn { width: 100%; }
     .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
     .sold-out-overlay {
       position: absolute;
@@ -173,6 +187,7 @@
       font-weight: 900;
       box-shadow: 0 6px 18px rgba(229, 57, 53, .45);
       letter-spacing: .01em;
+      pointer-events: none;
     }
     .card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px; }
     .card-body.sold-out { opacity: .55; }
@@ -247,6 +262,88 @@
     .field input, .field select { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--panel); padding: 0 12px; font-weight: 700; }
     .form-note { min-height: 22px; margin: 10px 0 0; color: var(--green); font-size: 14px; font-weight: 900; }
     .form-note.error { color: #c62828; }
+    .field-error {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c62828;
+    }
+    .field-error.is-visible { display: block; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .52);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .modal-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      position: relative;
+      width: min(100%, 440px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 24px 22px 22px;
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .18);
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-close:hover {
+      background: #ffe8d4;
+      color: var(--orange-dark);
+    }
+    .modal h2 {
+      margin: 0 32px 8px 0;
+      font-size: clamp(24px, 4vw, 30px);
+      line-height: 1.1;
+      letter-spacing: -.03em;
+    }
+    .modal-lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal .field input[readonly] {
+      background: #fff;
+      color: var(--text);
+      cursor: default;
+    }
+    .modal-success { display: none; padding: 8px 0 4px; }
+    .modal-success.is-visible { display: block; }
+    .modal-success p {
+      margin: 0;
+      color: var(--green);
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .modal-form-body.is-hidden { display: none; }
     .sticky-cta { position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 40; display: none; padding: 10px; border-radius: 14px; box-shadow: 0 14px 24px rgba(0,0,0,.14); background: rgba(255,255,255,.95); backdrop-filter: blur(3px); }
     .sticky-cta .btn { width: 100%; }
     .hidden { display: none !important; }
@@ -399,6 +496,38 @@
     <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Выбрать смену</a>
   </div>
 
+  <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">&times;</button>
+      <h2 id="modal-title">Забронировать смену</h2>
+      <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
+      <div class="modal-success" id="modal-success">
+        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+      </div>
+      <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
+        <div class="field">
+          <label for="modal-name">Имя</label>
+          <input id="modal-name" name="name" type="text" placeholder="Как к вам обращаться" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="modal-phone">Телефон</label>
+          <input id="modal-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="modal-phone-error">
+          <p class="field-error" id="modal-phone-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="modal-shift">Тип смены / выбранная смена</label>
+          <input id="modal-shift" name="shift" type="text" readonly required>
+        </div>
+        <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+          <label for="modal-website">Сайт</label>
+          <input id="modal-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
+        <p class="form-note" id="modal-form-note" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
   <script>
     const money = new Intl.NumberFormat('ru-RU');
     const PROMO_PRICE_10_DAYS = 39900;
@@ -441,14 +570,20 @@
       const badgeText = shift.isPromo
         ? (shift.specialTermsText || 'Скидка до 12 000 ₽')
         : (shift.specialTermsText || 'Спецусловия до 7 июня');
+      const imageBlock = shift.isSoldOut
+        ? `<div class="card-img sold-out">
+            <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+            <span class="card-badge">${badgeText}</span>
+            <span class="sold-out-overlay">Места закончились</span>
+          </div>`
+        : `<button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
+            <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+            <span class="card-badge">${badgeText}</span>
+          </button>`;
 
       return `
         <article class="${cardClass}">
-          <div class="card-img ${shift.isSoldOut ? 'sold-out' : ''}">
-            <img src="${shift.image}" alt="${shift.title}" loading="lazy">
-            <span class="card-badge">${badgeText}</span>
-            ${shift.isSoldOut ? '<span class="sold-out-overlay">Места закончились</span>' : ''}
-          </div>
+          ${imageBlock}
           <div class="card-body ${shift.isSoldOut ? 'sold-out' : ''}">
             <h3>${shift.title}</h3>
             <div class="${priceBlockClass}">
@@ -464,8 +599,7 @@
             <p class="promo-accent">${shift.promoAccentText || 'Летние смены по специальной цене'}</p>
             ${shift.isSoldOut
               ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>
-            <a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
+              : `<button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>`}
           </div>
         </article>
       `;
@@ -490,7 +624,322 @@
         console.warn('Не удалось загрузить смены', error);
       }
       renderShifts();
+      shiftsLoaded = true;
+      tryOpenShiftFromUrl();
     }
+
+    const reserveModal = document.getElementById('reserve-modal');
+    const modalForm = document.getElementById('modal-form');
+    const modalFormBody = modalForm;
+    const modalSuccess = document.getElementById('modal-success');
+    const modalName = document.getElementById('modal-name');
+    const modalPhone = document.getElementById('modal-phone');
+    const modalShift = document.getElementById('modal-shift');
+    const modalFormNote = document.getElementById('modal-form-note');
+    const modalSubmit = document.getElementById('modal-submit');
+    const modalClose = document.getElementById('modal-close');
+    const modalPhoneError = document.getElementById('modal-phone-error');
+
+    let shiftsLoaded = false;
+
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) raw = raw.slice(1);
+      return raw.slice(0, 10);
+    }
+
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
+      return formatted.length;
+    }
+
+    function createPhoneMaskController(input, errorEl) {
+      let digits = '';
+      let skipKeydown = false;
+
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.classList.remove('is-visible');
+        input.removeAttribute('aria-invalid');
+      }
+
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        const cursor = cursorFromDigitIndex(formatted, index);
+        const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+        input.setSelectionRange(safeCursor, safeCursor);
+      }
+
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+        clearError();
+      }
+
+      function selectionDigitRange() {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+      }
+
+      function handleKeydown(event) {
+        const { from, to } = selectionDigitRange();
+        if (event.key === 'Backspace') { event.preventDefault(); deleteBackward(from, to); return; }
+        if (event.key === 'Delete') { event.preventDefault(); deleteForward(from, to); return; }
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
+          return;
+        }
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) event.preventDefault();
+      }
+
+      input.addEventListener('focus', () => {
+        render(digits.length);
+        if (!digits.length) input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+      });
+      input.addEventListener('blur', () => { if (!digits.length) input.value = ''; });
+      input.addEventListener('click', () => {
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+      input.addEventListener('beforeinput', (event) => {
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+        if (inputType === 'deleteContentBackward') { event.preventDefault(); deleteBackward(from, to); return; }
+        if (inputType === 'deleteContentForward') { event.preventDefault(); deleteForward(from, to); return; }
+        if (inputType === 'insertText' || inputType === 'insertFromPaste' || inputType === 'insertReplacementText' || inputType === 'insertFromDrop') {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) { event.preventDefault(); return; }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          insertAt(from, chunk);
+        }
+      });
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) { skipKeydown = false; return; }
+        handleKeydown(event);
+      });
+      input.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, merged.length);
+      });
+
+      return {
+        getValue() { return `+7${digits}`; },
+        validate() {
+          if (digits.length !== 10) {
+            errorEl.textContent = 'Введите номер телефона полностью';
+            errorEl.classList.add('is-visible');
+            input.setAttribute('aria-invalid', 'true');
+            return false;
+          }
+          clearError();
+          return true;
+        },
+        reset() { digits = ''; input.value = ''; clearError(); },
+        showMask() { render(0); input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR); },
+      };
+    }
+
+    const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
+
+    function formatShiftLabel(shift) {
+      return `${shift.title} — ${shift.dates} · ${money.format(shift.displayPrice)} ₽`;
+    }
+
+    function findShiftById(id) {
+      return shifts.find((shift) => shift.id === id);
+    }
+
+    function collectUtm() {
+      const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+      const utm = {};
+      const params = new URLSearchParams(window.location.search);
+      keys.forEach((key) => {
+        const value = params.get(key);
+        if (value) utm[key] = value;
+      });
+      return utm;
+    }
+
+    function setFormNote(element, message, isError) {
+      element.textContent = message;
+      element.classList.toggle('error', Boolean(isError));
+    }
+
+    async function submitVlasevoLead({ name, phone, shift, source, website = '' }) {
+      const response = await fetch('/api/vlasevo-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, shift, source, website, utm: collectUtm() }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        if (data.error === 'invalid_phone') throw new Error('Введите номер телефона полностью');
+        if (data.error === 'misconfigured') throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
+        throw new Error('Не удалось отправить заявку. Попробуйте позже.');
+      }
+      return data;
+    }
+
+    function openReserveModal(shift) {
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      modalShift.value = formatShiftLabel(shift);
+      modalPhoneCtrl.reset();
+      setFormNote(modalFormNote, '', false);
+      modalSubmit.disabled = false;
+      reserveModal.classList.add('is-open');
+      reserveModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      const url = new URL(window.location.href);
+      url.searchParams.set('shift', shift.id);
+      window.history.replaceState({ vlasevoShift: shift.id }, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
+      modalName.focus();
+    }
+
+    function closeReserveModal(clearShift) {
+      reserveModal.classList.remove('is-open');
+      reserveModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      const url = new URL(window.location.href);
+      url.searchParams.delete('shift');
+      url.searchParams.delete('shift_id');
+      window.history.replaceState({}, '', `${url.pathname}${url.search ? `?${url.searchParams.toString()}` : ''}${url.hash}`);
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      if (clearShift) {
+        modalForm.reset();
+        modalShift.value = '';
+        modalPhoneCtrl.reset();
+      }
+    }
+
+    function tryOpenShiftFromUrl() {
+      if (!shiftsLoaded || !reserveModal) return;
+      if (reserveModal.classList.contains('is-open')) return;
+      const params = new URLSearchParams(window.location.search);
+      const shiftId = params.get('shift') || params.get('shift_id');
+      if (!shiftId) return;
+      const shift = findShiftById(shiftId);
+      if (shift && !shift.isSoldOut) openReserveModal(shift);
+    }
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.reserve-btn');
+      if (!button) return;
+      event.preventDefault();
+      const picked = findShiftById(button.dataset.shiftId);
+      if (picked && !picked.isSoldOut) openReserveModal(picked);
+    });
+
+    modalClose.addEventListener('click', () => closeReserveModal(true));
+    reserveModal.addEventListener('click', (event) => {
+      if (event.target === reserveModal) closeReserveModal(true);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && reserveModal.classList.contains('is-open')) closeReserveModal(true);
+    });
+
+    modalForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setFormNote(modalFormNote, '', false);
+      if (!modalPhoneCtrl.validate()) {
+        modalPhone.focus();
+        modalPhoneCtrl.showMask();
+        return;
+      }
+      modalSubmit.disabled = true;
+      try {
+        await submitVlasevoLead({
+          name: modalName.value.trim(),
+          phone: modalPhoneCtrl.getValue(),
+          shift: modalShift.value.trim(),
+          source: 'popup',
+          website: document.getElementById('modal-website').value,
+        });
+        modalFormBody.classList.add('is-hidden');
+        modalSuccess.classList.add('is-visible');
+        modalName.value = '';
+        modalPhoneCtrl.reset();
+        setTimeout(() => closeReserveModal(true), 15000);
+      } catch (error) {
+        setFormNote(modalFormNote, error.message, true);
+        modalSubmit.disabled = false;
+      }
+    });
 
     function setPromoExpiredState() {
       document.querySelectorAll('.promo-accent').forEach((el) => el.classList.add('hidden'));
@@ -556,14 +1005,7 @@
       }
 
       try {
-        const response = await fetch('/api/vlasevo-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, shift, source: 'landing', website }),
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) throw new Error('Не удалось отправить заявку');
-
+        await submitVlasevoLead({ name, phone, shift, source: 'landing', website });
         note.textContent = 'Спасибо! Мы получили заявку и скоро свяжемся с вами.';
         form.reset();
       } catch (error) {
