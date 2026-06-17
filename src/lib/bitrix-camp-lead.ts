@@ -192,3 +192,10 @@ export async function submitCampLead({
 }
 
 export { clamp };
+
+export function mapCampLeadError(message: string): string {
+  if (message === 'misconfigured') return message;
+  if (message.includes('INVALID_CREDENTIALS')) return 'misconfigured';
+  if (message.startsWith('bitrix_error:')) return 'bitrix_error';
+  return 'bitrix_error';
+}
