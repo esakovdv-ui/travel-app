@@ -1505,6 +1505,22 @@
       return shifts.find((shift) => shift.id === id);
     }
 
+    function findShiftByBookingLabel(label) {
+      const trimmed = String(label || '').trim();
+      if (!trimmed) return null;
+      return shifts.find((shift) => (
+        trimmed === `${shift.title} · ${shift.dates}`
+        || trimmed === `${shift.title} — ${shift.dates}`
+      )) || null;
+    }
+
+    function getBookingPrice(shift) {
+      if (!shift) return undefined;
+      const price = Number(shift.price);
+      return Number.isFinite(price) && price >= 0 ? price : undefined;
+    }
+
+    let activeModalShift = null;
     let shiftsLoaded = false;
     let shiftFromPostMessage = null;
     let suppressShiftAutoOpen = false;
@@ -1669,7 +1685,7 @@
       reachRadugaGoal('raduga_booking_submit');
     }
 
-    async function submitRadugaLead({ name, phone, shift, source, website = '' }) {
+    async function submitRadugaLead({ name, phone, shift, bookingPrice, source, website = '' }) {
       const response = await fetch('/api/raduga-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1677,6 +1693,7 @@
           name,
           phone,
           shift,
+          bookingPrice,
           source,
           website,
           utm: collectUtm(),
@@ -1702,6 +1719,7 @@
 
     function openReserveModal(shift) {
       if (isCampaignExpired) return;
+      activeModalShift = shift;
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
@@ -1725,6 +1743,7 @@
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       if (clearShift) {
+        activeModalShift = null;
         modalForm.reset();
         modalShift.value = '';
         modalPhoneCtrl.reset();
@@ -1765,6 +1784,7 @@
           name: modalName.value.trim(),
           phone: modalPhoneCtrl.getValue(),
           shift: modalShift.value.trim(),
+          bookingPrice: getBookingPrice(activeModalShift),
           source: 'popup',
           website: document.getElementById('modal-website').value,
         });
@@ -1841,6 +1861,7 @@
           name: landingForm.name.value.trim(),
           phone: landingPhoneCtrl.getValue(),
           shift: shiftSelect.value.trim(),
+          bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
           source: 'landing',
           website: document.getElementById('website').value,
         });

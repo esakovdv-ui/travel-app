@@ -3,6 +3,7 @@ import {
   clamp,
   mapCampLeadError,
   normalizeLeadPhone,
+  parseBookingPrice,
   parseLeadUtm,
   submitCampLead,
   type CampLanding,
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       name,
       phone,
       shift,
+      bookingPrice: parseBookingPrice(body.bookingPrice),
       source: typeof body.source === 'string' ? body.source : undefined,
       utm: parseLeadUtm(body.utm),
     });

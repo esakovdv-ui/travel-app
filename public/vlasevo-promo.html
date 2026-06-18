@@ -541,6 +541,7 @@
     const landingPhoneError = document.getElementById('phone-error');
 
     let shifts = [];
+    let activeModalShift = null;
 
     function isTenDayShift(shift) {
       return String(shift.duration || '').trim().startsWith('10');
@@ -840,6 +841,21 @@
       return shifts.find((shift) => shift.id === id);
     }
 
+    function findShiftByBookingLabel(label) {
+      const trimmed = String(label || '').trim();
+      if (!trimmed) return null;
+      return shifts.find((shift) => (
+        trimmed === `${shift.title} · ${shift.dates}`
+        || trimmed === `${shift.title} — ${shift.dates}`
+      )) || null;
+    }
+
+    function getBookingPrice(shift) {
+      if (!shift) return undefined;
+      const price = shift.displayPrice != null ? Number(shift.displayPrice) : Number(shift.price);
+      return Number.isFinite(price) && price >= 0 ? price : undefined;
+    }
+
     function collectUtm() {
       const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
       const utm = {};
@@ -867,7 +883,7 @@
       element.classList.toggle('is-error', Boolean(isError));
     }
 
-    async function submitVlasevoLead({ name, phone, shift, source, website = '' }) {
+    async function submitVlasevoLead({ name, phone, shift, bookingPrice, source, website = '' }) {
       const response = await fetch('/api/vlasevo-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -875,6 +891,7 @@
           name,
           phone,
           shift,
+          bookingPrice,
           source,
           website,
           landing: 'vlasevo-promo',
@@ -891,6 +908,7 @@
     }
 
     function openReserveModal(shift) {
+      activeModalShift = shift;
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
@@ -917,6 +935,7 @@
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
       if (clearShift) {
+        activeModalShift = null;
         modalForm.reset();
         modalShift.value = '';
         modalPhoneCtrl.reset();
@@ -963,6 +982,7 @@
           name: modalName.value.trim(),
           phone: modalPhoneCtrl.getValue(),
           shift: modalShift.value.trim(),
+          bookingPrice: getBookingPrice(activeModalShift),
           source: 'popup',
           website: document.getElementById('modal-website').value,
         });
@@ -1031,6 +1051,7 @@
           name: landingForm.name.value.trim(),
           phone: landingPhoneCtrl.getValue(),
           shift: shiftSelect.value.trim(),
+          bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
           source: 'landing',
           website: document.getElementById('website').value,
         });

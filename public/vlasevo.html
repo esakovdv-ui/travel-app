@@ -349,6 +349,18 @@
       });
     }
 
+    function findShiftByBookingLabel(label) {
+      const trimmed = String(label || '').trim();
+      if (!trimmed) return null;
+      return shifts.find((shift) => trimmed === `${shift.title} · ${shift.dates}`) || null;
+    }
+
+    function getBookingPrice(shift) {
+      if (!shift) return undefined;
+      const price = Number(shift.price);
+      return Number.isFinite(price) && price >= 0 ? price : undefined;
+    }
+
     async function loadShifts() {
       try {
         const response = await fetch('/api/vlasevo-shifts', { cache: 'no-store' });
@@ -423,10 +435,18 @@
       }
 
       try {
+        const selectedShift = findShiftByBookingLabel(shift);
         const response = await fetch('/api/vlasevo-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, shift, source: 'landing', website }),
+          body: JSON.stringify({
+            name,
+            phone,
+            shift,
+            bookingPrice: getBookingPrice(selectedShift),
+            source: 'landing',
+            website,
+          }),
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) throw new Error('Не удалось отправить заявку');

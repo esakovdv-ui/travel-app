@@ -148,9 +148,27 @@ export type SubmitCampLeadInput = {
   name: string;
   phone: string;
   shift: string;
+  bookingPrice?: number;
   source?: string;
   utm?: UtmFields;
 };
+
+function formatBookingPrice(price: number): string {
+  return `${Math.round(price).toLocaleString('ru-RU')} ₽`;
+}
+
+export function parseBookingPrice(raw: unknown): number | undefined {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
+    return Math.round(raw);
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    const parsed = Number(raw.replace(/\s/g, '').replace(',', '.'));
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return Math.round(parsed);
+    }
+  }
+  return undefined;
+}
 
 export async function submitCampLead({
   logPrefix,
@@ -158,10 +176,14 @@ export async function submitCampLead({
   name,
   phone,
   shift,
+  bookingPrice,
   source,
   utm = {},
 }: SubmitCampLeadInput) {
   const commentLines = [`Смена: ${shift}`];
+  if (bookingPrice != null) {
+    commentLines.push(`Цена бронирования: ${formatBookingPrice(bookingPrice)}`);
+  }
   if (source?.trim()) {
     commentLines.push(`Источник формы: ${source.trim()}`);
   }
