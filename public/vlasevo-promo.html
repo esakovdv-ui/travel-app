@@ -550,10 +550,21 @@
       return rawShifts.map((shift) => {
         const oldPrice = Number(shift.oldPrice);
         const basePrice = Number(shift.price);
-        const isPromo = isTenDayShift(shift);
-        const displayPrice = isPromo ? PROMO_PRICE_10_DAYS : basePrice;
+        const promoOverride = shift.promoDisplayPrice != null && shift.promoDisplayPrice !== ''
+          ? Number(shift.promoDisplayPrice)
+          : null;
+        const hasPromoOverride = promoOverride != null && !Number.isNaN(promoOverride) && promoOverride > 0;
+        const isPromo = shift.isPromoHighlight != null
+          ? Boolean(shift.isPromoHighlight)
+          : isTenDayShift(shift);
+        const displayPrice = hasPromoOverride
+          ? promoOverride
+          : (isTenDayShift(shift) ? PROMO_PRICE_10_DAYS : basePrice);
         const displayOldPrice = oldPrice;
         const saving = Math.max(0, displayOldPrice - displayPrice);
+        const benefitLabel = (shift.benefitLabel && String(shift.benefitLabel).trim())
+          ? String(shift.benefitLabel).trim()
+          : (isPromo ? 'Выгода до 12 000 ₽' : 'Специальная цена');
 
         return {
           ...shift,
@@ -561,7 +572,7 @@
           displayPrice,
           displayOldPrice,
           saving,
-          benefitLabel: isPromo ? 'Выгода до 12 000 ₽' : 'Специальная цена',
+          benefitLabel,
         };
       });
     }
@@ -623,7 +634,7 @@
 
     async function loadShifts() {
       try {
-        const response = await fetch('/api/vlasevo-shifts', { cache: 'no-store' });
+        const response = await fetch('/api/vlasevo-promo-shifts', { cache: 'no-store' });
         if (response.ok) shifts = applyPromoPricing(await response.json());
       } catch (error) {
         console.warn('Не удалось загрузить смены', error);

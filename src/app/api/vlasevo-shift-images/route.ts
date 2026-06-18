@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const ADMIN_PASSWORD = process.env.VLASEVO_ADMIN_PASSWORD ?? 'vlasevo2026';
+const PROMO_ADMIN_PASSWORD = process.env.VLASEVO_PROMO_ADMIN_PASSWORD ?? 'vlasevo-promo2026';
 const runtimeImagesDir = process.env.VLASEVO_SHIFT_IMAGES_DIR ?? path.join(process.cwd(), 'storage/vlasevo-shift-images');
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const DEBUG_ENDPOINT = 'http://127.0.0.1:7452/ingest/559fd227-ad27-4091-a3b1-b6f5ed56ddbf';
@@ -14,6 +15,10 @@ function extensionFor(type: string) {
   if (type === 'image/png') return 'png';
   if (type === 'image/webp') return 'webp';
   return 'jpg';
+}
+
+function isValidAdminPassword(password: string) {
+  return password === ADMIN_PASSWORD || password === PROMO_ADMIN_PASSWORD;
 }
 
 function slugify(value: string) {
@@ -58,7 +63,7 @@ export async function POST(request: Request) {
     location: 'src/app/api/vlasevo-shift-images/route.ts:POST:entry',
     message: 'Upload endpoint received request',
     data: {
-      passwordMatches: password === ADMIN_PASSWORD,
+      passwordMatches: isValidAdminPassword(password),
       hasFile: file instanceof File,
       fileType: file instanceof File ? file.type : null,
       fileSize: file instanceof File ? file.size : null,
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
   });
   // #endregion
 
-  if (password !== ADMIN_PASSWORD) {
+  if (!isValidAdminPassword(password)) {
     return NextResponse.json({ error: 'Неверный пароль.' }, { status: 401 });
   }
 
