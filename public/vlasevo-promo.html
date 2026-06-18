@@ -16,6 +16,19 @@
   <meta name="twitter:title" content="Летние смены в лагере «Власьево» от 39 900 ₽">
   <meta name="twitter:description" content="Специальная цена на 10-дневные смены — от 39 900 ₽. Выгода до 12 000 ₽.">
   <meta name="twitter:image" content="https://motrip.ru/vlasevo-og.png">
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
+
+    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
   <style>
     :root {
       --orange: #ff8500;
@@ -106,28 +119,33 @@
     }
     .hero { padding: 28px 0 18px; }
     .hero-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
-    .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 440px; display: flex; flex-direction: column; justify-content: space-between; }
-    .hero-main h1 { margin: 8px 0 0; font-size: clamp(30px, 3.2vw, 46px); line-height: 1.1; letter-spacing: -.015em; max-width: none; }
+    .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 400px; display: flex; flex-direction: column; justify-content: space-between; }
+    .hero-main h1 { margin: 0; font-size: clamp(32px, 3.6vw, 52px); line-height: 1.08; letter-spacing: -.02em; max-width: none; }
     .promo-hero-price {
       display: inline-flex;
       align-items: center;
-      margin-top: 16px;
-      padding: 14px 24px;
-      border-radius: 16px;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 12px 20px;
+      border-radius: 999px;
       background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
       color: #fff;
-      font-size: clamp(22px, 3vw, 34px);
+      font-size: clamp(18px, 2.2vw, 24px);
       font-weight: 900;
-      line-height: 1.15;
-      letter-spacing: -.02em;
-      box-shadow: 0 12px 28px rgba(229, 57, 53, .38);
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      box-shadow: 0 10px 28px rgba(229, 57, 53, .34);
       animation: promo-pulse 2.2s ease-in-out infinite;
+    }
+    .promo-hero-price-icon {
+      font-size: 1.1em;
+      line-height: 1;
     }
     @keyframes promo-pulse {
       0%, 100% { box-shadow: 0 12px 28px rgba(229, 57, 53, .38); transform: scale(1); }
       50% { box-shadow: 0 16px 40px rgba(229, 57, 53, .55); transform: scale(1.01); }
     }
-    .lead { margin-top: 18px; color: #334155; max-width: 680px; font-size: clamp(18px,2vw,22px); font-weight: 700; line-height: 1.5; }
+    .lead { margin-top: 16px; color: #475569; max-width: 560px; font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.5; }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
     .hero-photo img { width: 100%; height: 100%; min-height: 440px; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
     .timer-panel { margin-top: 18px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: center; }
@@ -137,7 +155,34 @@
     .time-num { display: block; font-size: clamp(24px,3vw,38px); color: var(--promo-red); font-weight: 900; }
     .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
     section { padding: 34px 0; }
+    #shifts {
+      padding-bottom: 14px;
+    }
+    #shifts + section {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    #about {
+      padding-top: 14px;
+    }
     .section-title { margin: 0 0 14px; font-size: clamp(28px, 3.5vw, 46px); line-height: 1.08; letter-spacing: -.02em; }
+    .shifts-intro {
+      width: 100%;
+      margin-bottom: 22px;
+    }
+    .shifts-intro .section-title {
+      margin: 0 0 8px;
+      max-width: none;
+    }
+    .shifts-intro .lead {
+      margin: 0;
+      max-width: none;
+      width: 100%;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 19px);
+      font-weight: 700;
+      line-height: 1.45;
+    }
     .section-text { margin: 0; color: var(--muted); font-weight: 700; }
     .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
     .card { overflow: hidden; border-radius: 20px; border: 1px solid rgba(0,0,0,.06); background: #fff; display: flex; flex-direction: column; }
@@ -255,6 +300,32 @@
     .about-card { padding: 20px; }
     .about-card h3 { margin: 0 0 10px; font-size: 24px; }
     .about-card p { margin: 0; color: #334155; font-weight: 700; line-height: 1.45; }
+    .camp-more-section { padding: 22px 0 30px; }
+    .camp-more {
+      padding: clamp(28px, 4vw, 42px);
+      text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+    .camp-more-title {
+      margin: 0 0 12px;
+      font-size: clamp(24px, 2.8vw, 34px);
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+    .camp-more-text {
+      margin: 0 auto 22px;
+      max-width: 760px;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 18px);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .camp-more .btn {
+      min-height: 46px;
+      padding: 12px 24px;
+    }
     .lead-block { display: grid; grid-template-columns: 1fr 420px; gap: 18px; align-items: start; }
     .form-card { padding: 20px; }
     .field { margin-bottom: 12px; }
@@ -370,12 +441,14 @@
         font-size: 14px;
       }
       .promo-hero-price {
-        width: 100%;
+        width: fit-content;
+        max-width: 100%;
         justify-content: center;
         text-align: center;
-        font-size: 22px;
-        padding: 12px 16px;
+        font-size: 17px;
+        padding: 11px 16px;
       }
+      .camp-more .btn { width: 100%; max-width: none; }
       .price-promo { font-size: 32px; }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
@@ -389,10 +462,12 @@
         <div class="hero-grid">
           <div class="hero-main panel">
             <div>
-              <span class="chip promo-accent"><span class="chip-icon" aria-hidden="true">🔥</span>Специальная акция · выгода до 12 000 ₽</span>
-              <h1>Летние смены в лагере «Власьево» по специальной цене</h1>
-              <div class="promo-hero-price promo-accent">Летние смены от 39 900 ₽</div>
-              <p class="lead">Летние смены для детей по специальной цене. Выберите подходящую программу и подарите ребенку незабываемые каникулы.</p>
+              <h1>Летние смены во «Власьево»</h1>
+              <div class="promo-hero-price" aria-label="Специальные цены от 39 900 рублей">
+                <span class="promo-hero-price-icon" aria-hidden="true">🔥</span>
+                <span>Специальные цены от 39 900 ₽</span>
+              </div>
+              <p class="lead">Проживание, питание и насыщенная программа для детей от 7 до 17 лет.</p>
             </div>
             <div class="hero-actions">
               <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
@@ -418,7 +493,10 @@
 
     <section id="shifts">
       <div class="container">
-        <h2 class="section-title">Летние смены по специальной цене</h2>
+        <div class="shifts-intro">
+          <h2 class="section-title">Летние смены по специальной цене</h2>
+          <p class="lead">В стоимость входит проживание, питание, участие во всех мероприятиях смены и сопровождение команды лагеря.</p>
+        </div>
         <div class="grid" id="shift-grid"></div>
       </div>
     </section>
@@ -441,17 +519,33 @@
         <h2 class="section-title">О лагере «Власьево»</h2>
         <div class="about-grid">
           <article class="about-card panel">
-            <h3>Летняя атмосфера</h3>
-            <p>Современная программа отдыха и развития в живописной природной локации с акцентом на эмоции, дружбу и безопасность.</p>
+            <h3>Загородный лагерь</h3>
+            <p>Лесная территория в Московской области, комфортное размещение и условия для полноценного летнего отдыха детей.</p>
           </article>
           <article class="about-card panel">
-            <h3>Развитие и досуг</h3>
-            <p>Творческие и спортивные активности, командные форматы, ежедневная программа и поддержка опытной команды лагеря.</p>
+            <h3>Все включено</h3>
+            <p>В стоимость смены входит проживание, питание, ежедневная программа мероприятий и участие во всех активностях лагеря.</p>
           </article>
           <article class="about-card panel">
-            <h3>Семейное доверие</h3>
-            <p>Понятные условия бронирования, прозрачная коммуникация и качественный сервис на всех этапах — от выбора смены до заезда.</p>
+            <h3>МОСГОРТУР</h3>
+            <p>Организованный детский отдых от крупнейшего оператора детских программ Москвы с многолетним опытом проведения смен.</p>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="camp-more" class="camp-more-section">
+      <div class="container">
+        <div class="camp-more panel">
+          <h2 class="camp-more-title">Хотите узнать больше о лагере?</h2>
+          <p class="camp-more-text">Посмотрите фотографии территории, условия проживания, инфраструктуру, программу отдыха и другую полезную информацию о комплексе «Власьево».</p>
+          <a
+            class="btn btn-primary"
+            id="camp-more-link"
+            href="https://vlasevo.mosgortur.ru/?utm_source=vlasevo_promo&amp;utm_medium=button&amp;utm_campaign=summer_2026&amp;utm_content=about_camp_block"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Подробнее о лагере →</a>
         </div>
       </div>
     </section>
@@ -462,7 +556,7 @@
           <div>
             <span class="chip">Без оплаты на сайте</span>
             <h2 class="section-title">Успейте забронировать летний отдых ребенка</h2>
-            <p class="lead">Оставьте заявку, и менеджер поможет выбрать подходящую смену в «Власьево», расскажет о деталях программы и бронирования.</p>
+            <p class="lead">Оставьте заявку, и менеджер поможет подобрать смену, расскажет о лагере, программе отдыха и актуальном наличии мест.</p>
           </div>
         </div>
         <form class="form-card panel" id="form">
@@ -1065,6 +1159,15 @@
         if (submitButton) submitButton.disabled = false;
       }
     });
+
+    const campMoreLink = document.getElementById('camp-more-link');
+    if (campMoreLink) {
+      campMoreLink.addEventListener('click', () => {
+        if (typeof ym === 'function') {
+          ym(109401746, 'reachGoal', 'vlasevo_lending_click');
+        }
+      });
+    }
 
     loadShifts();
   </script>
