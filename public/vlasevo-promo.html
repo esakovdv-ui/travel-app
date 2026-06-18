@@ -625,7 +625,7 @@
     function renderShifts() {
       shiftGrid.innerHTML = shifts.map(shiftTemplate).join('');
       shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
-      shifts.forEach((shift) => {
+      shifts.filter((shift) => !shift.isSoldOut).forEach((shift) => {
         const option = document.createElement('option');
         option.value = `${shift.title} · ${shift.dates}`;
         option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.displayPrice)} ₽`;
