@@ -416,6 +416,105 @@
       line-height: 1.45;
     }
     .modal-form-body.is-hidden { display: none; }
+    .modal--wide { width: min(100%, 760px); padding: 0; }
+    .modal--camp .modal-close { z-index: 2; }
+    .camp-info-body {
+      padding: 24px 22px 22px;
+    }
+    .camp-info-badge {
+      display: inline-flex;
+      align-items: center;
+      margin: 0 0 14px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .camp-info-lead {
+      margin: 0 0 18px;
+      color: #334155;
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .camp-info-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+    .camp-info-gallery img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .camp-info-section {
+      margin: 0 0 22px;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+    }
+    .camp-info-section h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    .camp-info-section p {
+      margin: 0 0 12px;
+      color: #334155;
+      font-weight: 700;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .camp-info-section p:last-child { margin-bottom: 0; }
+    .camp-info-photos {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .camp-info-photos img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 14px;
+      background: var(--panel);
+    }
+    .camp-info-infra-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .camp-info-infra-list li {
+      margin: 0 0 10px;
+      color: #334155;
+      font-weight: 700;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    .camp-info-infra-list li:last-child { margin-bottom: 0; }
+    .camp-info-infra-list strong { color: var(--text); }
+    .camp-info-location {
+      margin: 0;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--panel);
+      color: #334155;
+      font-weight: 800;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    @media (max-width: 680px) {
+      .camp-info-gallery,
+      .camp-info-photos { grid-template-columns: 1fr 1fr; }
+      .camp-info-gallery img:first-child { grid-column: 1 / -1; }
+    }
     .sticky-cta { position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 40; display: none; padding: 10px; border-radius: 14px; box-shadow: 0 14px 24px rgba(0,0,0,.14); background: rgba(255,255,255,.95); backdrop-filter: blur(3px); }
     .sticky-cta .btn { width: 100%; }
     .hidden { display: none !important; }
@@ -539,13 +638,7 @@
         <div class="camp-more panel">
           <h2 class="camp-more-title">Хотите узнать больше о лагере?</h2>
           <p class="camp-more-text">Посмотрите фотографии территории, условия проживания, инфраструктуру, программу отдыха и другую полезную информацию о комплексе «Власьево».</p>
-          <a
-            class="btn btn-primary"
-            id="camp-more-link"
-            href="https://vlasevo.mosgortur.ru/?utm_source=vlasevo_promo&amp;utm_medium=button&amp;utm_campaign=summer_2026&amp;utm_content=about_camp_block"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Подробнее о лагере →</a>
+          <button type="button" class="btn btn-primary" id="camp-more-link">Подробнее о лагере →</button>
         </div>
       </div>
     </section>
@@ -590,6 +683,76 @@
   <div class="sticky-cta" id="sticky-cta">
     <a class="btn btn-primary cta-primary" href="#lead-form">Забронировать</a>
     <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Выбрать смену</a>
+  </div>
+
+  <div class="modal-overlay" id="camp-info-modal" aria-hidden="true">
+    <div class="modal modal--wide modal--camp" role="dialog" aria-modal="true" aria-labelledby="camp-info-title">
+      <button type="button" class="modal-close" id="camp-info-close" aria-label="Закрыть">&times;</button>
+      <div class="camp-info-body">
+        <h2 id="camp-info-title">ЛОК «Власьево»</h2>
+        <span class="camp-info-badge">7–17 лет</span>
+        <p class="camp-info-lead">Лесной оздоровительный комплекс «Власьево» от МОСГОРТУРа — загородный комплекс, полностью оборудованный для отдыха детей. Это экологически чистая площадка, на которой любой организатор детского отдыха может провести свою авторскую смену.</p>
+        <p class="camp-info-lead">Во «Власьево» вы найдёте всё, чем могут похвастаться современные детские лагеря, в том числе работающие в концепции «Обучение через развлечение».</p>
+        <div class="camp-info-gallery">
+          <img src="https://static.tildacdn.com/tild3166-6433-4766-a135-373232393439/DSC08901.jpg" alt="Территория лагеря «Власьево»" loading="lazy">
+          <img src="https://static.tildacdn.com/tild3531-3565-4166-b562-613662633433/DSC09815.jpg" alt="Лагерь «Власьево»" loading="lazy">
+          <img src="https://static.tildacdn.com/tild3434-3162-4861-b163-663036633865/Screenshot_2026-01-1.png" alt="Комплекс «Власьево»" loading="lazy">
+        </div>
+
+        <article class="camp-info-section">
+          <h3>Размещение</h3>
+          <p>Дети проживают в комфортных двухэтажных корпусах. В каждом корпусе есть комната для хранения чемоданов, гладильные принадлежности, сушильный шкаф. На каждом этаже оборудованы досуговые холлы с мультимедийным оборудованием и установлен пурифайер — проточный автомат с питьевой водой.</p>
+          <p>Номера на 4–5 человек, санузлы и душевые на этаже. В номере: кровати с ортопедическими матрасами, прикроватные тумбочки, встроенные шкафы-купе. Wi‑Fi во всех комнатах и на территории.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild3935-3764-4935-b530-333430366130/DSC00121.jpg" alt="Корпус лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6163-3966-4233-b361-316539653630/IMG_8407_1.jpg" alt="Номер в лагере «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3534-6233-4838-a264-363430366133/DSC09872.JPG" alt="Комната проживания" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Питание</h3>
+          <p>Пятиразовое (комплексное) питание: завтрак, полдник, обед, ужин, второй ужин. Меню включает натуральные молочные и мясные продукты, сезонные овощи и фрукты — кормим вкусно, сытно и по нормам СанПиН.</p>
+          <p>Столовая работает только с сертифицированными поставщиками продуктов и воды. Сотрудники имеют медкнижки.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6635-3735-4534-b534-616565643064/5d75cd2662bac0628f4e.jpg" alt="Столовая лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3933-6533-4336-a362-333962386530/DSC09881.JPG" alt="Питание в лагере" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6166-3661-4964-b865-393239316233/DSC01748.jpg" alt="Обед в лагере «Власьево»" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Медицина</h3>
+          <p>На территории лесного оздоровительного комплекса есть медицинский пункт. Медики круглосуточно наблюдают за здоровьем детей и оказывают первую помощь.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6661-3339-4630-a264-313266623332/1685537655_polinka-t.jpg" alt="Медицинский пункт лагеря" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3662-6232-4563-b438-363532333439/4d2d042d3b1f0b9a5aa9.jpg" alt="Медицинское обслуживание в лагере" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Инфраструктура</h3>
+          <ul class="camp-info-infra-list">
+            <li><strong>Спортивные площадки:</strong> на территории лагеря находятся большие оборудованные спортивные и досуговые площадки разного профиля.</li>
+            <li><strong>Творческие пространства:</strong> в мастерских клуба-столовой можно проводить занятия и мастер-классы любой направленности — от творческих до научных.</li>
+            <li><strong>Игротека:</strong> здесь можно читать, играть и заниматься другими полезными делами в свободное время — в игровых комнатах есть всё необходимое.</li>
+            <li><strong>Концертный зал:</strong> универсальная площадка для показов кино и мультфильмов, шоу, представлений и дискотек.</li>
+            <li><strong>Большая сцена:</strong> на сцене лесного оздоровительного комплекса есть место и для актёрских талантов, и для танцевальных экспериментов, и для ярких фестивалей.</li>
+          </ul>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6530-3563-4431-b431-313036643738/DSC09798.JPG" alt="Спортивная площадка лагеря" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6662-3333-4638-b330-653265303761/DSC09885.JPG" alt="Инфраструктура лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6163-3439-4534-b936-316463333234/DSC06930.png" alt="Территория лагеря" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Расположение</h3>
+          <p class="camp-info-location">Московская область, городской округ Луховицы, территория оздоровительного комплекса, строение 1</p>
+        </article>
+
+      </div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
@@ -1059,7 +1222,12 @@
       if (event.target === reserveModal) closeReserveModal(true);
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && reserveModal.classList.contains('is-open')) closeReserveModal(true);
+      if (event.key !== 'Escape') return;
+      if (campInfoModal && campInfoModal.classList.contains('is-open')) {
+        closeCampInfoModal();
+        return;
+      }
+      if (reserveModal.classList.contains('is-open')) closeReserveModal(true);
     });
 
     modalForm.addEventListener('submit', async (event) => {
@@ -1161,11 +1329,36 @@
     });
 
     const campMoreLink = document.getElementById('camp-more-link');
+    const campInfoModal = document.getElementById('camp-info-modal');
+    const campInfoClose = document.getElementById('camp-info-close');
+
+    function openCampInfoModal() {
+      if (!campInfoModal) return;
+      if (typeof ym === 'function') {
+        ym(109401746, 'reachGoal', 'vlasevo_lending_click');
+      }
+      campInfoModal.classList.add('is-open');
+      campInfoModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      campInfoClose?.focus();
+    }
+
+    function closeCampInfoModal() {
+      if (!campInfoModal) return;
+      campInfoModal.classList.remove('is-open');
+      campInfoModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
     if (campMoreLink) {
-      campMoreLink.addEventListener('click', () => {
-        if (typeof ym === 'function') {
-          ym(109401746, 'reachGoal', 'vlasevo_lending_click');
-        }
+      campMoreLink.addEventListener('click', () => openCampInfoModal());
+    }
+    if (campInfoClose) {
+      campInfoClose.addEventListener('click', () => closeCampInfoModal());
+    }
+    if (campInfoModal) {
+      campInfoModal.addEventListener('click', (event) => {
+        if (event.target === campInfoModal) closeCampInfoModal();
       });
     }
 
