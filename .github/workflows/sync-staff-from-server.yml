@@ -60,10 +60,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/staff-landing-sync
           git add apps/staff-landing
           if git diff --staged --quiet; then
             echo "No changes in staff-landing snapshot"
             exit 0
           fi
           git commit -m "chore: sync staff-landing from VPS snapshot."
-          git push
+          git push -f origin chore/staff-landing-sync
