@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive staff-landing on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -26,12 +28,12 @@ jobs:
             cd /var/www/staff-landing
             echo "=== staff-landing git ==="
             if [ -d .git ]; then git status -sb; git remote -v; git log -1 --oneline; fi
-            tar czf /tmp/staff-landing-src.tgz \
+            tar czf /root/staff-landing-src.tgz \
               --exclude=node_modules \
               --exclude=.next \
               --exclude=.git \
               .
-            ls -lh /tmp/staff-landing-src.tgz
+            ls -lh /root/staff-landing-src.tgz
 
       - name: Download staff-landing archive
         uses: appleboy/scp-action@v0.1.7
@@ -39,14 +41,15 @@ jobs:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: /tmp/staff-landing-src.tgz
-          target: staff-landing-src.tgz
+          source: staff-landing-src.tgz
+          target: .
+          overwrite: true
 
       - name: Unpack into apps/staff-landing
         run: |
           rm -rf apps/staff-landing
           mkdir -p apps/staff-landing
-          tar xzf staff-landing-src.tgz/staff-landing-src.tgz -C apps/staff-landing
+          tar xzf staff-landing-src.tgz -C apps/staff-landing
           ls -la apps/staff-landing | head -30
 
       - name: Commit snapshot
