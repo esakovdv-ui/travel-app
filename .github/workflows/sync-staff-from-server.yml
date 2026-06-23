@@ -41,9 +41,10 @@ jobs:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: staff-landing-src.tgz
+          source: /root/staff-landing-src.tgz
           target: .
           overwrite: true
+          strip_components: 0
 
       - name: Unpack into apps/staff-landing
         run: |
