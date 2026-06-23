@@ -1,0 +1,48 @@
+name: Server inspect (dispatch)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect VPS layout
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "=== /home ==="
+            ls -la /home/
+            echo "=== pm2 ==="
+            pm2 list || true
+            echo "=== pm2 describe all ==="
+            pm2 jlist 2>/dev/null | head -c 20000 || true
+            echo ""
+            echo "=== nginx staff ==="
+            grep -R "staff.motrip" /etc/nginx/ 2>/dev/null || true
+            echo "=== nginx site files ==="
+            for f in /etc/nginx/sites-enabled/*; do
+              echo "--- $f ---"
+              cat "$f"
+              echo ""
+            done
+            echo "=== travel-app git ==="
+            if [ -d /home/travel-app/.git ]; then
+              cd /home/travel-app
+              git status -sb
+              git log -1 --oneline
+            fi
+            echo "=== package.json projects in /home ==="
+            for d in /home/*; do
+              if [ -f "$d/package.json" ]; then
+                echo "--- $d ---"
+                head -n 8 "$d/package.json"
+                if [ -d "$d/.git" ]; then
+                  cd "$d" && git status -sb && git log -1 --oneline
+                fi
+              fi
+            done
