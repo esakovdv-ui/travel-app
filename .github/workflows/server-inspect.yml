@@ -41,13 +41,22 @@ jobs:
               git status -sb
               git log -1 --oneline
             fi
-            echo "=== package.json projects in /home ==="
-            for d in /home/*; do
-              if [ -f "$d/package.json" ]; then
-                echo "--- $d ---"
-                head -n 8 "$d/package.json"
-                if [ -d "$d/.git" ]; then
-                  cd "$d" && git status -sb && git log -1 --oneline
-                fi
+            echo "=== staff-landing pm2 ==="
+            pm2 describe staff-landing || true
+            STAFF_CWD=$(pm2 jlist 2>/dev/null | node -e "const p=JSON.parse(require('fs').readFileSync(0,'utf8')); const a=p.find(x=>x.name==='staff-landing'); console.log(a?.pm2_env?.pm_cwd||'');")
+            echo "STAFF_CWD=$STAFF_CWD"
+            if [ -n "$STAFF_CWD" ] && [ -d "$STAFF_CWD" ]; then
+              ls -la "$STAFF_CWD"
+              if [ -f "$STAFF_CWD/package.json" ]; then head -n 12 "$STAFF_CWD/package.json"; fi
+              if [ -d "$STAFF_CWD/.git" ]; then
+                cd "$STAFF_CWD"
+                git status -sb
+                git remote -v
+                git log -1 --oneline
               fi
+            fi
+            echo "=== find staff-landing dirs ==="
+            find /home /root /var/www -maxdepth 4 -type d -name 'staff-landing' 2>/dev/null || true
+            find /home /root /var/www -maxdepth 5 -name package.json 2>/dev/null | while read f; do
+              if grep -q '"staff-landing"\|"staff"' "$f" 2>/dev/null; then echo "MATCH $f"; head -5 "$f"; fi
             done
