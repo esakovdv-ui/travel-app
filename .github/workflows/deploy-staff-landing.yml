@@ -1,0 +1,62 @@
+name: Deploy staff-landing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/staff-landing/**'
+      - '.github/workflows/deploy-staff-landing.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy staff-landing to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          STAFF_SESSION_SECRET: ${{ secrets.STAFF_SESSION_SECRET }}
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: STAFF_SESSION_SECRET
+          command_timeout: 15m
+          script: |
+            set -e
+            SRC=/home/travel-app/apps/staff-landing
+            DST=/var/www/staff-landing
+            if [ ! -d "$SRC" ]; then
+              echo "Source missing: $SRC (run travel-app deploy first)"
+              exit 1
+            fi
+            mkdir -p "$DST"
+            rsync -a --delete \
+              --exclude node_modules \
+              --exclude .next \
+              --exclude .env.local \
+              "$SRC/" "$DST/"
+            cd "$DST"
+            touch .env.local
+            set_env_var() {
+              key="$1"
+              val="$2"
+              if [ -z "$val" ]; then return 0; fi
+              if grep -q "^${key}=" .env.local; then
+                sed -i.bak "s|^${key}=.*|${key}=${val}|" .env.local
+              else
+                printf '%s=%s\n' "$key" "$val" >> .env.local
+              fi
+            }
+            if [ -n "${STAFF_SESSION_SECRET:-}" ]; then
+              set_env_var STAFF_SESSION_SECRET "$STAFF_SESSION_SECRET"
+            elif ! grep -q '^STAFF_SESSION_SECRET=.' .env.local; then
+              set_env_var STAFF_SESSION_SECRET "$(openssl rand -base64 32)"
+              echo "Generated STAFF_SESSION_SECRET on server (add GitHub secret for stable deploys)"
+            fi
+            set_env_var COOKIE_SECURE true
+            npm install
+            npm run build
+            pm2 restart staff-landing
+            pm2 status staff-landing
