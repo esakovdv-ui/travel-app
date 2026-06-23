@@ -1,0 +1,1757 @@
+/* ─── /tours — fullscreen результаты с боковыми фильтрами ───────────────── */
+
+/* Общий контейнер страницы — flex-колонка от 0 до 100vh */
+.toursPage {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--c-bg);
+}
+
+/* ─── Мобильная строка поиска (только ≤768px) ───────────────────────────── */
+
+.mobileSearchBar {
+  display: none;
+}
+
+.mobileHeaderTitle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobileHeaderTitle {
+    display: block;
+    text-align: left;
+    font-family: var(--font-unbounded), sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--c-text);
+    margin: 0;
+  }
+
+  .mobileSearchBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #fff;
+    border-bottom: 1px solid rgba(20, 20, 43, 0.07);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mobileSearchBarText {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobileSearchBarEdit {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--c-blue-subtle, rgba(27,79,191,0.08));
+    color: var(--c-blue);
+  }
+}
+
+/* ─── CTA «Оставить заявку» — скролл к турам (только mobile) ───────────── */
+
+.ctaScrollBtn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .ctaScrollBtn {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 22px;
+    border-radius: var(--radius-pill);
+    background: var(--c-red);
+    color: #fff;
+    border: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition);
+    align-self: flex-start;
+  }
+  .ctaScrollBtn:hover { background: var(--c-red-hover); }
+}
+
+/* ─── Прогресс-бар поиска (под хедером) ─────────────────────────────────── */
+
+.searchProgressBar {
+  flex-shrink: 0;
+  height: 3px;
+  background: rgba(12, 36, 97, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.searchProgressFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--c-blue) 0%, #4a90d9 100%);
+  border-radius: 0 999px 999px 0;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+/* ─── Подхедер: счётчик + сортировка + mobile-кнопка фильтров ───────────── */
+
+.subheader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  z-index: 30;
+}
+
+.subheaderCount {
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.subheaderCount strong { color: var(--c-text); }
+
+.sortSelect {
+  padding: 5px 28px 5px 10px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235c5c7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 9px center;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+}
+.sortSelect:focus { border-color: var(--c-blue); }
+
+/* Mobile: кнопка «Фильтры» с бейджем */
+.mobileFilterBtn {
+  display: none;  /* видна только на мобайле — переопределяется ниже */
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--transition);
+}
+.mobileFilterBtn:hover { border-color: var(--c-blue); }
+
+.mobileFilterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--c-blue);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* ─── Основное тело: сайдбар + список + карта ───────────────────────────── */
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Список отелей ─────────────────────────────────────────────────────── */
+
+.listPane {
+  width: 400px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  border-right: 1px solid rgba(20, 20, 43, 0.06);
+}
+
+/* ─── Карточка отеля ────────────────────────────────────────────────────── */
+
+.hotelCard {
+  display: flex;
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  border: 1.5px solid var(--c-border);
+  cursor: pointer;
+  /* overflow НЕ hidden — иначе обрезает контент при длинном названии */
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.hotelCard:hover,
+.hotelCardSelected {
+  border-color: var(--c-blue);
+  box-shadow: 0 2px 14px rgba(12, 36, 97, 0.10);
+}
+
+/* Фото — левая колонка, overflow:hidden только здесь для скруглений */
+.hotelThumbWrap {
+  width: 150px;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--c-blue-subtle);
+  overflow: hidden;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  align-self: stretch;
+}
+
+.hotelThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hotelThumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: linear-gradient(135deg, rgba(12,36,97,0.08), rgba(12,36,97,0.03));
+}
+
+.hotelStarsOverlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #f59e0b;
+  font-size: 0.75rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  letter-spacing: 1px;
+}
+
+/* Правый блок */
+.hotelCardBody {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hotelCardTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hotelCardName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  flex: 1;
+  line-height: 1.3;
+  /* max 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hotelCardRatingPill {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.08);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.hotelCardRatingHigh { background: #e8f5e9; color: #2e7d32; }
+.hotelCardRatingMid  { background: #fff8e1; color: #e65100; }
+.hotelCardRatingLow  { background: #fce4ec; color: #c62828; }
+
+.hotelCardLocation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+}
+
+.hotelCardSpecs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.hotelCardSpec {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.06);
+  font-size: 0.71rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.hotelCardDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 1px 0;
+}
+
+.hotelCardMealBadge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(244, 161, 2, 0.13);
+  color: #7a5200;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.hotelCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 2px;
+  gap: 8px;
+}
+
+.hotelCardPriceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hotelCardPriceFrom {
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  line-height: 1.2;
+}
+
+.hotelCardPrice {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-text);
+  line-height: 1.2;
+}
+
+.hotelCardNights {
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  line-height: 1.4;
+}
+
+.hotelCardBookBtn {
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  border: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.hotelCardBookBtn:hover { background: var(--c-red-hover); }
+
+/* ─── Прогресс поиска ───────────────────────────────────────────────────── */
+
+.searchProgress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px 20px;
+  gap: 14px;
+  text-align: center;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(12, 36, 97, 0.14);
+  border-top-color: var(--c-blue);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.progressBar {
+  width: 100%;
+  max-width: 240px;
+  height: 4px;
+  background: rgba(12, 36, 97, 0.10);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-blue);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  min-width: 6px;
+}
+
+.progressLabel {
+  font-size: 0.88rem;
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+.progressHint {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+}
+
+.inlineProgress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+.inlineProgressLabel {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+}
+
+/* ─── Пустые / ошибочные состояния ─────────────────────────────────────── */
+
+.emptyState {
+  padding: 48px 20px;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyStateText {
+  font-size: 0.9rem;
+  color: var(--c-text-muted);
+  line-height: 1.6;
+}
+
+.resetFiltersBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--c-border);
+  background: transparent;
+  color: var(--c-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.resetFiltersBtn:hover { border-color: var(--c-blue); color: var(--c-blue); }
+
+/* ─── Карта ─────────────────────────────────────────────────────────────── */
+
+.mapPane {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.mapPlaceholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e0d0;
+  color: var(--c-text-muted);
+  font-size: 0.88rem;
+}
+
+/* ─── Модальное окно отеля ──────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 40, 0.55);
+  z-index: 200;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+}
+
+.modal {
+  background: var(--c-surface);
+  border-radius: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #E8382E;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 0;
+  z-index: 10;
+  transition: background var(--transition);
+}
+.modalClose:hover { background: #c62e25; }
+
+.modalHeroImage {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  display: block;
+}
+
+.modalBody {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.modalLeft {
+  padding: 24px 28px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalRight {
+  border-left: 1px solid var(--c-border);
+  overflow-y: auto;
+  padding: 20px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--c-surface-alt);
+}
+
+.modalHotelName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--c-text);
+  padding-right: 36px;
+}
+
+.modalHotelMeta {
+  font-size: 0.83rem;
+  color: var(--c-text-muted);
+  margin-top: 4px;
+}
+
+.modalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modalSectionTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-text-muted);
+}
+
+.modalSectionText {
+  font-size: 0.85rem;
+  color: var(--c-text);
+  line-height: 1.6;
+}
+
+/* HTML-контент из API (UL/LI списки) */
+.modalSectionText ul,
+.modalSectionText ol {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.modalSectionText li {
+  margin-bottom: 3px;
+}
+
+/* ─── Секция номеров ─────────────────────────────────────────────────────── */
+
+.roomsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roomCard {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--c-surface);
+  transition: box-shadow var(--transition);
+}
+.roomCard:hover { box-shadow: var(--shadow-md); }
+
+.roomCardPhoto {
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.roomCardPhoto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  transition: background var(--transition);
+}
+.roomCardPhoto:hover::after { background: rgba(0,0,0,0.08); }
+
+.roomCardImg {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.roomCardPhotoCount {
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  background: rgba(0,0,0,0.52);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  z-index: 1;
+}
+
+.roomCardPhotoPlaceholder {
+  width: 200px;
+  height: 140px;
+  background: var(--c-blue-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  flex-shrink: 0;
+}
+
+.roomCardBody {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roomCardName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+}
+
+.roomCardMeta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.roomCardMeta span {
+  font-size: 0.71rem;
+  color: var(--c-text-muted);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.roomCardDesc {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+  line-height: 1.5;
+}
+.roomCardDesc ul, .roomCardDesc ol {
+  padding-left: 16px;
+  margin: 4px 0;
+}
+.roomCardDesc li { margin-bottom: 2px; }
+
+.modalToursList { display: flex; flex-direction: column; gap: 8px; }
+
+.modalTourRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-surface-alt);
+  flex-wrap: wrap;
+  cursor: pointer;
+}
+.modalTourRowSelected { border-color: var(--c-blue); background: var(--c-blue-subtle); }
+
+.modalTourMeta { flex: 1; font-size: 0.8rem; color: var(--c-text-muted); min-width: 0; }
+.modalTourPrice { font-size: 0.95rem; font-weight: 800; color: var(--c-blue); white-space: nowrap; }
+
+.modalTourBtn {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  border: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.modalTourBtn:hover { background: var(--c-red-hover); }
+
+.modalSpinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* ─── Форма заявки ──────────────────────────────────────────────────────── */
+
+.bookingSection {
+  border-top: 1px solid var(--c-border);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bookingTitle { font-size: 0.9rem; font-weight: 700; color: var(--c-text); }
+.bookingNote  { font-size: 0.72rem; color: var(--c-text-light); text-align: center; line-height: 1.5; }
+
+.bookingError {
+  background: #fff0f0;
+  border: 1px solid #ffc5c5;
+  border-radius: var(--radius-md);
+  padding: 9px 13px;
+  font-size: 0.82rem;
+  color: var(--c-red);
+}
+
+.bookingSuccess {
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.bookingSuccessIcon  { font-size: 2.5rem; }
+.bookingSuccessTitle { font-size: 1.1rem; font-weight: 700; color: var(--c-text); }
+.bookingSuccessText  { font-size: 0.85rem; color: var(--c-text-muted); line-height: 1.6; }
+
+/* ─── Карточка: рейтинг + питание ───────────────────────────────────────── */
+
+.hotelCardBadges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.ratingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.mealChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--c-blue-subtle);
+  color: var(--c-blue);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.charterChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(244, 161, 2, 0.14);
+  color: #a06000;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ─── Галерея в модалке ──────────────────────────────────────────────────── */
+
+.modalGallery {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.modalHeroWrap {
+  position: relative;
+  height: 360px;
+  background: var(--c-blue-subtle);
+}
+
+.modalHeroImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  display: block;
+}
+
+.modalThumbs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(10, 15, 40, 0.04);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.modalThumbs::-webkit-scrollbar { display: none; }
+
+.modalThumb {
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0.65;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: opacity var(--transition), border-color var(--transition);
+}
+.modalThumb:hover { opacity: 0.9; }
+.modalThumbActive { opacity: 1; border-color: var(--c-blue); }
+
+/* ─── Навигация галереи ──────────────────────────────────────────────────── */
+
+.galleryNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: background var(--transition);
+  z-index: 2;
+}
+.galleryNavBtn:hover { background: rgba(255, 255, 255, 1); }
+
+.galleryPrev { left: 12px; }
+.galleryNext { right: 12px; }
+
+.galleryCounter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.03em;
+}
+
+/* ─── Панель цены в правой колонке ───────────────────────────────────────── */
+
+.bookingPanel {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.bookingPanelFrom {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+}
+
+.bookingPanelPrice {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--c-blue);
+}
+
+.bookingPanelNights {
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+}
+
+/* ─── Характеристики отеля (факты) ──────────────────────────────────────── */
+
+.factsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.factItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+}
+
+.factLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-light);
+}
+
+.factValue {
+  font-size: 0.82rem;
+  color: var(--c-text);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ─── Строка тура в модалке ──────────────────────────────────────────────── */
+
+.tourRow {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-border);
+  background: var(--c-surface-alt);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  align-items: flex-start;
+}
+.tourRow:hover { border-color: var(--c-blue-mid); }
+.tourRowSelected { border-color: var(--c-blue); background: var(--c-blue-subtle); }
+
+.tourRowLeft {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tourRowTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tourDate {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.tourNights {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.tourMealBadge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--c-blue-subtle);
+  color: var(--c-blue);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tourCharterBadge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(244, 161, 2, 0.14);
+  color: #a06000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tourRowBottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tourOperator {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+}
+
+.tourRoomTag {
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--c-border);
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.tourRowRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tourPrice {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--c-blue);
+  white-space: nowrap;
+}
+
+.tourSelectBtn {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  border: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.tourSelectBtn:hover { background: var(--c-red-hover); }
+.tourSelectBtnActive { background: var(--c-blue); }
+.tourSelectBtnActive:hover { background: var(--c-blue-hover); }
+
+.tourPricePerPerson {
+  font-size: 0.72rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.showMoreToursBtn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  background: none;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--transition), color var(--transition);
+}
+.showMoreToursBtn:hover {
+  border-color: var(--c-blue);
+  color: var(--c-blue);
+}
+
+/* ─── Лайтбокс (полноэкранный просмотр фото) ────────────────────────────── */
+
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.93);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 0;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background var(--transition);
+}
+.lightboxClose:hover { background: rgba(255, 255, 255, 0.26); }
+
+.lightboxCounter {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.lightboxNavBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 0;
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background var(--transition);
+  margin-top: -30px; /* смещение вверх от полоски с миниатюрами */
+}
+.lightboxNavBtn:hover { background: rgba(255, 255, 255, 0.26); }
+.lightboxPrev { left: 20px; }
+.lightboxNext { right: 20px; }
+
+.lightboxImgWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  padding: 56px 80px 16px;
+}
+
+.lightboxImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.lightboxThumbs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px 16px;
+  overflow-x: auto;
+  width: 100%;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.lightboxThumbs::-webkit-scrollbar { display: none; }
+
+.lightboxThumb {
+  width: 76px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.45;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: opacity var(--transition), border-color var(--transition);
+}
+.lightboxThumb:hover { opacity: 0.75; }
+.lightboxThumbActive { opacity: 1; border-color: #fff; }
+
+/* ─── Скролл-контейнер модалки ───────────────────────────────────────────── */
+
+.modalScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modalHotelHeader { padding-right: 36px; }
+
+/* ─── Группы «номер + туры» ──────────────────────────────────────────────── */
+
+.roomGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.roomBlock {
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+
+.roomBlockHead {
+  display: flex;
+  background: var(--c-surface-alt);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.roomDesc {
+  padding: 10px 14px 12px;
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  border-bottom: 1px solid var(--c-border);
+  line-height: 1.5;
+}
+.roomDesc ul { padding-left: 18px; margin: 4px 0; }
+.roomDesc li { margin: 2px 0; }
+
+.roomBlockThumbWrap {
+  width: 160px;
+  flex-shrink: 0;
+  position: relative;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
+.roomBlockThumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition);
+}
+.roomBlockThumbWrap:hover .roomBlockThumb { transform: scale(1.04); }
+
+.roomBlockThumbCount {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.52);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.roomBlockThumbPlaceholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: linear-gradient(135deg, rgba(12,36,97,0.07), rgba(12,36,97,0.03));
+}
+
+.roomBlockInfo {
+  flex: 1;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.roomBlockName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+}
+
+.roomBlockMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roomBlockMeta span {
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.roomBlockMinPrice {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  margin-top: auto;
+}
+
+/* ─── Строки туров внутри блока номера ───────────────────────────────────── */
+
+.roomToursList { display: flex; flex-direction: column; }
+
+.roomTourRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--c-border);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.roomTourRow:last-of-type { border-bottom: 0; }
+.roomTourRow:hover { background: rgba(20, 20, 43, 0.025); }
+.roomTourRowSelected { background: var(--c-blue-subtle) !important; }
+.roomTourRowExpanded { background: rgba(20, 20, 43, 0.03); }
+
+.roomTourLeft {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roomTourRight {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tourIncludedBadge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 43, 20, 0.07);
+  color: #2e6e2e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tourRoomTag {
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--c-border);
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+/* ─── Детали рейса (lazy) ────────────────────────────────────────────────── */
+
+.flightDetails {
+  padding: 10px 16px 14px;
+  background: rgba(20, 20, 43, 0.02);
+  border-top: 1px dashed rgba(20, 20, 43, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flightDetailsLabel {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-muted);
+  margin-bottom: 2px;
+}
+
+.flightRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.flightRowDir {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  white-space: nowrap;
+  min-width: 56px;
+  padding-top: 1px;
+}
+
+.flightRowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flightRowTop {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.flightRoute {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.flightDate {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+}
+
+.flightTime {
+  font-size: 0.78rem;
+  color: var(--c-text);
+  font-weight: 600;
+}
+
+.flightRowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.flightTag {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.06);
+  font-size: 0.68rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.flightError {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+  font-style: italic;
+}
+
+/* Skeleton */
+
+.flightSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.skeletonLine {
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(20, 20, 43, 0.07) 25%,
+    rgba(20, 20, 43, 0.13) 50%,
+    rgba(20, 20, 43, 0.07) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Sticky footer при выбранном туре ───────────────────────────────────── */
+
+.stickyFooter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid var(--c-border);
+  box-shadow: 0 -4px 16px rgba(20, 20, 43, 0.08);
+}
+
+.stickyFooterInfo { flex: 1; min-width: 0; }
+
+.stickyFooterRoom {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stickyFooterDates {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stickyFooterRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.stickyFooterPrice {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--c-blue);
+  white-space: nowrap;
+}
+
+.stickyFooterBtn {
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
+  color: #fff;
+  border: 0;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.stickyFooterBtn:hover { background: var(--c-red-hover); }
+
+/* ─── Оверлей формы заявки (поверх контента модалки) ────────────────────── */
+
+.bookingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 248, 252, 0.97);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.bookingCard {
+  width: 100%;
+  max-width: 460px;
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 32px rgba(20, 20, 43, 0.12);
+}
+
+.bookingBackBtn {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color var(--transition);
+}
+.bookingBackBtn:hover { color: var(--c-text); }
+
+.bookingSummary {
+  padding: 12px 14px;
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bookingSummaryHotel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.bookingSummaryDetails {
+  font-size: 0.78rem;
+  color: var(--c-text-muted);
+  line-height: 1.4;
+}
+
+.bookingSummaryPrice {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-blue);
+  margin-top: 4px;
+}
+
+/* ─── Мини-карта в модалке ───────────────────────────────────────────────── */
+
+.miniMapWrap {
+  height: 220px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #e8e0d0;
+}
+
+/* ─── Mobile ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  /* Сайдбар скрыт — фильтры через bottom sheet */
+  .body > aside { display: none !important; }
+
+  .mobileFilterBtn { display: flex; }
+
+  .listPane { width: 100%; border-right: none; }
+
+  .mapPane { display: none; }
+  .mapPaneVisible { display: block !important; height: 55vh; }
+
+  /* Кнопка «Карта/Список» на мобайле */
+  .mapToggleBtn {
+    display: flex;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    background: var(--c-blue);
+    color: #fff;
+    border: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+}
+
+.mapToggleBtn { display: none; }
+
+@media (max-width: 768px) {
+  .modalScroll { padding: 14px 16px 24px; }
+  .roomBlockThumbWrap { width: 100px; }
+  .roomBlockThumb { height: 90px; }
+  .roomBlockThumbPlaceholder { height: 90px; }
+  .stickyFooter { flex-wrap: wrap; gap: 10px; padding: 10px 14px; }
+  .stickyFooterRight { width: 100%; justify-content: space-between; }
+  .stickyFooterBtn { flex: 1; text-align: center; }
+  .bookingOverlay { padding: 12px; align-items: flex-end; }
+  .bookingCard { max-width: 100%; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 20px 16px; }
+
+  /* Строка тура: на мобайле цена/кнопка уходят под детали */
+  .roomTourRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .roomTourRight {
+    justify-content: space-between;
+    padding-top: 4px;
+    border-top: 1px solid var(--c-border);
+  }
+}
+
+@media (max-width: 600px) {
+  .modalHeroWrap { height: 200px; }
+}
