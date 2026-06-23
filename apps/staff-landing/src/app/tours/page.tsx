@@ -1356,6 +1356,16 @@ function ToursContent() {
 // ─── Страница ─────────────────────────────────────────────────────────────────
 
 export default function ToursPage() {
+  const router = useRouter()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!sessionStorage.getItem('staff_access')) { router.replace('/'); return }
+    setReady(true)
+  }, [router])
+
+  if (!ready) return null
+
   return (
     <Suspense fallback={null}>
       <ToursContent />

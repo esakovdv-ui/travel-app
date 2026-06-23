@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { BrandLogo } from './components/Brand'
+import { BrandLogo, MgtBadge } from './components/Brand'
 import { MobileSearchSheet } from './components/MobileSearchSheet'
 import styles from './page.module.css'
 
@@ -108,6 +108,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
         body: JSON.stringify({ password: val }),
       })
       if (res.ok) {
+        sessionStorage.setItem('staff_access', '1')
         onUnlock()
       } else {
         setError('Неверный пароль')
@@ -186,9 +187,7 @@ export default function StaffPage() {
   })
 
   useEffect(() => {
-    fetch('/api/auth')
-      .then(res => { if (res.ok) setPhase('landing') })
-      .catch(() => {})
+    if (sessionStorage.getItem('staff_access')) setPhase('landing')
   }, [])
 
   useEffect(() => {
@@ -266,7 +265,20 @@ export default function StaffPage() {
 
   return (
     <>
-      <main className={styles.landingMain}>
+      {/* ── Header ── */}
+      <header className={styles.siteHeader}>
+        <div className="shell">
+          <div className={styles.headerInner}>
+            <BrandLogo />
+            <div className={styles.staffTab} role="tab" aria-selected="true">
+              <span className={styles.staffTabLabel}>Для сотрудников</span>
+              <span className={styles.staffTabHint}>Особые условия бронирования</span>
+            </div>
+            <MgtBadge />
+          </div>
+        </div>
+
+        {/* Search row */}
         <div className="shell">
           <div className={styles.searchRow} ref={searchRef}>
 
@@ -472,6 +484,7 @@ export default function StaffPage() {
 
             </div>
 
+            {/* Staff advantages */}
             <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
               <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
               <span className={styles.searchPill}>✓ Рассрочка 100 дней</span>
@@ -481,13 +494,50 @@ export default function StaffPage() {
             </div>
           </div>
         </div>
+      </header>
 
+      {/* ── Main content ── */}
+      <main>
         <div className={styles.emptyState}>
           <p className={styles.emptyStateText}>
             Введите параметры поиска выше, чтобы найти туры на особых условиях для сотрудников
           </p>
         </div>
       </main>
+
+      {/* ── Footer ── */}
+      <footer className={styles.siteFooter}>
+        <div className="shell">
+          <div className={styles.footerInner}>
+            <div className={styles.footerBrand}>
+              <BrandLogo />
+              <p className={styles.footerTagline}>
+                Корпоративный сервис для сотрудников Мосгортура — туры на спецусловиях.
+              </p>
+            </div>
+          </div>
+          <div className={styles.footerBottom}>
+            <p className={styles.footerCopyright}>МОСГОРТУР/Мои путешествия © 2026</p>
+            <div className={styles.footerSocials} aria-label="Социальные сети">
+              <a className={styles.footerSocialLink} aria-label="Telegram" href="https://t.me/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+                  <path d="M228.88,26.19a9,9,0,0,0-9.16-1.57L17.06,103.93a14.22,14.22,0,0,0,2.43,27.21L72,141.45V200a15.92,15.92,0,0,0,10,14.83,15.91,15.91,0,0,0,17.51-3.73l25.32-26.26L165,220a15.88,15.88,0,0,0,10.51,4,16.3,16.3,0,0,0,5-.79,15.85,15.85,0,0,0,10.67-11.63L231.77,35A9,9,0,0,0,228.88,26.19Zm-61.14,36L78.15,126.35l-49.6-9.73ZM88,200V152.52l24.79,21.74Zm87.53,8L92.85,135.5l119-85.29Z" />
+                </svg>
+              </a>
+              <a className={styles.footerSocialLink} aria-label="Instagram" href="https://instagram.com/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+                  <path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z" />
+                </svg>
+              </a>
+            </div>
+            <div className={styles.accentLine} aria-hidden="true">
+              <span className={`${styles.dot} ${styles.dotBlue}`} />
+              <span className={`${styles.dot} ${styles.dotRed}`} />
+              <span className={`${styles.dot} ${styles.dotYellow}`} />
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* ── Mobile fullscreen search sheet ── */}
       <MobileSearchSheet

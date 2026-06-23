@@ -156,12 +156,6 @@
   line-height: 1.2;
 }
 
-/* ─── Landing (без site header/footer) ─────────────────────────────────────── */
-
-.landingMain {
-  padding-top: 24px;
-}
-
 /* ─── Search Row ──────────────────────────────────────────────────────────── */
 
 .searchRow {
