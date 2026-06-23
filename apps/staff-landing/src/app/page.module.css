@@ -1,0 +1,1111 @@
+/* ─── Brand Logo ──────────────────────────────────────────────────────────── */
+
+.brandWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brandIcon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #000;
+}
+
+.brandTextLine {
+  display: block;
+}
+
+/* ─── Auth / Gate ─────────────────────────────────────────────────────────── */
+
+.authPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: var(--c-bg);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 40px rgba(20, 20, 43, 0.10);
+  padding: 40px;
+}
+
+.authLogoWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.authDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin-bottom: 28px;
+}
+
+.authTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: normal;
+  color: var(--c-text);
+  margin-bottom: 6px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.authSub {
+  font-size: 0.88rem;
+  color: var(--c-text-muted);
+  margin-bottom: 28px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.authForm {
+  display: grid;
+  gap: 14px;
+}
+
+.authError {
+  background: #fff0f0;
+  border: 1px solid #ffc5c5;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--c-red);
+}
+
+.tricolorLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dotBlue  { background: var(--c-blue); }
+.dotRed   { background: var(--c-red); }
+.dotYellow{ background: var(--c-yellow); }
+
+/* ─── Site Header ─────────────────────────────────────────────────────────── */
+
+.siteHeader {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(20, 20, 43, 0.06);
+  box-shadow: 0 2px 12px rgba(20, 20, 43, 0.05);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+}
+
+.staffTab {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 20, 43, 0.06);
+  margin-left: 8px;
+}
+
+.staffTabLabel {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1;
+}
+
+.staffTabHint {
+  font-size: 0.68rem;
+  color: var(--c-text-muted);
+  line-height: 1.2;
+}
+
+/* ─── Landing (без site header/footer) ─────────────────────────────────────── */
+
+.landingMain {
+  padding-top: 24px;
+}
+
+/* ─── Search Row ──────────────────────────────────────────────────────────── */
+
+.searchRow {
+  padding: 0 0 16px;
+}
+
+.searchBarPill {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid rgba(20, 20, 43, 0.08);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(20, 20, 43, 0.07);
+}
+
+.searchSeg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 16px;
+  flex: 1;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+.searchSeg:hover { background: rgba(20, 20, 43, 0.04); }
+
+/* Last segment: row layout to fit button inline */
+.searchSegLast {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding-right: 5px;
+}
+
+/* Content wrapper inside last segment */
+.searchSegText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+/* Icon + label in one row */
+.searchSegRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--c-text-muted);
+}
+
+.searchSegLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.searchSegCtrl {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--c-text-muted);
+  font: inherit;
+  font-size: 0.86rem;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  width: 100%;
+  min-width: 0;
+}
+
+.searchSegRowSep {
+  color: var(--c-text-muted);
+  font-size: 0.86rem;
+  flex-shrink: 0;
+}
+
+.searchDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(20, 20, 43, 0.08);
+  flex-shrink: 0;
+}
+
+.searchSubmit {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-red);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), opacity var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.searchSubmit:hover:not(:disabled) {
+  background: var(--c-red-hover);
+  transform: scale(1.03);
+}
+
+.searchSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Children Ages (раздел 4.1 ТЗ — до 3 детей, возраст 0..17) ───────────── */
+
+.childrenRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.childrenLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+}
+
+.childChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.05);
+}
+
+.childAgeSelect {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--c-text);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.childRemoveBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: background var(--transition), color var(--transition);
+}
+.childRemoveBtn:hover { background: rgba(20, 20, 43, 0.08); color: var(--c-text); }
+
+.childAddBtn {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px dashed var(--c-border-strong);
+  background: transparent;
+  color: var(--c-blue);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.childAddBtn:hover { background: var(--c-blue-subtle); }
+
+/* ─── Popover search form (Yandex Travel style) ──────────────────────────── */
+
+.searchSegActive { background: rgba(20, 20, 43, 0.06) !important; }
+
+.searchSegValue {
+  font-size: 0.86rem;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchPopover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  min-width: 300px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(20, 20, 43, 0.10), 0 1px 4px rgba(20, 20, 43, 0.06);
+  border: 1px solid rgba(20, 20, 43, 0.05);
+  padding: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popoverSectionLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  padding: 0 2px;
+  margin-top: 2px;
+}
+
+.popoverPopularGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.popoverPopularBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.popoverPopularBtn:hover { border-color: var(--c-blue); color: var(--c-blue); }
+.popoverPopularBtnActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+  font-weight: 700;
+}
+
+.popoverDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 6px 0;
+}
+
+.popoverSearch {
+  width: 100%;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.popoverSearch:focus { border-color: var(--c-blue); }
+
+.popoverList {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.popoverItem {
+  text-align: left;
+  padding: 11px 14px;
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.popoverItem:hover { background: rgba(20, 20, 43, 0.05); }
+.popoverItemActive {
+  background: var(--c-blue-subtle);
+  color: var(--c-blue);
+  font-weight: 600;
+}
+
+.popoverLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.popoverDateInput {
+  width: 100%;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.popoverDateInput:focus { border-color: var(--c-blue); }
+
+.flexBtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.flexBtn {
+  flex: 1;
+  padding: 8px 0;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--c-text-muted);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.flexBtn:hover { border-color: var(--c-blue); color: var(--c-blue); }
+.flexBtnActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+  font-weight: 700;
+}
+
+.popoverSelect {
+  width: 100%;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  background: #fff;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color var(--transition);
+}
+.popoverSelect:focus { border-color: var(--c-blue); }
+
+.travelerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.travelerLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.travelerSub {
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+  margin-top: 1px;
+}
+
+.travelerDivider {
+  height: 1px;
+  background: var(--c-border);
+  margin: 2px 0;
+}
+
+.childAgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+/* ─── Counter widget ─────────────────────────────────────────────────────── */
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.counterBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border-strong);
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--c-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), border-color var(--transition);
+}
+.counterBtn:hover:not(:disabled) { background: rgba(20,20,43,0.06); border-color: var(--c-text-muted); }
+.counterBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.counterVal {
+  min-width: 20px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.searchPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.searchPill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(20, 20, 43, 0.05);
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+/* ─── Progress / Searching ────────────────────────────────────────────────── */
+
+.searchingWrap {
+  padding: 72px 0;
+  text-align: center;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--c-blue-mid);
+  border-top-color: var(--c-blue);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 18px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.searchingText {
+  font-size: 1rem;
+  color: var(--c-text);
+  margin-bottom: 18px;
+}
+
+.progressBar {
+  height: 5px;
+  background: var(--c-blue-mid);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 auto 14px;
+  max-width: 320px;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-blue);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+  min-width: 6px;
+}
+
+.searchingMin {
+  font-size: 0.9rem;
+  color: var(--c-text-muted);
+}
+
+/* ─── Thematic Results (exact match to home.module.css) ───────────────────── */
+
+.thematicSection {
+  padding: 28px 0 64px;
+  overflow-x: clip;
+  display: grid;
+  gap: 26px;
+}
+
+.thematicRow {
+  display: grid;
+  gap: 18px;
+}
+
+.thematicRowHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-end;
+}
+
+.thematicEyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.thematicRowTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.2vw, 2.4rem);
+  line-height: 1.04;
+  font-weight: normal;
+  margin-top: 8px;
+}
+
+.thematicScroller {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  align-items: start;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.thematicScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.thematicScroller::before,
+.thematicScroller::after {
+  content: '';
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.thematicListingCard {
+  flex-shrink: 0;
+  width: 248px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  align-self: start;
+  gap: 8px;
+  min-height: 344px;
+  padding: 8px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(20, 20, 43, 0.04);
+  scroll-snap-align: start;
+  transition: transform var(--transition), box-shadow var(--transition);
+  cursor: pointer;
+  border: none;
+  text-align: left;
+}
+
+.thematicListingCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(20, 20, 43, 0.08);
+}
+
+.thematicListingImage {
+  width: 100%;
+  height: 214px;
+  min-height: 214px;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.thematicListingImagePlaceholder {
+  background: linear-gradient(135deg, rgba(12,36,97,0.08), rgba(12,36,97,0.03));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.thematicListingBody {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 5px;
+  padding: 2px 4px 4px;
+}
+
+.thematicListingTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.thematicListingPlace {
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.thematicListingTitle {
+  color: var(--c-text);
+  font-size: 0.84rem;
+  line-height: 1.25;
+  font-weight: 700;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.thematicListingMeta {
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.thematicListingPrice {
+  color: var(--c-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.thematicListingBtn {
+  margin-top: auto;
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--c-blue);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.thematicListingBtn:hover {
+  background: var(--c-blue-hover);
+  transform: scale(1.02);
+}
+
+/* ─── Empty State ─────────────────────────────────────────────────────────── */
+
+.emptyState {
+  padding: 96px 24px;
+  text-align: center;
+}
+
+.emptyStateText {
+  color: var(--c-text-muted);
+  font-size: 1rem;
+  line-height: 1.65;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Booking Modal ───────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 40, 0.65);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(5px);
+}
+
+.modal {
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.modalClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(20, 20, 43, 0.06);
+  color: var(--c-text-muted);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 0;
+  transition: background var(--transition), color var(--transition);
+}
+
+.modalClose:hover {
+  background: rgba(20, 20, 43, 0.12);
+  color: var(--c-text);
+}
+
+.modalTourInfo {
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.modalHotelName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 6px;
+}
+
+.modalMeta {
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+  margin-bottom: 2px;
+}
+
+.modalDate {
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+  margin-bottom: 12px;
+}
+
+.modalPrice {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--c-blue);
+}
+
+.modalFormTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 16px;
+}
+
+.modalForm {
+  display: grid;
+  gap: 12px;
+}
+
+.modalNote {
+  font-size: 0.73rem;
+  color: var(--c-text-light);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ─── Site Footer ─────────────────────────────────────────────────────────── */
+
+.siteFooter {
+  margin-top: 72px;
+  background: #fff;
+  color: var(--c-text);
+  border-top: 1px solid rgba(20, 20, 43, 0.06);
+}
+
+.footerInner {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 48px;
+  padding-block: 56px 44px;
+}
+
+.footerBrand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footerTagline {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--c-text-muted);
+  max-width: 300px;
+}
+
+.footerColumn h4 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin-bottom: 16px;
+}
+
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerLinks a {
+  font-size: 0.9rem;
+  color: var(--c-text);
+  transition: color var(--transition);
+}
+
+.footerLinks a:hover { color: var(--c-blue); }
+
+.footerBottom {
+  border-top: 1px solid rgba(20, 20, 43, 0.08);
+  padding-block: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.footerCopyright {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+}
+
+.footerSocials {
+  display: flex;
+  gap: 4px;
+}
+
+.footerSocialLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--c-text-muted);
+  transition: color var(--transition), background var(--transition);
+}
+
+.footerSocialLink:hover {
+  color: var(--c-text);
+  background: rgba(20, 20, 43, 0.05);
+}
+
+.accentLine {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .footerInner {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .footerBrand { grid-column: 1 / -1; }
+  .thematicRowHeader { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 768px) {
+  .searchBarPill { display: none; }
+  .searchDivider { display: none; }
+  .staffTabHint { display: none; }
+  .modal { padding: 28px 20px; }
+
+  /* Collapsed summary pill — opens MobileSearchSheet on tap */
+  .searchCollapsed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 10px 16px;
+    background: #fff;
+    border-radius: 999px;
+    border: 1px solid rgba(20, 20, 43, 0.08);
+    box-shadow: 0 4px 14px rgba(20, 20, 43, 0.07);
+    cursor: pointer;
+    transition: box-shadow var(--transition);
+  }
+  .searchCollapsed:hover { box-shadow: 0 6px 20px rgba(20, 20, 43, 0.12); }
+
+  .searchCollapsedText {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--c-text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .searchSubmit {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .searchSubmit span { display: none; }
+}
+
+@media (min-width: 769px) {
+  .searchCollapsed { display: none; }
+}
+
+@media (max-width: 600px) {
+  .footerInner { grid-template-columns: 1fr; }
+  .footerBottom { flex-direction: column; align-items: flex-start; }
+  .authCard { padding: 32px 24px; border-radius: 20px; }
+}
+
+@media (max-width: 480px) {
+  .brandText { display: none; }
+}
+
+/* ─── MGT Badge ───────────────────────────────────────────────────────────── */
+
+.mgtBadgeLogo {
+  height: 40px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+  object-fit: contain;
+}
