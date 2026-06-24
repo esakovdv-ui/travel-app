@@ -160,6 +160,123 @@
 
 .landingMain {
   padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.landingLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.searchColumn {
+  display: grid;
+  gap: 16px;
+}
+
+.landingIntro {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.benefitsBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.howItWorks {
+  padding: 4px 0 8px;
+}
+
+.howItWorksTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  font-weight: normal;
+  line-height: 1.12;
+  margin-bottom: 16px;
+  color: var(--c-text);
+}
+
+.stepsGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stepCard {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 100%;
+  padding: 16px 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(20, 20, 43, 0.06);
+  box-shadow: 0 4px 16px rgba(20, 20, 43, 0.05);
+}
+
+.stepCard:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  top: 28px;
+  right: -14px;
+  color: var(--c-text-light);
+  font-size: 0.95rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.stepTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stepIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--c-blue-subtle);
+  color: var(--c-blue);
+  flex-shrink: 0;
+}
+
+.stepNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(20, 20, 43, 0.05);
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.stepTitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--c-text);
+}
+
+.stepText {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
 }
 
 /* ─── Search Row ──────────────────────────────────────────────────────────── */
@@ -593,7 +710,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding-top: 10px;
 }
 
 .searchPill {
@@ -1032,6 +1148,35 @@
 
 /* ─── Responsive ──────────────────────────────────────────────────────────── */
 
+@media (max-width: 1100px) {
+  .landingLayout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .searchColumn {
+    order: 1;
+  }
+
+  .howItWorks {
+    order: 2;
+  }
+
+  .stepsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stepCard:nth-child(2n)::after,
+  .stepCard:last-child::after {
+    content: none;
+  }
+
+  .stepCard:nth-child(odd):not(:last-child)::after {
+    content: '→';
+    right: -10px;
+  }
+}
+
 @media (max-width: 900px) {
   .footerInner {
     grid-template-columns: 1fr 1fr;
@@ -1042,6 +1187,15 @@
 }
 
 @media (max-width: 768px) {
+  .stepsGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .stepCard::after {
+    content: none !important;
+  }
+
   .searchBarPill { display: none; }
   .searchDivider { display: none; }
   .staffTabHint { display: none; }
