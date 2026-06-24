@@ -3,19 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Летние смены в лагере «Власьево» — акция ко Дню защиты детей</title>
-  <meta name="description" content="Акция ко Дню защиты детей в лагере «Власьево»: специальные условия раннего бронирования до 7 июня 2026. Летние смены по специальной цене и экономия до 4 850 ₽.">
+  <title>Летние смены в лагере «Власьево» от 39 900 ₽ — специальная акция</title>
+  <meta name="description" content="Промо-акция в лагере «Власьево»: летние 10-дневные смены от 39 900 ₽. Выгода до 12 000 ₽. Специальные условия раннего бронирования до 7 июня 2026.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://motrip.ru/vlasevo">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Летние смены в лагере «Власьево»">
-  <meta property="og:description" content="Специальные условия до 7 июня: акция ко Дню защиты детей и летние смены по специальной цене.">
+  <meta property="og:title" content="Летние смены в лагере «Власьево» от 39 900 ₽">
+  <meta property="og:description" content="Специальная цена на 10-дневные смены — от 39 900 ₽. Выгода до 12 000 ₽. Успейте забронировать до 7 июня.">
   <meta property="og:url" content="https://motrip.ru/vlasevo">
   <meta property="og:image" content="https://motrip.ru/vlasevo-og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Летние смены в лагере «Власьево»">
-  <meta name="twitter:description" content="Специальные условия до 7 июня: бронируйте летние смены по специальной цене.">
+  <meta name="twitter:title" content="Летние смены в лагере «Власьево» от 39 900 ₽">
+  <meta name="twitter:description" content="Специальная цена на 10-дневные смены — от 39 900 ₽. Выгода до 12 000 ₽.">
   <meta name="twitter:image" content="https://motrip.ru/vlasevo-og.png">
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
+
+    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
   <style>
     :root {
       --orange: #ff8500;
@@ -23,6 +36,9 @@
       --cream: #fff7f1;
       --green-soft: #e8ffd4;
       --green: #009b22;
+      --promo-red: #e53935;
+      --promo-red-dark: #c62828;
+      --promo-orange: #ff5722;
       --text: #111;
       --muted: #667085;
       --panel: #f4f4f5;
@@ -103,24 +119,101 @@
     }
     .hero { padding: 28px 0 18px; }
     .hero-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
-    .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 440px; display: flex; flex-direction: column; justify-content: space-between; }
-    .hero-main h1 { margin: 8px 0 0; font-size: clamp(30px, 3.2vw, 46px); line-height: 1.1; letter-spacing: -.015em; max-width: none; }
-    .lead { margin-top: 18px; color: #334155; max-width: 680px; font-size: clamp(18px,2vw,22px); font-weight: 700; line-height: 1.5; }
+    .hero-main { padding: clamp(20px, 4vw, 40px); min-height: 400px; display: flex; flex-direction: column; justify-content: space-between; }
+    .hero-main h1 { margin: 0; font-size: clamp(32px, 3.6vw, 52px); line-height: 1.08; letter-spacing: -.02em; max-width: none; }
+    .promo-hero-price {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 12px 20px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
+      color: #fff;
+      font-size: clamp(18px, 2.2vw, 24px);
+      font-weight: 900;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      box-shadow: 0 10px 28px rgba(229, 57, 53, .34);
+      animation: promo-pulse 2.2s ease-in-out infinite;
+    }
+    .promo-hero-price-icon {
+      font-size: 1.1em;
+      line-height: 1;
+    }
+    @keyframes promo-pulse {
+      0%, 100% { box-shadow: 0 12px 28px rgba(229, 57, 53, .38); transform: scale(1); }
+      50% { box-shadow: 0 16px 40px rgba(229, 57, 53, .55); transform: scale(1.01); }
+    }
+    .lead { margin-top: 16px; color: #475569; max-width: 560px; font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.5; }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
     .hero-photo img { width: 100%; height: 100%; min-height: 440px; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
     .timer-panel { margin-top: 18px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: center; }
     .timer-panel h2 { margin: 0; font-size: clamp(22px, 3vw, 34px); line-height: 1.08; }
     .timer { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
     .time-box { border-radius: 14px; background: var(--panel); text-align: center; padding: 12px 6px; }
-    .time-num { display: block; font-size: clamp(24px,3vw,38px); color: var(--orange); font-weight: 900; }
+    .time-num { display: block; font-size: clamp(24px,3vw,38px); color: var(--promo-red); font-weight: 900; }
     .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
     section { padding: 34px 0; }
+    #shifts {
+      padding-bottom: 14px;
+    }
+    #shifts + section {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    #about {
+      padding-top: 14px;
+    }
     .section-title { margin: 0 0 14px; font-size: clamp(28px, 3.5vw, 46px); line-height: 1.08; letter-spacing: -.02em; }
+    .shifts-intro {
+      width: 100%;
+      margin-bottom: 22px;
+    }
+    .shifts-intro .section-title {
+      margin: 0 0 8px;
+      max-width: none;
+    }
+    .shifts-intro .lead {
+      margin: 0;
+      max-width: none;
+      width: 100%;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 19px);
+      font-weight: 700;
+      line-height: 1.45;
+    }
     .section-text { margin: 0; color: var(--muted); font-weight: 700; }
     .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
     .card { overflow: hidden; border-radius: 20px; border: 1px solid rgba(0,0,0,.06); background: #fff; display: flex; flex-direction: column; }
-    .card-img { height: 220px; position: relative; background: #eceef0; }
+    .card.card-promo-highlight {
+      border: 3px solid var(--promo-orange);
+      box-shadow: 0 0 0 4px rgba(255, 87, 34, .14), 0 16px 36px rgba(229, 57, 53, .16);
+    }
+    .card-img { height: 220px; position: relative; background: #eceef0; overflow: hidden; }
+    .card-img.reserve-link {
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+    .card-img.reserve-link:focus-visible {
+      outline: 2px solid var(--promo-orange);
+      outline-offset: -2px;
+    }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card .btn.reserve-link {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
     .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
     .sold-out-overlay {
       position: absolute;
@@ -135,16 +228,79 @@
       letter-spacing: .02em;
       text-transform: uppercase;
     }
-    .card-badge { position: absolute; left: 10px; top: 10px; background: #fff; color: var(--orange-dark); padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; }
+    .card-badge {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 900;
+      box-shadow: 0 6px 18px rgba(229, 57, 53, .45);
+      letter-spacing: .01em;
+      pointer-events: none;
+    }
     .card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px; }
     .card-body.sold-out { opacity: .55; }
     .card h3 { margin: 0; font-size: 24px; line-height: 1.1; }
     .meta { color: #475569; font-weight: 700; font-size: 14px; }
-    .promo-accent { background: var(--green-soft); color: var(--green); border-radius: 10px; padding: 8px 10px; font-weight: 800; font-size: 13px; margin: 0; }
-    .price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .price { font-size: 30px; font-weight: 900; }
-    .old-price { color: var(--muted); text-decoration: line-through; font-weight: 700; }
-    .saving { font-size: 13px; color: #0c7a29; font-weight: 800; }
+    .promo-accent {
+      background: linear-gradient(135deg, #fff0eb, #ffe0d6);
+      color: var(--promo-red-dark);
+      border: 1px solid rgba(255, 87, 34, .35);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-weight: 800;
+      font-size: 14px;
+      margin: 0;
+    }
+    .price-block {
+      background: #fff5f0;
+      border: 2px dashed var(--promo-orange);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 2px 0;
+    }
+    .price-block-promo {
+      background: linear-gradient(180deg, #fff8f5 0%, #fff0eb 100%);
+      border: 2px solid var(--promo-red);
+      box-shadow: inset 0 0 0 1px rgba(255, 87, 34, .2);
+    }
+    .special-label {
+      display: inline-block;
+      background: var(--promo-red);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 5px 11px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .price-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .price { font-size: 30px; font-weight: 900; color: var(--text); }
+    .price-promo {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--promo-red);
+      line-height: 1;
+      letter-spacing: -.02em;
+    }
+    .old-price { color: #94a3b8; text-decoration: line-through; font-weight: 700; font-size: 17px; }
+    .old-price-promo { color: #94a3b8; text-decoration: line-through; font-weight: 700; font-size: 18px; }
+    .saving { font-size: 14px; color: var(--promo-red-dark); font-weight: 900; }
+    .saving-promo {
+      font-size: 16px;
+      color: var(--promo-red);
+      font-weight: 900;
+      background: rgba(229, 57, 53, .08);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: inline-block;
+    }
     .urgency { padding: 22px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; }
     .urgency h2 { margin: 0 0 6px; font-size: clamp(24px,3vw,36px); line-height: 1.1; }
     .urgency p { margin: 0; color: var(--muted); font-weight: 700; }
@@ -152,6 +308,32 @@
     .about-card { padding: 20px; }
     .about-card h3 { margin: 0 0 10px; font-size: 24px; }
     .about-card p { margin: 0; color: #334155; font-weight: 700; line-height: 1.45; }
+    .camp-more-section { padding: 22px 0 30px; }
+    .camp-more {
+      padding: clamp(28px, 4vw, 42px);
+      text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+    .camp-more-title {
+      margin: 0 0 12px;
+      font-size: clamp(24px, 2.8vw, 34px);
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+    .camp-more-text {
+      margin: 0 auto 22px;
+      max-width: 760px;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 18px);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .camp-more .btn {
+      min-height: 46px;
+      padding: 12px 24px;
+    }
     .lead-block { display: grid; grid-template-columns: 1fr 420px; gap: 18px; align-items: start; }
     .form-card { padding: 20px; }
     .field { margin-bottom: 12px; }
@@ -159,6 +341,188 @@
     .field input, .field select { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--panel); padding: 0 12px; font-weight: 700; }
     .form-note { min-height: 22px; margin: 10px 0 0; color: var(--green); font-size: 14px; font-weight: 900; }
     .form-note.error { color: #c62828; }
+    .form-note.is-error { color: #c62828; }
+    .field-error {
+      display: none;
+      margin: 6px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c62828;
+    }
+    .field-error.is-visible { display: block; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, .52);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+    }
+    .modal-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal {
+      position: relative;
+      width: min(100%, 440px);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      padding: 24px 22px 22px;
+      border-radius: var(--radius);
+      background: var(--white);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .18);
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .modal-close:hover {
+      background: #ffe8d4;
+      color: var(--orange-dark);
+    }
+    .modal h2 {
+      margin: 0 32px 8px 0;
+      font-size: clamp(24px, 4vw, 30px);
+      line-height: 1.1;
+      letter-spacing: -.03em;
+    }
+    .modal-lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal .field input[readonly] {
+      background: #fff;
+      color: var(--text);
+      cursor: default;
+    }
+    .modal-success { display: none; padding: 8px 0 4px; }
+    .modal-success.is-visible { display: block; }
+    .modal-success p {
+      margin: 0;
+      color: var(--green);
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .modal-form-body.is-hidden { display: none; }
+    .modal--wide { width: min(100%, 760px); padding: 0; }
+    .modal--camp .modal-close { z-index: 2; }
+    .camp-info-body {
+      padding: 24px 22px 22px;
+    }
+    .camp-info-badge {
+      display: inline-flex;
+      align-items: center;
+      margin: 0 0 14px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .camp-info-lead {
+      margin: 0 0 18px;
+      color: #334155;
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .camp-info-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+    .camp-info-gallery img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .camp-info-section {
+      margin: 0 0 22px;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+    }
+    .camp-info-section h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    .camp-info-section p {
+      margin: 0 0 12px;
+      color: #334155;
+      font-weight: 700;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .camp-info-section p:last-child { margin-bottom: 0; }
+    .camp-info-photos {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .camp-info-photos img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 14px;
+      background: var(--panel);
+    }
+    .camp-info-infra-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .camp-info-infra-list li {
+      margin: 0 0 10px;
+      color: #334155;
+      font-weight: 700;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    .camp-info-infra-list li:last-child { margin-bottom: 0; }
+    .camp-info-infra-list strong { color: var(--text); }
+    .camp-info-location {
+      margin: 0;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--panel);
+      color: #334155;
+      font-weight: 800;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    @media (max-width: 680px) {
+      .camp-info-gallery,
+      .camp-info-photos { grid-template-columns: 1fr 1fr; }
+      .camp-info-gallery img:first-child { grid-column: 1 / -1; }
+    }
     .sticky-cta { position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 40; display: none; padding: 10px; border-radius: 14px; box-shadow: 0 14px 24px rgba(0,0,0,.14); background: rgba(255,255,255,.95); backdrop-filter: blur(3px); }
     .sticky-cta .btn { width: 100%; }
     .hidden { display: none !important; }
@@ -183,6 +547,16 @@
         height: 22px;
         font-size: 14px;
       }
+      .promo-hero-price {
+        width: fit-content;
+        max-width: 100%;
+        justify-content: center;
+        text-align: center;
+        font-size: 17px;
+        padding: 11px 16px;
+      }
+      .camp-more .btn { width: 100%; max-width: none; }
+      .price-promo { font-size: 32px; }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
     }
@@ -195,9 +569,12 @@
         <div class="hero-grid">
           <div class="hero-main panel">
             <div>
-              <span class="chip promo-accent"><span class="chip-icon" aria-hidden="true">🎈</span>Акция ко Дню защиты детей · спецусловия до 7 июня</span>
-              <h1>Летние смены в лагере «Власьево» по специальной цене</h1>
-              <p class="lead">Летние смены для детей по специальной цене. Выберите подходящую программу и подарите ребенку незабываемые каникулы.</p>
+              <h1>Летние смены во «Власьево»</h1>
+              <div class="promo-hero-price" aria-label="Специальные цены от 39 900 рублей">
+                <span class="promo-hero-price-icon" aria-hidden="true">🔥</span>
+                <span>Специальные цены от 39 900 ₽</span>
+              </div>
+              <p class="lead">Проживание, питание и насыщенная программа для детей от 7 до 17 лет.</p>
             </div>
             <div class="hero-actions">
               <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
@@ -223,7 +600,10 @@
 
     <section id="shifts">
       <div class="container">
-        <h2 class="section-title">Летние смены по специальной цене</h2>
+        <div class="shifts-intro">
+          <h2 class="section-title">Летние смены по специальной цене</h2>
+          <p class="lead">В стоимость входит проживание, питание, участие во всех мероприятиях смены и сопровождение команды лагеря.</p>
+        </div>
         <div class="grid" id="shift-grid"></div>
       </div>
     </section>
@@ -246,17 +626,27 @@
         <h2 class="section-title">О лагере «Власьево»</h2>
         <div class="about-grid">
           <article class="about-card panel">
-            <h3>Летняя атмосфера</h3>
-            <p>Современная программа отдыха и развития в живописной природной локации с акцентом на эмоции, дружбу и безопасность.</p>
+            <h3>Загородный лагерь</h3>
+            <p>Лесная территория в Московской области, комфортное размещение и условия для полноценного летнего отдыха детей.</p>
           </article>
           <article class="about-card panel">
-            <h3>Развитие и досуг</h3>
-            <p>Творческие и спортивные активности, командные форматы, ежедневная программа и поддержка опытной команды лагеря.</p>
+            <h3>Все включено</h3>
+            <p>В стоимость смены входит проживание, питание, ежедневная программа мероприятий и участие во всех активностях лагеря.</p>
           </article>
           <article class="about-card panel">
-            <h3>Семейное доверие</h3>
-            <p>Понятные условия бронирования, прозрачная коммуникация и качественный сервис на всех этапах — от выбора смены до заезда.</p>
+            <h3>МОСГОРТУР</h3>
+            <p>Организованный детский отдых от крупнейшего оператора детских программ Москвы с многолетним опытом проведения смен.</p>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="camp-more" class="camp-more-section">
+      <div class="container">
+        <div class="camp-more panel">
+          <h2 class="camp-more-title">Хотите узнать больше о лагере?</h2>
+          <p class="camp-more-text">Посмотрите фотографии территории, условия проживания, инфраструктуру, программу отдыха и другую полезную информацию о комплексе «Власьево».</p>
+          <button type="button" class="btn btn-primary" id="camp-more-link">Подробнее о лагере →</button>
         </div>
       </div>
     </section>
@@ -267,7 +657,7 @@
           <div>
             <span class="chip">Без оплаты на сайте</span>
             <h2 class="section-title">Успейте забронировать летний отдых ребенка</h2>
-            <p class="lead">Оставьте заявку, и менеджер поможет выбрать подходящую смену в «Власьево», расскажет о деталях программы и бронирования.</p>
+            <p class="lead">Оставьте заявку, и менеджер поможет подобрать смену, расскажет о лагере, программе отдыха и актуальном наличии мест.</p>
           </div>
         </div>
         <form class="form-card panel" id="form">
@@ -277,7 +667,8 @@
           </div>
           <div class="field">
             <label for="phone">Телефон</label>
-            <input id="phone" name="phone" type="tel" placeholder="+7 (___) ___-__-__" required>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error" required>
+            <p class="field-error" id="phone-error" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="shift">Смена</label>
@@ -302,37 +693,199 @@
     <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Выбрать смену</a>
   </div>
 
+  <div class="modal-overlay" id="camp-info-modal" aria-hidden="true">
+    <div class="modal modal--wide modal--camp" role="dialog" aria-modal="true" aria-labelledby="camp-info-title">
+      <button type="button" class="modal-close" id="camp-info-close" aria-label="Закрыть">&times;</button>
+      <div class="camp-info-body">
+        <h2 id="camp-info-title">ЛОК «Власьево»</h2>
+        <span class="camp-info-badge">7–17 лет</span>
+        <p class="camp-info-lead">Лесной оздоровительный комплекс «Власьево» от МОСГОРТУРа — загородный комплекс, полностью оборудованный для отдыха детей. Это экологически чистая площадка, на которой любой организатор детского отдыха может провести свою авторскую смену.</p>
+        <p class="camp-info-lead">Во «Власьево» вы найдёте всё, чем могут похвастаться современные детские лагеря, в том числе работающие в концепции «Обучение через развлечение».</p>
+        <div class="camp-info-gallery">
+          <img src="https://static.tildacdn.com/tild3166-6433-4766-a135-373232393439/DSC08901.jpg" alt="Территория лагеря «Власьево»" loading="lazy">
+          <img src="https://static.tildacdn.com/tild3531-3565-4166-b562-613662633433/DSC09815.jpg" alt="Лагерь «Власьево»" loading="lazy">
+          <img src="https://static.tildacdn.com/tild3434-3162-4861-b163-663036633865/Screenshot_2026-01-1.png" alt="Комплекс «Власьево»" loading="lazy">
+        </div>
+
+        <article class="camp-info-section">
+          <h3>Размещение</h3>
+          <p>Дети проживают в комфортных двухэтажных корпусах. В каждом корпусе есть комната для хранения чемоданов, гладильные принадлежности, сушильный шкаф. На каждом этаже оборудованы досуговые холлы с мультимедийным оборудованием и установлен пурифайер — проточный автомат с питьевой водой.</p>
+          <p>Номера на 4–5 человек, санузлы и душевые на этаже. В номере: кровати с ортопедическими матрасами, прикроватные тумбочки, встроенные шкафы-купе. Wi‑Fi во всех комнатах и на территории.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild3935-3764-4935-b530-333430366130/DSC00121.jpg" alt="Корпус лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6163-3966-4233-b361-316539653630/IMG_8407_1.jpg" alt="Номер в лагере «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3534-6233-4838-a264-363430366133/DSC09872.JPG" alt="Комната проживания" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Питание</h3>
+          <p>Пятиразовое (комплексное) питание: завтрак, полдник, обед, ужин, второй ужин. Меню включает натуральные молочные и мясные продукты, сезонные овощи и фрукты — кормим вкусно, сытно и по нормам СанПиН.</p>
+          <p>Столовая работает только с сертифицированными поставщиками продуктов и воды. Сотрудники имеют медкнижки.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6635-3735-4534-b534-616565643064/5d75cd2662bac0628f4e.jpg" alt="Столовая лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3933-6533-4336-a362-333962386530/DSC09881.JPG" alt="Питание в лагере" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6166-3661-4964-b865-393239316233/DSC01748.jpg" alt="Обед в лагере «Власьево»" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Медицина</h3>
+          <p>На территории лесного оздоровительного комплекса есть медицинский пункт. Медики круглосуточно наблюдают за здоровьем детей и оказывают первую помощь.</p>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6661-3339-4630-a264-313266623332/1685537655_polinka-t.jpg" alt="Медицинский пункт лагеря" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3662-6232-4563-b438-363532333439/4d2d042d3b1f0b9a5aa9.jpg" alt="Медицинское обслуживание в лагере" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Инфраструктура</h3>
+          <ul class="camp-info-infra-list">
+            <li><strong>Спортивные площадки:</strong> на территории лагеря находятся большие оборудованные спортивные и досуговые площадки разного профиля.</li>
+            <li><strong>Творческие пространства:</strong> в мастерских клуба-столовой можно проводить занятия и мастер-классы любой направленности — от творческих до научных.</li>
+            <li><strong>Игротека:</strong> здесь можно читать, играть и заниматься другими полезными делами в свободное время — в игровых комнатах есть всё необходимое.</li>
+            <li><strong>Концертный зал:</strong> универсальная площадка для показов кино и мультфильмов, шоу, представлений и дискотек.</li>
+            <li><strong>Большая сцена:</strong> на сцене лесного оздоровительного комплекса есть место и для актёрских талантов, и для танцевальных экспериментов, и для ярких фестивалей.</li>
+          </ul>
+          <div class="camp-info-photos">
+            <img src="https://static.tildacdn.com/tild6530-3563-4431-b431-313036643738/DSC09798.JPG" alt="Спортивная площадка лагеря" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6662-3333-4638-b330-653265303761/DSC09885.JPG" alt="Инфраструктура лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6163-3439-4534-b936-316463333234/DSC06930.png" alt="Территория лагеря" loading="lazy">
+          </div>
+        </article>
+
+        <article class="camp-info-section">
+          <h3>Расположение</h3>
+          <p class="camp-info-location">Московская область, городской округ Луховицы, территория оздоровительного комплекса, строение 1</p>
+        </article>
+
+      </div>
+    </div>
+  </div>
+
   <script>
     const money = new Intl.NumberFormat('ru-RU');
+    const PROMO_PRICE_10_DAYS = 39900;
     const shiftGrid = document.getElementById('shift-grid');
     const shiftSelect = document.getElementById('shift');
     const note = document.getElementById('form-note');
+    const landingForm = document.getElementById('form');
+    const landingPhone = document.getElementById('phone');
+    const landingPhoneError = document.getElementById('phone-error');
 
     let shifts = [];
 
+    function isTenDayShift(shift) {
+      return String(shift.duration || '').trim().startsWith('10');
+    }
+
+    function applyPromoPricing(rawShifts) {
+      return rawShifts.map((shift) => {
+        const oldPrice = Number(shift.oldPrice);
+        const basePrice = Number(shift.price);
+        const promoOverride = shift.promoDisplayPrice != null && shift.promoDisplayPrice !== ''
+          ? Number(shift.promoDisplayPrice)
+          : null;
+        const hasPromoOverride = promoOverride != null && !Number.isNaN(promoOverride) && promoOverride > 0;
+        const isPromo = shift.isPromoHighlight != null
+          ? Boolean(shift.isPromoHighlight)
+          : isTenDayShift(shift);
+        const displayPrice = hasPromoOverride
+          ? promoOverride
+          : (isTenDayShift(shift) ? PROMO_PRICE_10_DAYS : basePrice);
+        const displayOldPrice = oldPrice;
+        const saving = Math.max(0, displayOldPrice - displayPrice);
+        const benefitLabel = (shift.benefitLabel && String(shift.benefitLabel).trim())
+          ? String(shift.benefitLabel).trim()
+          : (isPromo ? 'Выгода до 12 000 ₽' : 'Специальная цена');
+
+        return {
+          ...shift,
+          isPromo,
+          displayPrice,
+          displayOldPrice,
+          saving,
+          benefitLabel,
+        };
+      });
+    }
+
+    function collectUtm() {
+      const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+      const utm = {};
+      const sources = [window.location.search];
+      if (document.referrer) {
+        try {
+          sources.push(new URL(document.referrer).search);
+        } catch (_) {}
+      }
+      sources.forEach((search) => {
+        const params = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
+        keys.forEach((key) => {
+          if (!utm[key]) {
+            const value = params.get(key);
+            if (value) utm[key] = value;
+          }
+        });
+      });
+      return utm;
+    }
+
+    function shiftBookingHref(shift, utmContent) {
+      if (!shift?.url) return '#';
+      try {
+        const url = new URL(shift.url);
+        const pageUtm = collectUtm();
+        url.searchParams.set('utm_source', pageUtm.utm_source || 'vlasevo');
+        url.searchParams.set('utm_medium', pageUtm.utm_medium || 'landing');
+        url.searchParams.set('utm_campaign', pageUtm.utm_campaign || 'vlasevo');
+        if (utmContent) url.searchParams.set('utm_content', utmContent);
+        else if (pageUtm.utm_content) url.searchParams.set('utm_content', pageUtm.utm_content);
+        return url.toString();
+      } catch {
+        return shift.url;
+      }
+    }
+
     function shiftTemplate(shift) {
-      const saving = Math.max(0, Number(shift.oldPrice) - Number(shift.price));
-      return `
-        <article class="card">
-          <div class="card-img ${shift.isSoldOut ? 'sold-out' : ''}">
+      const priceClass = shift.isPromo ? 'price-promo' : 'price';
+      const oldPriceClass = shift.isPromo ? 'old-price-promo' : 'old-price';
+      const savingClass = shift.isPromo ? 'saving saving-promo' : 'saving';
+      const priceBlockClass = shift.isPromo ? 'price-block price-block-promo' : 'price-block';
+      const cardClass = shift.isPromo ? 'card card-promo-highlight' : 'card';
+      const badgeText = shift.isPromo
+        ? (shift.specialTermsText || 'Скидка до 12 000 ₽')
+        : (shift.specialTermsText || 'Спецусловия до 7 июня');
+      const imageBlock = shift.isSoldOut
+        ? `<div class="card-img sold-out">
             <img src="${shift.image}" alt="${shift.title}" loading="lazy">
-            <span class="card-badge">${shift.specialTermsText || 'Спецусловия до 7 июня'}</span>
-            ${shift.isSoldOut ? '<span class="sold-out-overlay">Места закончились</span>' : ''}
-          </div>
+            <span class="card-badge">${badgeText}</span>
+            <span class="sold-out-overlay">Места закончились</span>
+          </div>`
+        : `<a href="${shiftBookingHref(shift, `shift_${shift.id}`)}" class="card-img reserve-link" target="_blank" rel="noopener noreferrer" aria-label="Забронировать смену «${shift.title}»">
+            <img src="${shift.image}" alt="${shift.title}" loading="lazy">
+            <span class="card-badge">${badgeText}</span>
+          </a>`;
+
+      return `
+        <article class="${cardClass}">
+          ${imageBlock}
           <div class="card-body ${shift.isSoldOut ? 'sold-out' : ''}">
             <h3>${shift.title}</h3>
+            <div class="${priceBlockClass}">
+              <span class="special-label">${shift.benefitLabel}</span>
+              <div class="price-row">
+                <span class="${priceClass}">${money.format(shift.displayPrice)} ₽</span>
+                <span class="${oldPriceClass}">${money.format(shift.displayOldPrice)} ₽</span>
+              </div>
+              <div class="${savingClass}">Экономия ${money.format(shift.saving)} ₽</div>
+            </div>
             <div class="meta">Даты: ${shift.dates}</div>
             <div class="meta">Длительность: ${shift.duration}</div>
             <p class="promo-accent">${shift.promoAccentText || 'Летние смены по специальной цене'}</p>
-            <div class="price-row">
-              <span class="price">${money.format(shift.price)} ₽</span>
-              <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
-            </div>
-            <div class="saving">Экономия ${money.format(saving)} ₽</div>
             ${shift.isSoldOut
               ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
-              : `<a class="btn btn-primary cta-primary" href="${shift.url}" target="_blank" rel="noopener noreferrer">Забронировать</a>
-            <a class="btn btn-secondary cta-neutral hidden" href="${shift.url}" target="_blank" rel="noopener noreferrer">Подробнее о смене</a>`}
+              : `<a href="${shiftBookingHref(shift, `shift_${shift.id}_btn`)}" class="btn btn-primary reserve-link" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
           </div>
         </article>
       `;
@@ -344,31 +897,256 @@
       shifts.filter((shift) => !shift.isSoldOut).forEach((shift) => {
         const option = document.createElement('option');
         option.value = `${shift.title} · ${shift.dates}`;
-        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.price)} ₽`;
+        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.displayPrice)} ₽`;
         shiftSelect.appendChild(option);
       });
+    }
+
+    async function loadShifts() {
+      try {
+        const response = await fetch('/api/vlasevo-promo-shifts', { cache: 'no-store' });
+        if (response.ok) shifts = applyPromoPricing(await response.json());
+      } catch (error) {
+        console.warn('Не удалось загрузить смены', error);
+      }
+      renderShifts();
+      shiftsLoaded = true;
+      tryOpenShiftFromUrl();
+    }
+
+    let shiftsLoaded = false;
+
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) raw = raw.slice(1);
+      return raw.slice(0, 10);
+    }
+
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
+      return formatted.length;
+    }
+
+    function createPhoneMaskController(input, errorEl) {
+      let digits = '';
+      let skipKeydown = false;
+
+      function clearError() {
+        errorEl.textContent = '';
+        errorEl.classList.remove('is-visible');
+        input.removeAttribute('aria-invalid');
+      }
+
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        const cursor = cursorFromDigitIndex(formatted, index);
+        const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+        input.setSelectionRange(safeCursor, safeCursor);
+      }
+
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+        clearError();
+      }
+
+      function selectionDigitRange() {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+      }
+
+      function handleKeydown(event) {
+        const { from, to } = selectionDigitRange();
+        if (event.key === 'Backspace') { event.preventDefault(); deleteBackward(from, to); return; }
+        if (event.key === 'Delete') { event.preventDefault(); deleteForward(from, to); return; }
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
+          return;
+        }
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) event.preventDefault();
+      }
+
+      input.addEventListener('focus', () => {
+        render(digits.length);
+        if (!digits.length) input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+      });
+      input.addEventListener('blur', () => { if (!digits.length) input.value = ''; });
+      input.addEventListener('click', () => {
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+      input.addEventListener('beforeinput', (event) => {
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+        if (inputType === 'deleteContentBackward') { event.preventDefault(); deleteBackward(from, to); return; }
+        if (inputType === 'deleteContentForward') { event.preventDefault(); deleteForward(from, to); return; }
+        if (inputType === 'insertText' || inputType === 'insertFromPaste' || inputType === 'insertReplacementText' || inputType === 'insertFromDrop') {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) { event.preventDefault(); return; }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          insertAt(from, chunk);
+        }
+      });
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) { skipKeydown = false; return; }
+        handleKeydown(event);
+      });
+      input.addEventListener('paste', (event) => {
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, merged.length);
+      });
+
+      return {
+        getValue() { return `+7${digits}`; },
+        validate() {
+          if (digits.length !== 10) {
+            errorEl.textContent = 'Введите номер телефона полностью';
+            errorEl.classList.add('is-visible');
+            input.setAttribute('aria-invalid', 'true');
+            return false;
+          }
+          clearError();
+          return true;
+        },
+        reset() { digits = ''; input.value = ''; clearError(); },
+        showMask() { render(0); input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR); },
+      };
+    }
+
+    const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
+
+    function findShiftById(id) {
+      return shifts.find((shift) => shift.id === id);
     }
 
     function findShiftByBookingLabel(label) {
       const trimmed = String(label || '').trim();
       if (!trimmed) return null;
-      return shifts.find((shift) => trimmed === `${shift.title} · ${shift.dates}`) || null;
+      return shifts.find((shift) => (
+        trimmed === `${shift.title} · ${shift.dates}`
+        || trimmed === `${shift.title} — ${shift.dates}`
+      )) || null;
     }
 
     function getBookingPrice(shift) {
       if (!shift) return undefined;
-      const price = Number(shift.price);
+      const price = shift.displayPrice != null ? Number(shift.displayPrice) : Number(shift.price);
       return Number.isFinite(price) && price >= 0 ? price : undefined;
     }
 
-    async function loadShifts() {
-      try {
-        const response = await fetch('/api/vlasevo-shifts', { cache: 'no-store' });
-        if (response.ok) shifts = await response.json();
-      } catch (error) {
-        console.warn('Не удалось загрузить смены', error);
+    function setFormNote(element, message, isError) {
+      element.textContent = message;
+      element.classList.toggle('error', Boolean(isError));
+      element.classList.toggle('is-error', Boolean(isError));
+    }
+
+    async function submitVlasevoLead({ name, phone, shift, bookingPrice, source, website = '' }) {
+      const response = await fetch('/api/vlasevo-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          phone,
+          shift,
+          bookingPrice,
+          source,
+          website,
+          landing: 'vlasevo',
+          utm: collectUtm(),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        if (data.error === 'invalid_phone') throw new Error('Введите номер телефона полностью');
+        if (data.error === 'misconfigured') throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
+        throw new Error('Не удалось отправить заявку. Попробуйте позже.');
       }
-      renderShifts();
+      return data;
+    }
+
+    function tryOpenShiftFromUrl() {
+      if (!shiftsLoaded) return;
+      const params = new URLSearchParams(window.location.search);
+      const shiftId = params.get('shift') || params.get('shift_id');
+      if (!shiftId) return;
+      const shift = findShiftById(shiftId);
+      if (shift && !shift.isSoldOut && shift.url) {
+        window.location.href = shiftBookingHref(shift, `shift_${shift.id}`);
+      }
     }
 
     function setPromoExpiredState() {
@@ -410,53 +1188,73 @@
       if (!tick()) clearInterval(timer);
     }, 1000);
 
-    function normalizePhone(input) {
-      const digits = String(input).replace(/\D/g, '');
-      if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) return `+7${digits.slice(1)}`;
-      if (digits.length === 10) return `+7${digits}`;
-      return null;
-    }
-
-    document.getElementById('form').addEventListener('submit', async (event) => {
+    landingForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      note.classList.remove('error');
-      note.textContent = '';
-
-      const form = event.currentTarget;
-      const name = form.name.value.trim();
-      const shift = form.shift.value.trim();
-      const website = form.website.value;
-      const phone = normalizePhone(form.phone.value);
-
-      if (!name || !shift || !phone) {
-        note.classList.add('error');
-        note.textContent = 'Проверьте заполнение формы, включая телефон.';
+      const submitButton = landingForm.querySelector('button[type="submit"]');
+      setFormNote(note, '', false);
+      if (!landingPhoneCtrl.validate()) {
+        landingPhone.focus();
+        landingPhoneCtrl.showMask();
         return;
       }
-
+      if (submitButton) submitButton.disabled = true;
       try {
-        const selectedShift = findShiftByBookingLabel(shift);
-        const response = await fetch('/api/vlasevo-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name,
-            phone,
-            shift,
-            bookingPrice: getBookingPrice(selectedShift),
-            source: 'landing',
-            website,
-          }),
+        await submitVlasevoLead({
+          name: landingForm.name.value.trim(),
+          phone: landingPhoneCtrl.getValue(),
+          shift: shiftSelect.value.trim(),
+          bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
+          source: 'landing',
+          website: document.getElementById('website').value,
         });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.ok) throw new Error('Не удалось отправить заявку');
-
-        note.textContent = 'Спасибо! Мы получили заявку и скоро свяжемся с вами.';
-        form.reset();
+        setFormNote(note, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+        landingForm.name.value = '';
+        landingPhoneCtrl.reset();
+        shiftSelect.value = '';
       } catch (error) {
-        note.classList.add('error');
-        note.textContent = error instanceof Error ? error.message : 'Не удалось отправить заявку';
+        setFormNote(note, error instanceof Error ? error.message : 'Не удалось отправить заявку', true);
+      } finally {
+        if (submitButton) submitButton.disabled = false;
       }
+    });
+
+    const campMoreLink = document.getElementById('camp-more-link');
+    const campInfoModal = document.getElementById('camp-info-modal');
+    const campInfoClose = document.getElementById('camp-info-close');
+
+    function openCampInfoModal() {
+      if (!campInfoModal) return;
+      if (typeof ym === 'function') {
+        ym(109401746, 'reachGoal', 'vlasevo_lending_click');
+      }
+      campInfoModal.classList.add('is-open');
+      campInfoModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      campInfoClose?.focus();
+    }
+
+    function closeCampInfoModal() {
+      if (!campInfoModal) return;
+      campInfoModal.classList.remove('is-open');
+      campInfoModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    if (campMoreLink) {
+      campMoreLink.addEventListener('click', () => openCampInfoModal());
+    }
+    if (campInfoClose) {
+      campInfoClose.addEventListener('click', () => closeCampInfoModal());
+    }
+    if (campInfoModal) {
+      campInfoModal.addEventListener('click', (event) => {
+        if (event.target === campInfoModal) closeCampInfoModal();
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (campInfoModal?.classList.contains('is-open')) closeCampInfoModal();
     });
 
     loadShifts();
