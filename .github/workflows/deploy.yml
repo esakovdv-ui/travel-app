@@ -43,3 +43,6 @@ jobs:
             set_env_var BITRIX_DOMAIN "$BITRIX_DOMAIN_VALUE"
             set_env_var WEBHOOK_TOKEN "$WEBHOOK_TOKEN_VALUE"
             /home/deploy.sh
+            if [ -f /home/travel-app/scripts/deploy-staff-landing.sh ]; then
+              bash /home/travel-app/scripts/deploy-staff-landing.sh
+            fi
