@@ -159,19 +159,21 @@ function StepIcon({ name }: { name: typeof HOW_IT_WORKS_STEPS[number]['icon'] })
 function HowItWorks() {
   return (
     <section className={styles.howItWorks} aria-labelledby="how-it-works-title">
-      <h2 id="how-it-works-title" className={styles.howItWorksTitle}>Как это работает</h2>
-      <ol className={styles.stepsGrid}>
-        {HOW_IT_WORKS_STEPS.map((step, index) => (
-          <li key={step.title} className={styles.stepCard}>
-            <div className={styles.stepTop}>
-              <span className={styles.stepIcon}><StepIcon name={step.icon} /></span>
-              <span className={styles.stepNum}>{index + 1}</span>
-            </div>
-            <h3 className={styles.stepTitle}>{step.title}</h3>
-            <p className={styles.stepText}>{step.text}</p>
-          </li>
-        ))}
-      </ol>
+      <div className={styles.howItWorksPanel}>
+        <h2 id="how-it-works-title" className={styles.howItWorksTitle}>Как это работает</h2>
+        <ol className={styles.stepsGrid}>
+          {HOW_IT_WORKS_STEPS.map((step, index) => (
+            <li key={step.title} className={styles.stepCard}>
+              <div className={styles.stepTop}>
+                <span className={styles.stepIcon}><StepIcon name={step.icon} /></span>
+                <span className={styles.stepNum}>{index + 1}</span>
+              </div>
+              <h3 className={styles.stepTitle}>{step.title}</h3>
+              <p className={styles.stepText}>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
     </section>
   )
 }
@@ -354,11 +356,14 @@ export default function StaffPage() {
     <>
       <main className={styles.landingMain}>
         <div className="shell">
-          <div className={styles.landingLayout}>
-            <HowItWorks />
+          <section className={styles.landingHero}>
+            <p className={styles.landingIntro}>
+              Корпоративный портал для сотрудников Мосгортура: здесь можно выбрать тур, оставить заявку
+              и забронировать поездку на специальных условиях — с предоплатой от 5&nbsp;₽, фиксацией цены
+              и оплатой остатка в течение 100 дней.
+            </p>
 
-            <div className={styles.searchColumn}>
-              <div className={styles.searchRow} ref={searchRef}>
+            <div className={styles.searchRow} ref={searchRef}>
 
             {/* ── Mobile collapsed pill (hidden on desktop via CSS) ── */}
             <div className={styles.searchCollapsed} onClick={() => setSearchExpanded(true)}>
@@ -563,22 +568,16 @@ export default function StaffPage() {
             </div>
             </div>
 
-            <div className={styles.benefitsBlock}>
-              <p className={styles.landingIntro}>
-                Корпоративный портал для сотрудников Мосгортура: здесь можно выбрать тур, оставить заявку
-                и забронировать поездку на специальных условиях — с предоплатой от 5&nbsp;₽, фиксацией цены
-                и оплатой остатка в течение 100 дней.
-              </p>
-              <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
-                <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
-                <span className={styles.searchPill}>✓ Рассрочка 100 дней</span>
-                <span className={styles.searchPill}>✓ Фиксация цены</span>
-                <span className={styles.searchPill}>✓ Без скрытых комиссий</span>
-                <span className={styles.searchPill}>✓ Гибкий график</span>
-              </div>
+            <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
+              <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
+              <span className={styles.searchPill}>✓ Рассрочка 100 дней</span>
+              <span className={styles.searchPill}>✓ Фиксация цены</span>
+              <span className={styles.searchPill}>✓ Без скрытых комиссий</span>
+              <span className={styles.searchPill}>✓ Гибкий график</span>
             </div>
-            </div>
-          </div>
+          </section>
+
+          <HowItWorks />
         </div>
       </main>
 
