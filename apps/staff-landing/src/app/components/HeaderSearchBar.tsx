@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { staffFetch } from '@/lib/staff-client'
 import styles from '../page.module.css'
 
 interface Country { id: number; name: string }
@@ -137,7 +138,7 @@ export function HeaderSearchBar({
   })
 
   useEffect(() => {
-    fetch('/api/tourvisor/countries')
+    staffFetch('/api/tourvisor/countries')
       .then(r => r.json())
       .then(json => {
         const list: Country[] = Array.isArray(json.data) ? json.data : []

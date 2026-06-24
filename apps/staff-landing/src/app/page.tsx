@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { staffFetch, setStaffSessionToken } from '@/lib/staff-client'
 import { BrandLogo } from './components/Brand'
 import { MobileSearchSheet } from './components/MobileSearchSheet'
 import styles from './page.module.css'
@@ -207,12 +208,14 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth', {
+      const res = await staffFetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: val }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (typeof data.token === 'string') setStaffSessionToken(data.token)
         onUnlock()
       } else {
         setError('Неверный пароль')
@@ -302,20 +305,26 @@ export default function StaffPage() {
   })
 
   useEffect(() => {
-    fetch('/api/auth')
-      .then(res => { if (res.ok) setPhase('landing') })
+    staffFetch('/api/auth')
+      .then(async res => {
+        if (!res.ok) return
+        const data = await res.json().catch(() => ({}))
+        if (typeof data.token === 'string') setStaffSessionToken(data.token)
+        setPhase('landing')
+      })
       .catch(() => {})
   }, [])
 
   useEffect(() => {
-    fetch('/api/tourvisor/countries')
+    if (phase !== 'landing') return
+    staffFetch('/api/tourvisor/countries')
       .then(r => r.json())
       .then(json => {
         const list: Country[] = Array.isArray(json.data) ? json.data : []
         setCountries(list)
       })
       .catch(() => {})
-  }, [])
+  }, [phase])
 
   useEffect(() => {
     if (!openPanel) return

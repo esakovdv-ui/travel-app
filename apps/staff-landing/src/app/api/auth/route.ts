@@ -1,21 +1,28 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { rejectDelay, verifyStaffCredential } from '@/lib/staff-access'
-import { attachStaffSessionCookie, isStaffSessionValid, STAFF_SESSION_COOKIE } from '@/lib/staff-session'
+import {
+  attachStaffSessionCookie,
+  extractSessionTokenFromRequest,
+  isStaffSessionValid,
+  issueStaffSessionToken,
+  STAFF_SESSION_COOKIE,
+} from '@/lib/staff-session'
 
 function misconfigured() {
   return NextResponse.json({ ok: false }, { status: 503 })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!process.env.STAFF_SESSION_SECRET?.trim()) {
     return misconfigured()
   }
-  const token = (await cookies()).get(STAFF_SESSION_COOKIE)?.value
+  const cookieToken = (await cookies()).get(STAFF_SESSION_COOKIE)?.value
+  const token = extractSessionTokenFromRequest(request, cookieToken)
   if (!(await isStaffSessionValid(token))) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, token })
 }
 
 export async function POST(req: Request) {
@@ -37,5 +44,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
 
-  return await attachStaffSessionCookie(NextResponse.json({ ok: true }))
+  const token = await issueStaffSessionToken()
+  if (!token) return misconfigured()
+
+  const res = NextResponse.json({ ok: true, token })
+  return attachStaffSessionCookie(res, token)
 }
