@@ -345,19 +345,98 @@
       line-height: 1.5;
     }
     .camp-overview-more { flex-shrink: 0; align-self: flex-start; }
-    .camp-overview-gallery {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 10px;
+    .camp-overview-slider-wrap {
       margin-bottom: 18px;
+      overflow: hidden;
     }
-    .camp-overview-gallery img {
+    .camp-overview-slider {
+      height: 450px;
+      position: relative;
+      overflow: visible;
+    }
+    .camp-overview-slider .swiper-wrapper {
+      align-items: center;
+    }
+    .camp-slider-slide {
+      width: 780px;
+    }
+    .camp-slider-card {
+      width: 780px;
+      height: 400px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
+    }
+    .camp-slider-card img {
       width: 100%;
       height: 100%;
-      min-height: 180px;
       object-fit: cover;
-      border-radius: 18px;
-      background: var(--panel);
+      display: block;
+    }
+    .camp-slider-arrows {
+      width: min(830px, calc(100% - 24px));
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      height: 60px;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    .camp-slider-arrow {
+      pointer-events: auto;
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--orange);
+      transition: background .2s, color .2s;
+    }
+    .camp-slider-arrow:hover {
+      background: var(--orange);
+      color: #fff;
+    }
+    .camp-slider-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+    .camp-slider-arrow--next svg {
+      transform: scaleX(-1);
+    }
+    .camp-slider-pagination {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .camp-slider-bullet {
+      cursor: pointer;
+      width: 10px;
+      height: 10px;
+      background: #ffd54f;
+      box-shadow: 0 4px 12px rgba(255, 133, 0, .25);
+      border-radius: 50px;
+      border: 0;
+      padding: 0;
+      transition: background .2s;
+    }
+    .camp-slider-bullet.is-active {
+      background: var(--orange);
     }
     .camp-pillars {
       display: grid;
@@ -654,6 +733,19 @@
       .camp-overview-head { flex-direction: column; }
       .camp-overview-more { align-self: stretch; width: 100%; }
     }
+    @media (max-width: 1024px) {
+      .camp-overview-slider { height: 400px; }
+      .camp-slider-slide,
+      .camp-slider-card { width: 728px; height: 400px; }
+      .camp-slider-arrows {
+        width: min(730px, calc(100% - 24px));
+        height: 40px;
+        top: auto;
+        bottom: 0;
+        transform: translateX(-50%);
+      }
+      .camp-slider-pagination { display: flex; }
+    }
     @media (max-width: 680px) {
       .container { width: min(100% - 20px, var(--max)); }
       .grid { grid-template-columns: 1fr; }
@@ -679,14 +771,17 @@
         padding: 11px 16px;
       }
       .camp-more .btn { width: 100%; max-width: none; }
-      .camp-overview-gallery { grid-template-columns: 1fr 1fr; }
-      .camp-overview-gallery img:first-child { grid-column: 1 / -1; min-height: 220px; }
       .camp-pillars { grid-template-columns: 1fr; }
       .price-promo { font-size: 32px; }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
+      .camp-overview-slider { height: 250px; }
+      .camp-slider-slide,
+      .camp-slider-card { width: 350px; height: 200px; }
+      .camp-slider-arrows { width: min(350px, calc(100% - 24px)); }
     }
   </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
 <body>
   <main>
@@ -733,10 +828,19 @@
             <button type="button" class="btn btn-secondary camp-overview-more" id="camp-overview-link">Фото и подробности →</button>
           </div>
 
-          <div class="camp-overview-gallery">
-            <img src="https://static.tildacdn.com/tild3166-6433-4766-a135-373232393439/DSC08901.jpg" alt="Территория лагеря «Власьево»" loading="lazy">
-            <img src="https://static.tildacdn.com/tild3935-3764-4935-b530-333430366130/DSC00121.jpg" alt="Корпус лагеря «Власьево»" loading="lazy">
-            <img src="https://static.tildacdn.com/tild6635-3735-4534-b534-616565643064/5d75cd2662bac0628f4e.jpg" alt="Столовая лагеря «Власьево»" loading="lazy">
+          <div class="camp-overview-slider-wrap">
+            <div class="swiper camp-overview-slider" id="camp-overview-slider">
+              <div class="swiper-wrapper"></div>
+              <div class="camp-slider-arrows" id="camp-slider-arrows">
+                <button type="button" class="camp-slider-arrow camp-slider-arrow--prev" aria-label="Предыдущее фото">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+                </button>
+                <button type="button" class="camp-slider-arrow camp-slider-arrow--next" aria-label="Следующее фото">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+                </button>
+              </div>
+              <div class="camp-slider-pagination" id="camp-slider-pagination"></div>
+            </div>
           </div>
 
           <div class="camp-pillars">
@@ -966,7 +1070,90 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
+    const CAMP_OVERVIEW_IMAGES = [
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/3cd2f64e-9858-4557-8308-246ce71b0e4a.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/24511283-5e6a-4e78-b39e-3144f3612589.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/1039c02c-b8dd-4dd8-8e29-f277e5f4829f.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/0dcc6e0c-fee0-45da-aa8e-ef37d05428a0.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_244264.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_298459.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/7a65f8cb-18cd-431b-b029-124f1bd5cfc6.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/965404bb-d9a4-4eb2-a636-6894909f52a1.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_244391.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/1764e54c-b6dd-440b-9622-f443be378022.jpg', alt: 'Лагерь «Власьево»' },
+    ];
+
+    function initCampOverviewSlider() {
+      const root = document.getElementById('camp-overview-slider');
+      const wrapper = root?.querySelector('.swiper-wrapper');
+      const paginationEl = document.getElementById('camp-slider-pagination');
+      const arrowsEl = document.getElementById('camp-slider-arrows');
+      if (!root || !wrapper || typeof Swiper === 'undefined') return;
+
+      const list = CAMP_OVERVIEW_IMAGES;
+      const count = list.length;
+      if (!count) return;
+
+      const useCarousel = count >= 3;
+      const slides = useCarousel ? list.concat(list, list) : list;
+
+      wrapper.innerHTML = slides.map((item) => `
+        <div class="swiper-slide camp-slider-slide">
+          <div class="camp-slider-card">
+            <img src="${item.src}" alt="${item.alt}" loading="lazy">
+          </div>
+        </div>
+      `).join('');
+
+      const swiper = new Swiper(root, {
+        centeredSlides: useCarousel,
+        allowTouchMove: useCarousel,
+        initialSlide: useCarousel ? count : 0,
+        spaceBetween: 45,
+        slidesPerView: 'auto',
+        on: {
+          slideChangeTransitionEnd(sw) {
+            if (!useCarousel || sw.animating) return;
+            const idx = sw.activeIndex;
+            if (idx < count) sw.slideTo(idx + count, 0, false);
+            else if (idx >= count * 2) sw.slideTo(idx - count, 0, false);
+          },
+        },
+      });
+
+      function syncBullet(idx) {
+        const active = ((idx % count) + count) % count;
+        paginationEl?.querySelectorAll('.camp-slider-bullet').forEach((btn, i) => {
+          btn.classList.toggle('is-active', i === active);
+          btn.setAttribute('aria-current', i === active ? 'true' : 'false');
+        });
+      }
+
+      if (paginationEl && useCarousel) {
+        paginationEl.innerHTML = list.map((_, i) => `
+          <button type="button" class="camp-slider-bullet${i === 0 ? ' is-active' : ''}" aria-label="Фото ${i + 1}" aria-current="${i === 0 ? 'true' : 'false'}"></button>
+        `).join('');
+        paginationEl.querySelectorAll('.camp-slider-bullet').forEach((btn, i) => {
+          btn.addEventListener('click', () => swiper.slideTo(count + i));
+        });
+        swiper.on('slideChange', () => syncBullet(swiper.activeIndex));
+        syncBullet(swiper.activeIndex);
+      } else if (paginationEl) {
+        paginationEl.hidden = true;
+      }
+
+      if (arrowsEl && useCarousel) {
+        arrowsEl.querySelector('.camp-slider-arrow--prev')?.addEventListener('click', () => swiper.slidePrev());
+        arrowsEl.querySelector('.camp-slider-arrow--next')?.addEventListener('click', () => swiper.slideNext());
+      } else if (arrowsEl) {
+        arrowsEl.hidden = true;
+      }
+    }
+
+    initCampOverviewSlider();
+
     const money = new Intl.NumberFormat('ru-RU');
     const PROMO_PRICE_10_DAYS = 39900;
     const shiftGrid = document.getElementById('shift-grid');
