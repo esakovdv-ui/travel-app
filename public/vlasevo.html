@@ -321,8 +321,9 @@
     .camp-overview-panel { padding: clamp(20px, 3.5vw, 32px); }
     .camp-overview-head {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
       gap: 16px;
       margin-bottom: 18px;
     }
@@ -337,32 +338,36 @@
     }
     .camp-overview-head .section-title { margin-bottom: 10px; }
     .camp-overview-lead {
-      margin: 0;
+      margin: 0 auto;
       max-width: 720px;
       color: #475569;
       font-size: clamp(16px, 1.7vw, 18px);
       font-weight: 700;
       line-height: 1.5;
     }
-    .camp-overview-more { flex-shrink: 0; align-self: flex-start; }
+    .camp-overview-more { flex-shrink: 0; }
     .camp-overview-slider-wrap {
+      width: 100%;
       margin-bottom: 18px;
-      overflow: hidden;
     }
     .camp-overview-slider {
+      width: 100%;
       height: 450px;
       position: relative;
-      overflow: visible;
+      overflow: hidden;
     }
     .camp-overview-slider .swiper-wrapper {
       align-items: center;
     }
     .camp-slider-slide {
-      width: 780px;
+      width: min(780px, calc(100% - 40px));
+      display: flex;
+      justify-content: center;
     }
     .camp-slider-card {
-      width: 780px;
+      width: 100%;
       height: 400px;
+      position: relative;
       border-radius: 24px;
       overflow: hidden;
       background: var(--panel);
@@ -375,7 +380,7 @@
       display: block;
     }
     .camp-slider-arrows {
-      width: min(830px, calc(100% - 24px));
+      width: min(876px, calc(100% - 24px));
       position: absolute;
       left: 50%;
       top: 50%;
@@ -478,6 +483,7 @@
     .camp-infra-tags {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
       margin-bottom: 14px;
     }
@@ -502,6 +508,7 @@
       font-size: 14px;
       font-weight: 800;
       line-height: 1.45;
+      text-align: center;
     }
     .about-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
     .about-card { padding: 20px; }
@@ -730,18 +737,16 @@
       .grid { grid-template-columns: repeat(2,1fr); }
       .about-grid { grid-template-columns: 1fr; }
       .camp-pillars { grid-template-columns: repeat(2, 1fr); }
-      .camp-overview-head { flex-direction: column; }
-      .camp-overview-more { align-self: stretch; width: 100%; }
     }
     @media (max-width: 1024px) {
       .camp-overview-slider { height: 400px; }
-      .camp-slider-slide,
-      .camp-slider-card { width: 728px; height: 400px; }
+      .camp-slider-slide { width: min(728px, calc(100% - 40px)); }
+      .camp-slider-card { height: 400px; }
       .camp-slider-arrows {
-        width: min(730px, calc(100% - 24px));
+        width: min(824px, calc(100% - 24px));
         height: 40px;
         top: auto;
-        bottom: 0;
+        bottom: 12px;
         transform: translateX(-50%);
       }
       .camp-slider-pagination { display: flex; }
@@ -776,9 +781,9 @@
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
       .camp-overview-slider { height: 250px; }
-      .camp-slider-slide,
-      .camp-slider-card { width: 350px; height: 200px; }
-      .camp-slider-arrows { width: min(350px, calc(100% - 24px)); }
+      .camp-slider-slide { width: min(350px, calc(100% - 32px)); }
+      .camp-slider-card { height: 200px; }
+      .camp-slider-arrows { width: min(446px, calc(100% - 16px)); }
     }
   </style>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
@@ -1109,10 +1114,12 @@
 
       const swiper = new Swiper(root, {
         centeredSlides: useCarousel,
+        centerInsufficientSlides: true,
         allowTouchMove: useCarousel,
         initialSlide: useCarousel ? count : 0,
         spaceBetween: 45,
         slidesPerView: 'auto',
+        watchOverflow: true,
         on: {
           slideChangeTransitionEnd(sw) {
             if (!useCarousel || sw.animating) return;
@@ -1122,6 +1129,8 @@
           },
         },
       });
+
+      swiper.update();
 
       function syncBullet(idx) {
         const active = ((idx % count) + count) % count;
