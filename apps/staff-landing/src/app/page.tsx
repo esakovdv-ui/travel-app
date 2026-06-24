@@ -90,6 +90,92 @@ function PeopleIcon() {
   )
 }
 
+// ─── How it works ───────────────────────────────────────────────────────────
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    title: 'Выбираете тур',
+    text: 'Находите подходящий тур в поиске: направление, даты, отель, питание и стоимость.',
+    icon: 'search',
+  },
+  {
+    title: 'Оставляете заявку',
+    text: 'Нажимаете на понравившийся тур и отправляете заявку через портал.',
+    icon: 'send',
+  },
+  {
+    title: 'Менеджер фиксирует цену',
+    text: 'Заявка попадает в Bitrix24, менеджер проверяет актуальность тура и фиксирует стоимость.',
+    icon: 'check',
+  },
+  {
+    title: 'Вносите предоплату от 5 ₽',
+    text: 'Для сотрудников действует минимальная предоплата и возможность оплатить остаток позже.',
+    icon: 'wallet',
+  },
+  {
+    title: 'Оплачиваете остаток в течение 100 дней',
+    text: 'Можно использовать рассрочку/постоплату без скрытых комиссий.',
+    icon: 'calendar',
+  },
+] as const
+
+function StepIcon({ name }: { name: typeof HOW_IT_WORKS_STEPS[number]['icon'] }) {
+  const common = { width: 22, height: 22, fill: 'currentColor', viewBox: '0 0 256 256', 'aria-hidden': true as const }
+  switch (name) {
+    case 'search':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z" />
+        </svg>
+      )
+    case 'send':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M231.87,114l-168-95.89A16,16,0,0,0,40.92,37.34l31.45,89.47L40.92,216.12a16,16,0,0,0,22.95,19.11l168-95.89A16,16,0,0,0,231.87,114ZM80.81,214.81l8.36-50.54,27.2,15.09a8,8,0,0,0,7.87,0l27.2-15.09,8.36,50.54ZM71.13,96.57,35.54,37.34,220.46,128Z" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z" />
+        </svg>
+      )
+    case 'wallet':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M216,72H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,64V192a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72Zm0,128H56a8,8,0,0,1-8-8V86.63A23.84,23.84,0,0,0,56,88H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,140Z" />
+        </svg>
+      )
+    case 'calendar':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z" />
+        </svg>
+      )
+  }
+}
+
+function HowItWorks() {
+  return (
+    <section className={styles.howItWorks} aria-labelledby="how-it-works-title">
+      <h2 id="how-it-works-title" className={styles.howItWorksTitle}>Как это работает</h2>
+      <ol className={styles.stepsGrid}>
+        {HOW_IT_WORKS_STEPS.map((step, index) => (
+          <li key={step.title} className={styles.stepCard}>
+            <div className={styles.stepTop}>
+              <span className={styles.stepIcon}><StepIcon name={step.icon} /></span>
+              <span className={styles.stepNum}>{index + 1}</span>
+            </div>
+            <h3 className={styles.stepTitle}>{step.title}</h3>
+            <p className={styles.stepText}>{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 // ─── Password Gate ────────────────────────────────────────────────────────────
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
@@ -268,7 +354,11 @@ export default function StaffPage() {
     <>
       <main className={styles.landingMain}>
         <div className="shell">
-          <div className={styles.searchRow} ref={searchRef}>
+          <div className={styles.landingLayout}>
+            <HowItWorks />
+
+            <div className={styles.searchColumn}>
+              <div className={styles.searchRow} ref={searchRef}>
 
             {/* ── Mobile collapsed pill (hidden on desktop via CSS) ── */}
             <div className={styles.searchCollapsed} onClick={() => setSearchExpanded(true)}>
@@ -471,21 +561,24 @@ export default function StaffPage() {
               </div>
 
             </div>
+            </div>
 
-            <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
-              <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
-              <span className={styles.searchPill}>✓ Рассрочка 100 дней</span>
-              <span className={styles.searchPill}>✓ Фиксация цены</span>
-              <span className={styles.searchPill}>✓ Без скрытых комиссий</span>
-              <span className={styles.searchPill}>✓ Гибкий график</span>
+            <div className={styles.benefitsBlock}>
+              <p className={styles.landingIntro}>
+                Корпоративный портал для сотрудников Мосгортура: здесь можно выбрать тур, оставить заявку
+                и забронировать поездку на специальных условиях — с предоплатой от 5&nbsp;₽, фиксацией цены
+                и оплатой остатка в течение 100 дней.
+              </p>
+              <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
+                <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
+                <span className={styles.searchPill}>✓ Рассрочка 100 дней</span>
+                <span className={styles.searchPill}>✓ Фиксация цены</span>
+                <span className={styles.searchPill}>✓ Без скрытых комиссий</span>
+                <span className={styles.searchPill}>✓ Гибкий график</span>
+              </div>
+            </div>
             </div>
           </div>
-        </div>
-
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>
-            Введите параметры поиска выше, чтобы найти туры на особых условиях для сотрудников
-          </p>
         </div>
       </main>
 
