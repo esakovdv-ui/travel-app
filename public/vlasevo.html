@@ -189,7 +189,7 @@
       box-shadow: 0 0 0 4px rgba(255, 87, 34, .14), 0 16px 36px rgba(229, 57, 53, .16);
     }
     .card-img { height: 220px; position: relative; background: #eceef0; overflow: hidden; }
-    .card-img.reserve-link {
+    .card-img.reserve-btn {
       cursor: pointer;
       border: none;
       padding: 0;
@@ -197,21 +197,13 @@
       text-align: left;
       font: inherit;
       display: block;
-      text-decoration: none;
-      color: inherit;
     }
-    .card-img.reserve-link:focus-visible {
+    .card-img.reserve-btn:focus-visible {
       outline: 2px solid var(--promo-orange);
       outline-offset: -2px;
     }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
-    .card .btn.reserve-link {
-      width: 100%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-    }
+    .card .btn.reserve-btn { width: 100%; }
     .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
     .sold-out-overlay {
       position: absolute;
@@ -872,6 +864,38 @@
     <a class="btn btn-secondary cta-neutral hidden" href="#lead-form">Выбрать смену</a>
   </div>
 
+  <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть">&times;</button>
+      <h2 id="modal-title">Забронировать смену</h2>
+      <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
+      <div class="modal-success" id="modal-success">
+        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+      </div>
+      <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
+        <div class="field">
+          <label for="modal-name">Имя</label>
+          <input id="modal-name" name="name" type="text" placeholder="Как к вам обращаться" required autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="modal-phone">Телефон</label>
+          <input id="modal-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="modal-phone-error">
+          <p class="field-error" id="modal-phone-error" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="modal-shift">Тип смены / выбранная смена</label>
+          <input id="modal-shift" name="shift" type="text" readonly required>
+        </div>
+        <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+          <label for="modal-website">Сайт</label>
+          <input id="modal-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <button class="btn" type="submit" id="modal-submit">Отправить заявку</button>
+        <p class="form-note" id="modal-form-note" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="camp-info-modal" aria-hidden="true">
     <div class="modal modal--wide modal--camp" role="dialog" aria-modal="true" aria-labelledby="camp-info-title">
       <button type="button" class="modal-close" id="camp-info-close" aria-label="Закрыть">&times;</button>
@@ -1010,22 +1034,6 @@
       return utm;
     }
 
-    function shiftBookingHref(shift, utmContent) {
-      if (!shift?.url) return '#';
-      try {
-        const url = new URL(shift.url);
-        const pageUtm = collectUtm();
-        url.searchParams.set('utm_source', pageUtm.utm_source || 'vlasevo');
-        url.searchParams.set('utm_medium', pageUtm.utm_medium || 'landing');
-        url.searchParams.set('utm_campaign', pageUtm.utm_campaign || 'vlasevo');
-        if (utmContent) url.searchParams.set('utm_content', utmContent);
-        else if (pageUtm.utm_content) url.searchParams.set('utm_content', pageUtm.utm_content);
-        return url.toString();
-      } catch {
-        return shift.url;
-      }
-    }
-
     function shiftTemplate(shift) {
       const priceClass = shift.isPromo ? 'price-promo' : 'price';
       const oldPriceClass = shift.isPromo ? 'old-price-promo' : 'old-price';
@@ -1041,10 +1049,10 @@
             <span class="card-badge">${badgeText}</span>
             <span class="sold-out-overlay">Места закончились</span>
           </div>`
-        : `<a href="${shiftBookingHref(shift, `shift_${shift.id}`)}" class="card-img reserve-link" target="_blank" rel="noopener noreferrer" aria-label="Забронировать смену «${shift.title}»">
+        : `<button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
             <img src="${shift.image}" alt="${shift.title}" loading="lazy">
             <span class="card-badge">${badgeText}</span>
-          </a>`;
+          </button>`;
 
       return `
         <article class="${cardClass}">
@@ -1064,7 +1072,7 @@
             <p class="promo-accent">${shift.promoAccentText || 'Летние смены по специальной цене'}</p>
             ${shift.isSoldOut
               ? '<span class="btn btn-primary btn-disabled" aria-disabled="true">Мест нет</span>'
-              : `<a href="${shiftBookingHref(shift, `shift_${shift.id}_btn`)}" class="btn btn-primary reserve-link" target="_blank" rel="noopener noreferrer">Забронировать</a>`}
+              : `<button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>`}
           </div>
         </article>
       `;
@@ -1093,7 +1101,20 @@
       tryOpenShiftFromUrl();
     }
 
+    const reserveModal = document.getElementById('reserve-modal');
+    const modalForm = document.getElementById('modal-form');
+    const modalFormBody = modalForm;
+    const modalSuccess = document.getElementById('modal-success');
+    const modalName = document.getElementById('modal-name');
+    const modalPhone = document.getElementById('modal-phone');
+    const modalShift = document.getElementById('modal-shift');
+    const modalFormNote = document.getElementById('modal-form-note');
+    const modalSubmit = document.getElementById('modal-submit');
+    const modalClose = document.getElementById('modal-close');
+    const modalPhoneError = document.getElementById('modal-phone-error');
+
     let shiftsLoaded = false;
+    let activeReserveShift = null;
 
     const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
     const PHONE_MIN_CURSOR = 4;
@@ -1267,6 +1288,11 @@
     }
 
     const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
+    const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
+
+    function formatShiftLabel(shift) {
+      return `${shift.title} — ${shift.dates}`;
+    }
 
     function findShiftById(id) {
       return shifts.find((shift) => shift.id === id);
@@ -1317,15 +1343,100 @@
       return data;
     }
 
+    function openReserveModal(shift) {
+      activeReserveShift = shift;
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      modalShift.value = formatShiftLabel(shift);
+      modalPhoneCtrl.reset();
+      setFormNote(modalFormNote, '', false);
+      modalSubmit.disabled = false;
+      reserveModal.classList.add('is-open');
+      reserveModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      const url = new URL(window.location.href);
+      url.searchParams.set('shift', shift.id);
+      window.history.replaceState({ vlasevoShift: shift.id }, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
+      modalName.focus();
+    }
+
+    function closeReserveModal(clearShift) {
+      reserveModal.classList.remove('is-open');
+      reserveModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      const url = new URL(window.location.href);
+      url.searchParams.delete('shift');
+      url.searchParams.delete('shift_id');
+      window.history.replaceState({}, '', `${url.pathname}${url.search ? `?${url.searchParams.toString()}` : ''}${url.hash}`);
+      modalSuccess.classList.remove('is-visible');
+      modalFormBody.classList.remove('is-hidden');
+      if (clearShift) {
+        modalForm.reset();
+        modalShift.value = '';
+        modalPhoneCtrl.reset();
+        activeReserveShift = null;
+      }
+    }
+
     function tryOpenShiftFromUrl() {
-      if (!shiftsLoaded) return;
+      if (!shiftsLoaded || !reserveModal) return;
+      if (reserveModal.classList.contains('is-open')) return;
       const params = new URLSearchParams(window.location.search);
       const shiftId = params.get('shift') || params.get('shift_id');
       if (!shiftId) return;
       const shift = findShiftById(shiftId);
-      if (shift && !shift.isSoldOut && shift.url) {
-        window.location.href = shiftBookingHref(shift, `shift_${shift.id}`);
-      }
+      if (shift && !shift.isSoldOut) openReserveModal(shift);
+    }
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.reserve-btn');
+      if (!button) return;
+      event.preventDefault();
+      const picked = findShiftById(button.dataset.shiftId);
+      if (picked && !picked.isSoldOut) openReserveModal(picked);
+    });
+
+    if (modalClose) {
+      modalClose.addEventListener('click', () => closeReserveModal(true));
+    }
+    if (reserveModal) {
+      reserveModal.addEventListener('click', (event) => {
+        if (event.target === reserveModal) closeReserveModal(true);
+      });
+    }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && reserveModal?.classList.contains('is-open')) closeReserveModal(true);
+    });
+
+    if (modalForm) {
+      modalForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        setFormNote(modalFormNote, '', false);
+        if (!modalPhoneCtrl.validate()) {
+          modalPhone.focus();
+          modalPhoneCtrl.showMask();
+          return;
+        }
+        modalSubmit.disabled = true;
+        try {
+          await submitVlasevoLead({
+            name: modalName.value.trim(),
+            phone: modalPhoneCtrl.getValue(),
+            shift: modalShift.value.trim(),
+            bookingPrice: getBookingPrice(activeReserveShift),
+            source: 'popup',
+            website: document.getElementById('modal-website').value,
+          });
+          modalFormBody.classList.add('is-hidden');
+          modalSuccess.classList.add('is-visible');
+          modalName.value = '';
+          modalPhoneCtrl.reset();
+          setTimeout(() => closeReserveModal(true), 15000);
+        } catch (error) {
+          setFormNote(modalFormNote, error instanceof Error ? error.message : 'Не удалось отправить заявку', true);
+          modalSubmit.disabled = false;
+        }
+      });
     }
 
     function setPromoExpiredState() {

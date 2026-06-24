@@ -189,6 +189,8 @@ export async function submitCampLead({
   }
   if (landing === 'vlasevo-promo') {
     commentLines.push('Лендинг: /vlasevo-promo');
+  } else if (landing === 'vlasevo') {
+    commentLines.push('Лендинг: /vlasevo');
   }
   const utmLines = Object.entries(utm).map(([key, value]) => `${key}: ${value}`);
   if (utmLines.length) {
