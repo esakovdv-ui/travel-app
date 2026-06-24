@@ -162,9 +162,6 @@
       padding-top: 10px;
       padding-bottom: 10px;
     }
-    #about {
-      padding-top: 14px;
-    }
     .section-title { margin: 0 0 14px; font-size: clamp(28px, 3.5vw, 46px); line-height: 1.08; letter-spacing: -.02em; }
     .shifts-intro {
       width: 100%;
@@ -304,6 +301,136 @@
     .urgency { padding: 22px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; }
     .urgency h2 { margin: 0 0 6px; font-size: clamp(24px,3vw,36px); line-height: 1.1; }
     .urgency p { margin: 0; color: var(--muted); font-weight: 700; }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: #216e1f;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+      line-height: 1.2;
+    }
+    .hero-badge--brand {
+      background: rgba(255, 133, 0, .12);
+      color: var(--orange-dark);
+    }
+    .camp-overview { padding: 0 0 18px; }
+    .timer-section { padding: 0 0 18px; }
+    .camp-overview-panel { padding: clamp(20px, 3.5vw, 32px); }
+    .camp-overview-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .camp-overview-eyebrow {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .camp-overview-head .section-title { margin-bottom: 10px; }
+    .camp-overview-lead {
+      margin: 0;
+      max-width: 720px;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 18px);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .camp-overview-more { flex-shrink: 0; align-self: flex-start; }
+    .camp-overview-gallery {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .camp-overview-gallery img {
+      width: 100%;
+      height: 100%;
+      min-height: 180px;
+      object-fit: cover;
+      border-radius: 18px;
+      background: var(--panel);
+    }
+    .camp-pillars {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .camp-pillar {
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+    }
+    .camp-pillar-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: rgba(255, 133, 0, .12);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .camp-pillar h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    .camp-pillar p {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .camp-infra-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .camp-infra-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .camp-location {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--green-soft);
+      color: #216e1f;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
     .about-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
     .about-card { padding: 20px; }
     .about-card h3 { margin: 0 0 10px; font-size: 24px; }
@@ -530,6 +657,9 @@
       .hero-grid, .lead-block, .timer-panel, .urgency { grid-template-columns: 1fr; }
       .grid { grid-template-columns: repeat(2,1fr); }
       .about-grid { grid-template-columns: 1fr; }
+      .camp-pillars { grid-template-columns: repeat(2, 1fr); }
+      .camp-overview-head { flex-direction: column; }
+      .camp-overview-more { align-self: stretch; width: 100%; }
     }
     @media (max-width: 680px) {
       .container { width: min(100% - 20px, var(--max)); }
@@ -556,6 +686,9 @@
         padding: 11px 16px;
       }
       .camp-more .btn { width: 100%; max-width: none; }
+      .camp-overview-gallery { grid-template-columns: 1fr 1fr; }
+      .camp-overview-gallery img:first-child { grid-column: 1 / -1; min-height: 220px; }
+      .camp-pillars { grid-template-columns: 1fr; }
       .price-promo { font-size: 32px; }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
@@ -569,15 +702,21 @@
         <div class="hero-grid">
           <div class="hero-main panel">
             <div>
-              <h1>Летние смены во «Власьево»</h1>
+              <div class="hero-badges">
+                <span class="hero-badge hero-badge--brand">ЛОК «Власьево»</span>
+                <span class="hero-badge">7–17 лет</span>
+                <span class="hero-badge">МОСГОРТУР</span>
+              </div>
+              <h1>Летний отдых в лесном оздоровительном комплексе</h1>
               <div class="promo-hero-price" aria-label="Специальные цены от 39 900 рублей">
                 <span class="promo-hero-price-icon" aria-hidden="true">🔥</span>
                 <span>Специальные цены от 39 900 ₽</span>
               </div>
-              <p class="lead">Проживание, питание и насыщенная программа для детей от 7 до 17 лет.</p>
+              <p class="lead">Загородный комплекс в экологически чистом лесу Подмосковья: комфортные корпуса, пятиразовое питание, спорт и творчество на закрытой территории. Программа в концепции «обучение через развлечение».</p>
             </div>
             <div class="hero-actions">
               <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
+              <button type="button" class="btn btn-secondary" id="camp-hero-more">О лагере</button>
               <a class="btn btn-secondary cta-primary" href="#lead-form">Забронировать</a>
               <a class="btn btn-secondary cta-neutral hidden" href="#shifts">Выбрать смену</a>
             </div>
@@ -586,6 +725,65 @@
             <img src="/vlasevo-hero-final.png" alt="Лагерь Власьево">
           </aside>
         </div>
+      </div>
+    </section>
+
+    <section id="camp-overview" class="camp-overview">
+      <div class="container">
+        <div class="camp-overview-panel panel">
+          <div class="camp-overview-head">
+            <div>
+              <span class="camp-overview-eyebrow">О комплексе</span>
+              <h2 class="section-title">Всё, что нужно ребёнку для лета</h2>
+              <p class="camp-overview-lead">Лесной оздоровительный комплекс «Власьево» — полностью оборудованная площадка МОСГОРТУРа для детского отдыха: от уютных номеров и вкусного питания до спортивных площадок, мастерских и концертного зала.</p>
+            </div>
+            <button type="button" class="btn btn-secondary camp-overview-more" id="camp-overview-link">Фото и подробности →</button>
+          </div>
+
+          <div class="camp-overview-gallery">
+            <img src="https://static.tildacdn.com/tild3166-6433-4766-a135-373232393439/DSC08901.jpg" alt="Территория лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild3935-3764-4935-b530-333430366130/DSC00121.jpg" alt="Корпус лагеря «Власьево»" loading="lazy">
+            <img src="https://static.tildacdn.com/tild6635-3735-4534-b534-616565643064/5d75cd2662bac0628f4e.jpg" alt="Столовая лагеря «Власьево»" loading="lazy">
+          </div>
+
+          <div class="camp-pillars">
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🏠</span>
+              <h3>Размещение</h3>
+              <p>Корпуса на 4–5 человек, ортопедические матрасы, Wi‑Fi, душевые на этаже, досуговые холлы с мультимедиа.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🍽</span>
+              <h3>Питание</h3>
+              <p>5 раз в день по СанПиН: натуральные молочные и мясные продукты, сезонные овощи и фрукты от сертифицированных поставщиков.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🩺</span>
+              <h3>Медицина</h3>
+              <p>Медпункт на территории, круглосуточное наблюдение за здоровьем детей и оперативная первая помощь.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🎯</span>
+              <h3>Инфраструктура</h3>
+              <p>Спорт, творческие мастерские, игротека, концертный зал и большая сцена — всё на одной закрытой территории.</p>
+            </article>
+          </div>
+
+          <div class="camp-infra-tags" aria-label="Инфраструктура лагеря">
+            <span class="camp-infra-tag">⚽ Спортивные площадки</span>
+            <span class="camp-infra-tag">🎨 Творческие мастерские</span>
+            <span class="camp-infra-tag">🎲 Игротека</span>
+            <span class="camp-infra-tag">🎬 Концертный зал</span>
+            <span class="camp-infra-tag">🎤 Большая сцена</span>
+          </div>
+
+          <p class="camp-location">📍 Московская область, городской округ Луховицы — лесная территория оздоровительного комплекса</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="timer-section">
+      <div class="container">
         <div class="timer-panel panel promo-accent" id="timer-panel">
           <h2>Специальные условия до 7 июня</h2>
           <div class="timer" aria-live="polite">
@@ -602,7 +800,7 @@
       <div class="container">
         <div class="shifts-intro">
           <h2 class="section-title">Летние смены по специальной цене</h2>
-          <p class="lead">В стоимость входит проживание, питание, участие во всех мероприятиях смены и сопровождение команды лагеря.</p>
+          <p class="lead">10 дней отдыха «всё включено»: проживание, питание 5 раз в день, программа мероприятий и сопровождение команды лагеря на закрытой лесной территории.</p>
         </div>
         <div class="grid" id="shift-grid"></div>
       </div>
@@ -621,32 +819,12 @@
       </div>
     </section>
 
-    <section id="about">
-      <div class="container">
-        <h2 class="section-title">О лагере «Власьево»</h2>
-        <div class="about-grid">
-          <article class="about-card panel">
-            <h3>Загородный лагерь</h3>
-            <p>Лесная территория в Московской области, комфортное размещение и условия для полноценного летнего отдыха детей.</p>
-          </article>
-          <article class="about-card panel">
-            <h3>Все включено</h3>
-            <p>В стоимость смены входит проживание, питание, ежедневная программа мероприятий и участие во всех активностях лагеря.</p>
-          </article>
-          <article class="about-card panel">
-            <h3>МОСГОРТУР</h3>
-            <p>Организованный детский отдых от крупнейшего оператора детских программ Москвы с многолетним опытом проведения смен.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <section id="camp-more" class="camp-more-section">
       <div class="container">
         <div class="camp-more panel">
-          <h2 class="camp-more-title">Хотите узнать больше о лагере?</h2>
-          <p class="camp-more-text">Посмотрите фотографии территории, условия проживания, инфраструктуру, программу отдыха и другую полезную информацию о комплексе «Власьево».</p>
-          <button type="button" class="btn btn-primary" id="camp-more-link">Подробнее о лагере →</button>
+          <h2 class="camp-more-title">Хотите увидеть больше?</h2>
+          <p class="camp-more-text">Откройте полную галерею с фотографиями номеров, столовой, медпункта и всей инфраструктуры комплекса.</p>
+          <button type="button" class="btn btn-primary" id="camp-more-link">Смотреть все фото и детали →</button>
         </div>
       </div>
     </section>
@@ -1219,6 +1397,8 @@
     });
 
     const campMoreLink = document.getElementById('camp-more-link');
+    const campOverviewLink = document.getElementById('camp-overview-link');
+    const campHeroMore = document.getElementById('camp-hero-more');
     const campInfoModal = document.getElementById('camp-info-modal');
     const campInfoClose = document.getElementById('camp-info-close');
 
@@ -1242,6 +1422,12 @@
 
     if (campMoreLink) {
       campMoreLink.addEventListener('click', () => openCampInfoModal());
+    }
+    if (campOverviewLink) {
+      campOverviewLink.addEventListener('click', () => openCampInfoModal());
+    }
+    if (campHeroMore) {
+      campHeroMore.addEventListener('click', () => openCampInfoModal());
     }
     if (campInfoClose) {
       campInfoClose.addEventListener('click', () => closeCampInfoModal());
