@@ -178,10 +178,27 @@ function HowItWorks() {
   )
 }
 
+function EyeIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+      <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z" />
+    </svg>
+  )
+}
+
+function EyeSlashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+      <path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22.2,24.41a8,8,0,1,0,11.84-10.76Zm47.33,75.84L114,155.22a48.07,48.07,0,0,1,0-58.44ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128a130.84,130.84,0,0,1,11.11-29.54l31,34.05a64,64,0,0,0,84.3,84.3l27.74,30.47A125.15,125.15,0,0,1,128,192Zm6.73-77.57,47.63,52.28a47.93,47.93,0,0,0-47.63-52.28ZM247.31,124.76c-.35.79-8.82,19.57-27.65,38.4C194.57,188.25,162.88,201.51,128,201.51a123.81,123.81,0,0,1-20.57-1.74,8,8,0,0,1,2.67-15.78,107.56,107.56,0,0,0,17.9,1.51c30.78,0,57.67-11.19,79.93-33.25a133.33,133.33,0,0,0,23.07-30.91,133.46,133.46,0,0,0-23.07-30.91c-11.46-11.11-24-20-37.22-26.38a8,8,0,0,1,7.15-14.34c14.88,7.15,28.8,16.85,41.43,29.08C238.49,105.18,247,124,247.31,124.76Z" />
+    </svg>
+  )
+}
+
 // ─── Password Gate ────────────────────────────────────────────────────────────
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   const [val, setVal] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -220,15 +237,26 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
           Введите пароль для доступа к специальным условиям бронирования туров
         </p>
         <form onSubmit={submit} className={styles.authForm}>
-          <input
-            type="password"
-            placeholder="Пароль"
-            value={val}
-            onChange={e => setVal(e.target.value)}
-            className="input"
-            autoFocus
-            autoComplete="current-password"
-          />
+          <div className={styles.passwordField}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Пароль"
+              value={val}
+              onChange={e => setVal(e.target.value)}
+              className={`input ${styles.passwordInput}`}
+              autoFocus
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className={styles.passwordToggle}
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+            </button>
+          </div>
           {error && <div className={styles.authError}>{error}</div>}
           <button
             type="submit"
