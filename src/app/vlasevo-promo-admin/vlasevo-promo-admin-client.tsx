@@ -24,6 +24,7 @@ const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специаль
 const DEFAULT_SPECIAL_TERMS_TEXT = 'Спецусловия до 7 июня';
 const DEFAULT_BENEFIT_LABEL = 'Специальная цена';
 const ADMIN_PASSWORD = 'vlasevo-promo2026';
+type BookingMode = 'direct' | 'lead';
 
 const blankShift: VlasevoPromoShift = {
   id: '',
@@ -181,6 +182,7 @@ export function VlasevoPromoAdminClient() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
   const [shifts, setShifts] = useState<VlasevoPromoShift[]>([]);
+  const [bookingMode, setBookingMode] = useState<BookingMode>('direct');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
@@ -217,7 +219,9 @@ export function VlasevoPromoAdminClient() {
         if (!response.ok) throw new Error('Не удалось загрузить смены');
         const data = await response.json();
         if (!ignore) {
-          setShifts(data.map((shift: Partial<VlasevoPromoShift>) => ({
+          const list = Array.isArray(data) ? data : data.shifts;
+          setBookingMode(!Array.isArray(data) && data.bookingMode === 'lead' ? 'lead' : 'direct');
+          setShifts((list ?? []).map((shift: Partial<VlasevoPromoShift>) => ({
             ...blankShift,
             ...shift,
             promoAccentText: shift.promoAccentText || DEFAULT_PROMO_ACCENT_TEXT,
@@ -259,6 +263,7 @@ export function VlasevoPromoAdminClient() {
     setIsAuthed(false);
     setPassword('');
     setShifts([]);
+    setBookingMode('direct');
   }
 
   function updateShift(index: number, patch: Partial<VlasevoPromoShift>) {
@@ -297,16 +302,23 @@ export function VlasevoPromoAdminClient() {
     moveShift(index, index + 1);
   }
 
-  async function persistShifts(nextShifts: VlasevoPromoShift[]) {
+  async function persistStore(nextShifts: VlasevoPromoShift[], nextBookingMode: BookingMode = bookingMode) {
     const response = await fetch('/api/vlasevo-promo-shifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, shifts: nextShifts.map(normalizeShift) }),
+      body: JSON.stringify({
+        password,
+        bookingMode: nextBookingMode,
+        shifts: nextShifts.map(normalizeShift),
+      }),
     });
     const data = await response.json();
 
     if (!response.ok) throw new Error(data.error || 'Не удалось сохранить смены');
-    return data.shifts as VlasevoPromoShift[];
+    return {
+      shifts: data.shifts as VlasevoPromoShift[],
+      bookingMode: (data.bookingMode === 'lead' ? 'lead' : 'direct') as BookingMode,
+    };
   }
 
   async function uploadImage(index: number, file: File | null) {
@@ -347,8 +359,9 @@ export function VlasevoPromoAdminClient() {
         shiftIndex === index ? { ...shift, image: data.url } : shift
       ));
       setShifts(nextShifts);
-      const persistedShifts = await persistShifts(nextShifts);
-      setShifts(persistedShifts);
+      const persisted = await persistStore(nextShifts);
+      setShifts(persisted.shifts);
+      setBookingMode(persisted.bookingMode);
       setStatus('Изображение загружено и сохранено. Лендинг можно обновить для проверки.');
     } catch (uploadError) {
       const message = uploadError instanceof Error
@@ -367,9 +380,10 @@ export function VlasevoPromoAdminClient() {
     setError('');
 
     try {
-      const persistedShifts = await persistShifts(shifts);
-      setShifts(persistedShifts);
-      setStatus('Смены сохранены. Промо-лендинг обновится при следующей загрузке страницы.');
+      const persisted = await persistStore(shifts);
+      setShifts(persisted.shifts);
+      setBookingMode(persisted.bookingMode);
+      setStatus('Настройки сохранены. Промо-лендинг обновится при следующей загрузке страницы.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Не удалось сохранить смены');
     } finally {
@@ -425,6 +439,38 @@ export function VlasevoPromoAdminClient() {
         </div>
 
         <div className={styles.panel}>
+          {!isLoading && (
+            <div className={styles.field} style={{ marginBottom: 20 }}>
+              <label>Режим бронирования на лендинге</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="bookingMode"
+                    value="direct"
+                    checked={bookingMode === 'direct'}
+                    onChange={() => setBookingMode('direct')}
+                  />
+                  Прямой переход на сайт бронирования
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="bookingMode"
+                    value="lead"
+                    checked={bookingMode === 'lead'}
+                    onChange={() => setBookingMode('lead')}
+                  />
+                  Сбор заявки (как на /vlasevo)
+                </label>
+              </div>
+              <span className={styles.hint}>
+                {bookingMode === 'direct'
+                  ? 'Кнопки «Забронировать» ведут на корзину online.mosgortur.ru.'
+                  : 'Кнопки открывают форму заявки; менеджер связывается с клиентом.'}
+              </span>
+            </div>
+          )}
           {isLoading ? (
             <p className={styles.subtitle}>Загружаю смены...</p>
           ) : (
@@ -522,7 +568,7 @@ export function VlasevoPromoAdminClient() {
                       </label>
                     </div>
                     <div className={`${styles.field} ${styles.wide}`}>
-                      <label>Ссылка на бронирование</label>
+                      <label>Ссылка на бронирование{bookingMode === 'lead' ? ' (для режима «Прямой переход»)' : ''}</label>
                       <textarea className={styles.textarea} value={shift.url} onChange={(event) => updateShift(index, { url: event.target.value })} />
                     </div>
                     <div className={`${styles.field} ${styles.wide}`}>
