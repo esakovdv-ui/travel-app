@@ -1288,7 +1288,10 @@
     async function loadShifts() {
       try {
         const response = await fetch('/api/vlasevo-promo-shifts', { cache: 'no-store' });
-        if (response.ok) shifts = applyPromoPricing(await response.json());
+        if (response.ok) {
+          const payload = parsePromoApiPayload(await response.json());
+          shifts = applyPromoPricing(payload.shifts);
+        }
       } catch (error) {
         console.warn('Не удалось загрузить смены', error);
       }
