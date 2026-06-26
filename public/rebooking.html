@@ -113,47 +113,8 @@
       color: #344054;
     }
     .section { padding: 22px 0; }
-    .section-title {
-      margin: 0 0 12px;
-      font-size: 20px;
-      line-height: 1.25;
-    }
-    .direction-panel {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
-    }
-    .direction-label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #344054;
-    }
-    .direction-select {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1px solid #d0d5dd;
-      border-radius: 12px;
-      font: inherit;
-      font-size: 16px;
-      background: var(--white);
-      color: var(--text);
-    }
-    .tourvisor-section {
-      margin-top: 18px;
-      min-height: 0;
-    }
-    .tourvisor-section.is-hidden { display: none; }
-    .tourvisor-placeholder {
-      padding: 28px 20px;
-      border: 1px dashed #d0d5dd;
-      border-radius: 16px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 15px;
-      background: rgba(255, 255, 255, 0.65);
+    .tourvisor-wrap {
+      min-height: 120px;
     }
     .site-footer {
       padding: 28px 0 36px;
@@ -196,7 +157,7 @@
       <div class="container">
         <p class="greeting hidden" id="greeting"></p>
         <h1>Подберите новый тур вместо отменённой поездки</h1>
-        <p class="lead">Мы уже учли основные параметры вашего бронирования. Вам останется выбрать новое направление и подходящий вариант отдыха.</p>
+        <p class="lead">Мы уже учли основные параметры вашего бронирования. Вам останется выбрать подходящий вариант отдыха.</p>
 
         <div class="trip-card">
           <h2>Параметры вашей поездки</h2>
@@ -204,25 +165,13 @@
           <div class="trip-meta" id="trip-meta"></div>
         </div>
 
-        <p class="instruction">Выберите направление в форме ниже — остальные параметры поиска уже заполнены.</p>
+        <p class="instruction">Используйте форму ниже для подбора тура — основные параметры поиска уже заполнены.</p>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
-        <div class="direction-panel">
-          <label class="direction-label" for="destination-select">Куда хотите поехать?</label>
-          <select class="direction-select" id="destination-select">
-            <option value="">Выберите направление</option>
-          </select>
-
-          <div class="tourvisor-section is-hidden" id="tourvisor-section">
-            <div id="tourvisor-mount"></div>
-          </div>
-          <div class="tourvisor-placeholder" id="tourvisor-placeholder">
-            Сначала выберите направление — после этого откроется поиск туров с вашими параметрами.
-          </div>
-        </div>
+        <div class="tourvisor-wrap" id="tourvisor-mount"></div>
       </div>
     </section>
   </main>
@@ -235,7 +184,6 @@
     (function () {
       var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
       var money = new Intl.NumberFormat('ru-RU');
-      var selectedDestination = null;
       var leadSubmitted = false;
 
       function parseIntParam(raw) {
@@ -404,12 +352,11 @@
         document.getElementById('trip-meta').textContent = meta.join(' · ');
       }
 
-      function buildTourvisorAttrs(data, countryCode) {
+      function buildTourvisorAttrs(data) {
         var attrs = {
           class: 'tv-search-form tv-moduleid-9978253',
           id: 'tourvisor-search',
         };
-        if (countryCode) attrs['tv-country'] = String(countryCode);
         if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
         if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
         if (data.adults != null && data.adults >= 1 && data.adults <= 4) attrs['tv-adults'] = String(data.adults);
@@ -432,11 +379,11 @@
         });
       }
 
-      function initTourvisorModule(data, destination) {
+      function initTourvisorModule(data) {
         var mount = document.getElementById('tourvisor-mount');
         mount.innerHTML = '';
         var el = document.createElement('div');
-        applyAttrs(el, buildTourvisorAttrs(data, destination.tvCountry));
+        applyAttrs(el, buildTourvisorAttrs(data));
         mount.appendChild(el);
 
         var oldScript = document.getElementById('tourvisor-init-script');
@@ -447,9 +394,6 @@
         script.src = '//tourvisor.ru/module/init.js?' + Date.now();
         script.async = true;
         document.body.appendChild(script);
-
-        document.getElementById('tourvisor-placeholder').classList.add('hidden');
-        document.getElementById('tourvisor-section').classList.remove('is-hidden');
       }
 
       function collectUtm() {
@@ -499,7 +443,7 @@
         return String(data.phone || data.touristphone || data.clientphone || data.mobile || '').trim();
       }
 
-      async function submitTourLead(bookingData, destination, tourPayload, phone) {
+      async function submitTourLead(bookingData, tourPayload, phone) {
         if (leadSubmitted) return;
         var response = await fetch('/api/rebooking-lead', {
           method: 'POST',
@@ -509,7 +453,6 @@
             cert: bookingData.cert,
             name: bookingData.name,
             phone: phone,
-            destination: destination ? destination.label : undefined,
             people: bookingData.people,
             kids: bookingData.kids,
             kid1: bookingData.kidAges[0],
@@ -528,34 +471,19 @@
         leadSubmitted = true;
       }
 
-      function setupTourvisorBridge(bookingData, getDestination) {
+      function setupTourvisorBridge(bookingData) {
         window.addEventListener('message', function (event) {
           if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
           if (!isTourvisorLeadEvent(event.data)) return;
           var phone = extractPhoneFromMessage(event.data);
           if (!phone) return;
           var tour = extractTourFromMessage(event.data);
-          var destination = getDestination();
-          if (!tour.hotel && !tour.country && destination) {
-            tour.country = destination.label;
-          }
           if (!tour.hotel && !tour.country) {
             tour.hotel = 'Заявка через Tourvisor';
           }
-          submitTourLead(bookingData, destination, tour, phone).catch(function (error) {
+          submitTourLead(bookingData, tour, phone).catch(function (error) {
             console.error('rebooking: failed to submit lead', error);
           });
-        });
-      }
-
-      function populateDestinations(selectEl, destinations) {
-        destinations.forEach(function (dest) {
-          if (/крым/i.test(dest.label)) return;
-          var option = document.createElement('option');
-          option.value = dest.id;
-          option.textContent = dest.label;
-          option.dataset.tvCountry = dest.tvCountry;
-          selectEl.appendChild(option);
         });
       }
 
@@ -577,32 +505,8 @@
       }
 
       renderTripCard(bookingData);
-      setupTourvisorBridge(bookingData, function () { return selectedDestination; });
-
-      fetch('/rebooking-destinations.json', { cache: 'no-store' })
-        .then(function (res) { return res.json(); })
-        .then(function (destinations) {
-          var select = document.getElementById('destination-select');
-          populateDestinations(select, destinations);
-          select.addEventListener('change', function () {
-            var option = select.options[select.selectedIndex];
-            if (!option || !option.value) {
-              selectedDestination = null;
-              document.getElementById('tourvisor-section').classList.add('is-hidden');
-              document.getElementById('tourvisor-placeholder').classList.remove('hidden');
-              return;
-            }
-            selectedDestination = {
-              id: option.value,
-              label: option.textContent,
-              tvCountry: option.dataset.tvCountry,
-            };
-            initTourvisorModule(bookingData, selectedDestination);
-          });
-        })
-        .catch(function (error) {
-          console.error('rebooking: failed to load destinations', error);
-        });
+      setupTourvisorBridge(bookingData);
+      initTourvisorModule(bookingData);
     })();
   </script>
 </body>
