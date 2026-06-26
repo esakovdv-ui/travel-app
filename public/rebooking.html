@@ -28,12 +28,6 @@
       line-height: 1.5;
     }
     .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
-    .site-header {
-      padding: 16px 0;
-      background: var(--white);
-      border-bottom: 1px solid var(--line);
-    }
-    .site-header img { height: 38px; width: auto; display: block; }
     .hero { padding: 28px 0 8px; }
     .hero h1 {
       margin: 0 0 10px;
@@ -116,12 +110,6 @@
     .tourvisor-wrap {
       min-height: 120px;
     }
-    .site-footer {
-      padding: 28px 0 36px;
-      font-size: 14px;
-      color: var(--muted);
-      text-align: center;
-    }
     .error-page {
       padding: 56px 0;
       text-align: center;
@@ -141,12 +129,6 @@
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <img src="https://mosgortur.ru/images/icons/mgt_logo.png" alt="МОСГОРТУР">
-    </div>
-  </header>
-
   <div id="invalid-link" class="container error-page hidden">
     <h1>Ссылка некорректна</h1>
     <p>Откройте страницу из письма, которое мы отправили вам на электронную почту.</p>
@@ -175,10 +157,6 @@
       </div>
     </section>
   </main>
-
-  <footer class="site-footer hidden" id="site-footer">
-    <div class="container">Вопросы по перебронированию? Позвоните в «Мои путешествия» или напишите менеджеру из письма.</div>
-  </footer>
 
   <script>
     (function () {
@@ -551,7 +529,6 @@
 
       var bookingData = validation.data;
       document.getElementById('main-content').classList.remove('hidden');
-      document.getElementById('site-footer').classList.remove('hidden');
 
       var greetingName = firstName(bookingData.name);
       if (greetingName) {

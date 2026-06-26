@@ -1,0 +1,17 @@
+---
+description: Автоматический деплой на production после изменений
+alwaysApply: true
+---
+
+# Авто-деплой motrip.ru
+
+После любых изменений, влияющих на production (код, `public/*.html`, API, конфиги), **сразу деплоить без вопроса** «задеплоить?»:
+
+1. `git add` только релевантные файлы (не `graphify-out/`, не `tsconfig.tsbuildinfo`)
+2. `git commit` с кратким сообщением
+3. `git push origin main` — триггерит GitHub Actions Deploy to production
+4. Дождаться завершения workflow или проверить `curl https://motrip.ru/`
+
+Сервер: VPS `72.56.32.183`, PM2 `travel-app`, скрипт `/home/deploy.sh`.
+
+Не запускать repair и deploy параллельно. При падении сборки (OOM) — repair workflow, не полный deploy со staff-landing.
