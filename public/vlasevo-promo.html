@@ -1198,32 +1198,57 @@
       return Number.isFinite(price) && price >= 0 ? price : undefined;
     }
 
+    const LEAD_REQUEST_TIMEOUT_MS = 25000;
+    const MODAL_SUBMIT_LABEL = 'Отправить заявку';
+    const LEAD_SUBMIT_ERROR = 'Не удалось отправить заявку. Попробуйте позже.';
+
     function setFormNote(element, message, isError) {
+      if (!element) return;
       element.textContent = message;
       element.classList.toggle('error', Boolean(isError));
       element.classList.toggle('is-error', Boolean(isError));
+      element.setAttribute('role', isError ? 'alert' : 'polite');
+      if (isError && message) {
+        element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+
+    function setSubmitBusy(button, busy, label = MODAL_SUBMIT_LABEL) {
+      if (!button) return;
+      button.disabled = busy;
+      button.textContent = busy ? 'Отправляем…' : label;
     }
 
     async function submitVlasevoLead({ name, phone, shift, bookingPrice, source, website = '' }) {
-      const response = await fetch('/api/vlasevo-lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          phone,
-          shift,
-          bookingPrice,
-          source,
-          website,
-          landing: 'vlasevo-promo',
-          utm: collectUtm(),
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), LEAD_REQUEST_TIMEOUT_MS);
+      let response;
+      try {
+        response = await fetch('/api/vlasevo-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            shift,
+            bookingPrice,
+            source,
+            website,
+            landing: 'vlasevo-promo',
+            utm: collectUtm(),
+          }),
+          signal: controller.signal,
+        });
+      } catch (error) {
+        throw new Error(LEAD_SUBMIT_ERROR);
+      } finally {
+        clearTimeout(timeoutId);
+      }
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
         if (data.error === 'invalid_phone') throw new Error('Введите номер телефона полностью');
         if (data.error === 'misconfigured') throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
-        throw new Error('Не удалось отправить заявку. Попробуйте позже.');
+        throw new Error(LEAD_SUBMIT_ERROR);
       }
       return data;
     }
@@ -1251,7 +1276,7 @@
       modalShift.value = formatShiftLabel(shift);
       modalPhoneCtrl.reset();
       setFormNote(modalFormNote, '', false);
-      modalSubmit.disabled = false;
+      setSubmitBusy(modalSubmit, false);
       reserveModal.classList.add('is-open');
       reserveModal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -1305,7 +1330,8 @@
           modalPhoneCtrl.showMask();
           return;
         }
-        modalSubmit.disabled = true;
+        let succeeded = false;
+        setSubmitBusy(modalSubmit, true);
         try {
           await submitVlasevoLead({
             name: modalName.value.trim(),
@@ -1315,14 +1341,17 @@
             source: 'popup',
             website: document.getElementById('modal-website').value,
           });
+          succeeded = true;
           modalFormBody.classList.add('is-hidden');
           modalSuccess.classList.add('is-visible');
           modalName.value = '';
           modalPhoneCtrl.reset();
           setTimeout(() => closeReserveModal(true), 15000);
         } catch (error) {
-          setFormNote(modalFormNote, error instanceof Error ? error.message : 'Не удалось отправить заявку', true);
-          modalSubmit.disabled = false;
+          const message = error instanceof Error ? error.message : LEAD_SUBMIT_ERROR;
+          setFormNote(modalFormNote, message, true);
+        } finally {
+          if (!succeeded) setSubmitBusy(modalSubmit, false);
         }
       });
     }
@@ -1366,35 +1395,41 @@
       if (!tick()) clearInterval(timer);
     }, 1000);
 
-    landingForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const submitButton = landingForm.querySelector('button[type="submit"]');
-      setFormNote(note, '', false);
-      if (!landingPhoneCtrl.validate()) {
-        landingPhone.focus();
-        landingPhoneCtrl.showMask();
-        return;
-      }
-      if (submitButton) submitButton.disabled = true;
-      try {
-        await submitVlasevoLead({
-          name: landingForm.name.value.trim(),
-          phone: landingPhoneCtrl.getValue(),
-          shift: shiftSelect.value.trim(),
-          bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
-          source: 'landing',
-          website: document.getElementById('website').value,
-        });
-        setFormNote(note, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
-        landingForm.name.value = '';
-        landingPhoneCtrl.reset();
-        shiftSelect.value = '';
-      } catch (error) {
-        setFormNote(note, error instanceof Error ? error.message : 'Не удалось отправить заявку', true);
-      } finally {
-        if (submitButton) submitButton.disabled = false;
-      }
-    });
+    if (landingForm) {
+      landingForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = landingForm.querySelector('button[type="submit"]:not(.hidden)');
+        const submitLabel = submitButton?.textContent?.trim() || 'Забронировать';
+        setFormNote(note, '', false);
+        if (!landingPhoneCtrl.validate()) {
+          landingPhone.focus();
+          landingPhoneCtrl.showMask();
+          return;
+        }
+        let succeeded = false;
+        setSubmitBusy(submitButton, true, submitLabel);
+        try {
+          await submitVlasevoLead({
+            name: landingForm.name.value.trim(),
+            phone: landingPhoneCtrl.getValue(),
+            shift: shiftSelect.value.trim(),
+            bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
+            source: 'landing',
+            website: document.getElementById('website').value,
+          });
+          succeeded = true;
+          setFormNote(note, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+          landingForm.name.value = '';
+          landingPhoneCtrl.reset();
+          shiftSelect.value = '';
+        } catch (error) {
+          const message = error instanceof Error ? error.message : LEAD_SUBMIT_ERROR;
+          setFormNote(note, message, true);
+        } finally {
+          if (!succeeded) setSubmitBusy(submitButton, false, submitLabel);
+        }
+      });
+    }
 
     const campMoreLink = document.getElementById('camp-more-link');
     const campInfoModal = document.getElementById('camp-info-modal');
