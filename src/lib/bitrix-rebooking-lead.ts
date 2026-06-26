@@ -17,6 +17,8 @@ export type RebookingTourInfo = {
   placement?: string;
   meal?: string;
   tourvisorOrderId?: string;
+  orderTypeName?: string;
+  email?: string;
   raw?: Record<string, unknown>;
 };
 
@@ -26,6 +28,7 @@ export type RebookingLeadInput = {
   cert: string;
   name: string;
   phone: string;
+  email?: string;
   comment?: string;
   people?: number;
   kids?: number;
@@ -115,6 +118,7 @@ function formatTourBlock(tour?: RebookingTourInfo): string[] {
   if (tour.placement) lines.push(`Размещение: ${tour.placement}`);
   if (tour.meal) lines.push(`Питание: ${tour.meal}`);
   if (tour.price != null) lines.push(`Цена тура: ${formatPrice(tour.price)}`);
+  if (tour.orderTypeName) lines.push(`Тип заявки Tourvisor: ${tour.orderTypeName}`);
   if (tour.tourvisorOrderId) lines.push(`Заявка Tourvisor: ${tour.tourvisorOrderId}`);
   return lines;
 }
@@ -183,6 +187,8 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
   };
 
   if (secondName) fields.SECOND_NAME = secondName;
+  const email = input.email?.trim() || input.tour?.email?.trim();
+  if (email) fields.EMAIL = [{ VALUE: email, VALUE_TYPE: 'WORK' }];
   if (input.tour?.price != null) {
     fields.OPPORTUNITY = Math.round(input.tour.price);
     fields.CURRENCY_ID = 'RUB';
@@ -221,6 +227,8 @@ export function parseTourFromBody(raw: unknown): RebookingTourInfo | undefined {
     dateTo: clamp(source.dateTo, 30) || undefined,
     placement: clamp(source.placement, 200) || undefined,
     meal: clamp(source.meal, 120) || undefined,
+    orderTypeName: clamp(source.orderTypeName, 120) || clamp(source.typename, 120) || undefined,
+    email: clamp(source.email, 200) || undefined,
     tourvisorOrderId:
       clamp(source.tourvisorOrderId, 40) || clamp(source.orderId, 40) || clamp(source.id, 40) || undefined,
   };

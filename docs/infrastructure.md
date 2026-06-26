@@ -38,8 +38,9 @@ pm2 restart all
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
 - `REBOOKING_BITRIX_DOMAIN` — домен Б24 для `/rebooking` (по умолчанию как `BITRIX_DOMAIN`)
 - `REBOOKING_WEBHOOK_TOKEN` — вебхук для лидов перебронирования (`crm.lead.add`), например `1981/j9pvdbhovvem7j6c`
-- Заявки с `/rebooking` → после выбора тура в ТурВизоре → `POST /api/rebooking-lead` или `GET /api/tourvisor-order-webhook` → лид в Битрикс24
-- `TOURVISOR_AUTHKEY` — ключ export API ТурВизора для серверного webhook заявок
+- Заявки с `/rebooking` → popup ТурВизора → webhook `GET /api/tourvisor-order-webhook` или `POST /api/rebooking-lead/sync` → лид в Битрикс24
+- `TOURVISOR_AUTHKEY` — ключ export API ТурВизора (запросить у поддержки TV); регистрация webhook: `node scripts/register-tourvisor-webhook.js`
+- При загрузке `/rebooking` клиент регистрирует контекст: `POST /api/rebooking-context` (order/cert/name, TTL 30 мин)
 - Направления без Крыма: [`public/rebooking-destinations.json`](public/rebooking-destinations.json)
 - `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
@@ -74,8 +75,8 @@ pm2 restart all
 `tv-runsearch` не ставится — пользователь сам нажимает «Найти».
 
 **Мосты в Битрикс:**
-- Основной: `postMessage` от `tourvisor.ru` (события `ORDERTOUR` / `HELPTOUR`) → `POST /api/rebooking-lead`
-- Запасной: webhook ТурВизора `GET /api/tourvisor-order-webhook?id=&type=` → `orders.php` + парсинг `referer` → `crm.lead.add`
+- Основной: webhook ТурВизора `GET /api/tourvisor-order-webhook?id=&type=` → `orders.php` / `ordersonline.php` → `crm.lead.add`
+- Запасной: `postMessage` (`ORDERTOUR`, `NOTOUR`, …) → `POST /api/rebooking-lead/sync` → подтягивание свежей заявки TV
 
 Регистрация TV webhook: `https://motrip.ru/api/tourvisor-order-webhook` (нужен `TOURVISOR_AUTHKEY` в `.env.local`).
 

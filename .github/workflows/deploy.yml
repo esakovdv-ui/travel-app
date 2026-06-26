@@ -18,11 +18,12 @@ jobs:
           BITRIX_DOMAIN: ${{ secrets.BITRIX_DOMAIN }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
           REBOOKING_WEBHOOK_TOKEN: ${{ secrets.REBOOKING_WEBHOOK_TOKEN }}
+          TOURVISOR_AUTHKEY: ${{ secrets.TOURVISOR_AUTHKEY }}
         with:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN
+          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN,TOURVISOR_AUTHKEY
           script: |
             set -e
             ENV_FILE=/home/travel-app/.env.local
@@ -46,6 +47,9 @@ jobs:
             set_env_var WEBHOOK_TOKEN "$WEBHOOK_TOKEN_VALUE"
             set_env_var REBOOKING_BITRIX_DOMAIN "$BITRIX_DOMAIN_VALUE"
             set_env_var REBOOKING_WEBHOOK_TOKEN "$REBOOKING_WEBHOOK_TOKEN_VALUE"
+            if [ -n "$TOURVISOR_AUTHKEY" ]; then
+              set_env_var TOURVISOR_AUTHKEY "$TOURVISOR_AUTHKEY"
+            fi
             MAIN_EXIT=0
             /home/deploy.sh || MAIN_EXIT=$?
             if [ -f /home/travel-app/scripts/deploy-staff-landing.sh ]; then

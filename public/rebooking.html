@@ -424,15 +424,23 @@
         };
       }
 
-      function isTourvisorLeadEvent(data) {
-        if (!data) return false;
-        if (typeof data === 'string') {
-          return data === 'ORDERTOUR' || data === 'HELPTOUR';
-        }
+      var TV_LEAD_EVENTS = ['ORDERTOUR', 'HELPTOUR', 'NOTOUR', 'HELPCART', 'TOURSELECTION', 'BOOKTOUR'];
+
+      function getTourvisorEventType(data) {
+        if (!data) return '';
+        if (typeof data === 'string') return data;
         if (typeof data === 'object') {
           var action = data.action || data.event || data.goal || data.type || data.name;
-          if (typeof action === 'string' && /ORDERTOUR|HELPTOUR|order/i.test(action)) return true;
-          if (data.category === 'tourvisor' && /ORDERTOUR|HELPTOUR/i.test(String(data.action || ''))) return true;
+          if (typeof action === 'string') return action;
+        }
+        return '';
+      }
+
+      function isTourvisorLeadEvent(data) {
+        var eventType = getTourvisorEventType(data);
+        if (eventType && TV_LEAD_EVENTS.indexOf(eventType) !== -1) return true;
+        if (typeof data === 'object' && data) {
+          if (data.category === 'tourvisor' && /ORDERTOUR|HELPTOUR|NOTOUR/i.test(String(data.action || ''))) return true;
           if (data.phone || data.hotel || data.hotelname) return true;
         }
         return false;
@@ -443,28 +451,65 @@
         return String(data.phone || data.touristphone || data.clientphone || data.mobile || '').trim();
       }
 
-      async function submitTourLead(bookingData, tourPayload, phone) {
+      function buildContextPayload(bookingData) {
+        return {
+          order: bookingData.order,
+          cert: bookingData.cert,
+          name: bookingData.name,
+          people: bookingData.people,
+          kids: bookingData.kids,
+          kid1: bookingData.kidAges[0],
+          kid2: bookingData.kidAges[1],
+          kid3: bookingData.kidAges[2],
+          price: bookingData.price,
+          nights: bookingData.nights,
+          date: bookingData.date.iso || bookingData.date.tv,
+        };
+      }
+
+      function registerRebookingContext(bookingData) {
+        return fetch('/api/rebooking-context', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildContextPayload(bookingData)),
+        }).catch(function (error) {
+          console.warn('rebooking: context register failed', error);
+        });
+      }
+
+      async function syncTourvisorLead(bookingData, eventType) {
+        if (leadSubmitted) return;
+        var delays = [1500, 3000, 5000];
+        for (var i = 0; i < delays.length; i += 1) {
+          await new Promise(function (resolve) { setTimeout(resolve, delays[i]); });
+          var response = await fetch('/api/rebooking-lead/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
+              eventType: eventType || undefined,
+            })),
+          });
+          var result = await response.json().catch(function () { return {}; });
+          if (response.ok && result.ok && !result.skipped) {
+            leadSubmitted = true;
+            return;
+          }
+          if (response.status === 202 || result.error === 'order_not_ready') continue;
+          if (result.error) throw new Error(result.error || 'sync_failed');
+        }
+      }
+
+      async function submitTourLeadDirect(bookingData, tourPayload, phone) {
         if (leadSubmitted) return;
         var response = await fetch('/api/rebooking-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            order: bookingData.order,
-            cert: bookingData.cert,
-            name: bookingData.name,
+          body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
             phone: phone,
-            people: bookingData.people,
-            kids: bookingData.kids,
-            kid1: bookingData.kidAges[0],
-            kid2: bookingData.kidAges[1],
-            kid3: bookingData.kidAges[2],
-            price: bookingData.price,
-            nights: bookingData.nights,
-            date: bookingData.date.iso || bookingData.date.tv,
             tour: tourPayload,
             utm: collectUtm(),
             website: '',
-          }),
+          })),
         });
         var result = await response.json().catch(function () { return {}; });
         if (!response.ok || !result.ok) throw new Error(result.error || 'submit_failed');
@@ -475,14 +520,25 @@
         window.addEventListener('message', function (event) {
           if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
           if (!isTourvisorLeadEvent(event.data)) return;
+
+          var eventType = getTourvisorEventType(event.data);
           var phone = extractPhoneFromMessage(event.data);
-          if (!phone) return;
-          var tour = extractTourFromMessage(event.data);
-          if (!tour.hotel && !tour.country) {
-            tour.hotel = 'Заявка через Tourvisor';
+
+          if (phone) {
+            var tour = extractTourFromMessage(event.data);
+            if (!tour.hotel && !tour.country) {
+              tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
+            }
+            submitTourLeadDirect(bookingData, tour, phone).catch(function () {
+              syncTourvisorLead(bookingData, eventType).catch(function (error) {
+                console.error('rebooking: failed to submit lead', error);
+              });
+            });
+            return;
           }
-          submitTourLead(bookingData, tour, phone).catch(function (error) {
-            console.error('rebooking: failed to submit lead', error);
+
+          syncTourvisorLead(bookingData, eventType).catch(function (error) {
+            console.error('rebooking: failed to sync lead', error);
           });
         });
       }
@@ -505,6 +561,7 @@
       }
 
       renderTripCard(bookingData);
+      registerRebookingContext(bookingData);
       setupTourvisorBridge(bookingData);
       initTourvisorModule(bookingData);
     })();

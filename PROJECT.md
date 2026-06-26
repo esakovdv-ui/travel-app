@@ -79,7 +79,9 @@
 | `/api/raduga-lead` | POST | Форма заявки Радуга |
 | `/api/raduga-shifts` | GET | Смены Радуга |
 | `/api/rebooking-lead` | POST | Лид перебронирования после заявки на тур в ТурВизоре → `crm.lead.add` |
-| `/api/tourvisor-order-webhook` | GET | Webhook ТурВизора → лид в Битрикс с order/cert/name из URL |
+| `/api/rebooking-context` | POST | Регистрация контекста перебронирования (order/cert/name) на 30 мин |
+| `/api/rebooking-lead/sync` | POST | Синхронизация заявки Tourvisor → Битрикс после postMessage |
+| `/api/tourvisor-order-webhook` | GET | Webhook Tourvisor → лид в Битрикс |
 
 ---
 
