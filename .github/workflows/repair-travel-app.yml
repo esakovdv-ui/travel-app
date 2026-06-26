@@ -16,11 +16,9 @@ jobs:
           command_timeout: 15m
           script: |
             set -e
-            echo "=== stop crash loop ==="
+            echo "=== stop travel-app ==="
             pm2 stop travel-app || true
-            pkill -f "next-server" || true
-            pkill -f "next start" || true
-            sleep 3
+            sleep 2
             echo "=== deploy ==="
             bash /home/deploy.sh
             sleep 10
