@@ -20,7 +20,7 @@
 | Auth | JWT в httpOnly cookie (собственная реализация) |
 | Аналитика | Яндекс.Метрика (`src/components/analytics/yandex-metrika.tsx`) |
 | Платежи | Т-Банк (не подключён) |
-| CRM | Битрикс24 (не подключён) |
+| CRM | Битрикс24 — лиды лендингов (`crm.lead.add`, `crm.deal.add`) |
 | Контент | Level Travel API v3.7 |
 | Деплой | VPS Timeweb, Ubuntu 22.04, IP 72.56.32.183 |
 
@@ -47,8 +47,10 @@
 
 | Лендинг | Путь | Статус |
 |---------|------|--------|
-| Власьево | `/vlasevo.html` | **Работает** — форма заявки, API смен, admin |
-| Радуга | `/raduga.html` | **Работает** — форма заявки, API смен, admin |
+| Власьево | `/vlasevo` | **Работает** — форма заявки, API смен, admin |
+| Радуга | `/raduga` | **Работает** — форма заявки, API смен, admin |
+| Власьево promo | `/vlasevo-promo` | **Работает** — промо-лендинг, admin |
+| Перебронирование | `/rebooking` | **Работает** — виджет ТурВизора, лид в Битрикс24 |
 
 ### Админка (`src/app/admin/`)
 
@@ -76,6 +78,7 @@
 | `/api/vlasevo-shifts` | GET | Смены Власьево |
 | `/api/raduga-lead` | POST | Форма заявки Радуга |
 | `/api/raduga-shifts` | GET | Смены Радуга |
+| `/api/rebooking-lead` | POST | Лид перебронирования → Битрикс24 `crm.lead.add` |
 
 ---
 
@@ -250,6 +253,14 @@ NEXT_PUBLIC_LT_PARTNER_TOKEN=...
 
 ## Changelog
 
+### Июнь 2026 — Сервис перебронирования `/rebooking`
+- [x] Лендинг [`public/rebooking.html`](public/rebooking.html) — параметры из URL (заявка, сертификат, ФИО, состав, цена, даты)
+- [x] Виджет ТурВизора (module `9978253`) с предзаполнением туристов/даты/ночей, без фильтра по направлению
+- [x] API [`/api/rebooking-lead`](src/app/api/rebooking-lead/route.ts) → [`bitrix-rebooking-lead.ts`](src/lib/bitrix-rebooking-lead.ts) → `crm.lead.add`
+- [x] Отдельный вебхук: `REBOOKING_WEBHOOK_TOKEN` (не смешивается с camp-deals)
+- [x] Генератор ссылок: `node scripts/generate-rebooking-links.js`
+- [x] Rewrite `/rebooking` в [`next.config.ts`](next.config.ts)
+
 ### Июнь 2026 — Истории путешествий, лендинги, инфра
 - [x] Страница `/stories` — editorial grid, карусель, фильтры по тегам, галерея
 - [x] Форма подачи истории с загрузкой фото
@@ -284,7 +295,8 @@ NEXT_PUBLIC_LT_PARTNER_TOKEN=...
 - [ ] Email-уведомления (в т.ч. Анне при новой истории)
 - [ ] Load more для историй (кнопка «Показать ещё 6»)
 - [ ] Платёжная система (Т-Банк)
-- [ ] Интеграция с Битрикс24
+- [x] Интеграция с Битрикс24 (лендинги vlasevo/raduga/rebooking)
+- [ ] Полная синхронизация заказов WL → Битрикс24
 - [ ] Страница деталей тура с реальными данными из LT API
 - [ ] Пакеты туров и отзывы — перевод с mock на PostgreSQL
 - [ ] bitrix-deal-chat (Битрикс24 фича) — проверить статус и обновить

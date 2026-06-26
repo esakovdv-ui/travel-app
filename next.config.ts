@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
         source: '/vlasevo-promo',
         destination: '/vlasevo-promo.html',
       },
+      {
+        source: '/rebooking',
+        destination: '/rebooking.html',
+      },
     ];
   },
   typescript: {
