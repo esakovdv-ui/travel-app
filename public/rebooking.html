@@ -4,21 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Перебронирование тура — Мои путешествия</title>
-  <meta name="description" content="Выберите новый тур вместо аннулированного. Поиск туров и заявка менеджеру Мосгортур.">
+  <meta name="description" content="Подберите новый тур вместо отменённой поездки. Параметры бронирования уже учтены.">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png">
   <style>
     :root {
-      --orange: #ff8500;
-      --cream: #fff7f1;
-      --text: #111;
+      --text: #101828;
       --muted: #667085;
-      --panel: #f4f4f5;
+      --line: #eaecf0;
+      --cream: #faf8f5;
       --white: #fff;
+      --accent: #ff8500;
       --radius: 20px;
-      --shadow: 0 12px 32px rgba(0, 0, 0, .08);
-      --max: 1100px;
-      --readonly-bg: #f0f2f5;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+      --max: 1040px;
     }
     * { box-sizing: border-box; }
     body {
@@ -26,130 +25,157 @@
       font-family: Mulish, Arial, sans-serif;
       background: var(--cream);
       color: var(--text);
-      line-height: 1.45;
+      line-height: 1.5;
     }
     .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
-    .panel {
+    .site-header {
+      padding: 16px 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+    }
+    .site-header img { height: 38px; width: auto; display: block; }
+    .hero { padding: 28px 0 8px; }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 4.2vw, 38px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .hero .lead {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+    .greeting {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .trip-card {
+      margin-top: 22px;
       background: var(--white);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      padding: 22px 22px 18px;
     }
-    .site-header {
-      padding: 18px 0;
-      border-bottom: 1px solid rgba(0,0,0,.06);
-      background: var(--white);
+    .trip-card h2 {
+      margin: 0 0 18px;
+      font-size: 18px;
+      line-height: 1.3;
     }
-    .site-header img { height: 40px; width: auto; }
-    .hero { padding: 28px 0 12px; }
-    .hero h1 {
-      margin: 0 0 12px;
-      font-size: clamp(26px, 4vw, 40px);
-      line-height: 1.12;
-      letter-spacing: -.02em;
-    }
-    .hero p { margin: 0; color: var(--muted); font-size: 17px; max-width: 720px; }
-    .section { padding: 16px 0 24px; }
-    .section-title {
-      margin: 0 0 14px;
-      font-size: 22px;
-      line-height: 1.2;
-    }
-    .summary-grid {
+    .trip-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 20px;
+    }
+    .trip-item {
+      display: flex;
       gap: 12px;
-      padding: 20px;
+      align-items: flex-start;
+      min-width: 0;
     }
-    .summary-item label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 4px;
-    }
-    .summary-item .value {
-      font-size: 16px;
-      font-weight: 700;
-      word-break: break-word;
-    }
-    .summary-item.full { grid-column: 1 / -1; }
-    .tourvisor-wrap {
-      padding: 8px 0 24px;
-      min-height: 120px;
-    }
-    .form-card { padding: 24px; }
-    .field { margin-bottom: 14px; }
-    .field label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .field input,
-    .field textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #d0d5dd;
-      border-radius: 12px;
-      font: inherit;
-      background: var(--white);
-    }
-    .field input[readonly],
-    .field textarea[readonly] {
-      background: var(--readonly-bg);
-      color: #344054;
-      cursor: default;
-    }
-    .field textarea { min-height: 96px; resize: vertical; }
-    .field-error {
-      margin: 6px 0 0;
-      font-size: 13px;
-      color: #d92d20;
-      display: none;
-    }
-    .field-error.is-visible { display: block; }
-    .btn {
-      min-height: 44px;
+    .trip-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #f2f4f7;
+      color: #475467;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 20px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #fc0, #f60);
-      color: #fff;
+      flex-shrink: 0;
+    }
+    .trip-icon svg { width: 18px; height: 18px; }
+    .trip-value {
+      font-size: 17px;
       font-weight: 800;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .trip-caption {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .trip-meta {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: #98a2b3;
+      line-height: 1.45;
+    }
+    .instruction {
+      margin: 18px 0 0;
+      font-size: 15px;
+      color: #344054;
+    }
+    .section { padding: 22px 0; }
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+    .direction-panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .direction-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #344054;
+    }
+    .direction-select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      font: inherit;
       font-size: 16px;
-      cursor: pointer;
-      box-shadow: 0 10px 24px rgba(255, 133, 0, .22);
+      background: var(--white);
+      color: var(--text);
     }
-    .btn:hover { filter: brightness(1.03); }
-    .btn[disabled] {
-      opacity: .6;
-      cursor: not-allowed;
-      box-shadow: none;
+    .tourvisor-section {
+      margin-top: 18px;
+      min-height: 0;
     }
-    .form-note { margin-top: 12px; font-size: 14px; color: var(--muted); }
-    .form-note.is-error { color: #d92d20; }
-    .success-block {
-      display: none;
-      padding: 28px;
+    .tourvisor-section.is-hidden { display: none; }
+    .tourvisor-placeholder {
+      padding: 28px 20px;
+      border: 1px dashed #d0d5dd;
+      border-radius: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+      background: rgba(255, 255, 255, 0.65);
+    }
+    .site-footer {
+      padding: 28px 0 36px;
+      font-size: 14px;
+      color: var(--muted);
       text-align: center;
     }
-    .success-block.is-visible { display: block; }
-    .success-block h2 { margin: 0 0 8px; font-size: 24px; }
-    .success-block p { margin: 0; color: var(--muted); }
     .error-page {
-      padding: 48px 24px;
+      padding: 56px 0;
       text-align: center;
     }
-    .error-page h1 { margin: 0 0 12px; font-size: 24px; }
+    .error-page h1 { margin: 0 0 10px; font-size: 24px; }
     .error-page p { margin: 0; color: var(--muted); }
     .hidden { display: none !important; }
     @media (max-width: 640px) {
-      .summary-grid { grid-template-columns: 1fr; }
+      .trip-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+      .trip-value { font-size: 15px; }
+      .trip-item { gap: 10px; }
+      .trip-icon { width: 32px; height: 32px; border-radius: 8px; }
+    }
+    @media (max-width: 400px) {
+      .trip-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -168,158 +194,149 @@
   <main id="main-content" class="hidden">
     <section class="hero">
       <div class="container">
-        <h1>Перебронирование тура</h1>
-        <p>
-          В связи с изменением транспортной ситуации ваш тур аннулирован.
-          Ниже вы можете подобрать новый тур и оставить заявку — менеджер свяжется с вами
-          и поможет оформить перебронирование.
-        </p>
-      </div>
-    </section>
+        <p class="greeting hidden" id="greeting"></p>
+        <h1>Подберите новый тур вместо отменённой поездки</h1>
+        <p class="lead">Мы уже учли основные параметры вашего бронирования. Вам останется выбрать новое направление и подходящий вариант отдыха.</p>
 
-    <section class="section">
-      <div class="container">
-        <h2 class="section-title">Ваша заявка</h2>
-        <div class="panel summary-grid" id="summary-card"></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container">
-        <h2 class="section-title">Подбор нового тура</h2>
-        <div class="tourvisor-wrap">
-          <div class="tv-search-form tv-moduleid-9978253" id="tourvisor-search"></div>
+        <div class="trip-card">
+          <h2>Параметры вашей поездки</h2>
+          <div class="trip-grid" id="trip-grid"></div>
+          <div class="trip-meta" id="trip-meta"></div>
         </div>
+
+        <p class="instruction">Выберите направление в форме ниже — остальные параметры поиска уже заполнены.</p>
       </div>
     </section>
 
-    <section class="section" id="lead-form">
+    <section class="section">
       <div class="container">
-        <h2 class="section-title">Оставить заявку</h2>
-        <div class="panel form-card" id="form-panel">
-          <div class="success-block" id="success-block">
-            <h2>Заявка отправлена</h2>
-            <p>Спасибо! Менеджер свяжется с вами в ближайшее время.</p>
+        <div class="direction-panel">
+          <label class="direction-label" for="destination-select">Куда хотите поехать?</label>
+          <select class="direction-select" id="destination-select">
+            <option value="">Выберите направление</option>
+          </select>
+
+          <div class="tourvisor-section is-hidden" id="tourvisor-section">
+            <div id="tourvisor-mount"></div>
           </div>
-          <form id="lead-form-el">
-            <div class="field">
-              <label for="form-order">Номер заявки</label>
-              <input id="form-order" name="order" type="text" readonly>
-            </div>
-            <div class="field">
-              <label for="form-cert">Номер сертификата</label>
-              <input id="form-cert" name="cert" type="text" readonly>
-            </div>
-            <div class="field">
-              <label for="form-name">ФИО</label>
-              <input id="form-name" name="name" type="text" readonly>
-            </div>
-            <div class="field">
-              <label for="form-phone">Телефон</label>
-              <input id="form-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error" required>
-              <p class="field-error" id="phone-error" aria-live="polite"></p>
-            </div>
-            <div class="field">
-              <label for="form-comment">Комментарий</label>
-              <textarea id="form-comment" name="comment" placeholder="Укажите, какой тур вы выбрали в поиске (отель, даты, направление)"></textarea>
-            </div>
-            <div class="field hidden" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
-              <label for="form-website">Сайт</label>
-              <input id="form-website" name="website" type="text" tabindex="-1" autocomplete="off">
-            </div>
-            <button class="btn" type="submit" id="submit-btn">Отправить заявку</button>
-            <p class="form-note" id="form-note" aria-live="polite"></p>
-          </form>
+          <div class="tourvisor-placeholder" id="tourvisor-placeholder">
+            Сначала выберите направление — после этого откроется поиск туров с вашими параметрами.
+          </div>
         </div>
       </div>
     </section>
   </main>
 
+  <footer class="site-footer hidden" id="site-footer">
+    <div class="container">Вопросы по перебронированию? Позвоните в «Мои путешествия» или напишите менеджеру из письма.</div>
+  </footer>
+
   <script>
     (function () {
-      const money = new Intl.NumberFormat('ru-RU');
-
-      function parseParams() {
-        const params = new URLSearchParams(window.location.search);
-        const kids = Math.max(0, parseIntParam(params.get('kids')) ?? 0);
-        const people = parseIntParam(params.get('people'));
-        const kidAges = [];
-        for (let i = 1; i <= 3; i += 1) {
-          const age = parseIntParam(params.get('kid' + i));
-          if (age != null && kidAges.length < kids) kidAges.push(age);
-        }
-        return {
-          order: (params.get('order') || '').trim(),
-          cert: (params.get('cert') || '').trim(),
-          name: (params.get('name') || '').trim(),
-          people,
-          kids,
-          kidAges,
-          price: parseIntParam(params.get('price')),
-          nights: parseIntParam(params.get('nights')),
-          date: normalizeDate(params.get('date')),
-        };
-      }
+      var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      var money = new Intl.NumberFormat('ru-RU');
+      var selectedDestination = null;
+      var leadSubmitted = false;
 
       function parseIntParam(raw) {
         if (raw == null || !String(raw).trim()) return undefined;
-        const n = Number(String(raw).trim());
+        var n = Number(String(raw).trim());
         return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
       }
 
       function normalizeDate(raw) {
-        if (!raw) return '';
-        const s = String(raw).trim();
-        const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-        if (iso) return s;
-        const ru = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
-        if (ru) return ru[3] + '-' + ru[2] + '-' + ru[1];
-        return s;
-      }
-
-      function formatDateDisplay(iso) {
-        if (!iso) return '—';
-        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-        if (!m) return iso;
-        return m[3] + '.' + m[2] + '.' + m[1];
-      }
-
-      function adultsCount(data) {
-        if (data.people == null) return undefined;
-        return Math.max(data.people - (data.kids || 0), 0);
-      }
-
-      function compositionText(data) {
-        const adults = adultsCount(data);
-        const parts = [];
-        if (data.people != null) parts.push('всего ' + data.people);
-        if (adults != null) parts.push('взрослых ' + adults);
-        if (data.kids) parts.push('детей ' + data.kids);
-        if (data.kidAges.length) {
-          data.kidAges.forEach(function (age, i) {
-            parts.push('ребёнок ' + (i + 1) + ': ' + age + ' лет');
-          });
+        if (!raw) return { iso: '', displayRu: '', tv: '' };
+        var s = String(raw).trim();
+        var isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (isoMatch) {
+          return {
+            iso: s,
+            displayRu: formatRuDate(isoMatch[3], isoMatch[2], isoMatch[1]),
+            tv: isoMatch[3] + '.' + isoMatch[2] + '.' + isoMatch[1],
+          };
         }
-        return parts.length ? parts.join(', ') : '—';
+        var ruMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+        if (ruMatch) {
+          return {
+            iso: ruMatch[3] + '-' + ruMatch[2] + '-' + ruMatch[1],
+            displayRu: formatRuDate(ruMatch[1], ruMatch[2], ruMatch[3]),
+            tv: ruMatch[1] + '.' + ruMatch[2] + '.' + ruMatch[3],
+          };
+        }
+        return { iso: s, displayRu: s, tv: s };
       }
 
-      function renderSummary(data) {
-        const card = document.getElementById('summary-card');
-        const items = [
-          { label: 'Заявка', value: data.order || '—' },
-          { label: 'Сертификат', value: data.cert || '—' },
-          { label: 'ФИО', value: data.name || '—', full: true },
-          { label: 'Состав', value: compositionText(data), full: true },
-          { label: 'Стоимость', value: data.price != null ? money.format(data.price) + ' ₽' : '—' },
-          { label: 'Дней отдыха', value: data.nights != null ? String(data.nights) : '—' },
-          { label: 'Дата начала', value: formatDateDisplay(data.date) },
-        ];
-        card.innerHTML = items.map(function (item) {
-          return '<div class="summary-item' + (item.full ? ' full' : '') + '">' +
-            '<label>' + item.label + '</label>' +
-            '<div class="value">' + escapeHtml(item.value) + '</div>' +
-            '</div>';
-        }).join('');
+      function formatRuDate(day, month, year) {
+        return Number(day) + ' ' + MONTHS[Number(month) - 1] + ' ' + year;
+      }
+
+      function plural(n, one, few, many) {
+        var mod10 = n % 10;
+        var mod100 = n % 100;
+        if (mod10 === 1 && mod100 !== 11) return one;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+        return many;
+      }
+
+      function parseRebookingParams(search) {
+        var params = new URLSearchParams(search || window.location.search);
+        var kids = parseIntParam(params.get('kids')) ?? 0;
+        var kidAges = [];
+        for (var i = 1; i <= 3; i += 1) {
+          if (kidAges.length >= kids) break;
+          var age = parseIntParam(params.get('kid' + i));
+          if (age != null && age >= 0 && age <= 15) kidAges.push(age);
+          else if (kids > 0) console.warn('rebooking: missing or invalid kid' + i);
+        }
+        var date = normalizeDate(params.get('date'));
+        return {
+          order: (params.get('order') || '').trim(),
+          cert: (params.get('cert') || '').trim(),
+          name: (params.get('name') || '').trim(),
+          people: parseIntParam(params.get('people')),
+          kids: kids,
+          kidAges: kidAges,
+          price: parseIntParam(params.get('price')),
+          nights: parseIntParam(params.get('nights')),
+          date: date,
+        };
+      }
+
+      function validateRebookingParams(data) {
+        if (!data.order) return { ok: false };
+        if (data.kids != null && data.people != null && data.kids > data.people) {
+          data.kids = 0;
+          data.kidAges = [];
+        }
+        data.adults =
+          data.people != null && data.kids != null ? Math.max(data.people - data.kids, 0) : undefined;
+        return { ok: true, data: data };
+      }
+
+      function firstName(fullName) {
+        var parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return parts[1];
+        return parts[0] || '';
+      }
+
+      function kidsText(data) {
+        if (!data.kids) return '';
+        if (data.kidAges.length === 1) {
+          return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей') + ', ' + data.kidAges[0] + ' ' + plural(data.kidAges[0], 'год', 'года', 'лет');
+        }
+        if (data.kidAges.length > 1) {
+          return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей') + ': ' + data.kidAges.join(', ') + ' лет';
+        }
+        return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей');
+      }
+
+      function touristsCaption(data) {
+        if (data.people == null) return '';
+        var parts = [];
+        if (data.adults != null) parts.push(data.adults + ' ' + plural(data.adults, 'взрослый', 'взрослых', 'взрослых'));
+        var kidsPart = kidsText(data);
+        if (kidsPart) parts.push(kidsPart);
+        return parts.join(' и ');
       }
 
       function escapeHtml(str) {
@@ -330,251 +347,262 @@
           .replace(/"/g, '&quot;');
       }
 
-      function configureTourvisor(data) {
-        const el = document.getElementById('tourvisor-search');
-        if (!el) return;
-        const adults = adultsCount(data);
-        if (adults != null && adults >= 1 && adults <= 4) {
-          el.setAttribute('tv-adults', String(adults));
-        }
-        if (data.kids >= 1 && data.kids <= 3) {
-          el.setAttribute('tv-kids', String(data.kids));
-          data.kidAges.forEach(function (age, i) {
-            el.setAttribute('tv-kid' + (i + 1), String(age));
+      function iconCalendar() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>';
+      }
+      function iconMoon() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z"></path></svg>';
+      }
+      function iconPeople() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M14.5 19c.3-2.2 2-3.5 4.5-3.5"></path></svg>';
+      }
+      function iconRub() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h5.2a3.8 3.8 0 1 1 0 7.6H8V6z"></path><path d="M8 13.6h6.2M8 17h8"></path></svg>';
+      }
+
+      function renderTripCard(data) {
+        var items = [];
+        if (data.date.displayRu) {
+          items.push({
+            icon: iconCalendar(),
+            value: data.date.displayRu,
+            caption: 'дата начала отдыха',
           });
         }
-        if (data.date) el.setAttribute('tv-date', data.date);
         if (data.nights != null && data.nights > 0) {
-          el.setAttribute('tv-nights', String(data.nights));
+          items.push({
+            icon: iconMoon(),
+            value: data.nights + ' ' + plural(data.nights, 'ночь', 'ночи', 'ночей'),
+            caption: 'продолжительность',
+          });
         }
+        if (data.people != null && data.people > 0) {
+          items.push({
+            icon: iconPeople(),
+            value: data.people + ' ' + plural(data.people, 'турист', 'туриста', 'туристов'),
+            caption: touristsCaption(data),
+          });
+        }
+        if (data.price != null && data.price > 0) {
+          items.push({
+            icon: iconRub(),
+            value: money.format(data.price) + ' ₽',
+            caption: 'бюджет поездки',
+          });
+        }
+
+        document.getElementById('trip-grid').innerHTML = items.map(function (item) {
+          return '<div class="trip-item">' +
+            '<span class="trip-icon">' + item.icon + '</span>' +
+            '<div><div class="trip-value">' + escapeHtml(item.value) + '</div>' +
+            '<div class="trip-caption">' + escapeHtml(item.caption) + '</div></div></div>';
+        }).join('');
+
+        var meta = [];
+        if (data.order) meta.push('Заявка № ' + data.order);
+        if (data.cert) meta.push('Сертификат № ' + data.cert);
+        document.getElementById('trip-meta').textContent = meta.join(' · ');
+      }
+
+      function buildTourvisorAttrs(data, countryCode) {
+        var attrs = {
+          class: 'tv-search-form tv-moduleid-9978253',
+          id: 'tourvisor-search',
+        };
+        if (countryCode) attrs['tv-country'] = String(countryCode);
+        if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
+        if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
+        if (data.adults != null && data.adults >= 1 && data.adults <= 4) attrs['tv-adults'] = String(data.adults);
+        if (data.kids >= 1 && data.kids <= 3) {
+          attrs['tv-kids'] = String(data.kids);
+          data.kidAges.forEach(function (age, index) {
+            attrs['tv-kid' + (index + 1)] = String(age);
+          });
+        }
+        if (data.price != null && data.price > 0) {
+          attrs['tv-pricefrom'] = '0';
+          attrs['tv-priceto'] = String(data.price);
+        }
+        return attrs;
+      }
+
+      function applyAttrs(el, attrs) {
+        Object.keys(attrs).forEach(function (key) {
+          el.setAttribute(key, attrs[key]);
+        });
+      }
+
+      function initTourvisorModule(data, destination) {
+        var mount = document.getElementById('tourvisor-mount');
+        mount.innerHTML = '';
+        var el = document.createElement('div');
+        applyAttrs(el, buildTourvisorAttrs(data, destination.tvCountry));
+        mount.appendChild(el);
+
+        var oldScript = document.getElementById('tourvisor-init-script');
+        if (oldScript) oldScript.parentNode.removeChild(oldScript);
+
+        var script = document.createElement('script');
+        script.id = 'tourvisor-init-script';
+        script.src = '//tourvisor.ru/module/init.js?' + Date.now();
+        script.async = true;
+        document.body.appendChild(script);
+
+        document.getElementById('tourvisor-placeholder').classList.add('hidden');
+        document.getElementById('tourvisor-section').classList.remove('is-hidden');
       }
 
       function collectUtm() {
-        const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
-        const utm = {};
-        const params = new URLSearchParams(window.location.search);
+        var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+        var utm = {};
+        var params = new URLSearchParams(window.location.search);
         keys.forEach(function (key) {
-          const value = params.get(key);
+          var value = params.get(key);
           if (value) utm[key] = value;
         });
         return utm;
       }
 
-      const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
-      const PHONE_MIN_CURSOR = 4;
-
-      function normalizePastedDigits(text) {
-        var raw = String(text).replace(/\D/g, '');
-        if (!raw) return '';
-        if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) raw = raw.slice(1);
-        return raw.slice(0, 10);
-      }
-
-      function formatNationalDigits(digitString) {
-        if (!digitString.length) return PHONE_MASK_EMPTY;
-        var area = (digitString.slice(0, 3) + '___').slice(0, 3);
-        var mid = (digitString.slice(3, 6) + '___').slice(0, 3);
-        var part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
-        var part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
-        return '+7 (' + area + ') ' + mid + '-' + part1 + '-' + part2;
-      }
-
-      function digitIndexFromCursor(formatted, cursor) {
-        var count = 0;
-        for (var i = 0; i < cursor && i < formatted.length; i += 1) {
-          var ch = formatted[i];
-          if (ch >= '0' && ch <= '9') count += 1;
-        }
-        return count;
-      }
-
-      function cursorFromDigitIndex(formatted, digitIndex) {
-        if (digitIndex <= 0) return PHONE_MIN_CURSOR;
-        var seen = 0;
-        for (var i = 0; i < formatted.length; i += 1) {
-          var ch = formatted[i];
-          if (ch >= '0' && ch <= '9') {
-            seen += 1;
-            if (seen === digitIndex) return i + 1;
-          }
-        }
-        for (var j = 0; j < formatted.length; j += 1) {
-          if (formatted[j] === '_') return Math.max(j, PHONE_MIN_CURSOR);
-        }
-        return formatted.length;
-      }
-
-      function createPhoneMaskController(input, errorEl) {
-        var digits = '';
-        var skipKeydown = false;
-
-        function clearError() {
-          errorEl.textContent = '';
-          errorEl.classList.remove('is-visible');
-          input.removeAttribute('aria-invalid');
-        }
-
-        function render(caretIndex) {
-          var index = caretIndex != null ? caretIndex : digits.length;
-          var formatted = formatNationalDigits(digits);
-          input.value = formatted;
-          var cursor = cursorFromDigitIndex(formatted, index);
-          var safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
-          input.setSelectionRange(safeCursor, safeCursor);
-        }
-
-        function setDigits(nextDigits, caretIndex) {
-          digits = nextDigits.slice(0, 10);
-          render(caretIndex != null ? caretIndex : digits.length);
-          clearError();
-        }
-
-        function selectionDigitRange() {
-          var start = input.selectionStart != null ? input.selectionStart : 0;
-          var end = input.selectionEnd != null ? input.selectionEnd : 0;
-          return {
-            from: digitIndexFromCursor(input.value, start),
-            to: digitIndexFromCursor(input.value, end),
-          };
-        }
-
-        input.addEventListener('focus', function () {
-          render(digits.length);
-          if (!digits.length) input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
-        });
-        input.addEventListener('blur', function () {
-          if (!digits.length) input.value = '';
-        });
-        input.addEventListener('beforeinput', function (event) {
-          skipKeydown = true;
-          var range = selectionDigitRange();
-          var from = range.from;
-          var to = range.to;
-          if (event.inputType === 'deleteContentBackward') {
-            event.preventDefault();
-            if (from !== to) setDigits(digits.slice(0, from) + digits.slice(to), from);
-            else if (from > 0) setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
-            return;
-          }
-          if (event.inputType === 'insertText' || event.inputType === 'insertFromPaste') {
-            var chunk = event.data || '';
-            if (!/\d/.test(chunk)) { event.preventDefault(); return; }
-            event.preventDefault();
-            var normalized = normalizePastedDigits(chunk);
-            var merged = (digits.slice(0, from) + normalized + digits.slice(from === to ? from : to)).slice(0, 10);
-            setDigits(merged, from + normalized.length);
-          }
-        });
-        input.addEventListener('keydown', function (event) {
-          if (skipKeydown) { skipKeydown = false; return; }
-          var range = selectionDigitRange();
-          if (event.key === 'Backspace') {
-            event.preventDefault();
-            if (range.from !== range.to) setDigits(digits.slice(0, range.from) + digits.slice(range.to), range.from);
-            else if (range.from > 0) setDigits(digits.slice(0, range.from - 1) + digits.slice(range.from), range.from - 1);
-          }
-        });
-        input.addEventListener('paste', function (event) {
-          event.preventDefault();
-          var pasted = (event.clipboardData || window.clipboardData).getData('text');
-          var range = selectionDigitRange();
-          var normalized = normalizePastedDigits(pasted);
-          var merged = (digits.slice(0, range.from) + normalized + digits.slice(range.to)).slice(0, 10);
-          setDigits(merged, merged.length);
-        });
-
+      function extractTourFromMessage(data) {
+        if (!data || typeof data !== 'object') return {};
+        var source = data.tour && typeof data.tour === 'object' ? data.tour : data;
         return {
-          getValue: function () { return '+7' + digits; },
-          validate: function () {
-            if (digits.length !== 10) {
-              errorEl.textContent = 'Введите номер телефона полностью';
-              errorEl.classList.add('is-visible');
-              input.setAttribute('aria-invalid', 'true');
-              return false;
-            }
-            clearError();
-            return true;
-          },
+          hotel: source.hotel || source.hotelname || source.hotelName || '',
+          country: source.country || source.countryname || '',
+          region: source.region || source.resort || '',
+          dateFrom: source.flydate || source.dateFrom || source.date || '',
+          nights: source.nights || source.night || undefined,
+          price: source.price || source.tourprice || source.cost || undefined,
+          placement: source.placement || '',
+          meal: source.meal || '',
+          tourvisorOrderId: source.orderId || source.id || '',
+          raw: source,
         };
       }
 
-      function setFormNote(message, isError) {
-        var note = document.getElementById('form-note');
-        note.textContent = message;
-        note.classList.toggle('is-error', Boolean(isError));
+      function isTourvisorLeadEvent(data) {
+        if (!data) return false;
+        if (typeof data === 'string') {
+          return data === 'ORDERTOUR' || data === 'HELPTOUR';
+        }
+        if (typeof data === 'object') {
+          var action = data.action || data.event || data.goal || data.type || data.name;
+          if (typeof action === 'string' && /ORDERTOUR|HELPTOUR|order/i.test(action)) return true;
+          if (data.category === 'tourvisor' && /ORDERTOUR|HELPTOUR/i.test(String(data.action || ''))) return true;
+          if (data.phone || data.hotel || data.hotelname) return true;
+        }
+        return false;
       }
 
-      async function submitLead(data, phoneCtrl) {
+      function extractPhoneFromMessage(data) {
+        if (!data || typeof data !== 'object') return '';
+        return String(data.phone || data.touristphone || data.clientphone || data.mobile || '').trim();
+      }
+
+      async function submitTourLead(bookingData, destination, tourPayload, phone) {
+        if (leadSubmitted) return;
         var response = await fetch('/api/rebooking-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            order: data.order,
-            cert: data.cert,
-            name: data.name,
-            phone: phoneCtrl.getValue(),
-            comment: document.getElementById('form-comment').value.trim(),
-            people: data.people,
-            kids: data.kids,
-            kid1: data.kidAges[0],
-            kid2: data.kidAges[1],
-            kid3: data.kidAges[2],
-            price: data.price,
-            nights: data.nights,
-            date: data.date,
-            website: document.getElementById('form-website').value,
+            order: bookingData.order,
+            cert: bookingData.cert,
+            name: bookingData.name,
+            phone: phone,
+            destination: destination ? destination.label : undefined,
+            people: bookingData.people,
+            kids: bookingData.kids,
+            kid1: bookingData.kidAges[0],
+            kid2: bookingData.kidAges[1],
+            kid3: bookingData.kidAges[2],
+            price: bookingData.price,
+            nights: bookingData.nights,
+            date: bookingData.date.iso || bookingData.date.tv,
+            tour: tourPayload,
             utm: collectUtm(),
+            website: '',
           }),
         });
         var result = await response.json().catch(function () { return {}; });
-        if (!response.ok || !result.ok) {
-          if (result.error === 'invalid_phone') throw new Error('Введите номер телефона полностью');
-          if (result.error === 'misconfigured') throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
-          throw new Error('Не удалось отправить заявку. Попробуйте позже.');
-        }
-        return result;
+        if (!response.ok || !result.ok) throw new Error(result.error || 'submit_failed');
+        leadSubmitted = true;
       }
 
-      var bookingData = parseParams();
-
-      if (!bookingData.order || !bookingData.name) {
-        document.getElementById('invalid-link').classList.remove('hidden');
-      } else {
-        document.getElementById('main-content').classList.remove('hidden');
-        renderSummary(bookingData);
-        configureTourvisor(bookingData);
-
-        document.getElementById('form-order').value = bookingData.order;
-        document.getElementById('form-cert').value = bookingData.cert;
-        document.getElementById('form-name').value = bookingData.name;
-
-        var phoneInput = document.getElementById('form-phone');
-        var phoneError = document.getElementById('phone-error');
-        var phoneCtrl = createPhoneMaskController(phoneInput, phoneError);
-        var submitBtn = document.getElementById('submit-btn');
-        var formEl = document.getElementById('lead-form-el');
-        var successBlock = document.getElementById('success-block');
-
-        formEl.addEventListener('submit', async function (event) {
-          event.preventDefault();
-          if (!phoneCtrl.validate()) return;
-          submitBtn.disabled = true;
-          setFormNote('', false);
-          try {
-            await submitLead(bookingData, phoneCtrl);
-            formEl.classList.add('hidden');
-            successBlock.classList.add('is-visible');
-          } catch (error) {
-            setFormNote(error.message || 'Ошибка отправки', true);
-            submitBtn.disabled = false;
+      function setupTourvisorBridge(bookingData, getDestination) {
+        window.addEventListener('message', function (event) {
+          if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
+          if (!isTourvisorLeadEvent(event.data)) return;
+          var phone = extractPhoneFromMessage(event.data);
+          if (!phone) return;
+          var tour = extractTourFromMessage(event.data);
+          var destination = getDestination();
+          if (!tour.hotel && !tour.country && destination) {
+            tour.country = destination.label;
           }
+          if (!tour.hotel && !tour.country) {
+            tour.hotel = 'Заявка через Tourvisor';
+          }
+          submitTourLead(bookingData, destination, tour, phone).catch(function (error) {
+            console.error('rebooking: failed to submit lead', error);
+          });
         });
-
-        var script = document.createElement('script');
-        script.src = '//tourvisor.ru/module/init.js';
-        script.async = true;
-        document.body.appendChild(script);
       }
+
+      function populateDestinations(selectEl, destinations) {
+        destinations.forEach(function (dest) {
+          if (/крым/i.test(dest.label)) return;
+          var option = document.createElement('option');
+          option.value = dest.id;
+          option.textContent = dest.label;
+          option.dataset.tvCountry = dest.tvCountry;
+          selectEl.appendChild(option);
+        });
+      }
+
+      var validation = validateRebookingParams(parseRebookingParams());
+      if (!validation.ok) {
+        document.getElementById('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      var bookingData = validation.data;
+      document.getElementById('main-content').classList.remove('hidden');
+      document.getElementById('site-footer').classList.remove('hidden');
+
+      var greetingName = firstName(bookingData.name);
+      if (greetingName) {
+        var greeting = document.getElementById('greeting');
+        greeting.textContent = 'Здравствуйте, ' + greetingName + '!';
+        greeting.classList.remove('hidden');
+      }
+
+      renderTripCard(bookingData);
+      setupTourvisorBridge(bookingData, function () { return selectedDestination; });
+
+      fetch('/rebooking-destinations.json', { cache: 'no-store' })
+        .then(function (res) { return res.json(); })
+        .then(function (destinations) {
+          var select = document.getElementById('destination-select');
+          populateDestinations(select, destinations);
+          select.addEventListener('change', function () {
+            var option = select.options[select.selectedIndex];
+            if (!option || !option.value) {
+              selectedDestination = null;
+              document.getElementById('tourvisor-section').classList.add('is-hidden');
+              document.getElementById('tourvisor-placeholder').classList.remove('hidden');
+              return;
+            }
+            selectedDestination = {
+              id: option.value,
+              label: option.textContent,
+              tvCountry: option.dataset.tvCountry,
+            };
+            initTourvisorModule(bookingData, selectedDestination);
+          });
+        })
+        .catch(function (error) {
+          console.error('rebooking: failed to load destinations', error);
+        });
     })();
   </script>
 </body>

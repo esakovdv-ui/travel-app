@@ -50,7 +50,7 @@
 | Власьево | `/vlasevo` | **Работает** — форма заявки, API смен, admin |
 | Радуга | `/raduga` | **Работает** — форма заявки, API смен, admin |
 | Власьево promo | `/vlasevo-promo` | **Работает** — промо-лендинг, admin |
-| Перебронирование | `/rebooking` | **Работает** — виджет ТурВизора, лид в Битрикс24 |
+| Перебронирование | `/rebooking` | **Работает** — карточка параметров, селектор направлений, ТурВизор, лид после выбора тура |
 
 ### Админка (`src/app/admin/`)
 
@@ -78,7 +78,8 @@
 | `/api/vlasevo-shifts` | GET | Смены Власьево |
 | `/api/raduga-lead` | POST | Форма заявки Радуга |
 | `/api/raduga-shifts` | GET | Смены Радуга |
-| `/api/rebooking-lead` | POST | Лид перебронирования → Битрикс24 `crm.lead.add` |
+| `/api/rebooking-lead` | POST | Лид перебронирования после заявки на тур в ТурВизоре → `crm.lead.add` |
+| `/api/tourvisor-order-webhook` | GET | Webhook ТурВизора → лид в Битрикс с order/cert/name из URL |
 
 ---
 
@@ -252,6 +253,13 @@ NEXT_PUBLIC_LT_PARTNER_TOKEN=...
 ---
 
 ## Changelog
+
+### Июнь 2026 — Доработка `/rebooking` (UX + ТурВизор)
+- [x] Первый экран: карточка параметров 2×2, заявка/сертификат мелко внизу
+- [x] Селектор направлений без Крыма ([`public/rebooking-destinations.json`](public/rebooking-destinations.json))
+- [x] Предзаполнение ТурВизора: `tv-flydates`, `tv-nights`, `tv-adults`, `tv-kids`, `tv-kidN`, `tv-priceto`
+- [x] Удалена нижняя форма абстрактной заявки
+- [x] Лид в Битрикс после заявки на тур: `postMessage` + [`/api/tourvisor-order-webhook`](src/app/api/tourvisor-order-webhook/route.ts)
 
 ### Июнь 2026 — Сервис перебронирования `/rebooking`
 - [x] Лендинг [`public/rebooking.html`](public/rebooking.html) — параметры из URL (заявка, сертификат, ФИО, состав, цена, даты)

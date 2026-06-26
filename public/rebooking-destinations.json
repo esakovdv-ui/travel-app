@@ -1,0 +1,13 @@
+[
+  { "id": "turkey", "label": "Турция", "tvCountry": "4" },
+  { "id": "egypt", "label": "Египет", "tvCountry": "1" },
+  { "id": "thailand", "label": "Таиланд", "tvCountry": "2" },
+  { "id": "uae", "label": "ОАЭ", "tvCountry": "9" },
+  { "id": "spain", "label": "Испания", "tvCountry": "16" },
+  { "id": "greece", "label": "Греция", "tvCountry": "6" },
+  { "id": "cyprus", "label": "Кипр", "tvCountry": "13" },
+  { "id": "tunisia", "label": "Тунис", "tvCountry": "8" },
+  { "id": "vietnam", "label": "Вьетнам", "tvCountry": "12" },
+  { "id": "india", "label": "Индия", "tvCountry": "46" },
+  { "id": "montenegro", "label": "Черногория", "tvCountry": "47" }
+]

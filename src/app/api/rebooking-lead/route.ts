@@ -7,6 +7,7 @@ import {
   parseKidAges,
   parseLeadUtm,
   parsePositiveInt,
+  parseTourFromBody,
   submitRebookingLead,
 } from '@/lib/bitrix-rebooking-lead';
 
@@ -29,14 +30,22 @@ export async function POST(request: Request) {
   const cert = clamp(body.cert, 100);
   const rawPhone = clamp(body.phone, 30);
   const comment = clamp(body.comment, 2000);
+  const destination = clamp(body.destination, 120);
 
-  if (!order || !name || !rawPhone) {
+  if (!order || !rawPhone) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
   const phone = normalizeLeadPhone(rawPhone);
   if (!phone) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
+  }
+
+  const tour =
+    parseTourFromBody(body.tour) ||
+    (destination ? { country: destination, hotel: 'Заявка через Tourvisor' } : undefined);
+  if (!tour) {
+    return NextResponse.json({ ok: false, error: 'missing_tour' }, { status: 400 });
   }
 
   const people = parsePositiveInt(body.people);
@@ -51,15 +60,17 @@ export async function POST(request: Request) {
       logPrefix: 'rebooking-lead',
       order,
       cert,
-      name,
+      name: name || 'Клиент',
       phone,
       comment,
+      destination: destination || undefined,
       people,
       kids,
       kidAges,
       price,
       nights,
       date: date || undefined,
+      tour,
       utm: parseLeadUtm(body.utm),
     });
     return NextResponse.json({ ok: true, ...result });

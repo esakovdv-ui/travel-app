@@ -6,6 +6,20 @@ import {
   type UtmFields,
 } from '@/lib/bitrix-camp-lead';
 
+export type RebookingTourInfo = {
+  hotel?: string;
+  country?: string;
+  region?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  nights?: number;
+  price?: number;
+  placement?: string;
+  meal?: string;
+  tourvisorOrderId?: string;
+  raw?: Record<string, unknown>;
+};
+
 export type RebookingLeadInput = {
   logPrefix: string;
   order: string;
@@ -19,6 +33,8 @@ export type RebookingLeadInput = {
   price?: number;
   nights?: number;
   date?: string;
+  destination?: string;
+  tour?: RebookingTourInfo;
   utm?: UtmFields;
 };
 
@@ -88,23 +104,52 @@ function formatComposition(people?: number, kids?: number, kidAges?: number[]): 
   return lines.join('\n');
 }
 
+function formatTourBlock(tour?: RebookingTourInfo): string[] {
+  if (!tour) return [];
+  const lines = ['', 'Выбранный тур:'];
+  if (tour.hotel) lines.push(`Отель: ${tour.hotel}`);
+  if (tour.country) lines.push(`Страна: ${tour.country}`);
+  if (tour.region) lines.push(`Курорт: ${tour.region}`);
+  if (tour.dateFrom) lines.push(`Дата вылета: ${tour.dateFrom}`);
+  if (tour.nights != null) lines.push(`Ночей: ${tour.nights}`);
+  if (tour.placement) lines.push(`Размещение: ${tour.placement}`);
+  if (tour.meal) lines.push(`Питание: ${tour.meal}`);
+  if (tour.price != null) lines.push(`Цена тура: ${formatPrice(tour.price)}`);
+  if (tour.tourvisorOrderId) lines.push(`Заявка Tourvisor: ${tour.tourvisorOrderId}`);
+  return lines;
+}
+
+function buildLeadTitle(input: RebookingLeadInput): string {
+  const tourLabel =
+    input.tour?.hotel ||
+    input.tour?.country ||
+    input.destination ||
+    'новый тур';
+  const namePart = input.name?.trim() || 'клиент';
+  return `Перебронирование ${input.order} — ${tourLabel} — ${namePart}`;
+}
+
 function buildComments(input: RebookingLeadInput): string {
   const lines = [
     'Тип: перебронирование',
     `Заявка: ${input.order}`,
     `Сертификат: ${input.cert || '—'}`,
-    `ФИО: ${input.name}`,
+    `ФИО: ${input.name || '—'}`,
   ];
 
   const composition = formatComposition(input.people, input.kids, input.kidAges);
   if (composition) {
-    lines.push('', 'Состав:', composition);
+    lines.push('', 'Исходная поездка:', composition);
   }
-  if (input.price != null) lines.push(`Стоимость заявки: ${formatPrice(input.price)}`);
-  if (input.nights != null) lines.push(`Дней отдыха: ${input.nights}`);
-  if (input.date) lines.push(`Дата начала: ${input.date}`);
+  if (input.price != null) lines.push(`Бюджет исходной поездки: ${formatPrice(input.price)}`);
+  if (input.nights != null) lines.push(`Дней отдыха (исходные): ${input.nights}`);
+  if (input.date) lines.push(`Дата начала (исходная): ${input.date}`);
+  if (input.destination) lines.push(`Выбранное направление: ${input.destination}`);
+
+  lines.push(...formatTourBlock(input.tour));
+
   if (input.comment?.trim()) {
-    lines.push('', `Комментарий клиента: ${input.comment.trim()}`);
+    lines.push('', `Комментарий: ${input.comment.trim()}`);
   }
   lines.push('', 'Источник: /rebooking');
 
@@ -125,11 +170,11 @@ function getRebookingConfig() {
 
 export async function submitRebookingLead(input: RebookingLeadInput) {
   const { domain, token } = getRebookingConfig();
-  const { name, lastName, secondName } = splitFullName(input.name);
+  const { name, lastName, secondName } = splitFullName(input.name || 'Клиент');
 
   const fields: Record<string, unknown> = {
-    TITLE: `Перебронирование ${input.order} — ${input.name}`,
-    NAME: name,
+    TITLE: buildLeadTitle(input),
+    NAME: name || 'Клиент',
     LAST_NAME: lastName,
     PHONE: [{ VALUE: input.phone, VALUE_TYPE: 'WORK' }],
     COMMENTS: buildComments(input),
@@ -138,6 +183,10 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
   };
 
   if (secondName) fields.SECOND_NAME = secondName;
+  if (input.tour?.price != null) {
+    fields.OPPORTUNITY = Math.round(input.tour.price);
+    fields.CURRENCY_ID = 'RUB';
+  }
   if (input.utm?.utm_source) fields.UTM_SOURCE = input.utm.utm_source;
   if (input.utm?.utm_medium) fields.UTM_MEDIUM = input.utm.utm_medium;
   if (input.utm?.utm_campaign) fields.UTM_CAMPAIGN = input.utm.utm_campaign;
@@ -159,6 +208,31 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
     });
     return { leadId };
   }
+}
+
+export function parseTourFromBody(raw: unknown): RebookingTourInfo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const source = raw as Record<string, unknown>;
+  const tour: RebookingTourInfo = {
+    hotel: clamp(source.hotel, 300) || clamp(source.hotelname, 300) || undefined,
+    country: clamp(source.country, 120) || undefined,
+    region: clamp(source.region, 120) || clamp(source.resort, 120) || undefined,
+    dateFrom: clamp(source.dateFrom, 30) || clamp(source.flydate, 30) || clamp(source.date, 30) || undefined,
+    dateTo: clamp(source.dateTo, 30) || undefined,
+    placement: clamp(source.placement, 200) || undefined,
+    meal: clamp(source.meal, 120) || undefined,
+    tourvisorOrderId:
+      clamp(source.tourvisorOrderId, 40) || clamp(source.orderId, 40) || clamp(source.id, 40) || undefined,
+  };
+  const nights = parsePositiveInt(source.nights);
+  if (nights != null) tour.nights = nights;
+  const price = parseBookingPrice(source.price ?? source.tourPrice);
+  if (price != null) tour.price = price;
+  if (source.raw && typeof source.raw === 'object') {
+    tour.raw = source.raw as Record<string, unknown>;
+  }
+  const hasData = Object.entries(tour).some(([key, value]) => key !== 'raw' && value != null);
+  return hasData ? tour : undefined;
 }
 
 export function parseKidAges(body: Record<string, unknown>, kids: number): number[] {
