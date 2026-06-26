@@ -16,20 +16,15 @@ jobs:
           command_timeout: 15m
           script: |
             set -e
-            cd /home/travel-app
-            echo "=== pm2 before ==="
-            pm2 list || true
-            echo "=== last logs ==="
-            pm2 logs travel-app --lines 40 --nostream || true
-            git remote prune origin || true
-            git fetch --force origin main
-            git reset --hard origin/main
-            npm install
-            npm run build
-            pm2 restart travel-app --update-env || pm2 start npm --name travel-app -- start
-            sleep 8
-            echo "=== pm2 after ==="
+            echo "=== stop crash loop ==="
+            pm2 stop travel-app || true
+            pkill -f "next-server" || true
+            pkill -f "next start" || true
+            sleep 3
+            echo "=== deploy ==="
+            bash /home/deploy.sh
+            sleep 10
+            echo "=== pm2 ==="
             pm2 list
-            echo "=== local health ==="
             curl -sS -o /dev/null -w "localhost:%{http_code}\n" http://127.0.0.1:3000/ || echo "localhost failed"
             grep "^TOURVISOR_AUTHKEY=" /home/travel-app/.env.local || echo "missing TOURVISOR_AUTHKEY"
