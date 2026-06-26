@@ -18,6 +18,7 @@ import {
   computeFilterOptions,
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
+import { staffFetch } from '@/lib/staff-client'
 import type { HotelSearchResult, HotelDescription, HotelRoom, TourSummary, TourDetail } from '@/lib/tourvisor/types'
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false })
@@ -302,7 +303,7 @@ function RoomTourGroup({
     if (fetchedRef.current.has(expandedTourId)) return
     fetchedRef.current.add(expandedTourId)
     setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'loading' } }))
-    fetch(`/api/tourvisor/tours/${expandedTourId}`)
+    staffFetch(`/api/tourvisor/tours/${expandedTourId}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then((detail: TourDetail) => {
         setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'ok', detail } }))
@@ -507,7 +508,7 @@ function HotelModal({
 
   // Загрузка описания отеля
   useEffect(() => {
-    fetch(`/api/tourvisor/hotels/${hotel.id}`)
+    staffFetch(`/api/tourvisor/hotels/${hotel.id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { setDesc(data); setLoading(false) })
       .catch(() => setLoading(false))
@@ -518,7 +519,7 @@ function HotelModal({
     const ids = [...new Set(hotel.tours.map(t => t.roomId).filter((id): id is number => id != null && id > 0))].slice(0, 30)
     if (ids.length === 0) return
     setRoomsLoading(true)
-    fetch(`/api/tourvisor/rooms?ids=${ids.join(',')}`)
+    staffFetch(`/api/tourvisor/rooms?ids=${ids.join(',')}`)
       .then(r => r.ok ? r.json() : [])
       .then((data: HotelRoom[]) => { setRooms(Array.isArray(data) ? data : []); setRoomsLoading(false) })
       .catch(() => setRoomsLoading(false))
@@ -528,7 +529,7 @@ function HotelModal({
   // Ссылка оператора при выборе тура
   useEffect(() => {
     if (!bookTourId) { setOperatorLink(null); return }
-    fetch(`/api/tourvisor/tours/${bookTourId}`)
+    staffFetch(`/api/tourvisor/tours/${bookTourId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => setOperatorLink(data?.operatorLink ?? null))
       .catch(() => null)
@@ -574,7 +575,7 @@ function HotelModal({
     setBookSubmitting(true)
     setBookError('')
     try {
-      const res = await fetch('/api/lead', {
+      const res = await staffFetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1014,7 +1015,7 @@ function ToursContent() {
   const [mobileForm, setMobileForm] = useState<SearchForm>(initMobileForm)
 
   useEffect(() => {
-    fetch('/api/tourvisor/countries')
+    staffFetch('/api/tourvisor/countries')
       .then(r => r.json())
       .then(json => { if (Array.isArray(json.data)) setMobileCountries(json.data) })
       .catch(() => {})
@@ -1069,7 +1070,7 @@ function ToursContent() {
   }, [])
 
   const fetchResults = useCallback(async (searchId: string) => {
-    const res = await fetch(`/api/tourvisor/results/${searchId}?limit=${RESULTS_LIMIT}`)
+    const res = await staffFetch(`/api/tourvisor/results/${searchId}?limit=${RESULTS_LIMIT}`)
     if (!res.ok) return
     const data: HotelSearchResult[] = await res.json()
     setHotels(data)
@@ -1077,7 +1078,7 @@ function ToursContent() {
 
   const pollStatus = useCallback(async (searchId: string, isPhase2: boolean) => {
     try {
-      const res = await fetch(`/api/tourvisor/status/${searchId}`)
+      const res = await staffFetch(`/api/tourvisor/status/${searchId}`)
       if (!res.ok) throw new Error(`status ${res.status}`)
       const status = await res.json()
 
@@ -1093,7 +1094,7 @@ function ToursContent() {
       if (status.status === 'done') {
         if (!isPhase2) {
           setPhase('continuing')
-          const contRes = await fetch(`/api/tourvisor/continue/${searchId}`)
+          const contRes = await staffFetch(`/api/tourvisor/continue/${searchId}`)
           if (!contRes.ok) {
             await fetchResults(searchId)
             setPhase('done')
@@ -1129,7 +1130,7 @@ function ToursContent() {
     })
     if (childsStr) params.set('childs', childsStr)
 
-    fetch(`/api/tourvisor/search?${params}`)
+    staffFetch(`/api/tourvisor/search?${params}`)
       .then(r => r.ok ? r.json() : r.json().then((e: unknown) => Promise.reject(e)))
       .then(data => {
         const id = String(data.searchId)

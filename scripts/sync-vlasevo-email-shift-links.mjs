@@ -12,7 +12,8 @@ const UTM = 'utm_source=email&utm_medium=newsletter&utm_campaign=vlasevo_june_20
 async function loadShifts() {
   const response = await fetch('https://motrip.ru/api/vlasevo-promo-shifts', { cache: 'no-store' });
   if (!response.ok) throw new Error(`API ${response.status}`);
-  const shifts = await response.json();
+  const data = await response.json();
+  const shifts = Array.isArray(data) ? data : data.shifts;
   const byId = Object.fromEntries(shifts.map((shift) => [shift.id, shift]));
   for (const id of SHIFT_IDS) {
     if (!byId[id]?.url) throw new Error(`Missing shift url for ${id}`);

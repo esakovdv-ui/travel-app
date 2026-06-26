@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { staffFetch, setStaffSessionToken } from '@/lib/staff-client'
 import { BrandLogo } from './components/Brand'
 import { MobileSearchSheet } from './components/MobileSearchSheet'
 import styles from './page.module.css'
@@ -90,10 +91,115 @@ function PeopleIcon() {
   )
 }
 
+// ─── How it works ───────────────────────────────────────────────────────────
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    title: 'Выбираете тур',
+    text: 'Находите подходящий тур в поиске: направление, даты, отель, питание и стоимость.',
+    icon: 'search',
+  },
+  {
+    title: 'Оставляете заявку',
+    text: 'Нажимаете на понравившийся тур и отправляете заявку через портал.',
+    icon: 'send',
+  },
+  {
+    title: 'Менеджер подтверждает детали',
+    text: 'Менеджер связывается с вами, уточняет детали поездки и подтверждает бронирование.',
+    icon: 'check',
+  },
+  {
+    title: 'Вносите предоплату от 5 ₽',
+    text: 'После внесения предоплаты стоимость тура фиксируется и не изменяется.',
+    icon: 'wallet',
+  },
+  {
+    title: 'Оплачиваете остаток в течение 100 дней',
+    text: 'Можно использовать рассрочку/постоплату без скрытых комиссий.',
+    icon: 'calendar',
+  },
+] as const
+
+function StepIcon({ name }: { name: typeof HOW_IT_WORKS_STEPS[number]['icon'] }) {
+  const common = { width: 22, height: 22, fill: 'currentColor', viewBox: '0 0 256 256', 'aria-hidden': true as const }
+  switch (name) {
+    case 'search':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M232.49,215.51,185,168a92.12,92.12,0,1,0-17,17l47.53,47.54a12,12,0,0,0,17-17ZM44,112a68,68,0,1,1,68,68A68.07,68.07,0,0,1,44,112Z" />
+        </svg>
+      )
+    case 'send':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M231.87,114l-168-95.89A16,16,0,0,0,40.92,37.34l31.45,89.47L40.92,216.12a16,16,0,0,0,22.95,19.11l168-95.89A16,16,0,0,0,231.87,114ZM80.81,214.81l8.36-50.54,27.2,15.09a8,8,0,0,0,7.87,0l27.2-15.09,8.36,50.54ZM71.13,96.57,35.54,37.34,220.46,128Z" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z" />
+        </svg>
+      )
+    case 'wallet':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M216,72H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,64V192a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72Zm0,128H56a8,8,0,0,1-8-8V86.63A23.84,23.84,0,0,0,56,88H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,140Z" />
+        </svg>
+      )
+    case 'calendar':
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" {...common}>
+          <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z" />
+        </svg>
+      )
+  }
+}
+
+function HowItWorks() {
+  return (
+    <section className={styles.howItWorks} aria-labelledby="how-it-works-title">
+      <div className={styles.howItWorksPanel}>
+        <h2 id="how-it-works-title" className={styles.howItWorksTitle}>Как это работает</h2>
+        <ol className={styles.stepsGrid}>
+          {HOW_IT_WORKS_STEPS.map((step, index) => (
+            <li key={step.title} className={styles.stepCard}>
+              <div className={styles.stepTop}>
+                <span className={styles.stepIcon}><StepIcon name={step.icon} /></span>
+                <span className={styles.stepNum}>{index + 1}</span>
+              </div>
+              <h3 className={styles.stepTitle}>{step.title}</h3>
+              <p className={styles.stepText}>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
+}
+
+function EyeIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+      <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z" />
+    </svg>
+  )
+}
+
+function EyeSlashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+      <path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22.2,24.41a8,8,0,1,0,11.84-10.76Zm47.33,75.84L114,155.22a48.07,48.07,0,0,1,0-58.44ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128a130.84,130.84,0,0,1,11.11-29.54l31,34.05a64,64,0,0,0,84.3,84.3l27.74,30.47A125.15,125.15,0,0,1,128,192Zm6.73-77.57,47.63,52.28a47.93,47.93,0,0,0-47.63-52.28ZM247.31,124.76c-.35.79-8.82,19.57-27.65,38.4C194.57,188.25,162.88,201.51,128,201.51a123.81,123.81,0,0,1-20.57-1.74,8,8,0,0,1,2.67-15.78,107.56,107.56,0,0,0,17.9,1.51c30.78,0,57.67-11.19,79.93-33.25a133.33,133.33,0,0,0,23.07-30.91,133.46,133.46,0,0,0-23.07-30.91c-11.46-11.11-24-20-37.22-26.38a8,8,0,0,1,7.15-14.34c14.88,7.15,28.8,16.85,41.43,29.08C238.49,105.18,247,124,247.31,124.76Z" />
+    </svg>
+  )
+}
+
 // ─── Password Gate ────────────────────────────────────────────────────────────
 
 function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
   const [val, setVal] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -102,12 +208,14 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/auth', {
+      const res = await staffFetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: val }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (typeof data.token === 'string') setStaffSessionToken(data.token)
         onUnlock()
       } else {
         setError('Неверный пароль')
@@ -132,15 +240,26 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
           Введите пароль для доступа к специальным условиям бронирования туров
         </p>
         <form onSubmit={submit} className={styles.authForm}>
-          <input
-            type="password"
-            placeholder="Пароль"
-            value={val}
-            onChange={e => setVal(e.target.value)}
-            className="input"
-            autoFocus
-            autoComplete="current-password"
-          />
+          <div className={styles.passwordField}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Пароль"
+              value={val}
+              onChange={e => setVal(e.target.value)}
+              className={`input ${styles.passwordInput}`}
+              autoFocus
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              className={styles.passwordToggle}
+              onClick={() => setShowPassword(v => !v)}
+              aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+            </button>
+          </div>
           {error && <div className={styles.authError}>{error}</div>}
           <button
             type="submit"
@@ -186,20 +305,26 @@ export default function StaffPage() {
   })
 
   useEffect(() => {
-    fetch('/api/auth')
-      .then(res => { if (res.ok) setPhase('landing') })
+    staffFetch('/api/auth')
+      .then(async res => {
+        if (!res.ok) return
+        const data = await res.json().catch(() => ({}))
+        if (typeof data.token === 'string') setStaffSessionToken(data.token)
+        setPhase('landing')
+      })
       .catch(() => {})
   }, [])
 
   useEffect(() => {
-    fetch('/api/tourvisor/countries')
+    if (phase !== 'landing') return
+    staffFetch('/api/tourvisor/countries')
       .then(r => r.json())
       .then(json => {
         const list: Country[] = Array.isArray(json.data) ? json.data : []
         setCountries(list)
       })
       .catch(() => {})
-  }, [])
+  }, [phase])
 
   useEffect(() => {
     if (!openPanel) return
@@ -268,7 +393,14 @@ export default function StaffPage() {
     <>
       <main className={styles.landingMain}>
         <div className="shell">
-          <div className={styles.searchRow} ref={searchRef}>
+          <section className={styles.landingHero}>
+            <p className={styles.landingIntro}>
+              Корпоративный портал для сотрудников Мосгортура: здесь можно выбрать тур, оставить заявку
+              и забронировать поездку на специальных условиях — с предоплатой от 5&nbsp;₽, фиксацией цены
+              и оплатой остатка в течение 100 дней.
+            </p>
+
+            <div className={styles.searchRow} ref={searchRef}>
 
             {/* ── Mobile collapsed pill (hidden on desktop via CSS) ── */}
             <div className={styles.searchCollapsed} onClick={() => setSearchExpanded(true)}>
@@ -471,6 +603,7 @@ export default function StaffPage() {
               </div>
 
             </div>
+            </div>
 
             <div className={styles.searchPills} aria-label="Преимущества для сотрудников">
               <span className={styles.searchPill}>✓ Предоплата от 5 ₽</span>
@@ -479,13 +612,9 @@ export default function StaffPage() {
               <span className={styles.searchPill}>✓ Без скрытых комиссий</span>
               <span className={styles.searchPill}>✓ Гибкий график</span>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>
-            Введите параметры поиска выше, чтобы найти туры на особых условиях для сотрудников
-          </p>
+          <HowItWorks />
         </div>
       </main>
 

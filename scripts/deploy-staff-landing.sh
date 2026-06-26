@@ -18,6 +18,7 @@ rsync -a --delete \
   "$SRC/" "$DST/"
 
 cd "$DST"
+rm -rf .next
 touch .env.local
 if ! grep -q '^STAFF_SESSION_SECRET=.' .env.local; then
   echo "STAFF_SESSION_SECRET=$(openssl rand -base64 32)" >> .env.local

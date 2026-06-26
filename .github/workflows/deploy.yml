@@ -42,7 +42,9 @@ jobs:
             WEBHOOK_TOKEN_VALUE="${WEBHOOK_TOKEN:-1981/0ly7df3o8j23eq30}"
             set_env_var BITRIX_DOMAIN "$BITRIX_DOMAIN_VALUE"
             set_env_var WEBHOOK_TOKEN "$WEBHOOK_TOKEN_VALUE"
-            /home/deploy.sh
+            MAIN_EXIT=0
+            /home/deploy.sh || MAIN_EXIT=$?
             if [ -f /home/travel-app/scripts/deploy-staff-landing.sh ]; then
               bash /home/travel-app/scripts/deploy-staff-landing.sh
             fi
+            exit $MAIN_EXIT

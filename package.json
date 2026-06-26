@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "vlasevo": "node scripts/preview-vlasevo.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit"

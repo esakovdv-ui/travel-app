@@ -34,7 +34,7 @@ async function hmacSign(body: string, secret: string): Promise<string> {
   return Buffer.from(sig).toString('base64url')
 }
 
-async function createSessionToken(): Promise<string | null> {
+export async function issueStaffSessionToken(): Promise<string | null> {
   const secret = sessionSecret()
   if (!secret) return null
   const body = Buffer.from(JSON.stringify({
@@ -74,14 +74,31 @@ export async function isStaffSessionValid(token: string | undefined | null): Pro
   return verifySessionToken(token)
 }
 
-export async function attachStaffSessionCookie(res: NextResponse): Promise<NextResponse> {
-  const token = await createSessionToken()
-  if (!token) return res
+export function extractSessionTokenFromRequest(
+  request: Request,
+  cookieToken?: string | null,
+): string | undefined {
+  const auth = request.headers.get('authorization')
+  if (auth?.startsWith('Bearer ')) {
+    const bearer = auth.slice(7).trim()
+    if (bearer) return bearer
+  }
+  return cookieToken ?? undefined
+}
 
-  res.cookies.set(STAFF_SESSION_COOKIE, token, {
+export async function attachStaffSessionCookie(
+  res: NextResponse,
+  token?: string,
+): Promise<NextResponse> {
+  const sessionToken = token ?? await issueStaffSessionToken()
+  if (!sessionToken) return res
+
+  const secure = process.env.COOKIE_SECURE === 'true'
+  res.cookies.set(STAFF_SESSION_COOKIE, sessionToken, {
     httpOnly: true,
-    secure: process.env.COOKIE_SECURE === 'true',
-    sameSite: 'lax',
+    secure,
+    // В iframe на стороннем домене cookie с sameSite=lax не отправляется.
+    sameSite: secure ? 'none' : 'lax',
     path: '/',
     maxAge: SESSION_TTL_SEC,
   })
@@ -89,5 +106,7 @@ export async function attachStaffSessionCookie(res: NextResponse): Promise<NextR
 }
 
 export async function readStaffSession(request: NextRequest): Promise<boolean> {
-  return isStaffSessionValid(request.cookies.get(STAFF_SESSION_COOKIE)?.value)
+  const cookieToken = request.cookies.get(STAFF_SESSION_COOKIE)?.value
+  const token = extractSessionTokenFromRequest(request, cookieToken)
+  return isStaffSessionValid(token)
 }
