@@ -36,6 +36,9 @@ pm2 restart all
 - `BITRIX_DOMAIN` — домен портала Bitrix24 (например `crm.mosgortur.ru`)
 - `WEBHOOK_TOKEN` — часть URL вебхука после `/rest/` (например `1981/xxxxxxxx`)
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
+- `REBOOKING_BITRIX_DOMAIN` — домен Б24 для `/rebooking` (по умолчанию как `BITRIX_DOMAIN`)
+- `REBOOKING_WEBHOOK_TOKEN` — вебхук для лидов перебронирования (`crm.lead.add`), например `1981/j9pvdbhovvem7j6c`
+- Заявки с `/rebooking` → `POST /api/rebooking-lead` → лид в Битрикс24 (`crm.lead.add`)
 - `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
 ### Радуга на online.mosgortur.ru (iframe)
@@ -54,6 +57,7 @@ pm2 restart all
 
 | Коммит | Описание |
 |--------|----------|
+| — | Feat: `/rebooking` — лендинг перебронирования, ТурВизор, лиды в Битрикс24 |
 | `061aca1` | Fix: thematic rows — переход на shared leveltravel.ts клиент |
 | `5f2b4c5` | Fix: sequential LT API fetches + retry на 403 rate limit |
 | `8c0a748` | Fix: client-side fallback для thematic rows при медленном SSR |

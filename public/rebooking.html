@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Перебронирование тура — Мои путешествия</title>
+  <meta name="description" content="Выберите новый тур вместо аннулированного. Поиск туров и заявка менеджеру Мосгортур.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png">
+  <style>
+    :root {
+      --orange: #ff8500;
+      --cream: #fff7f1;
+      --text: #111;
+      --muted: #667085;
+      --panel: #f4f4f5;
+      --white: #fff;
+      --radius: 20px;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .08);
+      --max: 1100px;
+      --readonly-bg: #f0f2f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Mulish, Arial, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .site-header {
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      background: var(--white);
+    }
+    .site-header img { height: 40px; width: auto; }
+    .hero { padding: 28px 0 12px; }
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(26px, 4vw, 40px);
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+    .hero p { margin: 0; color: var(--muted); font-size: 17px; max-width: 720px; }
+    .section { padding: 16px 0 24px; }
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding: 20px;
+    }
+    .summary-item label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 4px;
+    }
+    .summary-item .value {
+      font-size: 16px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .summary-item.full { grid-column: 1 / -1; }
+    .tourvisor-wrap {
+      padding: 8px 0 24px;
+      min-height: 120px;
+    }
+    .form-card { padding: 24px; }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      font: inherit;
+      background: var(--white);
+    }
+    .field input[readonly],
+    .field textarea[readonly] {
+      background: var(--readonly-bg);
+      color: #344054;
+      cursor: default;
+    }
+    .field textarea { min-height: 96px; resize: vertical; }
+    .field-error {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: #d92d20;
+      display: none;
+    }
+    .field-error.is-visible { display: block; }
+    .btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fc0, #f60);
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(255, 133, 0, .22);
+    }
+    .btn:hover { filter: brightness(1.03); }
+    .btn[disabled] {
+      opacity: .6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .form-note { margin-top: 12px; font-size: 14px; color: var(--muted); }
+    .form-note.is-error { color: #d92d20; }
+    .success-block {
+      display: none;
+      padding: 28px;
+      text-align: center;
+    }
+    .success-block.is-visible { display: block; }
+    .success-block h2 { margin: 0 0 8px; font-size: 24px; }
+    .success-block p { margin: 0; color: var(--muted); }
+    .error-page {
+      padding: 48px 24px;
+      text-align: center;
+    }
+    .error-page h1 { margin: 0 0 12px; font-size: 24px; }
+    .error-page p { margin: 0; color: var(--muted); }
+    .hidden { display: none !important; }
+    @media (max-width: 640px) {
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <img src="https://mosgortur.ru/images/icons/mgt_logo.png" alt="МОСГОРТУР">
+    </div>
+  </header>
+
+  <div id="invalid-link" class="container error-page hidden">
+    <h1>Ссылка некорректна</h1>
+    <p>Откройте страницу из письма, которое мы отправили вам на электронную почту.</p>
+  </div>
+
+  <main id="main-content" class="hidden">
+    <section class="hero">
+      <div class="container">
+        <h1>Перебронирование тура</h1>
+        <p>
+          В связи с изменением транспортной ситуации ваш тур аннулирован.
+          Ниже вы можете подобрать новый тур и оставить заявку — менеджер свяжется с вами
+          и поможет оформить перебронирование.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Ваша заявка</h2>
+        <div class="panel summary-grid" id="summary-card"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Подбор нового тура</h2>
+        <div class="tourvisor-wrap">
+          <div class="tv-search-form tv-moduleid-9978253" id="tourvisor-search"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="lead-form">
+      <div class="container">
+        <h2 class="section-title">Оставить заявку</h2>
+        <div class="panel form-card" id="form-panel">
+          <div class="success-block" id="success-block">
+            <h2>Заявка отправлена</h2>
+            <p>Спасибо! Менеджер свяжется с вами в ближайшее время.</p>
+          </div>
+          <form id="lead-form-el">
+            <div class="field">
+              <label for="form-order">Номер заявки</label>
+              <input id="form-order" name="order" type="text" readonly>
+            </div>
+            <div class="field">
+              <label for="form-cert">Номер сертификата</label>
+              <input id="form-cert" name="cert" type="text" readonly>
+            </div>
+            <div class="field">
+              <label for="form-name">ФИО</label>
+              <input id="form-name" name="name" type="text" readonly>
+            </div>
+            <div class="field">
+              <label for="form-phone">Телефон</label>
+              <input id="form-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error" required>
+              <p class="field-error" id="phone-error" aria-live="polite"></p>
+            </div>
+            <div class="field">
+              <label for="form-comment">Комментарий</label>
+              <textarea id="form-comment" name="comment" placeholder="Укажите, какой тур вы выбрали в поиске (отель, даты, направление)"></textarea>
+            </div>
+            <div class="field hidden" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+              <label for="form-website">Сайт</label>
+              <input id="form-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+            <button class="btn" type="submit" id="submit-btn">Отправить заявку</button>
+            <p class="form-note" id="form-note" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const money = new Intl.NumberFormat('ru-RU');
+
+      function parseParams() {
+        const params = new URLSearchParams(window.location.search);
+        const kids = Math.max(0, parseIntParam(params.get('kids')) ?? 0);
+        const people = parseIntParam(params.get('people'));
+        const kidAges = [];
+        for (let i = 1; i <= 3; i += 1) {
+          const age = parseIntParam(params.get('kid' + i));
+          if (age != null && kidAges.length < kids) kidAges.push(age);
+        }
+        return {
+          order: (params.get('order') || '').trim(),
+          cert: (params.get('cert') || '').trim(),
+          name: (params.get('name') || '').trim(),
+          people,
+          kids,
+          kidAges,
+          price: parseIntParam(params.get('price')),
+          nights: parseIntParam(params.get('nights')),
+          date: normalizeDate(params.get('date')),
+        };
+      }
+
+      function parseIntParam(raw) {
+        if (raw == null || !String(raw).trim()) return undefined;
+        const n = Number(String(raw).trim());
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+      }
+
+      function normalizeDate(raw) {
+        if (!raw) return '';
+        const s = String(raw).trim();
+        const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (iso) return s;
+        const ru = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+        if (ru) return ru[3] + '-' + ru[2] + '-' + ru[1];
+        return s;
+      }
+
+      function formatDateDisplay(iso) {
+        if (!iso) return '—';
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+        if (!m) return iso;
+        return m[3] + '.' + m[2] + '.' + m[1];
+      }
+
+      function adultsCount(data) {
+        if (data.people == null) return undefined;
+        return Math.max(data.people - (data.kids || 0), 0);
+      }
+
+      function compositionText(data) {
+        const adults = adultsCount(data);
+        const parts = [];
+        if (data.people != null) parts.push('всего ' + data.people);
+        if (adults != null) parts.push('взрослых ' + adults);
+        if (data.kids) parts.push('детей ' + data.kids);
+        if (data.kidAges.length) {
+          data.kidAges.forEach(function (age, i) {
+            parts.push('ребёнок ' + (i + 1) + ': ' + age + ' лет');
+          });
+        }
+        return parts.length ? parts.join(', ') : '—';
+      }
+
+      function renderSummary(data) {
+        const card = document.getElementById('summary-card');
+        const items = [
+          { label: 'Заявка', value: data.order || '—' },
+          { label: 'Сертификат', value: data.cert || '—' },
+          { label: 'ФИО', value: data.name || '—', full: true },
+          { label: 'Состав', value: compositionText(data), full: true },
+          { label: 'Стоимость', value: data.price != null ? money.format(data.price) + ' ₽' : '—' },
+          { label: 'Дней отдыха', value: data.nights != null ? String(data.nights) : '—' },
+          { label: 'Дата начала', value: formatDateDisplay(data.date) },
+        ];
+        card.innerHTML = items.map(function (item) {
+          return '<div class="summary-item' + (item.full ? ' full' : '') + '">' +
+            '<label>' + item.label + '</label>' +
+            '<div class="value">' + escapeHtml(item.value) + '</div>' +
+            '</div>';
+        }).join('');
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function configureTourvisor(data) {
+        const el = document.getElementById('tourvisor-search');
+        if (!el) return;
+        const adults = adultsCount(data);
+        if (adults != null && adults >= 1 && adults <= 4) {
+          el.setAttribute('tv-adults', String(adults));
+        }
+        if (data.kids >= 1 && data.kids <= 3) {
+          el.setAttribute('tv-kids', String(data.kids));
+          data.kidAges.forEach(function (age, i) {
+            el.setAttribute('tv-kid' + (i + 1), String(age));
+          });
+        }
+        if (data.date) el.setAttribute('tv-date', data.date);
+        if (data.nights != null && data.nights > 0) {
+          el.setAttribute('tv-nights', String(data.nights));
+        }
+      }
+
+      function collectUtm() {
+        const keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+        const utm = {};
+        const params = new URLSearchParams(window.location.search);
+        keys.forEach(function (key) {
+          const value = params.get(key);
+          if (value) utm[key] = value;
+        });
+        return utm;
+      }
+
+      const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+      const PHONE_MIN_CURSOR = 4;
+
+      function normalizePastedDigits(text) {
+        var raw = String(text).replace(/\D/g, '');
+        if (!raw) return '';
+        if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) raw = raw.slice(1);
+        return raw.slice(0, 10);
+      }
+
+      function formatNationalDigits(digitString) {
+        if (!digitString.length) return PHONE_MASK_EMPTY;
+        var area = (digitString.slice(0, 3) + '___').slice(0, 3);
+        var mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+        var part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+        var part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+        return '+7 (' + area + ') ' + mid + '-' + part1 + '-' + part2;
+      }
+
+      function digitIndexFromCursor(formatted, cursor) {
+        var count = 0;
+        for (var i = 0; i < cursor && i < formatted.length; i += 1) {
+          var ch = formatted[i];
+          if (ch >= '0' && ch <= '9') count += 1;
+        }
+        return count;
+      }
+
+      function cursorFromDigitIndex(formatted, digitIndex) {
+        if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+        var seen = 0;
+        for (var i = 0; i < formatted.length; i += 1) {
+          var ch = formatted[i];
+          if (ch >= '0' && ch <= '9') {
+            seen += 1;
+            if (seen === digitIndex) return i + 1;
+          }
+        }
+        for (var j = 0; j < formatted.length; j += 1) {
+          if (formatted[j] === '_') return Math.max(j, PHONE_MIN_CURSOR);
+        }
+        return formatted.length;
+      }
+
+      function createPhoneMaskController(input, errorEl) {
+        var digits = '';
+        var skipKeydown = false;
+
+        function clearError() {
+          errorEl.textContent = '';
+          errorEl.classList.remove('is-visible');
+          input.removeAttribute('aria-invalid');
+        }
+
+        function render(caretIndex) {
+          var index = caretIndex != null ? caretIndex : digits.length;
+          var formatted = formatNationalDigits(digits);
+          input.value = formatted;
+          var cursor = cursorFromDigitIndex(formatted, index);
+          var safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+          input.setSelectionRange(safeCursor, safeCursor);
+        }
+
+        function setDigits(nextDigits, caretIndex) {
+          digits = nextDigits.slice(0, 10);
+          render(caretIndex != null ? caretIndex : digits.length);
+          clearError();
+        }
+
+        function selectionDigitRange() {
+          var start = input.selectionStart != null ? input.selectionStart : 0;
+          var end = input.selectionEnd != null ? input.selectionEnd : 0;
+          return {
+            from: digitIndexFromCursor(input.value, start),
+            to: digitIndexFromCursor(input.value, end),
+          };
+        }
+
+        input.addEventListener('focus', function () {
+          render(digits.length);
+          if (!digits.length) input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+        });
+        input.addEventListener('blur', function () {
+          if (!digits.length) input.value = '';
+        });
+        input.addEventListener('beforeinput', function (event) {
+          skipKeydown = true;
+          var range = selectionDigitRange();
+          var from = range.from;
+          var to = range.to;
+          if (event.inputType === 'deleteContentBackward') {
+            event.preventDefault();
+            if (from !== to) setDigits(digits.slice(0, from) + digits.slice(to), from);
+            else if (from > 0) setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+            return;
+          }
+          if (event.inputType === 'insertText' || event.inputType === 'insertFromPaste') {
+            var chunk = event.data || '';
+            if (!/\d/.test(chunk)) { event.preventDefault(); return; }
+            event.preventDefault();
+            var normalized = normalizePastedDigits(chunk);
+            var merged = (digits.slice(0, from) + normalized + digits.slice(from === to ? from : to)).slice(0, 10);
+            setDigits(merged, from + normalized.length);
+          }
+        });
+        input.addEventListener('keydown', function (event) {
+          if (skipKeydown) { skipKeydown = false; return; }
+          var range = selectionDigitRange();
+          if (event.key === 'Backspace') {
+            event.preventDefault();
+            if (range.from !== range.to) setDigits(digits.slice(0, range.from) + digits.slice(range.to), range.from);
+            else if (range.from > 0) setDigits(digits.slice(0, range.from - 1) + digits.slice(range.from), range.from - 1);
+          }
+        });
+        input.addEventListener('paste', function (event) {
+          event.preventDefault();
+          var pasted = (event.clipboardData || window.clipboardData).getData('text');
+          var range = selectionDigitRange();
+          var normalized = normalizePastedDigits(pasted);
+          var merged = (digits.slice(0, range.from) + normalized + digits.slice(range.to)).slice(0, 10);
+          setDigits(merged, merged.length);
+        });
+
+        return {
+          getValue: function () { return '+7' + digits; },
+          validate: function () {
+            if (digits.length !== 10) {
+              errorEl.textContent = 'Введите номер телефона полностью';
+              errorEl.classList.add('is-visible');
+              input.setAttribute('aria-invalid', 'true');
+              return false;
+            }
+            clearError();
+            return true;
+          },
+        };
+      }
+
+      function setFormNote(message, isError) {
+        var note = document.getElementById('form-note');
+        note.textContent = message;
+        note.classList.toggle('is-error', Boolean(isError));
+      }
+
+      async function submitLead(data, phoneCtrl) {
+        var response = await fetch('/api/rebooking-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order: data.order,
+            cert: data.cert,
+            name: data.name,
+            phone: phoneCtrl.getValue(),
+            comment: document.getElementById('form-comment').value.trim(),
+            people: data.people,
+            kids: data.kids,
+            kid1: data.kidAges[0],
+            kid2: data.kidAges[1],
+            kid3: data.kidAges[2],
+            price: data.price,
+            nights: data.nights,
+            date: data.date,
+            website: document.getElementById('form-website').value,
+            utm: collectUtm(),
+          }),
+        });
+        var result = await response.json().catch(function () { return {}; });
+        if (!response.ok || !result.ok) {
+          if (result.error === 'invalid_phone') throw new Error('Введите номер телефона полностью');
+          if (result.error === 'misconfigured') throw new Error('Сервис временно недоступен. Пожалуйста, позвоните нам.');
+          throw new Error('Не удалось отправить заявку. Попробуйте позже.');
+        }
+        return result;
+      }
+
+      var bookingData = parseParams();
+
+      if (!bookingData.order || !bookingData.name) {
+        document.getElementById('invalid-link').classList.remove('hidden');
+      } else {
+        document.getElementById('main-content').classList.remove('hidden');
+        renderSummary(bookingData);
+        configureTourvisor(bookingData);
+
+        document.getElementById('form-order').value = bookingData.order;
+        document.getElementById('form-cert').value = bookingData.cert;
+        document.getElementById('form-name').value = bookingData.name;
+
+        var phoneInput = document.getElementById('form-phone');
+        var phoneError = document.getElementById('phone-error');
+        var phoneCtrl = createPhoneMaskController(phoneInput, phoneError);
+        var submitBtn = document.getElementById('submit-btn');
+        var formEl = document.getElementById('lead-form-el');
+        var successBlock = document.getElementById('success-block');
+
+        formEl.addEventListener('submit', async function (event) {
+          event.preventDefault();
+          if (!phoneCtrl.validate()) return;
+          submitBtn.disabled = true;
+          setFormNote('', false);
+          try {
+            await submitLead(bookingData, phoneCtrl);
+            formEl.classList.add('hidden');
+            successBlock.classList.add('is-visible');
+          } catch (error) {
+            setFormNote(error.message || 'Ошибка отправки', true);
+            submitBtn.disabled = false;
+          }
+        });
+
+        var script = document.createElement('script');
+        script.src = '//tourvisor.ru/module/init.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    })();
+  </script>
+</body>
+</html>
