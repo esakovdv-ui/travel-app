@@ -1174,6 +1174,16 @@
 
     let shifts = [];
 
+    function parsePromoApiPayload(data) {
+      if (Array.isArray(data)) {
+        return { bookingMode: 'direct', shifts: data };
+      }
+      return {
+        bookingMode: data?.bookingMode === 'lead' ? 'lead' : 'direct',
+        shifts: Array.isArray(data?.shifts) ? data.shifts : [],
+      };
+    }
+
     function isTenDayShift(shift) {
       return String(shift.duration || '').trim().startsWith('10');
     }
