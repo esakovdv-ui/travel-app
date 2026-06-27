@@ -37,8 +37,6 @@ function buildBitrixUrl(domain: string, token: string, method: string): string {
   return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
 }
 
-const BITRIX_REQUEST_TIMEOUT_MS = 25000;
-
 async function bitrixCall<T = unknown>(
   logPrefix: string,
   method: string,
@@ -52,7 +50,6 @@ async function bitrixCall<T = unknown>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(BITRIX_REQUEST_TIMEOUT_MS),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.error) {
