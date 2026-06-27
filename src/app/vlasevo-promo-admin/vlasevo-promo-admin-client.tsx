@@ -2,6 +2,9 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import styles from '../raduga-admin/raduga-admin.module.css';
+import { VlasevoLeadsPanel } from '@/components/vlasevo-leads-panel';
+
+type AdminTab = 'shifts' | 'leads';
 
 type VlasevoPromoShift = {
   id: string;
@@ -188,6 +191,7 @@ export function VlasevoPromoAdminClient() {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<AdminTab>('shifts');
 
   const canSave = useMemo(() => shifts.every((shift) => (
     shift.title.trim()
@@ -430,14 +434,38 @@ export function VlasevoPromoAdminClient() {
             </p>
           </div>
           <div className={styles.actions}>
-            <button className={styles.secondaryButton} type="button" onClick={addShift}>Добавить смену</button>
-            <button className={styles.button} type="button" onClick={save} disabled={isSaving || isLoading || !canSave}>
-              {isSaving ? 'Сохраняю...' : 'Сохранить'}
-            </button>
+            {activeTab === 'shifts' && (
+              <>
+                <button className={styles.secondaryButton} type="button" onClick={addShift}>Добавить смену</button>
+                <button className={styles.button} type="button" onClick={save} disabled={isSaving || isLoading || !canSave}>
+                  {isSaving ? 'Сохраняю...' : 'Сохранить'}
+                </button>
+              </>
+            )}
             <button className={styles.dangerButton} type="button" onClick={logout}>Выйти</button>
           </div>
         </div>
 
+        <div className={styles.tabBar}>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'shifts' ? styles.tabButtonActive : ''}`}
+            type="button"
+            onClick={() => setActiveTab('shifts')}
+          >
+            Смены
+          </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'leads' ? styles.tabButtonActive : ''}`}
+            type="button"
+            onClick={() => setActiveTab('leads')}
+          >
+            Заявки
+          </button>
+        </div>
+
+        {activeTab === 'leads' ? (
+          <VlasevoLeadsPanel password={password} defaultLanding="vlasevo-promo" />
+        ) : (
         <div className={styles.panel}>
           {!isLoading && (
             <div className={styles.field} style={{ marginBottom: 20 }}>
@@ -596,6 +624,7 @@ export function VlasevoPromoAdminClient() {
           {status && <p className={styles.status}>{status}</p>}
           {error && <p className={`${styles.status} ${styles.error}`}>{error}</p>}
         </div>
+        )}
       </div>
     </main>
   );

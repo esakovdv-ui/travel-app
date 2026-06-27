@@ -8,6 +8,7 @@ import {
   submitCampLead,
   type CampLanding,
 } from '@/lib/bitrix-camp-lead';
+import { saveVlasevoLead, updateVlasevoLeadBitrix } from '@/lib/vlasevo-lead-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,22 +43,69 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
   }
 
+  const landing = resolveLanding(body);
+  const bookingPrice = parseBookingPrice(body.bookingPrice);
+  const source = typeof body.source === 'string' ? body.source : undefined;
+  const utm = parseLeadUtm(body.utm);
+
+  let savedLead;
   try {
-    const result = await submitCampLead({
-      logPrefix: 'vlasevo-lead',
-      landing: resolveLanding(body),
+    savedLead = await saveVlasevoLead({
       name,
       phone,
       shift,
-      bookingPrice: parseBookingPrice(body.bookingPrice),
-      source: typeof body.source === 'string' ? body.source : undefined,
-      utm: parseLeadUtm(body.utm),
+      landing,
+      bookingPrice,
+      source,
+      utm,
     });
-    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    console.error('vlasevo-lead: local save failed', error);
+    return NextResponse.json({ ok: false, error: 'save_failed' }, { status: 500 });
+  }
+
+  try {
+    const result = await submitCampLead({
+      logPrefix: 'vlasevo-lead',
+      landing,
+      name,
+      phone,
+      shift,
+      bookingPrice,
+      source,
+      utm,
+    });
+
+    await updateVlasevoLeadBitrix(savedLead.id, {
+      bitrixStatus: 'sent',
+      bitrixDealId: result.dealId,
+      bitrixContactId: result.contactId,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      leadId: savedLead.id,
+      ...result,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'unknown';
     const error = mapCampLeadError(message);
-    const status = error === 'misconfigured' ? 500 : 502;
-    return NextResponse.json({ ok: false, error }, { status });
+
+    await updateVlasevoLeadBitrix(savedLead.id, {
+      bitrixStatus: 'failed',
+      bitrixError: error,
+    }).catch((updateError) => {
+      console.error('vlasevo-lead: failed to update lead status', updateError);
+    });
+
+    console.error('vlasevo-lead: Bitrix failed, lead saved locally', savedLead.id, message);
+
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      leadId: savedLead.id,
+      bitrixPending: true,
+    });
   }
 }

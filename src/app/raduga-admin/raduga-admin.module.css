@@ -233,3 +233,95 @@
     flex-direction: column;
   }
 }
+
+.tabBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  background: #fff;
+  color: #737373;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .06);
+}
+
+.tabButtonActive {
+  background: #111;
+  color: #fff;
+}
+
+.leadsToolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.leadsFilters {
+  min-width: 220px;
+}
+
+.leadsTableWrap {
+  overflow: auto;
+  margin-top: 8px;
+}
+
+.leadsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.leadsTable th,
+.leadsTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: top;
+}
+
+.leadsTable th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #737373;
+}
+
+.leadsTable a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.leadStatus {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.leadStatus_pending {
+  background: #fff4e5;
+  color: #9a6700;
+}
+
+.leadStatus_sent {
+  background: #e8f7ee;
+  color: #1f7a3f;
+}
+
+.leadStatus_failed {
+  background: #fdecec;
+  color: #b42318;
+}
