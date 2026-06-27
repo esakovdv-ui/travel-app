@@ -10,6 +10,7 @@ import {
   parseTourFromBody,
   submitRebookingLead,
 } from '@/lib/bitrix-rebooking-lead';
+import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
   const nights = parsePositiveInt(body.nights);
   const date = clamp(body.date, 30);
 
+  const visitId = clamp(body.visitId, 80) || undefined;
+  const email = clamp(body.email, 120) || tour.email || undefined;
+
   try {
     const result = await submitRebookingLead({
       logPrefix: 'rebooking-lead',
@@ -62,6 +66,7 @@ export async function POST(request: Request) {
       cert,
       name: name || 'Клиент',
       phone,
+      email,
       comment,
       destination: destination || undefined,
       people,
@@ -73,6 +78,18 @@ export async function POST(request: Request) {
       tour,
       utm: parseLeadUtm(body.utm),
     });
+
+    await markRebookingVisitSubmitted({
+      visitId,
+      order,
+      phone,
+      email,
+      tour,
+      leadSource: 'direct',
+      bitrixLeadId: result.leadId,
+      eventType: clamp(body.eventType, 40) || 'ORDERTOUR',
+    }).catch(() => {});
+
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'unknown';

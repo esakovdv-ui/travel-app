@@ -430,7 +430,7 @@
       }
 
       function buildContextPayload(bookingData) {
-        return {
+        var payload = {
           order: bookingData.order,
           cert: bookingData.cert,
           name: bookingData.name,
@@ -443,6 +443,42 @@
           nights: bookingData.nights,
           date: bookingData.date.iso || bookingData.date.tv,
         };
+        var utm = collectUtm();
+        Object.keys(utm).forEach(function (key) {
+          payload[key] = utm[key];
+        });
+        return payload;
+      }
+
+      var visitId = '';
+
+      function trackRebookingEvent(bookingData, eventType, tourPayload, extra) {
+        if (!bookingData || !bookingData.order) return Promise.resolve();
+        var body = Object.assign({}, buildContextPayload(bookingData), {
+          visitId: visitId || undefined,
+          order: bookingData.order,
+          eventType: eventType || undefined,
+        });
+        if (tourPayload) {
+          body.tour = {
+            hotel: tourPayload.hotel || undefined,
+            country: tourPayload.country || undefined,
+            region: tourPayload.region || undefined,
+            tourvisorOrderId: tourPayload.tourvisorOrderId || undefined,
+          };
+        }
+        if (extra && typeof extra === 'object') {
+          Object.keys(extra).forEach(function (key) {
+            body[key] = extra[key];
+          });
+        }
+        return fetch('/api/rebooking-track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }).catch(function (error) {
+          console.warn('rebooking: track failed', error);
+        });
       }
 
       function registerRebookingContext(bookingData) {
@@ -450,9 +486,14 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(buildContextPayload(bookingData)),
-        }).catch(function (error) {
-          console.warn('rebooking: context register failed', error);
-        });
+        })
+          .then(function (response) { return response.json().catch(function () { return {}; }); })
+          .then(function (result) {
+            if (result && result.visitId) visitId = result.visitId;
+          })
+          .catch(function (error) {
+            console.warn('rebooking: context register failed', error);
+          });
       }
 
       async function syncTourvisorLead(bookingData, eventType) {
@@ -465,6 +506,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
               eventType: eventType || undefined,
+              visitId: visitId || undefined,
             })),
           });
           var result = await response.json().catch(function () { return {}; });
@@ -477,7 +519,7 @@
         }
       }
 
-      async function submitTourLeadDirect(bookingData, tourPayload, phone) {
+      async function submitTourLeadDirect(bookingData, tourPayload, phone, eventType) {
         if (leadSubmitted) return;
         var response = await fetch('/api/rebooking-lead', {
           method: 'POST',
@@ -487,6 +529,9 @@
             tour: tourPayload,
             utm: collectUtm(),
             website: '',
+            visitId: visitId || undefined,
+            eventType: eventType || undefined,
+            email: tourPayload.email || undefined,
           })),
         });
         var result = await response.json().catch(function () { return {}; });
@@ -497,17 +542,25 @@
       function setupTourvisorBridge(bookingData) {
         window.addEventListener('message', function (event) {
           if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
-          if (!isTourvisorLeadEvent(event.data)) return;
 
           var eventType = getTourvisorEventType(event.data);
+          var tour = extractTourFromMessage(event.data);
           var phone = extractPhoneFromMessage(event.data);
 
+          if (eventType || tour.hotel || tour.country) {
+            trackRebookingEvent(bookingData, eventType || 'tourvisor_message', tour, {
+              phone: phone || undefined,
+              email: event.data && event.data.email ? String(event.data.email) : undefined,
+            });
+          }
+
+          if (!isTourvisorLeadEvent(event.data)) return;
+
           if (phone) {
-            var tour = extractTourFromMessage(event.data);
             if (!tour.hotel && !tour.country) {
               tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
             }
-            submitTourLeadDirect(bookingData, tour, phone).catch(function () {
+            submitTourLeadDirect(bookingData, tour, phone, eventType).catch(function () {
               syncTourvisorLead(bookingData, eventType).catch(function (error) {
                 console.error('rebooking: failed to submit lead', error);
               });

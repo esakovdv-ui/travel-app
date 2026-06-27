@@ -6,6 +6,7 @@ import {
   registerRebookingContext,
 } from '@/lib/rebooking-context';
 import { syncRecentTourvisorOrderToBitrix } from '@/lib/tourvisor-rebooking';
+import { markRebookingVisitSubmitted, trackRebookingVisitEvent } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,13 @@ export async function POST(request: Request) {
   registerRebookingContext(parsed);
   const rebooking = getRebookingContextByOrder(parsed.order) ?? { ...parsed, registeredAt: Date.now() };
   const eventType = clamp(body.eventType, 40) || undefined;
+  const visitId = clamp(body.visitId, 80) || undefined;
+
+  await trackRebookingVisitEvent({
+    visitId,
+    order: parsed.order,
+    eventType: eventType || 'sync_attempt',
+  }).catch(() => {});
 
   try {
     const result = await syncRecentTourvisorOrderToBitrix({
@@ -37,6 +45,14 @@ export async function POST(request: Request) {
     if (result.skipped) {
       return NextResponse.json({ ok: true, skipped: true, reason: result.reason });
     }
+
+    await markRebookingVisitSubmitted({
+      visitId,
+      order: parsed.order,
+      leadSource: 'sync',
+      bitrixLeadId: result.leadId,
+      eventType: eventType || 'sync_success',
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, leadId: result.leadId });
   } catch (e) {

@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { mapRebookingLeadError } from '@/lib/bitrix-rebooking-lead';
 import {
   fetchTourvisorOrderById,
+  mapTourvisorOrderToTour,
   submitTourvisorOrderToBitrix,
 } from '@/lib/tourvisor-rebooking';
+import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
+import { parseRebookingParamsFromUrl } from '@/lib/rebooking-context';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +28,27 @@ export async function GET(request: NextRequest) {
 
     if (result.skipped) {
       return NextResponse.json({ ok: true, skipped: true, reason: result.reason });
+    }
+
+    const tour = mapTourvisorOrderToTour(tvOrder);
+    const referer = typeof tvOrder.referer === 'string'
+      ? tvOrder.referer
+      : typeof tvOrder.referrer === 'string'
+        ? tvOrder.referrer
+        : '';
+    const fromUrl = referer ? parseRebookingParamsFromUrl(referer) : null;
+    const order = fromUrl?.order;
+
+    if (order) {
+      await markRebookingVisitSubmitted({
+        order,
+        phone: typeof tvOrder.phone === 'string' ? tvOrder.phone : undefined,
+        email: tour.email,
+        tour,
+        leadSource: 'webhook',
+        bitrixLeadId: result.leadId,
+        eventType: 'webhook',
+      }).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, leadId: result.leadId });
