@@ -29,14 +29,6 @@ export function normalizeLeadPhone(input: string): string | null {
   return null;
 }
 
-function contactPhoneLookupValues(phone: string): string[] {
-  const digits = phone.replace(/\D/g, '');
-  const national =
-    digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))
-      ? digits.slice(1)
-      : digits;
-  return [...new Set([phone, national].filter(Boolean))];
-}
 
 function buildBitrixUrl(domain: string, token: string, method: string): string {
   const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
@@ -45,7 +37,7 @@ function buildBitrixUrl(domain: string, token: string, method: string): string {
   return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
 }
 
-const BITRIX_REQUEST_TIMEOUT_MS = 8000;
+const BITRIX_REQUEST_TIMEOUT_MS = 25000;
 
 async function bitrixCall<T = unknown>(
   logPrefix: string,
@@ -74,20 +66,18 @@ async function bitrixCall<T = unknown>(
 }
 
 async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
-  for (const value of contactPhoneLookupValues(phone)) {
-    try {
-      const result = await bitrixCall<Array<{ ID?: string | number }>>(logPrefix, 'crm.contact.list', {
-        filter: { PHONE: value },
-        select: ['ID'],
-      });
-      const rawId = result?.[0]?.ID;
-      const id = typeof rawId === 'number' ? rawId : Number(rawId);
-      if (Number.isFinite(id) && id > 0) return id;
-    } catch (error) {
-      console.warn(`${logPrefix}: contact list lookup failed for ${value}`, error);
-    }
+  try {
+    const result = await bitrixCall<Array<{ ID?: string | number }>>(logPrefix, 'crm.contact.list', {
+      filter: { PHONE: phone },
+      select: ['ID'],
+    });
+    const rawId = result?.[0]?.ID;
+    const id = typeof rawId === 'number' ? rawId : Number(rawId);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  } catch (error) {
+    console.warn(`${logPrefix}: contact list lookup failed for ${phone}`, error);
+    return null;
   }
-  return null;
 }
 
 async function resolveContactId(
@@ -95,9 +85,6 @@ async function resolveContactId(
   name: string,
   phone: string
 ): Promise<{ contactId: number; contactCreated: boolean }> {
-  const existingId = await findContactByPhone(logPrefix, phone);
-  if (existingId) return { contactId: existingId, contactCreated: false };
-
   try {
     const contactId = await bitrixCall<number>(logPrefix, 'crm.contact.add', {
       fields: {
@@ -109,8 +96,8 @@ async function resolveContactId(
     });
     return { contactId, contactCreated: true };
   } catch (error) {
-    const fallbackId = await findContactByPhone(logPrefix, phone);
-    if (fallbackId) return { contactId: fallbackId, contactCreated: false };
+    const existingId = await findContactByPhone(logPrefix, phone);
+    if (existingId) return { contactId: existingId, contactCreated: false };
     throw error;
   }
 }
