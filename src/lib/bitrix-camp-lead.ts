@@ -29,15 +29,13 @@ export function normalizeLeadPhone(input: string): string | null {
   return null;
 }
 
-function phoneLookupValues(phone: string): string[] {
+function contactPhoneLookupValues(phone: string): string[] {
   const digits = phone.replace(/\D/g, '');
   const national =
     digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))
       ? digits.slice(1)
-      : digits.length === 10
-        ? digits
-        : digits;
-  return [...new Set([phone, `+7${national}`, national, `8${national}`, digits].filter(Boolean))];
+      : digits;
+  return [...new Set([phone, national].filter(Boolean))];
 }
 
 function buildBitrixUrl(domain: string, token: string, method: string): string {
@@ -47,7 +45,7 @@ function buildBitrixUrl(domain: string, token: string, method: string): string {
   return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
 }
 
-const BITRIX_REQUEST_TIMEOUT_MS = 20000;
+const BITRIX_REQUEST_TIMEOUT_MS = 8000;
 
 async function bitrixCall<T = unknown>(
   logPrefix: string,
@@ -75,8 +73,8 @@ async function bitrixCall<T = unknown>(
   return data.result as T;
 }
 
-async function findContactByPhoneList(logPrefix: string, phone: string): Promise<number | null> {
-  for (const value of phoneLookupValues(phone)) {
+async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
+  for (const value of contactPhoneLookupValues(phone)) {
     try {
       const result = await bitrixCall<Array<{ ID?: string | number }>>(logPrefix, 'crm.contact.list', {
         filter: { PHONE: value },
@@ -90,23 +88,6 @@ async function findContactByPhoneList(logPrefix: string, phone: string): Promise
     }
   }
   return null;
-}
-
-async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
-  for (const value of phoneLookupValues(phone)) {
-    try {
-      const result = await bitrixCall<{ CONTACT?: number[] }>(logPrefix, 'crm.duplicate.findbycomm', {
-        type: 'PHONE',
-        values: [value],
-        entity_type: 'CONTACT',
-      });
-      const id = result?.CONTACT?.[0];
-      if (typeof id === 'number') return id;
-    } catch (error) {
-      console.warn(`${logPrefix}: duplicate lookup failed for ${value}`, error);
-    }
-  }
-  return findContactByPhoneList(logPrefix, phone);
 }
 
 async function resolveContactId(
