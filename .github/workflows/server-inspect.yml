@@ -47,7 +47,14 @@ jobs:
             WEBHOOK_TOKEN=$(grep '^WEBHOOK_TOKEN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
             BITRIX_DOMAIN=$(grep '^BITRIX_DOMAIN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
             echo "BITRIX_DOMAIN=${BITRIX_DOMAIN:-crm.mosgortur.ru}"
+            echo "=== DNS lookup (getent/dig/host) ==="
             getent hosts "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
+            command -v dig >/dev/null && dig +short "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
+            command -v host >/dev/null && host "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
+            echo "=== ping crm.mosgortur.ru (4 packets) ==="
+            ping -c 4 -W 5 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
+            echo "=== traceroute (max 15 hops) ==="
+            command -v traceroute >/dev/null && traceroute -m 15 -w 2 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" 2>/dev/null | head -20 || true
             curl -m 5 -s -o /dev/null -w "HTTPS reachability HTTP:%{http_code} TIME:%{time_total}s\n" "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/" || true
             curl -m 15 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
               -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
