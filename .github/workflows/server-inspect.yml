@@ -41,6 +41,20 @@ jobs:
               git status -sb
               git log -1 --oneline
             fi
+            echo "=== Bitrix env (masked) ==="
+            grep -E '^(BITRIX_DOMAIN|WEBHOOK_TOKEN|REBOOKING_)=' /home/travel-app/.env.local 2>/dev/null | sed 's/=.*/=***masked***/' || true
+            echo "=== curl Bitrix from VPS ==="
+            WEBHOOK_TOKEN=$(grep '^WEBHOOK_TOKEN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
+            BITRIX_DOMAIN=$(grep '^BITRIX_DOMAIN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
+            curl -m 15 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
+              -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
+              -H 'Content-Type: application/json' \
+              -d '{"filter":{"PHONE":"+79991234567"},"select":["ID"]}' || true
+            echo "=== localhost vlasevo-lead ==="
+            curl -m 30 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
+              -X POST http://127.0.0.1:3000/api/vlasevo-lead \
+              -H 'Content-Type: application/json' \
+              -d '{"name":"Test","phone":"+79991234567","shift":"Dream","landing":"vlasevo","website":""}' || true
             echo "=== staff-landing pm2 ==="
             pm2 describe staff-landing || true
             STAFF_CWD=$(pm2 jlist 2>/dev/null | node -e "const p=JSON.parse(require('fs').readFileSync(0,'utf8')); const a=p.find(x=>x.name==='staff-landing'); console.log(a?.pm2_env?.pm_cwd||'');")
