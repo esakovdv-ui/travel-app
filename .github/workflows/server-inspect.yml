@@ -46,6 +46,9 @@ jobs:
             echo "=== curl Bitrix from VPS ==="
             WEBHOOK_TOKEN=$(grep '^WEBHOOK_TOKEN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
             BITRIX_DOMAIN=$(grep '^BITRIX_DOMAIN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
+            echo "BITRIX_DOMAIN=${BITRIX_DOMAIN:-crm.mosgortur.ru}"
+            getent hosts "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
+            curl -m 5 -s -o /dev/null -w "HTTPS reachability HTTP:%{http_code} TIME:%{time_total}s\n" "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/" || true
             curl -m 15 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
               -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
               -H 'Content-Type: application/json' \
