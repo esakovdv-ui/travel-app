@@ -44,6 +44,10 @@ jobs:
             echo "=== Bitrix env (masked) ==="
             grep -E '^(BITRIX_DOMAIN|WEBHOOK_TOKEN|REBOOKING_)=' /home/travel-app/.env.local 2>/dev/null | sed 's/=.*/=***masked***/' || true
             echo "=== curl Bitrix from VPS ==="
+            echo "SOURCE_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 icanhazip.com || echo unknown)"
+            echo "=== outbound firewall (ufw/iptables) ==="
+            ufw status 2>/dev/null || true
+            iptables -L OUTPUT -n -v 2>/dev/null | head -20 || true
             WEBHOOK_TOKEN=$(grep '^WEBHOOK_TOKEN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
             BITRIX_DOMAIN=$(grep '^BITRIX_DOMAIN=' /home/travel-app/.env.local 2>/dev/null | cut -d= -f2-)
             echo "BITRIX_DOMAIN=${BITRIX_DOMAIN:-crm.mosgortur.ru}"
@@ -60,6 +64,10 @@ jobs:
               -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
               -H 'Content-Type: application/json' \
               -d '{"filter":{"PHONE":"+79991234567"},"select":["ID"]}' || true
+            echo "=== curl verbose (connect only, 10s) ==="
+            curl -v --max-time 10 -o /dev/null -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
+              -H 'Content-Type: application/json' \
+              -d '{"filter":{"PHONE":"+79991234567"},"select":["ID"]}' 2>&1 | tail -20 || true
             echo "=== localhost vlasevo-lead ==="
             curl -m 30 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
               -X POST http://127.0.0.1:3000/api/vlasevo-lead \
