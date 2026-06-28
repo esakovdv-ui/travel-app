@@ -18,6 +18,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: /home/travel-app/storage/vlasevo-leads.json
           target: sync-data/
+          strip_components: 4
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -42,7 +43,9 @@ jobs:
           export BITRIX_DOMAIN="${BITRIX_DOMAIN:-crm.mosgortur.ru}"
           export WEBHOOK_TOKEN="${WEBHOOK_TOKEN:-1981/0ly7df3o8j23eq30}"
           node scripts/sync-vlasevo-leads-bitrix.mjs "$LEADS_FILE"
-          cp "$LEADS_FILE" sync-data/vlasevo-leads.json
+          if [ "$LEADS_FILE" != "sync-data/vlasevo-leads.json" ]; then
+            cp "$LEADS_FILE" sync-data/vlasevo-leads.json
+          fi
 
       - name: Upload leads back to VPS
         uses: appleboy/scp-action@v0.1.7
