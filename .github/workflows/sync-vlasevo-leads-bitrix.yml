@@ -1,0 +1,49 @@
+name: Sync vlasevo leads to Bitrix
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download leads from VPS
+        uses: appleboy/scp-action@v0.1.7
+        continue-on-error: true
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: /home/travel-app/storage/vlasevo-leads.json
+          target: sync-data/
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync pending leads to Bitrix
+        env:
+          BITRIX_DOMAIN: ${{ secrets.BITRIX_DOMAIN }}
+          WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
+        run: |
+          LEADS_FILE="sync-data/vlasevo-leads.json"
+          if [ ! -f "$LEADS_FILE" ]; then
+            echo '[]' > "$LEADS_FILE"
+          fi
+          node scripts/sync-vlasevo-leads-bitrix.mjs "$LEADS_FILE"
+
+      - name: Upload leads back to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: sync-data/vlasevo-leads.json
+          target: /home/travel-app/storage/
+          overwrite: true

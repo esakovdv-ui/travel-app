@@ -64,6 +64,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'save_failed' }, { status: 500 });
   }
 
+  const syncMode = process.env.BITRIX_SYNC_MODE?.trim().toLowerCase();
+  if (syncMode === 'relay') {
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      leadId: savedLead.id,
+      bitrixPending: true,
+      bitrixSyncMode: 'relay',
+    });
+  }
+
   try {
     const result = await submitCampLead({
       logPrefix: 'vlasevo-lead',

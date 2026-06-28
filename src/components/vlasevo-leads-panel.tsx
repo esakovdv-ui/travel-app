@@ -20,9 +20,9 @@ type VlasevoLead = {
 type LandingFilter = 'all' | 'vlasevo' | 'vlasevo-promo';
 
 const BITRIX_STATUS_LABELS: Record<VlasevoLead['bitrixStatus'], string> = {
-  pending: 'Ожидает Bitrix',
+  pending: 'Ожидает отправки',
   sent: 'Отправлено в Bitrix',
-  failed: 'Bitrix недоступен',
+  failed: 'Ошибка Bitrix (повтор через ~5 мин)',
 };
 
 function formatDate(value: string) {
@@ -83,6 +83,7 @@ export function VlasevoLeadsPanel({ password, defaultLanding = 'all' }: VlasevoL
   const stats = useMemo(() => ({
     total: leads.length,
     failed: leads.filter((lead) => lead.bitrixStatus === 'failed').length,
+    pending: leads.filter((lead) => lead.bitrixStatus === 'pending').length,
     sent: leads.filter((lead) => lead.bitrixStatus === 'sent').length,
   }), [leads]);
 
@@ -111,7 +112,10 @@ export function VlasevoLeadsPanel({ password, defaultLanding = 'all' }: VlasevoL
       </div>
 
       <p className={styles.subtitle}>
-        Всего: {stats.total} · в Bitrix: {stats.sent} · ожидают отправки: {stats.failed}
+        Всего: {stats.total} · в Bitrix: {stats.sent} · ожидают отправки: {stats.failed + stats.pending}
+      </p>
+      <p className={styles.hint}>
+        Заявки сохраняются на сервере сразу. Отправка в Bitrix идёт через GitHub Actions (relay), т.к. VPS не достучится до CRM напрямую — обычно в течение 5 минут.
       </p>
 
       {isLoading ? (
