@@ -32,6 +32,7 @@ async function bitrixCall(method, payload) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(20000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.error) {

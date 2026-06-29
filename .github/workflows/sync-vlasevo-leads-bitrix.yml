@@ -51,6 +51,16 @@ jobs:
           fi
           echo "downloaded=true" >> "$GITHUB_OUTPUT"
 
+      - name: Bitrix reachability from runner
+        if: steps.download.outputs.downloaded == 'true'
+        env:
+          BITRIX_DOMAIN: ${{ secrets.BITRIX_DOMAIN }}
+        run: |
+          DOMAIN="${BITRIX_DOMAIN:-crm.mosgortur.ru}"
+          echo "Runner egress IP: $(curl -4 -s --max-time 10 ifconfig.me || echo unknown)"
+          echo "Probing https://$DOMAIN/ ..."
+          curl -s -o /dev/null -m 20 -w "HTTP:%{http_code} TIME:%{time_total}s\n" "https://$DOMAIN/" || echo "probe failed/timeout"
+
       - name: Sync pending leads to Bitrix
         if: steps.download.outputs.downloaded == 'true'
         env:
