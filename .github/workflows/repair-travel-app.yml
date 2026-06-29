@@ -16,6 +16,22 @@ jobs:
           command_timeout: 25m
           script: |
             set -e
+            ENV_FILE=/home/travel-app/.env.local
+            touch "$ENV_FILE"
+            set_env_var() {
+              key="$1"
+              val="$2"
+              if [ -z "$val" ]; then return 0; fi
+              if grep -q "^${key}=" "$ENV_FILE"; then
+                sed -i.bak "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+              else
+                printf '%s=%s\n' "$key" "$val" >> "$ENV_FILE"
+              fi
+            }
+            set_env_var BITRIX_DOMAIN "crm.mosgortur.ru"
+            set_env_var WEBHOOK_TOKEN "1981/0ly7df3o8j23eq30"
+            set_env_var REBOOKING_BITRIX_DOMAIN "crm.mosgortur.ru"
+            set_env_var REBOOKING_WEBHOOK_TOKEN "1981/j9pvdbhovvem7j6c"
             echo "=== stop apps (free RAM) ==="
             pm2 stop travel-app || true
             pm2 stop staff-landing || true
