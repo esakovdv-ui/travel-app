@@ -31,7 +31,8 @@ jobs:
             set_env_var BITRIX_DOMAIN "crm.mosgortur.ru"
             set_env_var WEBHOOK_TOKEN "1981/0ly7df3o8j23eq30"
             set_env_var REBOOKING_BITRIX_DOMAIN "crm.mosgortur.ru"
-            set_env_var REBOOKING_WEBHOOK_TOKEN "1981/j9pvdbhovvem7j6c"
+            set_env_var REBOOKING_WEBHOOK_TOKEN "1981/0ly7df3o8j23eq30"
+            set_env_var BITRIX_REST_BASE_URL "https://it.mosgortur.ru/b24catch"
             echo "=== stop apps (free RAM) ==="
             pm2 stop travel-app || true
             pm2 stop staff-landing || true

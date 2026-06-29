@@ -176,9 +176,12 @@ function getRebookingConfig() {
     process.env.REBOOKING_BITRIX_DOMAIN?.trim() ||
     process.env.BITRIX_DOMAIN?.trim() ||
     'crm.mosgortur.ru';
+  const rebookingToken = process.env.REBOOKING_WEBHOOK_TOKEN?.trim();
+  const revokedTokens = new Set(['1981/j9pvdbhovvem7j6c']);
   const token =
-    process.env.REBOOKING_WEBHOOK_TOKEN?.trim() ||
-    '1981/j9pvdbhovvem7j6c';
+    (rebookingToken && !revokedTokens.has(rebookingToken) ? rebookingToken : '') ||
+    process.env.WEBHOOK_TOKEN?.trim() ||
+    '1981/0ly7df3o8j23eq30';
   if (!domain || !token) throw new Error('misconfigured');
   return { domain, token };
 }
@@ -280,7 +283,7 @@ export function parsePositiveInt(raw: unknown): number | undefined {
 
 export function mapRebookingLeadError(message: string): string {
   if (message === 'misconfigured') return message;
-  if (message.includes('INVALID_CREDENTIALS')) return 'misconfigured';
+  if (message.includes('INVALID_CREDENTIALS')) return 'bitrix_error';
   if (message.startsWith('bitrix_error:')) return 'bitrix_error';
   return 'bitrix_error';
 }
