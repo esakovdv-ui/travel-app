@@ -41,6 +41,11 @@ jobs:
               git status -sb
               git log -1 --oneline
             fi
+            echo "=== leads storage ==="
+            ls -la /home/travel-app/storage/ 2>/dev/null || echo "no /home/travel-app/storage"
+            find /home/travel-app -maxdepth 4 -name 'vlasevo-leads.json' 2>/dev/null || true
+            grep -E '^VLASEVO_LEADS_PATH=' /home/travel-app/.env.local 2>/dev/null || echo "VLASEVO_LEADS_PATH not set"
+            grep -E '^BITRIX_SYNC_MODE=' /home/travel-app/.env.local 2>/dev/null || echo "BITRIX_SYNC_MODE not set"
             echo "=== Bitrix env (masked) ==="
             grep -E '^(BITRIX_DOMAIN|WEBHOOK_TOKEN|REBOOKING_)=' /home/travel-app/.env.local 2>/dev/null | sed 's/=.*/=***masked***/' || true
             echo "=== curl Bitrix from VPS ==="
