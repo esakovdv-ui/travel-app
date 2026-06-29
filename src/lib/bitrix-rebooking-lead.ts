@@ -172,8 +172,13 @@ function buildComments(input: RebookingLeadInput): string {
 }
 
 function getRebookingConfig() {
-  const domain = process.env.REBOOKING_BITRIX_DOMAIN || process.env.BITRIX_DOMAIN;
-  const token = process.env.REBOOKING_WEBHOOK_TOKEN;
+  const domain =
+    process.env.REBOOKING_BITRIX_DOMAIN?.trim() ||
+    process.env.BITRIX_DOMAIN?.trim() ||
+    'crm.mosgortur.ru';
+  const token =
+    process.env.REBOOKING_WEBHOOK_TOKEN?.trim() ||
+    '1981/j9pvdbhovvem7j6c';
   if (!domain || !token) throw new Error('misconfigured');
   return { domain, token };
 }
