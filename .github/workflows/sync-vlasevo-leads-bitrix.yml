@@ -1,8 +1,10 @@
 name: Sync vlasevo leads to Bitrix
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  # NOTE: CRM (crm.mosgortur.ru / 81.23.1.210) silently drops packets from
+  # non-whitelisted IPs. GitHub runner IPs are dynamic and cannot be whitelisted,
+  # so scheduled relay cannot deliver. Kept as manual fallback only.
+  # Re-enable the cron only if IT whitelists a stable relay IP.
   workflow_dispatch:
 
 concurrency:
