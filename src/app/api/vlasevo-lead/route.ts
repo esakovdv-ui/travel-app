@@ -12,6 +12,8 @@ import { saveVlasevoLead, updateVlasevoLeadBitrix } from '@/lib/vlasevo-lead-sto
 
 export const dynamic = 'force-dynamic';
 
+const RESPONSE_BUDGET_MS = 5000;
+
 function resolveLanding(body: Record<string, unknown>): CampLanding {
   const landing = clamp(body.landing, 30);
   if (landing === 'vlasevo-promo') return 'vlasevo-promo';
@@ -75,48 +77,67 @@ export async function POST(request: Request) {
     });
   }
 
-  try {
-    const result = await submitCampLead({
-      logPrefix: 'vlasevo-lead',
-      landing,
-      name,
-      phone,
-      shift,
-      bookingPrice,
-      source,
-      utm,
+  // The lead is already stored locally and visible in the admin panel, so we
+  // never need to make the user wait on Bitrix. Attempt the Bitrix submission,
+  // but only hold the HTTP response for up to RESPONSE_BUDGET_MS. If Bitrix is
+  // slow/unreachable, we answer "success" immediately and let the submission
+  // finish in the background, updating the lead status when it resolves.
+  const submission = submitCampLead({
+    logPrefix: 'vlasevo-lead',
+    landing,
+    name,
+    phone,
+    shift,
+    bookingPrice,
+    source,
+    utm,
+  })
+    .then(async (result) => {
+      await updateVlasevoLeadBitrix(savedLead.id, {
+        bitrixStatus: 'sent',
+        bitrixDealId: result.dealId,
+        bitrixContactId: result.contactId,
+      }).catch((updateError) => {
+        console.error('vlasevo-lead: failed to mark lead sent', updateError);
+      });
+      return { status: 'sent' as const, result };
+    })
+    .catch(async (e) => {
+      const message = e instanceof Error ? e.message : 'unknown';
+      const error = mapCampLeadError(message);
+      await updateVlasevoLeadBitrix(savedLead.id, {
+        bitrixStatus: 'failed',
+        bitrixError: error,
+      }).catch((updateError) => {
+        console.error('vlasevo-lead: failed to mark lead failed', updateError);
+      });
+      console.error('vlasevo-lead: Bitrix failed, lead saved locally', savedLead.id, message);
+      return { status: 'failed' as const };
     });
 
-    await updateVlasevoLeadBitrix(savedLead.id, {
-      bitrixStatus: 'sent',
-      bitrixDealId: result.dealId,
-      bitrixContactId: result.contactId,
-    });
+  const timeoutMarker = Symbol('bitrix-timeout');
+  const outcome = await Promise.race([
+    submission,
+    new Promise<typeof timeoutMarker>((resolve) => {
+      setTimeout(() => resolve(timeoutMarker), RESPONSE_BUDGET_MS);
+    }),
+  ]);
 
+  if (outcome !== timeoutMarker && outcome.status === 'sent') {
     return NextResponse.json({
       ok: true,
       saved: true,
       leadId: savedLead.id,
-      ...result,
-    });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'unknown';
-    const error = mapCampLeadError(message);
-
-    await updateVlasevoLeadBitrix(savedLead.id, {
-      bitrixStatus: 'failed',
-      bitrixError: error,
-    }).catch((updateError) => {
-      console.error('vlasevo-lead: failed to update lead status', updateError);
-    });
-
-    console.error('vlasevo-lead: Bitrix failed, lead saved locally', savedLead.id, message);
-
-    return NextResponse.json({
-      ok: true,
-      saved: true,
-      leadId: savedLead.id,
-      bitrixPending: true,
+      ...outcome.result,
     });
   }
+
+  // Timed out (submission keeps running in the background) or failed quickly.
+  // Either way the lead is safely stored, so we report success to the user.
+  return NextResponse.json({
+    ok: true,
+    saved: true,
+    leadId: savedLead.id,
+    bitrixPending: true,
+  });
 }
