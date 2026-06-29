@@ -20,7 +20,10 @@ async function bitrixCall<T = unknown>(method: string, payload: Record<string, u
   const token = process.env.WEBHOOK_TOKEN
   if (!domain || !token) throw new Error('misconfigured')
 
-  const url = `https://${domain}/rest/${token}/${method}.json`
+  const base = process.env.BITRIX_REST_BASE_URL?.trim().replace(/\/+$/, '')
+  const url = base
+    ? `${base}/${token}/${method}.json`
+    : `https://${domain}/rest/${token}/${method}.json`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

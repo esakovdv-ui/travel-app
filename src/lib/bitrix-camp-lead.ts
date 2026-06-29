@@ -31,9 +31,13 @@ export function normalizeLeadPhone(input: string): string | null {
 
 
 function buildBitrixUrl(domain: string, token: string, method: string): string {
-  const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   const cleanToken = token.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   const cleanMethod = method.replace(/^\/+/, '').replace(/\.json$/i, '');
+  const base = process.env.BITRIX_REST_BASE_URL?.trim().replace(/\/+$/, '');
+  if (base) {
+    return `${base}/${cleanToken}/${cleanMethod}.json`;
+  }
+  const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
 }
 

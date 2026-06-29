@@ -47,6 +47,7 @@ jobs:
             set_env_var WEBHOOK_TOKEN "$WEBHOOK_TOKEN_VALUE"
             set_env_var REBOOKING_BITRIX_DOMAIN "$BITRIX_DOMAIN_VALUE"
             set_env_var REBOOKING_WEBHOOK_TOKEN "$REBOOKING_WEBHOOK_TOKEN_VALUE"
+            set_env_var BITRIX_REST_BASE_URL "https://it.mosgortur.ru/b24catch"
             sed -i.bak '/^BITRIX_SYNC_MODE=/d' "$ENV_FILE"
             if [ -n "$TOURVISOR_AUTHKEY" ]; then
               set_env_var TOURVISOR_AUTHKEY "$TOURVISOR_AUTHKEY"

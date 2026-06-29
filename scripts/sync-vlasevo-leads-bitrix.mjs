@@ -17,9 +17,13 @@ const LANDING_TITLES = {
 };
 
 function buildBitrixUrl(domain, token, method) {
-  const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   const cleanToken = token.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   const cleanMethod = method.replace(/^\/+/, '').replace(/\.json$/i, '');
+  const base = process.env.BITRIX_REST_BASE_URL?.trim().replace(/\/+$/, '');
+  if (base) {
+    return `${base}/${cleanToken}/${cleanMethod}.json`;
+  }
+  const cleanDomain = domain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   return `https://${cleanDomain}/rest/${cleanToken}/${cleanMethod}.json`;
 }
 
