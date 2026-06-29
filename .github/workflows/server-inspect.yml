@@ -84,6 +84,30 @@ jobs:
             curl -v --max-time 10 -o /dev/null -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
               -H 'Content-Type: application/json' \
               -d '{"filter":{"PHONE":"+79991234567"},"select":["ID"]}' 2>&1 | tail -20 || true
+            echo "=== COMPARATIVE CONNECTIVITY TEST (TSPU vs destination-filter) ==="
+            command -v traceroute >/dev/null 2>&1 || (apt-get update -y >/dev/null 2>&1 && apt-get install -y traceroute >/dev/null 2>&1) || true
+            echo "EGRESS_IPV4=$(curl -4 -s -m 8 ifconfig.me || echo unknown)"
+            probe(){ host="$1"; ip="$2"; echo "--- $host ($ip) ---"; curl -s -o /dev/null -m 8 -w "curl HTTP:%{http_code} TIME:%{time_total}s\n" "https://$host/" || echo "curl: timeout"; if [ -n "$ip" ]; then tgt="$ip"; else tgt="$host"; fi; timeout 8 bash -c "cat < /dev/null > /dev/tcp/$tgt/443" && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED"; }
+            echo "### CRM target (baseline failure) ###"
+            probe crm.mosgortur.ru 81.23.1.210
+            echo "### CRM subnet neighbors (raw TCP/443 by IP) ###"
+            echo "--- 81.23.1.209 ---"; timeout 8 bash -c "cat < /dev/null > /dev/tcp/81.23.1.209/443" && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED"
+            echo "--- 81.23.1.1 ---"; timeout 8 bash -c "cat < /dev/null > /dev/tcp/81.23.1.1/443" && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED"
+            echo "### Russian HTTPS resources (broad RU reachability) ###"
+            probe mail.ru ""
+            probe yandex.ru ""
+            probe gosuslugi.ru ""
+            probe vk.com ""
+            probe sberbank.ru ""
+            echo "### Global controls ###"
+            probe google.com ""
+            probe cloudflare.com 1.1.1.1
+            echo "### Side-by-side TCP/443 traceroute (neighbor vs CRM) ###"
+            echo "--- traceroute -T 443 81.23.1.209 (neighbor) ---"
+            traceroute -T -p 443 -n -m 20 -w 2 81.23.1.209 || true
+            echo "--- traceroute -T 443 81.23.1.210 (CRM) ---"
+            traceroute -T -p 443 -n -m 20 -w 2 81.23.1.210 || true
+            echo "=== END COMPARATIVE CONNECTIVITY TEST ==="
             echo "=== localhost vlasevo-lead ==="
             curl -m 30 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
               -X POST http://127.0.0.1:3000/api/vlasevo-lead \
