@@ -65,6 +65,16 @@ jobs:
             ping -c 4 -W 5 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
             echo "=== traceroute (max 15 hops) ==="
             command -v traceroute >/dev/null && traceroute -m 15 -w 2 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" 2>/dev/null | head -20 || true
+            echo "=== ICMP traceroute to 81.23.1.210 ==="
+            command -v traceroute >/dev/null 2>&1 || (apt-get update -y >/dev/null 2>&1 && apt-get install -y traceroute >/dev/null 2>&1) || true
+            traceroute -n -m 30 -w 2 81.23.1.210 || true
+            echo "=== TCP traceroute to 81.23.1.210:443 ==="
+            traceroute -T -p 443 -n -m 30 -w 2 81.23.1.210 || true
+            echo "=== MTR TCP/443 ==="
+            command -v mtr >/dev/null 2>&1 || (apt-get update -y >/dev/null 2>&1 && apt-get install -y mtr-tiny >/dev/null 2>&1) || true
+            command -v mtr >/dev/null 2>&1 && mtr -n -r -c 5 -T -P 443 81.23.1.210 || echo "mtr not available"
+            echo "=== TCP connect 443 ==="
+            timeout 8 bash -c 'cat < /dev/null > /dev/tcp/81.23.1.210/443' && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED/timeout"
             curl -m 5 -s -o /dev/null -w "HTTPS reachability HTTP:%{http_code} TIME:%{time_total}s\n" "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/" || true
             curl -m 15 -s -w "\nHTTP:%{http_code} TIME:%{time_total}s\n" \
               -X POST "https://${BITRIX_DOMAIN:-crm.mosgortur.ru}/rest/${WEBHOOK_TOKEN}/crm.contact.list.json" \
