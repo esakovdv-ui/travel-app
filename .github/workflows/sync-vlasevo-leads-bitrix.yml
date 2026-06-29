@@ -5,21 +5,14 @@ on:
     - cron: '*/5 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: sync-vlasevo-leads
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Download leads from VPS
-        uses: appleboy/scp-action@v0.1.7
-        continue-on-error: true
-        with:
-          host: 72.56.32.183
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: /home/travel-app/storage/vlasevo-leads.json
-          target: sync-data/
-          strip_components: 4
-
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -28,31 +21,53 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+          ssh-keyscan -H 72.56.32.183 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Download leads from VPS
+        id: download
+        run: |
+          mkdir -p sync-data
+          set +e
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no \
+            root@72.56.32.183:/home/travel-app/storage/vlasevo-leads.json \
+            sync-data/vlasevo-leads.json
+          SCP_EXIT=$?
+          set -e
+          if [ "$SCP_EXIT" -ne 0 ] || [ ! -s sync-data/vlasevo-leads.json ]; then
+            echo "Download failed or empty (exit=$SCP_EXIT) — aborting to avoid data loss."
+            echo "downloaded=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Validate JSON array before processing
+          if ! node -e "const a=require('./sync-data/vlasevo-leads.json'); if(!Array.isArray(a)) process.exit(1);"; then
+            echo "Downloaded file is not a JSON array — aborting."
+            echo "downloaded=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "downloaded=true" >> "$GITHUB_OUTPUT"
+
       - name: Sync pending leads to Bitrix
+        if: steps.download.outputs.downloaded == 'true'
         env:
           BITRIX_DOMAIN: ${{ secrets.BITRIX_DOMAIN }}
           WEBHOOK_TOKEN: ${{ secrets.WEBHOOK_TOKEN }}
         run: |
-          mkdir -p sync-data
-          LEADS_FILE="$(find sync-data -name 'vlasevo-leads.json' -type f | head -1)"
-          if [ -z "$LEADS_FILE" ]; then
-            LEADS_FILE="sync-data/vlasevo-leads.json"
-            echo '[]' > "$LEADS_FILE"
-          fi
-          echo "Using leads file: $LEADS_FILE"
           export BITRIX_DOMAIN="${BITRIX_DOMAIN:-crm.mosgortur.ru}"
           export WEBHOOK_TOKEN="${WEBHOOK_TOKEN:-1981/0ly7df3o8j23eq30}"
-          node scripts/sync-vlasevo-leads-bitrix.mjs "$LEADS_FILE"
-          if [ "$LEADS_FILE" != "sync-data/vlasevo-leads.json" ]; then
-            cp "$LEADS_FILE" sync-data/vlasevo-leads.json
-          fi
+          node scripts/sync-vlasevo-leads-bitrix.mjs sync-data/vlasevo-leads.json
 
       - name: Upload leads back to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: 72.56.32.183
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: sync-data/vlasevo-leads.json
-          target: /home/travel-app/storage/
-          overwrite: true
+        if: steps.download.outputs.downloaded == 'true'
+        run: |
+          if [ ! -s sync-data/vlasevo-leads.json ]; then
+            echo "Refusing to upload empty leads file."
+            exit 1
+          fi
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no \
+            sync-data/vlasevo-leads.json \
+            root@72.56.32.183:/home/travel-app/storage/vlasevo-leads.json
