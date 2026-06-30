@@ -10,11 +10,14 @@ import {
   parseRebookingParamsFromUrl,
   type RebookingContext,
 } from '@/lib/rebooking-context';
-import { findRecentRebookingVisitContext } from '@/lib/rebooking-visit-store';
+import {
+  findRecentRebookingVisitByPhone,
+  findRecentRebookingVisitContext,
+} from '@/lib/rebooking-visit-store';
 
 export type TourvisorOrderRecord = Record<string, unknown>;
 
-const MOTRIP_DOMAINS = ['motrip.ru'];
+const MOTRIP_DOMAINS = ['motrip.ru', 'mosgortur.ru', 'online.mosgortur.ru'];
 const PROCESSED_TTL_MS = 24 * 60 * 60 * 1000;
 const processedOrderIds = new Map<string, number>();
 
@@ -135,31 +138,45 @@ export async function fetchRecentTourvisorOrders(limit = 5, type = '0'): Promise
 }
 
 async function resolveRebookingFromTvOrder(tvOrder: TourvisorOrderRecord): Promise<RebookingContext | null> {
-  const referer = pickString(tvOrder, ['referer', 'referrer', 'page', 'sourceurl', 'url']);
+  const referer = pickString(tvOrder, [
+    'referer',
+    'referrer',
+    'page',
+    'sourceurl',
+    'url',
+    'site',
+    'pagelink',
+  ]);
   if (referer) {
     const fromUrl = parseRebookingParamsFromUrl(referer);
     if (fromUrl) return { ...fromUrl, registeredAt: Date.now() };
   }
 
-  const domain = pickString(tvOrder, ['domain']);
-  if (domain && isMotripDomain(domain)) {
-    const fromContext = await findRecentRebookingContext();
-    if (fromContext) return fromContext;
-    const fromVisit = await findRecentRebookingVisitContext();
-    if (fromVisit) {
-      return {
-        order: fromVisit.order,
-        cert: fromVisit.cert,
-        name: fromVisit.name,
-        people: fromVisit.people,
-        kids: fromVisit.kids,
-        kidAges: [],
-        price: fromVisit.price,
-        nights: fromVisit.nights,
-        date: fromVisit.date,
-        registeredAt: fromVisit.registeredAt,
-      };
-    }
+  const fromContext = await findRecentRebookingContext();
+  if (fromContext) return fromContext;
+
+  const phoneRaw =
+    pickString(tvOrder, ['phone', 'mobile', 'tel', 'clientphone', 'touristphone']);
+  const phone = normalizeLeadPhone(phoneRaw);
+  if (phone) {
+    const fromPhoneVisit = await findRecentRebookingVisitByPhone(phone);
+    if (fromPhoneVisit) return fromPhoneVisit;
+  }
+
+  const fromVisit = await findRecentRebookingVisitContext();
+  if (fromVisit) {
+    return {
+      order: fromVisit.order,
+      cert: fromVisit.cert,
+      name: fromVisit.name,
+      people: fromVisit.people,
+      kids: fromVisit.kids,
+      kidAges: fromVisit.kidAges,
+      price: fromVisit.price,
+      nights: fromVisit.nights,
+      date: fromVisit.date,
+      registeredAt: fromVisit.registeredAt,
+    };
   }
 
   return null;
@@ -255,6 +272,27 @@ export async function captureTourvisorOrderAsLead(options: {
 
 /** @deprecated use captureTourvisorOrderAsLead */
 export const submitTourvisorOrderToBitrix = captureTourvisorOrderAsLead;
+
+export async function captureTourvisorOrderById(options: {
+  logPrefix: string;
+  tourvisorOrderId: string;
+  type?: string;
+  rebooking?: RebookingContext;
+  eventType?: string;
+  visitId?: string;
+  captureSource: 'sync' | 'webhook';
+}) {
+  const tvOrder = await fetchTourvisorOrderById(options.tourvisorOrderId, options.type ?? '0');
+  return captureTourvisorOrderAsLead({
+    logPrefix: options.logPrefix,
+    tvOrder,
+    tourvisorOrderId: options.tourvisorOrderId,
+    rebooking: options.rebooking,
+    eventType: options.eventType,
+    visitId: options.visitId,
+    captureSource: options.captureSource,
+  });
+}
 
 export async function captureRecentTourvisorOrderAsLead(options: {
   logPrefix: string;

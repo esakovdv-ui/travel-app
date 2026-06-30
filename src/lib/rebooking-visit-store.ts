@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { RebookingTourInfo } from '@/lib/bitrix-rebooking-lead';
+import { normalizeLeadPhone } from '@/lib/bitrix-rebooking-lead';
 import type { RebookingContext } from '@/lib/rebooking-context';
 
 export const rebookingVisitStatusSchema = z.enum(['visited', 'searched', 'submitted']);
@@ -264,6 +265,52 @@ export async function listRebookingVisits(options?: { order?: string; limit?: nu
 
 const VISIT_CONTEXT_MAX_AGE_MS = 30 * 60 * 1000;
 
+export async function findRecentRebookingVisitByPhone(phone: string, maxAgeMs = VISIT_CONTEXT_MAX_AGE_MS) {
+  const normalized = normalizeLeadPhone(phone);
+  if (!normalized) return null;
+
+  const visits = await readVisitsRaw();
+  const now = Date.now();
+  const recent = visits.filter((visit) => {
+    const ts = Date.parse(visit.lastEventAt || visit.visitedAt);
+    return Number.isFinite(ts) && now - ts <= maxAgeMs;
+  });
+
+  const withPhone = recent.filter(
+    (visit) => visit.phone && normalizeLeadPhone(visit.phone) === normalized
+  );
+  const pool = withPhone.length ? withPhone : recent;
+
+  let best: RebookingVisit | undefined;
+  for (const visit of pool) {
+    if (!best) {
+      best = visit;
+      continue;
+    }
+    const ts = Date.parse(visit.lastEventAt || visit.visitedAt);
+    const bestTs = Date.parse(best.lastEventAt || best.visitedAt);
+    if (ts > bestTs) best = visit;
+  }
+
+  if (!best) return null;
+  return visitToRebookingContext(best);
+}
+
+function visitToRebookingContext(visit: RebookingVisit) {
+  return {
+    order: visit.order,
+    cert: visit.cert,
+    name: visit.name,
+    people: visit.people,
+    kids: visit.kids,
+    kidAges: [] as number[],
+    price: visit.price,
+    nights: visit.nights,
+    date: visit.date,
+    registeredAt: Date.parse(visit.lastEventAt || visit.visitedAt) || Date.now(),
+  };
+}
+
 /** Fallback context from persisted visits when TV referer has no query params. */
 export async function findRecentRebookingVisitContext(maxAgeMs = VISIT_CONTEXT_MAX_AGE_MS) {
   const visits = await readVisitsRaw();
@@ -280,17 +327,7 @@ export async function findRecentRebookingVisitContext(maxAgeMs = VISIT_CONTEXT_M
     if (ts > bestTs) best = visit;
   }
   if (!best) return null;
-  return {
-    order: best.order,
-    cert: best.cert,
-    name: best.name,
-    people: best.people,
-    kids: best.kids,
-    price: best.price,
-    nights: best.nights,
-    date: best.date,
-    registeredAt: Date.parse(best.lastEventAt || best.visitedAt) || Date.now(),
-  };
+  return visitToRebookingContext(best);
 }
 
 export async function trackRebookingWebhookCall(input: {

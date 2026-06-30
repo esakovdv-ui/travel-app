@@ -5,7 +5,10 @@ import {
   parseRebookingContextFromBody,
   registerRebookingContext,
 } from '@/lib/rebooking-context';
-import { captureRecentTourvisorOrderAsLead } from '@/lib/tourvisor-rebooking';
+import {
+  captureRecentTourvisorOrderAsLead,
+  captureTourvisorOrderById,
+} from '@/lib/tourvisor-rebooking';
 import { markRebookingVisitSubmitted, trackRebookingVisitEvent } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +30,7 @@ export async function POST(request: Request) {
   const rebooking = (await getRebookingContextByOrder(parsed.order)) ?? { ...parsed, registeredAt: Date.now() };
   const eventType = clamp(body.eventType, 40) || undefined;
   const visitId = clamp(body.visitId, 80) || undefined;
+  const tourvisorOrderId = clamp(body.tourvisorOrderId, 40) || undefined;
 
   await trackRebookingVisitEvent({
     visitId,
@@ -35,11 +39,42 @@ export async function POST(request: Request) {
   }).catch(() => {});
 
   try {
+    if (tourvisorOrderId) {
+      try {
+        const byId = await captureTourvisorOrderById({
+          logPrefix: 'rebooking-lead-sync',
+          tourvisorOrderId,
+          rebooking,
+          eventType,
+          visitId,
+          captureSource: 'sync',
+        });
+        if (!byId.skipped) {
+          await markRebookingVisitSubmitted({
+            visitId,
+            order: parsed.order,
+            leadSource: 'sync',
+            eventType: eventType || 'sync_queued',
+          }).catch(() => {});
+          return NextResponse.json({
+            ok: true,
+            queued: true,
+            leadId: byId.leadId,
+            duplicate: byId.duplicate,
+            bitrixPending: byId.bitrixPending,
+          });
+        }
+      } catch (byIdError) {
+        const byIdMessage = byIdError instanceof Error ? byIdError.message : '';
+        if (byIdMessage !== 'tourvisor_order_not_found') throw byIdError;
+      }
+    }
+
     const result = await captureRecentTourvisorOrderAsLead({
       logPrefix: 'rebooking-lead-sync',
       rebooking,
       eventType,
-      maxAgeSeconds: 300,
+      maxAgeSeconds: 600,
       visitId,
     });
 

@@ -483,6 +483,7 @@
       }
 
       var visitId = '';
+      var lastTourvisorOrderId = '';
 
       function trackRebookingEvent(bookingData, eventType, tourPayload, extra) {
         if (!bookingData || !bookingData.order) return Promise.resolve();
@@ -498,6 +499,7 @@
             region: tourPayload.region || undefined,
             tourvisorOrderId: tourPayload.tourvisorOrderId || undefined,
           };
+          if (tourPayload.tourvisorOrderId) lastTourvisorOrderId = String(tourPayload.tourvisorOrderId);
         }
         if (extra && typeof extra === 'object') {
           Object.keys(extra).forEach(function (key) {
@@ -539,6 +541,7 @@
             body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
               eventType: eventType || undefined,
               visitId: visitId || undefined,
+              tourvisorOrderId: lastTourvisorOrderId || undefined,
             })),
           });
           var result = await response.json().catch(function () { return {}; });
@@ -578,6 +581,22 @@
       }
 
       function setupTourvisorBridge(bookingData) {
+        var focusSyncStarted = false;
+
+        function scheduleSync(eventType) {
+          if (leadSubmitted) return;
+          syncTourvisorLead(bookingData, eventType).catch(function (error) {
+            console.error('rebooking: failed to sync lead', error);
+            showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
+          });
+        }
+
+        window.addEventListener('focus', function () {
+          if (leadSubmitted || focusSyncStarted) return;
+          focusSyncStarted = true;
+          setTimeout(function () { scheduleSync('focus_sync'); }, 4000);
+        });
+
         window.addEventListener('message', function (event) {
           if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
 
@@ -592,25 +611,24 @@
             });
           }
 
-          if (!isTourvisorLeadEvent(event.data)) return;
+          var looksLikeSubmit =
+            isTourvisorLeadEvent(event.data) ||
+            Boolean(phone) ||
+            /order|submit|success|sent/i.test(eventType || '');
+
+          if (!looksLikeSubmit) return;
 
           if (phone) {
             if (!tour.hotel && !tour.country) {
               tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
             }
             submitTourLeadDirect(bookingData, tour, phone, eventType).catch(function () {
-              syncTourvisorLead(bookingData, eventType).catch(function (error) {
-                console.error('rebooking: failed to submit lead', error);
-                showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
-              });
+              scheduleSync(eventType || 'postmessage_sync');
             });
             return;
           }
 
-          syncTourvisorLead(bookingData, eventType).catch(function (error) {
-            console.error('rebooking: failed to sync lead', error);
-            showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
-          });
+          scheduleSync(eventType || 'postmessage_sync');
         });
       }
 
