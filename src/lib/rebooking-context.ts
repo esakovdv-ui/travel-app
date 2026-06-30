@@ -90,7 +90,7 @@ export async function findRecentRebookingContext(
 export function parseRebookingParamsFromUrl(rawUrl: string): Omit<RebookingContext, 'registeredAt'> | null {
   try {
     const url = new URL(rawUrl);
-    if (!url.pathname.includes('/rebooking')) return null;
+    if (!url.pathname.includes('/rebooking') && !url.pathname.includes('/new/rebooking')) return null;
     const params = url.searchParams;
     const order = params.get('order')?.trim();
     if (!order) return null;

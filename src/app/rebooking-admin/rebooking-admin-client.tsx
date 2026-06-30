@@ -57,6 +57,25 @@ const CAPTURE_SOURCE_LABELS: Record<RebookingCaptureSource, string> = {
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
+type AdminView = 'leads' | 'visits';
+
+type RebookingVisit = {
+  id: string;
+  order: string;
+  cert: string;
+  name: string;
+  visitedAt: string;
+  lastEventAt: string;
+  lastEvent?: string;
+  status: 'visited' | 'searched' | 'submitted';
+  selectedHotel?: string;
+  selectedCountry?: string;
+  phone?: string;
+  tourvisorOrderId?: string;
+  leadSource?: string;
+  bitrixLeadId?: number;
+};
+
 function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -90,7 +109,9 @@ function formatComposition(lead: RebookingQueuedLead) {
 export function RebookingAdminClient() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
+  const [view, setView] = useState<AdminView>('leads');
   const [leads, setLeads] = useState<RebookingQueuedLead[]>([]);
+  const [visits, setVisits] = useState<RebookingVisit[]>([]);
   const [orderFilter, setOrderFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | RebookingBitrixStatus>('all');
   const [isLoading, setIsLoading] = useState(false);
@@ -132,6 +153,31 @@ export function RebookingAdminClient() {
     }
   }, [orderFilter, password, statusFilter]);
 
+  const loadVisits = useCallback(async () => {
+    if (!password) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams({ password, limit: '500' });
+      if (orderFilter.trim()) params.set('order', orderFilter.trim());
+      const response = await fetch(`/api/rebooking-visits?${params.toString()}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Не удалось загрузить визиты');
+      setVisits(Array.isArray(data.visits) ? data.visits : []);
+      setStatus(`Визитов: ${Array.isArray(data.visits) ? data.visits.length : 0}`);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить визиты');
+      setVisits([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [orderFilter, password]);
+
+  const loadData = useCallback(async () => {
+    if (view === 'visits') await loadVisits();
+    else await loadLeads();
+  }, [loadLeads, loadVisits, view]);
+
   const syncBitrix = useCallback(async (silent = false) => {
     if (!password) return;
     setIsSyncing(true);
@@ -159,16 +205,16 @@ export function RebookingAdminClient() {
 
   useEffect(() => {
     if (!isAuthed) return;
-    loadLeads();
-  }, [isAuthed, loadLeads]);
+    loadData();
+  }, [isAuthed, loadData]);
 
   useEffect(() => {
-    if (!isAuthed) return;
+    if (!isAuthed || view !== 'leads') return;
     const timer = window.setInterval(() => {
       syncBitrix(true);
     }, SYNC_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [isAuthed, syncBitrix]);
+  }, [isAuthed, syncBitrix, view]);
 
   const stats = useMemo(() => ({
     total: leads.length,
@@ -223,16 +269,32 @@ export function RebookingAdminClient() {
       <div className={styles.shell}>
         <div className={styles.topbar}>
           <div>
-            <h1 className={styles.title}>Лиды /rebooking</h1>
+            <h1 className={styles.title}>Перебронирование /rebooking</h1>
             <p className={styles.subtitle}>
-              Все заявки сначала попадают сюда. В Bitrix уходят автоматически каждые 5 минут
-              (или по кнопке «Отправить в Bitrix»).
+              Лиды — очередь в Bitrix. Визиты — кто заходил и что делал на странице (даже если лид ещё не создан).
             </p>
           </div>
           <button className={styles.secondaryButton} type="button" onClick={logout}>Выйти</button>
         </div>
 
         <div className={styles.panel}>
+          <div className={styles.actions} style={{ marginBottom: 16 }}>
+            <button
+              className={view === 'leads' ? styles.primaryButton : styles.secondaryButton}
+              type="button"
+              onClick={() => setView('leads')}
+            >
+              Лиды
+            </button>
+            <button
+              className={view === 'visits' ? styles.primaryButton : styles.secondaryButton}
+              type="button"
+              onClick={() => setView('visits')}
+            >
+              Визиты
+            </button>
+          </div>
+
           <div className={styles.leadsToolbar}>
             <div className={styles.leadsFilters}>
               <label className={styles.field}>
@@ -245,6 +307,7 @@ export function RebookingAdminClient() {
                   onChange={(event) => setOrderFilter(event.target.value)}
                 />
               </label>
+              {view === 'leads' ? (
               <label className={styles.field}>
                 Статус Bitrix
                 <select
@@ -258,8 +321,10 @@ export function RebookingAdminClient() {
                   <option value="failed">Ошибка</option>
                 </select>
               </label>
+              ) : null}
             </div>
             <div className={styles.actions}>
+              {view === 'leads' ? (
               <button
                 className={styles.primaryButton}
                 type="button"
@@ -268,12 +333,15 @@ export function RebookingAdminClient() {
               >
                 {isSyncing ? 'Отправляю…' : 'Отправить в Bitrix'}
               </button>
-              <button className={styles.secondaryButton} type="button" onClick={loadLeads} disabled={isLoading}>
+              ) : null}
+              <button className={styles.secondaryButton} type="button" onClick={loadData} disabled={isLoading}>
                 {isLoading ? 'Обновляю…' : 'Обновить'}
               </button>
             </div>
           </div>
 
+          {view === 'leads' ? (
+          <>
           <p className={styles.subtitle}>
             Всего: {stats.total} · в очереди: {stats.pending} · в Bitrix: {stats.sent} · ошибки: {stats.failed}
           </p>
@@ -281,7 +349,7 @@ export function RebookingAdminClient() {
           {isLoading ? (
             <p className={styles.subtitle}>Загружаю лиды…</p>
           ) : leads.length === 0 ? (
-            <p className={styles.subtitle}>Лидов пока нет.</p>
+            <p className={styles.subtitle}>Лидов пока нет. Проверьте вкладку «Визиты» — заявка могла зафиксироваться там.</p>
           ) : (
             <div className={styles.leadsTableWrap}>
               <table className={styles.leadsTable}>
@@ -360,6 +428,46 @@ export function RebookingAdminClient() {
                         {lead.tour?.placement ? <><br />размещение: {lead.tour.placement}</> : null}
                         {lead.comment ? <><br />{lead.comment}</> : null}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </>
+          ) : isLoading ? (
+            <p className={styles.subtitle}>Загружаю визиты…</p>
+          ) : visits.length === 0 ? (
+            <p className={styles.subtitle}>Визитов пока нет.</p>
+          ) : (
+            <div className={styles.leadsTableWrap}>
+              <table className={styles.leadsTable}>
+                <thead>
+                  <tr>
+                    <th>Заход</th>
+                    <th>Заявка</th>
+                    <th>Клиент</th>
+                    <th>Статус</th>
+                    <th>Событие</th>
+                    <th>Тур</th>
+                    <th>Телефон</th>
+                    <th>TV</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visits.map((visit) => (
+                    <tr key={visit.id}>
+                      <td>{formatDate(visit.visitedAt)}</td>
+                      <td><strong>{visit.order}</strong></td>
+                      <td>{visit.name || '—'}</td>
+                      <td>{visit.status}</td>
+                      <td>
+                        {visit.lastEvent || '—'}
+                        <span className={styles.hint}><br />{formatDate(visit.lastEventAt)}</span>
+                      </td>
+                      <td>{[visit.selectedHotel, visit.selectedCountry].filter(Boolean).join(' · ') || '—'}</td>
+                      <td>{visit.phone || '—'}</td>
+                      <td>{visit.tourvisorOrderId ? `#${visit.tourvisorOrderId}` : '—'}</td>
                     </tr>
                   ))}
                 </tbody>

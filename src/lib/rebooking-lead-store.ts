@@ -116,8 +116,14 @@ function findDuplicate(
   return leads.find((lead) => {
     const created = Date.parse(lead.createdAt);
     if (!Number.isFinite(created) || now - created > DEDUP_MS) return false;
-    if (input.tourvisorOrderId && lead.tourvisorOrderId === input.tourvisorOrderId) return true;
-    return lead.order === input.order && lead.phone === input.phone;
+    if (input.tourvisorOrderId) {
+      return lead.tourvisorOrderId === input.tourvisorOrderId;
+    }
+    return (
+      lead.order === input.order &&
+      lead.phone === input.phone &&
+      !lead.tourvisorOrderId
+    );
   });
 }
 
