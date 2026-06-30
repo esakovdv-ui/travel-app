@@ -6,7 +6,7 @@
  *   Номер заявки, ФИО (Б24), Телефон (Б24), Email (Б24), Дата выезда,
  *   Туристов, Стоимость (руб), Б24 ссылка, …
  *
- * Выход: email, name, phone, order, deal_id, date, people, price, rebooking_link
+ * Выход: email, name, phone, order, deal_id, date, people, rebooking_link
  *
  * Запуск:
  *   node scripts/generate-rebooking-campaign-xlsx.js "/path/to/file.xlsx" [output.csv]
@@ -82,7 +82,7 @@ function extractDealId(url) {
 
 function buildRebookingLink(row) {
   const params = new URLSearchParams();
-  const fields = ['order', 'cert', 'name', 'people', 'kids', 'kid1', 'kid2', 'kid3', 'price', 'nights', 'date'];
+  const fields = ['order', 'cert', 'name', 'people', 'kids', 'kid1', 'kid2', 'kid3', 'nights', 'date'];
   fields.forEach((key) => {
     const value = row[key];
     if (value != null && String(value).trim() !== '') {
@@ -125,7 +125,6 @@ function mapRow(values, columns) {
     deal_url: dealUrl,
     date: parseDateToIso(get('date')),
     people: parseIntValue(get('people')),
-    price: parseIntValue(get('price')),
     cert: String(get('cert') || '').trim(),
     kids: parseIntValue(get('kids')),
     nights: parseIntValue(get('nights')),
@@ -200,7 +199,6 @@ function main() {
     'deal_url',
     'date',
     'people',
-    'price',
     'rebooking_link',
     'utm_campaign',
   ];

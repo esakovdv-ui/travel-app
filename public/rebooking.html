@@ -469,13 +469,6 @@
             caption: touristsCaption(data),
           });
         }
-        if (data.price != null && data.price > 0) {
-          items.push({
-            icon: iconRub(),
-            value: money.format(data.price) + ' ₽',
-            caption: 'бюджет поездки',
-          });
-        }
 
         document.getElementById('trip-grid').innerHTML = items.map(function (item) {
           return '<div class="trip-item">' +
@@ -491,7 +484,7 @@
       }
 
       function syncTourvisorSearchParamsToUrl(data) {
-        // Tourvisor v6 reads tourists/price from URL query (s_adults, child_age_N), not tv-kid* on the div.
+        // Tourvisor v6 reads tourists from URL query (s_adults, child_age_N), not tv-kid* on the div.
         // ts_dosearch=0 is required so createModule merges URL params without auto-running search.
         var url = new URL(window.location.href);
         url.searchParams.set('ts_dosearch', '0');
@@ -508,10 +501,6 @@
         if (data.nights != null && data.nights > 0) {
           url.searchParams.set('s_nights_from', String(data.nights));
           url.searchParams.set('s_nights_to', String(data.nights));
-        }
-        if (data.price != null && data.price > 0) {
-          url.searchParams.set('s_price_from', '0');
-          url.searchParams.set('s_price_to', String(data.price));
         }
         history.replaceState(null, document.title, url.pathname + url.search + url.hash);
       }

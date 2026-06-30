@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = process.env.REBOOKING_BASE_URL || 'https://motrip.ru/rebooking';
+const BASE_URL = process.env.REBOOKING_BASE_URL || 'https://online.mosgortur.ru/new/rebooking';
 
 const inputPath = process.argv[2] || path.join(process.cwd(), 'input-rebooking.csv');
 const outputPath = process.argv[3] || path.join(process.cwd(), 'output-rebooking-links.csv');
@@ -48,7 +48,6 @@ function buildLink(row) {
     'kid1',
     'kid2',
     'kid3',
-    'price',
     'nights',
     'date',
   ];
