@@ -80,11 +80,21 @@ function extractDealId(url) {
   return match ? match[1] : '';
 }
 
+function normalizePhoneForLink(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+    return `+7${digits.slice(1)}`;
+  }
+  if (digits.length === 10) return `+7${digits}`;
+  return String(raw || '').trim();
+}
+
 function buildRebookingLink(row) {
   const params = new URLSearchParams();
-  const fields = ['order', 'cert', 'name', 'people', 'kids', 'kid1', 'kid2', 'kid3', 'nights', 'date'];
+  const fields = ['order', 'cert', 'name', 'phone', 'people', 'kids', 'kid1', 'kid2', 'kid3', 'nights', 'date'];
   fields.forEach((key) => {
-    const value = row[key];
+    let value = row[key];
+    if (key === 'phone') value = normalizePhoneForLink(value);
     if (value != null && String(value).trim() !== '') {
       params.set(key, String(value).trim());
     }

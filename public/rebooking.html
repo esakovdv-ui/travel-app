@@ -351,6 +351,16 @@
         return many;
       }
 
+      function normalizePhoneFromUrl(raw) {
+        if (!raw) return '';
+        var digits = String(raw).replace(/\D/g, '');
+        if (digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
+          return '+7' + digits.slice(1);
+        }
+        if (digits.length === 10) return '+7' + digits;
+        return String(raw).trim();
+      }
+
       function parseRebookingParams(search) {
         var params = new URLSearchParams(search || window.location.search);
         var explicitKids = parseIntParam(params.get('kids'));
@@ -370,6 +380,7 @@
           order: (params.get('order') || '').trim(),
           cert: (params.get('cert') || '').trim(),
           name: (params.get('name') || '').trim(),
+          phone: normalizePhoneFromUrl(params.get('phone')),
           people: parseIntParam(params.get('people')),
           kids: kids,
           kid1: kidAgeSlots[0],
@@ -584,6 +595,7 @@
           order: bookingData.order,
           cert: bookingData.cert,
           name: bookingData.name,
+          phone: bookingData.phone || undefined,
           people: bookingData.people,
           kids: bookingData.kids,
           kid1: bookingData.kidAges[0],
@@ -598,6 +610,14 @@
           payload[key] = utm[key];
         });
         return payload;
+      }
+
+      function buildLeadPhonePayload(bookingData, tourvisorPhone) {
+        var sourcePhone = bookingData.phone || undefined;
+        return {
+          sourcePhone: sourcePhone,
+          phone: tourvisorPhone || sourcePhone,
+        };
       }
 
       var visitId = '';
@@ -656,7 +676,7 @@
           var response = await fetch('/api/rebooking-lead/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
+            body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData), {
               eventType: eventType || undefined,
               visitId: visitId || undefined,
               tourvisorOrderId: lastTourvisorOrderId || undefined,
@@ -682,8 +702,7 @@
         var response = await fetch('/api/rebooking-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
-            phone: phone,
+          body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData, phone), {
             tour: tourPayload,
             utm: collectUtm(),
             website: '',
@@ -731,7 +750,7 @@
             var response = await fetch('/api/rebooking-annul', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
+              body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData), {
                 visitId: visitId || undefined,
                 website: '',
               })),

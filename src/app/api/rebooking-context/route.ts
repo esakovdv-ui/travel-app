@@ -34,6 +34,8 @@ export async function POST(request: Request) {
 
   const visit = await createRebookingVisit({
     ...context,
+    phone: context.phone,
+    email: context.email,
     utm: parseUtmFromBody(body),
     userAgent: request.headers.get('user-agent') ?? undefined,
     referer: request.headers.get('referer') ?? undefined,

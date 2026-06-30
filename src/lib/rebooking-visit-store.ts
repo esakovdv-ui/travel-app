@@ -171,6 +171,7 @@ export function isRebookingAdminPassword(password: string): boolean {
 }
 
 export type CreateRebookingVisitInput = Omit<RebookingContext, 'registeredAt' | 'kidAges'> & {
+  kidAges?: number[];
   utm?: RebookingVisit['utm'];
   userAgent?: string;
   referer?: string;
@@ -183,6 +184,8 @@ export async function createRebookingVisit(input: CreateRebookingVisitInput): Pr
     order: input.order,
     cert: input.cert || '',
     name: input.name || '',
+    phone: input.phone?.slice(0, 30),
+    email: input.email?.slice(0, 120),
     people: input.people,
     kids: input.kids,
     price: input.price,

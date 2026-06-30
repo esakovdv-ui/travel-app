@@ -235,6 +235,7 @@ export async function captureTourvisorOrderAsLead(options: {
     tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
   }
 
+  const sourcePhone = normalizeLeadPhone(rebooking.phone || '') || undefined;
   const clientName = buildClientName(tvOrder, rebooking.name);
   const { lead, duplicate } = await enqueueRebookingLead({
     visitId: options.visitId,
@@ -242,6 +243,7 @@ export async function captureTourvisorOrderAsLead(options: {
     cert: rebooking.cert,
     name: clientName,
     phone,
+    sourcePhone: sourcePhone || phone,
     email: tour.email,
     people: rebooking.people,
     kids: rebooking.kids,

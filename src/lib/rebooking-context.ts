@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import {
+  normalizeLeadPhone,
   parseBookingPrice,
   parseKidAges,
   parsePositiveInt,
@@ -11,6 +12,8 @@ export type RebookingContext = {
   order: string;
   cert: string;
   name: string;
+  phone?: string;
+  email?: string;
   people?: number;
   kids?: number;
   kidAges: number[];
@@ -24,6 +27,8 @@ const contextSchema = z.object({
   order: z.string().min(1),
   cert: z.string(),
   name: z.string(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
   people: z.number().int().nonnegative().optional(),
   kids: z.number().int().nonnegative().optional(),
   kidAges: z.array(z.number()),
@@ -99,6 +104,8 @@ export function parseRebookingParamsFromUrl(rawUrl: string): Omit<RebookingConte
       order,
       cert: params.get('cert')?.trim() || '',
       name: params.get('name')?.trim() || '',
+      phone: normalizeLeadPhone(params.get('phone')?.trim() || '') || undefined,
+      email: params.get('email')?.trim() || undefined,
       people: parsePositiveInt(params.get('people')),
       kids,
       kidAges: parseKidAges(
@@ -126,6 +133,9 @@ export function parseRebookingContextFromBody(body: Record<string, unknown>): Om
     order,
     cert: typeof body.cert === 'string' ? body.cert.trim() : '',
     name: typeof body.name === 'string' ? body.name.trim() : '',
+    phone:
+      normalizeLeadPhone(typeof body.phone === 'string' ? body.phone.trim() : '') || undefined,
+    email: typeof body.email === 'string' ? body.email.trim() : undefined,
     people: parsePositiveInt(body.people),
     kids,
     kidAges: parseKidAges(body, kids),

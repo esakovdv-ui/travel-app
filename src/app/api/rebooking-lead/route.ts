@@ -28,18 +28,20 @@ export async function POST(request: Request) {
   const order = clamp(body.order, 100);
   const name = clamp(body.name, 200);
   const cert = clamp(body.cert, 100);
-  const rawPhone = clamp(body.phone, 30);
-  const comment = clamp(body.comment, 2000);
-  const destination = clamp(body.destination, 120);
+  const phoneRaw = clamp(body.phone, 30);
+  const sourcePhoneRaw = clamp(body.sourcePhone, 30);
+  const tourPhone = phoneRaw ? normalizeLeadPhone(phoneRaw) : undefined;
+  const sourcePhone = sourcePhoneRaw
+    ? normalizeLeadPhone(sourcePhoneRaw) || undefined
+    : undefined;
+  const phone = tourPhone || sourcePhone;
 
-  if (!order || !rawPhone) {
+  if (!order || !phone) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
-  const phone = normalizeLeadPhone(rawPhone);
-  if (!phone) {
-    return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
-  }
+  const comment = clamp(body.comment, 2000);
+  const destination = clamp(body.destination, 120);
 
   const tour =
     parseTourFromBody(body.tour) ||
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
       cert,
       name: name || 'Клиент',
       phone,
+      sourcePhone: sourcePhone || phone,
       email,
       comment,
       destination: destination || undefined,
@@ -85,7 +88,7 @@ export async function POST(request: Request) {
     await markRebookingVisitSubmitted({
       visitId,
       order,
-      phone,
+      phone: sourcePhone || phone,
       email,
       tour,
       leadSource: 'direct',

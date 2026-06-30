@@ -33,6 +33,7 @@ export const rebookingQueuedLeadSchema = z.object({
   cert: z.string(),
   name: z.string().min(1),
   phone: z.string().min(1),
+  sourcePhone: z.string().optional(),
   email: z.string().optional(),
   comment: z.string().optional(),
   people: z.number().int().nonnegative().optional(),
@@ -92,6 +93,7 @@ export type EnqueueRebookingLeadInput = {
   cert: string;
   name: string;
   phone: string;
+  sourcePhone?: string;
   email?: string;
   comment?: string;
   people?: number;
@@ -161,6 +163,7 @@ export async function enqueueRebookingLead(
     cert: input.cert || '',
     name: input.name || 'Клиент',
     phone: input.phone,
+    sourcePhone: input.sourcePhone,
     email: input.email,
     comment: input.comment?.slice(0, 2000),
     people: input.people,

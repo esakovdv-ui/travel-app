@@ -32,8 +32,10 @@ export async function POST(request: Request) {
   }
 
   const rawPhone = clamp(body.phone, 30);
-  const phone = rawPhone ? normalizeLeadPhone(rawPhone) : undefined;
-  if (rawPhone && !phone) {
+  const rawSourcePhone = clamp(body.sourcePhone, 30) || rawPhone;
+  const sourcePhone = rawSourcePhone ? normalizeLeadPhone(rawSourcePhone) : undefined;
+  const tourPhone = rawPhone && rawPhone !== rawSourcePhone ? normalizeLeadPhone(rawPhone) : undefined;
+  if (rawSourcePhone && !sourcePhone) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
   }
 
@@ -43,7 +45,8 @@ export async function POST(request: Request) {
     order,
     cert: clamp(body.cert, 100),
     name: clamp(body.name, 200) || 'Клиент',
-    phone,
+    sourcePhone,
+    phone: tourPhone,
     email: clamp(body.email, 120) || undefined,
     comment: clamp(body.comment, 2000) || undefined,
     people: parsePositiveInt(body.people),
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
     const { record, duplicate } = await recordRebookingAnnul({
       visitId,
       ...annulInput,
+      phone: sourcePhone,
       bitrixStatus: 'sent',
       bitrixItemId: result.itemId,
     });
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
     await markRebookingVisitSubmitted({
       visitId,
       order,
-      phone,
+      phone: sourcePhone,
       email: annulInput.email,
       leadSource: 'direct',
       eventType: 'ANNUL_REQUEST',
@@ -91,6 +95,7 @@ export async function POST(request: Request) {
     await recordRebookingAnnul({
       visitId,
       ...annulInput,
+      phone: sourcePhone,
       bitrixStatus: 'failed',
       bitrixError: mapRebookingLeadError(message),
     }).catch(() => {});

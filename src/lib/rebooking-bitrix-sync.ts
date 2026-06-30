@@ -26,6 +26,7 @@ async function syncOneLead(lead: RebookingQueuedLead) {
     cert: lead.cert,
     name: lead.name,
     phone: lead.phone,
+    sourcePhone: lead.sourcePhone || lead.phone,
     email: lead.email,
     comment: lead.comment,
     people: lead.people,
@@ -47,7 +48,7 @@ async function syncOneLead(lead: RebookingQueuedLead) {
   await markRebookingVisitSubmitted({
     visitId: lead.visitId,
     order: lead.order,
-    phone: lead.phone,
+    phone: lead.sourcePhone || lead.phone,
     email: lead.email,
     tour: lead.tour,
     leadSource: lead.captureSource,

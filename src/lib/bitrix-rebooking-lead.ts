@@ -28,6 +28,8 @@ export type RebookingLeadInput = {
   cert: string;
   name: string;
   phone: string;
+  /** Телефон из письма / ссылки рассылки (оригинал из таблицы). */
+  sourcePhone?: string;
   email?: string;
   comment?: string;
   people?: number;
@@ -131,18 +133,30 @@ function formatTourBlock(tour?: RebookingTourInfo): string[] {
 
 type RebookingTripContext = Pick<
   RebookingLeadInput,
-  'order' | 'cert' | 'name' | 'people' | 'kids' | 'kidAges' | 'price' | 'nights' | 'date' | 'comment' | 'utm'
+  | 'order'
+  | 'cert'
+  | 'name'
+  | 'sourcePhone'
+  | 'phone'
+  | 'email'
+  | 'people'
+  | 'kids'
+  | 'kidAges'
+  | 'price'
+  | 'nights'
+  | 'date'
+  | 'comment'
+  | 'utm'
 >;
 
-function formatAnnulTimestamp(): string {
-  return new Intl.DateTimeFormat('ru-RU', {
-    timeZone: 'Europe/Moscow',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date());
+function formatPhoneLines(input: { sourcePhone?: string; phone?: string }): string[] {
+  const lines: string[] = [];
+  const source = input.sourcePhone?.trim();
+  const tour = input.phone?.trim();
+  if (source) lines.push(`Телефон (из письма): ${source}`);
+  if (tour && tour !== source) lines.push(`Телефон в заявке Tourvisor: ${tour}`);
+  if (!source && tour) lines.push(`Телефон: ${tour}`);
+  return lines;
 }
 
 function buildTripContextLines(input: RebookingTripContext): string[] {
@@ -151,6 +165,11 @@ function buildTripContextLines(input: RebookingTripContext): string[] {
     `Сертификат: ${input.cert || '—'}`,
     `ФИО: ${input.name || '—'}`,
   ];
+
+  const phoneLines = formatPhoneLines({ sourcePhone: input.sourcePhone, phone: input.phone });
+  if (phoneLines.length) {
+    lines.push('', ...phoneLines);
+  }
 
   const composition = formatComposition(input.people, input.kids, input.kidAges);
   if (composition) {
@@ -172,6 +191,17 @@ function buildTripContextLines(input: RebookingTripContext): string[] {
   return lines;
 }
 
+function formatAnnulTimestamp(): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
+}
+
 function buildLeadTitle(input: RebookingLeadInput): string {
   const tourLabel =
     input.tour?.hotel ||
@@ -188,7 +218,14 @@ function buildAnnulTitle(input: RebookingAnnulInput): string {
 }
 
 function buildComments(input: RebookingLeadInput): string {
-  const lines = ['Тип: перебронирование', ...buildTripContextLines(input)];
+  const lines = [
+    'Тип: перебронирование',
+    ...buildTripContextLines({
+      ...input,
+      phone: input.phone,
+      sourcePhone: input.sourcePhone || input.phone,
+    }),
+  ];
 
   if (input.destination) lines.push(`Выбранное направление: ${input.destination}`);
   lines.push(...formatTourBlock(input.tour));
@@ -201,7 +238,11 @@ function buildAnnulComments(input: RebookingAnnulInput): string {
   const lines = [
     'Тип: запрос аннуляции',
     `Время запроса (МСК): ${formatAnnulTimestamp()}`,
-    ...buildTripContextLines(input),
+    ...buildTripContextLines({
+      ...input,
+      sourcePhone: input.sourcePhone || input.phone,
+      phone: undefined,
+    }),
     '',
     'Источник: /rebooking (кнопка «Аннулировать заявку»)',
   ];
@@ -222,6 +263,8 @@ export type RebookingAnnulInput = {
   order: string;
   cert: string;
   name: string;
+  /** Телефон из письма / ссылки рассылки. */
+  sourcePhone?: string;
   phone?: string;
   email?: string;
   comment?: string;
@@ -351,20 +394,22 @@ async function createRebookingSmartProcessItem(options: {
   stageId: string;
   name: string;
   phone?: string;
+  sourcePhone?: string;
   email?: string;
   opportunity?: number;
   utm?: UtmFields;
 }) {
   const { domain, token, entityTypeId, categoryId, assignedById } = getRebookingConfig();
   const { name } = splitFullName(options.name || 'Клиент');
+  const contactPhone = options.sourcePhone?.trim() || options.phone?.trim();
   let contactId: number | null = null;
-  if (options.phone) {
+  if (contactPhone) {
     contactId = await resolveContactId(
       options.logPrefix,
       domain,
       token,
       name || options.name || 'Клиент',
-      options.phone,
+      contactPhone,
       options.email,
       assignedById
     );
@@ -420,6 +465,7 @@ function getAnnulStageId(): string {
 export async function submitRebookingLead(input: RebookingLeadInput) {
   const { stageId } = getRebookingConfig();
   const email = input.email?.trim() || input.tour?.email?.trim();
+  const sourcePhone = input.sourcePhone?.trim() || input.phone;
   return createRebookingSmartProcessItem({
     logPrefix: input.logPrefix,
     title: buildLeadTitle(input),
@@ -427,6 +473,7 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
     stageId,
     name: input.name || 'Клиент',
     phone: input.phone,
+    sourcePhone,
     email,
     opportunity: input.tour?.price,
     utm: input.utm,
@@ -434,13 +481,14 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
 }
 
 export async function submitRebookingAnnulment(input: RebookingAnnulInput) {
+  const sourcePhone = input.sourcePhone?.trim() || input.phone?.trim();
   return createRebookingSmartProcessItem({
     logPrefix: input.logPrefix,
     title: buildAnnulTitle(input),
     comments: buildAnnulComments(input),
     stageId: getAnnulStageId(),
     name: input.name || 'Клиент',
-    phone: input.phone?.trim() || undefined,
+    sourcePhone,
     email: input.email?.trim() || undefined,
     opportunity: input.price,
     utm: input.utm,

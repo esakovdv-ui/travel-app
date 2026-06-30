@@ -3,7 +3,7 @@
  * Генератор ссылок на /rebooking из CSV.
  *
  * Формат input.csv:
- * order,cert,name,people,kids,kid1,kid2,kid3,price,nights,date
+ * order,cert,name,phone,people,kids,kid1,kid2,kid3,nights,date
  *
  * Запуск: node scripts/generate-rebooking-links.js [input.csv] [output.csv]
  */
@@ -43,6 +43,7 @@ function buildLink(row) {
     'order',
     'cert',
     'name',
+    'phone',
     'people',
     'kids',
     'kid1',
@@ -52,7 +53,15 @@ function buildLink(row) {
     'date',
   ];
   fields.forEach((key) => {
-    const value = row[key];
+    let value = row[key];
+    if (key === 'phone' && value) {
+      const digits = String(value).replace(/\D/g, '');
+      if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
+        value = `+7${digits.slice(1)}`;
+      } else if (digits.length === 10) {
+        value = `+7${digits}`;
+      }
+    }
     if (value != null && String(value).trim() !== '') {
       params.set(key, String(value).trim());
     }
@@ -63,7 +72,7 @@ function buildLink(row) {
 function main() {
   if (!fs.existsSync(inputPath)) {
     console.error(`Файл не найден: ${inputPath}`);
-    console.error('Создайте CSV с колонками: order,cert,name,people,kids,kid1,kid2,kid3,price,nights,date');
+    console.error('Создайте CSV с колонками: order,cert,name,phone,people,kids,kid1,kid2,kid3,nights,date');
     process.exit(1);
   }
 
