@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import {
   clamp,
-  mapRebookingLeadError,
   normalizeLeadPhone,
   parseBookingPrice,
   parseKidAges,
   parseLeadUtm,
   parsePositiveInt,
   parseTourFromBody,
-  submitRebookingLead,
 } from '@/lib/bitrix-rebooking-lead';
+import { enqueueRebookingLead } from '@/lib/rebooking-lead-store';
 import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
@@ -58,10 +57,11 @@ export async function POST(request: Request) {
 
   const visitId = clamp(body.visitId, 80) || undefined;
   const email = clamp(body.email, 120) || tour.email || undefined;
+  const eventType = clamp(body.eventType, 40) || undefined;
 
   try {
-    const result = await submitRebookingLead({
-      logPrefix: 'rebooking-lead',
+    const { lead, duplicate } = await enqueueRebookingLead({
+      visitId,
       order,
       cert,
       name: name || 'Клиент',
@@ -77,6 +77,9 @@ export async function POST(request: Request) {
       date: date || undefined,
       tour,
       utm: parseLeadUtm(body.utm),
+      captureSource: 'direct',
+      tourvisorOrderId: tour.tourvisorOrderId,
+      eventType,
     });
 
     await markRebookingVisitSubmitted({
@@ -86,15 +89,18 @@ export async function POST(request: Request) {
       email,
       tour,
       leadSource: 'direct',
-      bitrixLeadId: result.leadId,
-      eventType: clamp(body.eventType, 40) || 'ORDERTOUR',
+      eventType: eventType || 'ORDERTOUR',
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({
+      ok: true,
+      queued: true,
+      leadId: lead.id,
+      duplicate,
+      bitrixPending: lead.bitrixStatus === 'pending',
+    });
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'unknown';
-    const error = mapRebookingLeadError(message);
-    const status = error === 'misconfigured' ? 500 : 502;
-    return NextResponse.json({ ok: false, error }, { status });
+    console.error('rebooking-lead: enqueue failed', e);
+    return NextResponse.json({ ok: false, error: 'save_failed' }, { status: 500 });
   }
 }

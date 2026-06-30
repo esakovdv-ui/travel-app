@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mapRebookingLeadError } from '@/lib/bitrix-rebooking-lead';
 import {
+  captureTourvisorOrderAsLead,
   fetchTourvisorOrderById,
   mapTourvisorOrderToTour,
   pickString,
-  submitTourvisorOrderToBitrix,
 } from '@/lib/tourvisor-rebooking';
 import {
   markRebookingVisitSubmitted,
@@ -27,18 +27,18 @@ export async function GET(request: NextRequest) {
     const referer = pickString(tvOrder, ['referer', 'referrer', 'page', 'sourceurl', 'url']);
     const fromUrl = referer ? parseRebookingParamsFromUrl(referer) : null;
 
-    const result = await submitTourvisorOrderToBitrix({
+    const result = await captureTourvisorOrderAsLead({
       logPrefix: 'tourvisor-order-webhook',
       tvOrder,
       tourvisorOrderId: orderId,
+      captureSource: 'webhook',
     });
 
-    const webhookResult = result.skipped ? `skipped:${result.reason}` : 'lead_created';
+    const webhookResult = result.skipped ? `skipped:${result.reason}` : 'lead_queued';
     await trackRebookingWebhookCall({
       tourvisorOrderId: orderId,
       type,
       result: webhookResult,
-      bitrixLeadId: result.skipped ? undefined : result.leadId,
       order: fromUrl?.order ?? (result.skipped ? undefined : result.order),
     }).catch(() => {});
 
@@ -55,12 +55,16 @@ export async function GET(request: NextRequest) {
         email: tour.email,
         tour,
         leadSource: 'webhook',
-        bitrixLeadId: result.leadId,
-        eventType: 'webhook',
+        eventType: 'webhook_queued',
       }).catch(() => {});
     }
 
-    return NextResponse.json({ ok: true, leadId: result.leadId });
+    return NextResponse.json({
+      ok: true,
+      queued: true,
+      leadId: result.leadId,
+      bitrixPending: result.bitrixPending,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'unknown';
     await trackRebookingWebhookCall({

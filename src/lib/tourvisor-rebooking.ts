@@ -1,11 +1,10 @@
 import {
-  clamp,
   normalizeLeadPhone,
   parseBookingPrice,
   parsePositiveInt,
-  submitRebookingLead,
   type RebookingTourInfo,
 } from '@/lib/bitrix-rebooking-lead';
+import { enqueueRebookingLead } from '@/lib/rebooking-lead-store';
 import {
   findRecentRebookingContext,
   parseRebookingParamsFromUrl,
@@ -187,14 +186,16 @@ function buildComment(tvOrder: TourvisorOrderRecord, eventType?: string): string
   return parts.length ? parts.join('\n') : undefined;
 }
 
-export async function submitTourvisorOrderToBitrix(options: {
+export async function captureTourvisorOrderAsLead(options: {
   logPrefix: string;
   tvOrder: TourvisorOrderRecord;
   tourvisorOrderId: string;
   rebooking?: RebookingContext | null;
   eventType?: string;
+  visitId?: string;
+  captureSource: 'sync' | 'webhook';
 }) {
-  const { logPrefix, tvOrder, tourvisorOrderId, eventType } = options;
+  const { tvOrder, tourvisorOrderId, eventType, captureSource } = options;
 
   if (wasTourvisorOrderProcessed(tourvisorOrderId)) {
     return { skipped: true as const, reason: 'duplicate' };
@@ -218,8 +219,8 @@ export async function submitTourvisorOrderToBitrix(options: {
   }
 
   const clientName = buildClientName(tvOrder, rebooking.name);
-  const result = await submitRebookingLead({
-    logPrefix,
+  const { lead, duplicate } = await enqueueRebookingLead({
+    visitId: options.visitId,
     order: rebooking.order,
     cert: rebooking.cert,
     name: clientName,
@@ -233,17 +234,34 @@ export async function submitTourvisorOrderToBitrix(options: {
     date: rebooking.date || undefined,
     tour,
     comment: buildComment(tvOrder, eventType),
+    captureSource,
+    tourvisorOrderId,
+    eventType,
   });
 
-  markTourvisorOrderProcessed(tourvisorOrderId);
-  return { skipped: false as const, ...result, order: rebooking.order };
+  if (!duplicate) {
+    markTourvisorOrderProcessed(tourvisorOrderId);
+  }
+
+  return {
+    skipped: false as const,
+    queued: true as const,
+    leadId: lead.id,
+    duplicate,
+    order: rebooking.order,
+    bitrixPending: lead.bitrixStatus === 'pending',
+  };
 }
 
-export async function syncRecentTourvisorOrderToBitrix(options: {
+/** @deprecated use captureTourvisorOrderAsLead */
+export const submitTourvisorOrderToBitrix = captureTourvisorOrderAsLead;
+
+export async function captureRecentTourvisorOrderAsLead(options: {
   logPrefix: string;
   rebooking: RebookingContext;
   eventType?: string;
   maxAgeSeconds?: number;
+  visitId?: string;
 }) {
   const maxAgeMs = (options.maxAgeSeconds ?? 120) * 1000;
   const orders = await fetchRecentTourvisorOrders(8, '0');
@@ -268,15 +286,20 @@ export async function syncRecentTourvisorOrderToBitrix(options: {
     const phone = normalizeLeadPhone(pickString(tvOrder, ['phone', 'mobile', 'tel']));
     if (!phone) continue;
 
-    return submitTourvisorOrderToBitrix({
+    return captureTourvisorOrderAsLead({
       logPrefix: options.logPrefix,
       tvOrder,
       tourvisorOrderId: tvOrderId,
       rebooking: options.rebooking,
       eventType: options.eventType,
+      visitId: options.visitId,
+      captureSource: 'sync',
     });
   }
 
   throw new Error('tourvisor_order_not_found');
 }
+
+/** @deprecated use captureRecentTourvisorOrderAsLead */
+export const syncRecentTourvisorOrderToBitrix = captureRecentTourvisorOrderAsLead;
 

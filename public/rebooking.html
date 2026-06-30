@@ -542,7 +542,7 @@
             })),
           });
           var result = await response.json().catch(function () { return {}; });
-          if (response.ok && result.ok && !result.skipped) {
+          if (response.ok && result.ok && (result.queued || !result.skipped)) {
             leadSubmitted = true;
             showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
             return;

@@ -322,8 +322,9 @@ export async function trackRebookingWebhookCall(input: {
     lastEvent: `webhook tv#${input.tourvisorOrderId} ${input.result}`,
     tourvisorOrderId: input.tourvisorOrderId,
     bitrixLeadId: input.bitrixLeadId,
-    status: input.result === 'lead_created' ? 'submitted' : visits[index].status,
-    leadSource: input.result === 'lead_created' ? 'webhook' : visits[index].leadSource,
+    status: input.result === 'lead_queued' || input.result === 'lead_created' ? 'submitted' : visits[index].status,
+    leadSource:
+      input.result === 'lead_queued' || input.result === 'lead_created' ? 'webhook' : visits[index].leadSource,
   });
   await writeVisits(visits);
   return visits[index];

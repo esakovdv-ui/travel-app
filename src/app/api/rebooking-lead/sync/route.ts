@@ -5,7 +5,7 @@ import {
   parseRebookingContextFromBody,
   registerRebookingContext,
 } from '@/lib/rebooking-context';
-import { syncRecentTourvisorOrderToBitrix } from '@/lib/tourvisor-rebooking';
+import { captureRecentTourvisorOrderAsLead } from '@/lib/tourvisor-rebooking';
 import { markRebookingVisitSubmitted, trackRebookingVisitEvent } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
@@ -35,11 +35,12 @@ export async function POST(request: Request) {
   }).catch(() => {});
 
   try {
-    const result = await syncRecentTourvisorOrderToBitrix({
+    const result = await captureRecentTourvisorOrderAsLead({
       logPrefix: 'rebooking-lead-sync',
       rebooking,
       eventType,
       maxAgeSeconds: 300,
+      visitId,
     });
 
     if (result.skipped) {
@@ -50,11 +51,16 @@ export async function POST(request: Request) {
       visitId,
       order: parsed.order,
       leadSource: 'sync',
-      bitrixLeadId: result.leadId,
-      eventType: eventType || 'sync_success',
+      eventType: eventType || 'sync_queued',
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true, leadId: result.leadId });
+    return NextResponse.json({
+      ok: true,
+      queued: true,
+      leadId: result.leadId,
+      duplicate: result.duplicate,
+      bitrixPending: result.bitrixPending,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'unknown';
     if (message === 'tourvisor_order_not_found') {

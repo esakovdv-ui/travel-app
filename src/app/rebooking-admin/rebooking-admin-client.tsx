@@ -3,40 +3,59 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import styles from '../raduga-admin/raduga-admin.module.css';
 
-type RebookingVisitStatus = 'visited' | 'searched' | 'submitted';
+type RebookingBitrixStatus = 'pending' | 'sent' | 'failed';
+type RebookingCaptureSource = 'direct' | 'sync' | 'webhook';
 
-type RebookingVisit = {
+type RebookingQueuedLead = {
   id: string;
+  createdAt: string;
   order: string;
   cert: string;
   name: string;
-  visitedAt: string;
-  lastEventAt: string;
-  lastEvent?: string;
-  status: RebookingVisitStatus;
-  selectedHotel?: string;
-  selectedCountry?: string;
-  selectedRegion?: string;
-  phone?: string;
+  phone: string;
   email?: string;
-  tourvisorOrderId?: string;
-  leadSource?: 'direct' | 'sync' | 'webhook';
-  bitrixLeadId?: number;
+  comment?: string;
   people?: number;
+  kids?: number;
+  kidAges?: number[];
   price?: number;
+  nights?: number;
+  date?: string;
+  destination?: string;
+  tour?: {
+    hotel?: string;
+    country?: string;
+    region?: string;
+    dateFrom?: string;
+    nights?: number;
+    price?: number;
+    placement?: string;
+    meal?: string;
+    tourvisorOrderId?: string;
+    orderTypeName?: string;
+  };
+  captureSource: RebookingCaptureSource;
+  tourvisorOrderId?: string;
+  eventType?: string;
+  bitrixStatus: RebookingBitrixStatus;
+  bitrixLeadId?: number;
+  bitrixSyncedAt?: string;
+  bitrixError?: string;
 };
 
-const STATUS_LABELS: Record<RebookingVisitStatus, string> = {
-  visited: 'Зашёл',
-  searched: 'Выбрал тур',
-  submitted: 'Оставил заявку',
+const BITRIX_STATUS_LABELS: Record<RebookingBitrixStatus, string> = {
+  pending: 'В очереди',
+  sent: 'В Bitrix',
+  failed: 'Ошибка Bitrix',
 };
 
-const LEAD_SOURCE_LABELS: Record<NonNullable<RebookingVisit['leadSource']>, string> = {
+const CAPTURE_SOURCE_LABELS: Record<RebookingCaptureSource, string> = {
   direct: 'postMessage',
   sync: 'sync TV',
   webhook: 'webhook TV',
 };
+
+const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -50,8 +69,8 @@ function formatDate(value: string) {
   });
 }
 
-function formatTour(visit: RebookingVisit) {
-  const parts = [visit.selectedHotel, visit.selectedCountry, visit.selectedRegion].filter(Boolean);
+function formatTour(lead: RebookingQueuedLead) {
+  const parts = [lead.tour?.hotel, lead.tour?.country, lead.tour?.region].filter(Boolean);
   return parts.length ? parts.join(' · ') : '—';
 }
 
@@ -60,12 +79,22 @@ function formatPrice(value?: number) {
   return `${Math.round(value).toLocaleString('ru-RU')} ₽`;
 }
 
+function formatComposition(lead: RebookingQueuedLead) {
+  const parts: string[] = [];
+  if (lead.people != null) parts.push(`${lead.people} чел.`);
+  if (lead.kids != null) parts.push(`детей: ${lead.kids}`);
+  if (lead.kidAges?.length) parts.push(`возрасты: ${lead.kidAges.join(', ')}`);
+  return parts.join(' · ');
+}
+
 export function RebookingAdminClient() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
-  const [visits, setVisits] = useState<RebookingVisit[]>([]);
+  const [leads, setLeads] = useState<RebookingQueuedLead[]>([]);
   const [orderFilter, setOrderFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | RebookingBitrixStatus>('all');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
 
@@ -77,43 +106,76 @@ export function RebookingAdminClient() {
     }
   }, []);
 
-  const loadVisits = useCallback(async () => {
+  const loadLeads = useCallback(async () => {
     if (!password) return;
     setIsLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ password, limit: '500' });
+      const params = new URLSearchParams({ password, limit: '500', status: statusFilter });
       if (orderFilter.trim()) params.set('order', orderFilter.trim());
-      const response = await fetch(`/api/rebooking-visits?${params.toString()}`, { cache: 'no-store' });
+      const response = await fetch(`/api/rebooking-leads?${params.toString()}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) {
         if (response.status === 401) {
           window.sessionStorage.removeItem('rebooking-admin-password');
           setIsAuthed(false);
         }
-        throw new Error(data.error || 'Не удалось загрузить визиты');
+        throw new Error(data.error || 'Не удалось загрузить лиды');
       }
-      setVisits(Array.isArray(data.visits) ? data.visits : []);
-      setStatus(`Записей: ${Array.isArray(data.visits) ? data.visits.length : 0}`);
+      setLeads(Array.isArray(data.leads) ? data.leads : []);
+      setStatus(`Лидов: ${Array.isArray(data.leads) ? data.leads.length : 0}`);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить визиты');
-      setVisits([]);
+      setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить лиды');
+      setLeads([]);
     } finally {
       setIsLoading(false);
     }
-  }, [orderFilter, password]);
+  }, [orderFilter, password, statusFilter]);
+
+  const syncBitrix = useCallback(async (silent = false) => {
+    if (!password) return;
+    setIsSyncing(true);
+    if (!silent) setError('');
+    try {
+      const params = new URLSearchParams({ password, limit: '30' });
+      const response = await fetch(`/api/rebooking-sync-bitrix?${params.toString()}`, {
+        method: 'POST',
+        cache: 'no-store',
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Синхронизация не удалась');
+      if (!silent) {
+        setStatus(`Bitrix: отправлено ${data.sent ?? 0}, ошибок ${data.failed ?? 0}`);
+      }
+      await loadLeads();
+    } catch (syncError) {
+      if (!silent) {
+        setError(syncError instanceof Error ? syncError.message : 'Синхронизация не удалась');
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [loadLeads, password]);
 
   useEffect(() => {
     if (!isAuthed) return;
-    loadVisits();
-  }, [isAuthed, loadVisits]);
+    loadLeads();
+  }, [isAuthed, loadLeads]);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    const timer = window.setInterval(() => {
+      syncBitrix(true);
+    }, SYNC_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [isAuthed, syncBitrix]);
 
   const stats = useMemo(() => ({
-    total: visits.length,
-    visited: visits.filter((visit) => visit.status === 'visited').length,
-    searched: visits.filter((visit) => visit.status === 'searched').length,
-    submitted: visits.filter((visit) => visit.status === 'submitted').length,
-  }), [visits]);
+    total: leads.length,
+    pending: leads.filter((lead) => lead.bitrixStatus === 'pending').length,
+    sent: leads.filter((lead) => lead.bitrixStatus === 'sent').length,
+    failed: leads.filter((lead) => lead.bitrixStatus === 'failed').length,
+  }), [leads]);
 
   function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,7 +188,7 @@ export function RebookingAdminClient() {
     window.sessionStorage.removeItem('rebooking-admin-password');
     setIsAuthed(false);
     setPassword('');
-    setVisits([]);
+    setLeads([]);
   }
 
   if (!isAuthed) {
@@ -135,7 +197,7 @@ export function RebookingAdminClient() {
         <div className={`${styles.shell} ${styles.loginWrap}`}>
           <form className={styles.loginCard} onSubmit={login}>
             <h1>Перебронирование</h1>
-            <p className={styles.subtitle}>Введите пароль админки визитов /rebooking.</p>
+            <p className={styles.subtitle}>Введите пароль админки лидов /rebooking.</p>
             <label className={styles.field}>
               Пароль
               <input
@@ -161,9 +223,10 @@ export function RebookingAdminClient() {
       <div className={styles.shell}>
         <div className={styles.topbar}>
           <div>
-            <h1 className={styles.title}>Визиты /rebooking</h1>
+            <h1 className={styles.title}>Лиды /rebooking</h1>
             <p className={styles.subtitle}>
-              Кто заходил на лендинг, какой тур выбрал и какие данные оставил в форме Tourvisor.
+              Все заявки сначала попадают сюда. В Bitrix уходят автоматически каждые 5 минут
+              (или по кнопке «Отправить в Bitrix»).
             </p>
           </div>
           <button className={styles.secondaryButton} type="button" onClick={logout}>Выйти</button>
@@ -182,69 +245,120 @@ export function RebookingAdminClient() {
                   onChange={(event) => setOrderFilter(event.target.value)}
                 />
               </label>
+              <label className={styles.field}>
+                Статус Bitrix
+                <select
+                  className={styles.input}
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value as typeof statusFilter)}
+                >
+                  <option value="all">Все</option>
+                  <option value="pending">В очереди</option>
+                  <option value="sent">В Bitrix</option>
+                  <option value="failed">Ошибка</option>
+                </select>
+              </label>
             </div>
             <div className={styles.actions}>
-              <button className={styles.secondaryButton} type="button" onClick={loadVisits} disabled={isLoading}>
+              <button
+                className={styles.primaryButton}
+                type="button"
+                onClick={() => syncBitrix(false)}
+                disabled={isSyncing}
+              >
+                {isSyncing ? 'Отправляю…' : 'Отправить в Bitrix'}
+              </button>
+              <button className={styles.secondaryButton} type="button" onClick={loadLeads} disabled={isLoading}>
                 {isLoading ? 'Обновляю…' : 'Обновить'}
               </button>
             </div>
           </div>
 
           <p className={styles.subtitle}>
-            Всего: {stats.total} · зашли: {stats.visited} · выбрали тур: {stats.searched} · заявки: {stats.submitted}
+            Всего: {stats.total} · в очереди: {stats.pending} · в Bitrix: {stats.sent} · ошибки: {stats.failed}
           </p>
 
           {isLoading ? (
-            <p className={styles.subtitle}>Загружаю визиты…</p>
-          ) : visits.length === 0 ? (
-            <p className={styles.subtitle}>Визитов пока нет.</p>
+            <p className={styles.subtitle}>Загружаю лиды…</p>
+          ) : leads.length === 0 ? (
+            <p className={styles.subtitle}>Лидов пока нет.</p>
           ) : (
             <div className={styles.leadsTableWrap}>
               <table className={styles.leadsTable}>
                 <thead>
                   <tr>
-                    <th>Заход</th>
+                    <th>Создан</th>
                     <th>Заявка</th>
                     <th>Клиент</th>
-                    <th>Статус</th>
-                    <th>Последнее событие</th>
-                    <th>Выбранный тур</th>
+                    <th>Bitrix</th>
+                    <th>Источник</th>
+                    <th>Тур</th>
                     <th>Телефон</th>
-                    <th>Email</th>
+                    <th>Детали</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visits.map((visit) => (
-                    <tr key={visit.id}>
-                      <td>{formatDate(visit.visitedAt)}</td>
+                  {leads.map((lead) => (
+                    <tr key={lead.id}>
+                      <td>{formatDate(lead.createdAt)}</td>
                       <td>
-                        <strong>{visit.order}</strong>
-                        {visit.cert ? <span className={styles.hint}><br />{visit.cert}</span> : null}
+                        <strong>{lead.order}</strong>
+                        {lead.cert ? <span className={styles.hint}><br />{lead.cert}</span> : null}
                       </td>
                       <td>
-                        {visit.name || '—'}
-                        {visit.people ? (
-                          <span className={styles.hint}><br />{visit.people} чел.{formatPrice(visit.price) ? ` · ${formatPrice(visit.price)}` : ''}</span>
+                        {lead.name}
+                        {formatComposition(lead) ? (
+                          <span className={styles.hint}><br />{formatComposition(lead)}</span>
+                        ) : null}
+                        {lead.price != null ? (
+                          <span className={styles.hint}><br />бюджет: {formatPrice(lead.price)}</span>
                         ) : null}
                       </td>
                       <td>
-                        <span className={`${styles.leadStatus} ${styles[`leadStatus_${visit.status === 'submitted' ? 'sent' : visit.status === 'searched' ? 'pending' : 'failed'}`]}`}>
-                          {STATUS_LABELS[visit.status]}
+                        <span className={`${styles.leadStatus} ${styles[`leadStatus_${lead.bitrixStatus === 'sent' ? 'sent' : lead.bitrixStatus === 'failed' ? 'failed' : 'pending'}`]}`}>
+                          {BITRIX_STATUS_LABELS[lead.bitrixStatus]}
                         </span>
-                        {visit.leadSource ? (
-                          <span className={styles.hint}><br />{LEAD_SOURCE_LABELS[visit.leadSource]}</span>
+                        {lead.bitrixLeadId ? (
+                          <span className={styles.hint}>
+                            <br />
+                            <a
+                              href={`https://crm.mosgortur.ru/crm/lead/details/${lead.bitrixLeadId}/`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              лид #{lead.bitrixLeadId}
+                            </a>
+                          </span>
+                        ) : null}
+                        {lead.bitrixError ? (
+                          <span className={styles.hint}><br />{lead.bitrixError}</span>
                         ) : null}
                       </td>
                       <td>
-                        {visit.lastEvent || '—'}
-                        <span className={styles.hint}><br />{formatDate(visit.lastEventAt)}</span>
+                        {CAPTURE_SOURCE_LABELS[lead.captureSource]}
+                        {lead.eventType ? <span className={styles.hint}><br />{lead.eventType}</span> : null}
+                        {lead.tourvisorOrderId ? (
+                          <span className={styles.hint}><br />TV #{lead.tourvisorOrderId}</span>
+                        ) : null}
                       </td>
-                      <td>{formatTour(visit)}</td>
                       <td>
-                        {visit.phone ? <a href={`tel:${visit.phone}`}>{visit.phone}</a> : '—'}
+                        {formatTour(lead)}
+                        {lead.tour?.price != null ? (
+                          <span className={styles.hint}><br />{formatPrice(lead.tour.price)}</span>
+                        ) : null}
                       </td>
                       <td>
-                        {visit.email ? <a href={`mailto:${visit.email}`}>{visit.email}</a> : '—'}
+                        <a href={`tel:${lead.phone}`}>{lead.phone}</a>
+                        {lead.email ? (
+                          <span className={styles.hint}><br /><a href={`mailto:${lead.email}`}>{lead.email}</a></span>
+                        ) : null}
+                      </td>
+                      <td className={styles.hint}>
+                        {lead.date ? `дата: ${lead.date}` : null}
+                        {lead.nights != null ? <><br />ночей: {lead.nights}</> : null}
+                        {lead.tour?.meal ? <><br />питание: {lead.tour.meal}</> : null}
+                        {lead.tour?.placement ? <><br />размещение: {lead.tour.placement}</> : null}
+                        {lead.comment ? <><br />{lead.comment}</> : null}
                       </td>
                     </tr>
                   ))}
