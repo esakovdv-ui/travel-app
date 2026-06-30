@@ -405,26 +405,6 @@
         return { ok: true, data: data };
       }
 
-      function kidsText(data) {
-        if (!data.kids) return '';
-        if (data.kidAges.length === 1) {
-          return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей') + ', ' + data.kidAges[0] + ' ' + plural(data.kidAges[0], 'год', 'года', 'лет');
-        }
-        if (data.kidAges.length > 1) {
-          return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей') + ': ' + data.kidAges.join(', ') + ' лет';
-        }
-        return data.kids + ' ' + plural(data.kids, 'ребёнок', 'ребёнка', 'детей');
-      }
-
-      function touristsCaption(data) {
-        if (data.people == null) return '';
-        var parts = [];
-        if (data.adults != null) parts.push(data.adults + ' ' + plural(data.adults, 'взрослый', 'взрослых', 'взрослых'));
-        var kidsPart = kidsText(data);
-        if (kidsPart) parts.push(kidsPart);
-        return parts.join(' и ');
-      }
-
       function escapeHtml(str) {
         return String(str)
           .replace(/&/g, '&amp;')
