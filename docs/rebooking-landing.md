@@ -103,11 +103,13 @@ flowchart TD
 |----------|-------------|---------|-----------------|
 | — | `class` | всегда | `tv-search-form tv-moduleid-9978253` |
 | — | `id` | всегда | `tourvisor-search` |
+| — | `tv-formmode` | всегда | `1` (только отели, без перелёта) |
+| — | `tv-formmodes` | всегда | `1` (в UI доступен только режим отелей) |
 | `date` | `tv-flydates` | если дата распознана | `{dd.mm.yyyy},{dd.mm.yyyy}` (одинаковые from/to) |
 | `nights` | `tv-nights` | `nights > 0` | `{n},{n}` |
-| adults | `tv-adults` | `adults` от 1 до 4 | строка числа |
+| adults | `tv-adults` | `adults` от 1 до 6 | строка числа |
 | `kids` | `tv-kids` | от 1 до 3 | строка числа |
-| `kid1`…`kid3` | `tv-kid1`…`tv-kid3` | при наличии возрастов | строка возраста |
+| `kid1`…`kid3` | `tv-kid1`…`tv-kid3` | при наличии валидных возрастов в URL | строка возраста |
 | `price` | `tv-pricefrom` | `price > 0` | `0` |
 | `price` | `tv-priceto` | `price > 0` | `{price}` |
 

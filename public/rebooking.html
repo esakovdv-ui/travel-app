@@ -238,14 +238,18 @@
 
       function parseRebookingParams(search) {
         var params = new URLSearchParams(search || window.location.search);
-        var kids = parseIntParam(params.get('kids')) ?? 0;
-        var kidAges = [];
+        var explicitKids = parseIntParam(params.get('kids'));
+        var kidAgeSlots = [];
         for (var i = 1; i <= 3; i += 1) {
-          if (kidAges.length >= kids) break;
           var age = parseIntParam(params.get('kid' + i));
-          if (age != null && age >= 0 && age <= 15) kidAges.push(age);
-          else if (kids > 0) console.warn('rebooking: missing or invalid kid' + i);
+          if (age != null && age >= 0 && age <= 15) kidAgeSlots.push(age);
+          else {
+            kidAgeSlots.push(undefined);
+            if (params.has('kid' + i) && explicitKids > 0) console.warn('rebooking: missing or invalid kid' + i);
+          }
         }
+        var inferredKids = kidAgeSlots.filter(function (age) { return age != null; }).length;
+        var kids = explicitKids != null ? explicitKids : inferredKids;
         var date = normalizeDate(params.get('date'));
         return {
           order: (params.get('order') || '').trim(),
@@ -253,7 +257,10 @@
           name: (params.get('name') || '').trim(),
           people: parseIntParam(params.get('people')),
           kids: kids,
-          kidAges: kidAges,
+          kid1: kidAgeSlots[0],
+          kid2: kidAgeSlots[1],
+          kid3: kidAgeSlots[2],
+          kidAges: kidAgeSlots.filter(function (age) { return age != null; }),
           price: parseIntParam(params.get('price')),
           nights: parseIntParam(params.get('nights')),
           date: date,
@@ -262,12 +269,24 @@
 
       function validateRebookingParams(data) {
         if (!data.order) return { ok: false };
-        if (data.kids != null && data.people != null && data.kids > data.people) {
-          data.kids = 0;
-          data.kidAges = [];
+        if (data.kids == null || data.kids < 0) data.kids = 0;
+        if (data.kids > 3) {
+          console.warn('rebooking: kids count capped at 3');
+          data.kids = 3;
+        }
+        if (data.people != null && data.kids > data.people) {
+          console.warn('rebooking: kids count exceeds people count');
+          data.kids = data.people;
         }
         data.adults =
           data.people != null && data.kids != null ? Math.max(data.people - data.kids, 0) : undefined;
+        if (data.adults != null && data.adults > 6) {
+          console.warn('rebooking: adults count capped at 6 for Tourvisor');
+          data.adults = 6;
+        }
+        data.kidAges = [data.kid1, data.kid2, data.kid3]
+          .slice(0, data.kids)
+          .filter(function (age) { return age != null; });
         return { ok: true, data: data };
       }
 
@@ -366,14 +385,16 @@
         var attrs = {
           class: 'tv-search-form tv-moduleid-9978253',
           id: 'tourvisor-search',
+          'tv-formmode': '1',
+          'tv-formmodes': '1',
         };
         if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
         if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
-        if (data.adults != null && data.adults >= 1 && data.adults <= 4) attrs['tv-adults'] = String(data.adults);
+        if (data.adults != null && data.adults >= 1 && data.adults <= 6) attrs['tv-adults'] = String(data.adults);
         if (data.kids >= 1 && data.kids <= 3) {
           attrs['tv-kids'] = String(data.kids);
-          data.kidAges.forEach(function (age, index) {
-            attrs['tv-kid' + (index + 1)] = String(age);
+          [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
+            if (age != null) attrs['tv-kid' + (index + 1)] = String(age);
           });
         }
         if (data.price != null && data.price > 0) {
