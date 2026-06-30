@@ -1,3 +1,6 @@
+import { promises as fs } from 'fs';
+import path from 'path';
+import { z } from 'zod';
 import {
   parseBookingPrice,
   parseKidAges,
@@ -17,40 +20,66 @@ export type RebookingContext = {
   registeredAt: number;
 };
 
+const contextSchema = z.object({
+  order: z.string().min(1),
+  cert: z.string(),
+  name: z.string(),
+  people: z.number().int().nonnegative().optional(),
+  kids: z.number().int().nonnegative().optional(),
+  kidAges: z.array(z.number()),
+  price: z.number().nonnegative().optional(),
+  nights: z.number().int().positive().optional(),
+  date: z.string().optional(),
+  registeredAt: z.number(),
+});
+
 const TTL_MS = 30 * 60 * 1000;
-const store = new Map<string, RebookingContext>();
+const MAX_CONTEXTS = 2000;
+const runtimeContextPath =
+  process.env.REBOOKING_CONTEXT_PATH ?? path.join(process.cwd(), 'storage/rebooking-context.json');
 
-function pruneExpired() {
+async function readContextsRaw(): Promise<RebookingContext[]> {
+  try {
+    const raw = await fs.readFile(runtimeContextPath, 'utf8');
+    return z.array(contextSchema).parse(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+}
+
+async function writeContexts(contexts: RebookingContext[]) {
+  await fs.mkdir(path.dirname(runtimeContextPath), { recursive: true });
+  await fs.writeFile(runtimeContextPath, `${JSON.stringify(contexts, null, 2)}\n`, 'utf8');
+}
+
+function pruneExpired(contexts: RebookingContext[]): RebookingContext[] {
   const now = Date.now();
-  for (const [key, value] of store.entries()) {
-    if (now - value.registeredAt > TTL_MS) store.delete(key);
-  }
+  return contexts.filter((entry) => now - entry.registeredAt <= TTL_MS);
 }
 
-export function registerRebookingContext(input: Omit<RebookingContext, 'registeredAt'>) {
-  pruneExpired();
+export async function registerRebookingContext(input: Omit<RebookingContext, 'registeredAt'>) {
   const entry: RebookingContext = { ...input, registeredAt: Date.now() };
-  store.set(input.order, entry);
+  let contexts = pruneExpired(await readContextsRaw());
+  contexts = contexts.filter((item) => item.order !== entry.order);
+  contexts.unshift(entry);
+  if (contexts.length > MAX_CONTEXTS) contexts.length = MAX_CONTEXTS;
+  await writeContexts(contexts);
   return entry;
 }
 
-export function getRebookingContextByOrder(order: string): RebookingContext | undefined {
-  pruneExpired();
-  const entry = store.get(order);
-  if (!entry) return undefined;
-  if (Date.now() - entry.registeredAt > TTL_MS) {
-    store.delete(order);
-    return undefined;
-  }
-  return entry;
+export async function getRebookingContextByOrder(order: string): Promise<RebookingContext | undefined> {
+  const contexts = pruneExpired(await readContextsRaw());
+  return contexts.find((entry) => entry.order === order);
 }
 
 /** Most recent rebooking session for motrip.ru when referer is missing. */
-export function findRecentRebookingContext(maxAgeMs = 15 * 60 * 1000): RebookingContext | undefined {
-  pruneExpired();
+export async function findRecentRebookingContext(
+  maxAgeMs = 30 * 60 * 1000
+): Promise<RebookingContext | undefined> {
+  const contexts = pruneExpired(await readContextsRaw());
   const now = Date.now();
   let best: RebookingContext | undefined;
-  for (const entry of store.values()) {
+  for (const entry of contexts) {
     const age = now - entry.registeredAt;
     if (age > maxAgeMs) continue;
     if (!best || entry.registeredAt > best.registeredAt) best = entry;

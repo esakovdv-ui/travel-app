@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_order' }, { status: 400 });
   }
 
-  registerRebookingContext(context);
+  await registerRebookingContext(context);
 
   const visit = await createRebookingVisit({
     ...context,

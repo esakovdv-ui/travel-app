@@ -117,6 +117,25 @@
     .error-page h1 { margin: 0 0 10px; font-size: 24px; }
     .error-page p { margin: 0; color: var(--muted); }
     .hidden { display: none !important; }
+    .lead-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      max-width: min(420px, calc(100% - 32px));
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.4;
+      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .lead-toast.visible { opacity: 1; }
+    .lead-toast.success { background: #ecfdf3; color: #027a48; border: 1px solid #abefc6; }
+    .lead-toast.error { background: #fef3f2; color: #b42318; border: 1px solid #fecdca; }
     @media (max-width: 640px) {
       .trip-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
       .trip-value { font-size: 15px; }
@@ -157,12 +176,25 @@
       </div>
     </section>
   </main>
+  <div id="lead-toast" class="lead-toast" role="status" aria-live="polite"></div>
 
   <script>
     (function () {
       var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
       var money = new Intl.NumberFormat('ru-RU');
       var leadSubmitted = false;
+      var leadToastTimer;
+
+      function showLeadToast(message, isError) {
+        var el = document.getElementById('lead-toast');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'lead-toast visible ' + (isError ? 'error' : 'success');
+        if (leadToastTimer) clearTimeout(leadToastTimer);
+        leadToastTimer = setTimeout(function () {
+          el.classList.remove('visible');
+        }, isError ? 12000 : 8000);
+      }
 
       function parseIntParam(raw) {
         if (raw == null || !String(raw).trim()) return undefined;
@@ -498,7 +530,7 @@
 
       async function syncTourvisorLead(bookingData, eventType) {
         if (leadSubmitted) return;
-        var delays = [1500, 3000, 5000];
+        var delays = [2000, 4000, 8000, 15000, 30000, 45000, 60000];
         for (var i = 0; i < delays.length; i += 1) {
           await new Promise(function (resolve) { setTimeout(resolve, delays[i]); });
           var response = await fetch('/api/rebooking-lead/sync', {
@@ -512,11 +544,16 @@
           var result = await response.json().catch(function () { return {}; });
           if (response.ok && result.ok && !result.skipped) {
             leadSubmitted = true;
+            showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
             return;
           }
           if (response.status === 202 || result.error === 'order_not_ready') continue;
           if (result.error) throw new Error(result.error || 'sync_failed');
         }
+        showLeadToast(
+          'Не удалось автоматически отправить заявку. Позвоните в «Мои путешествия» или попробуйте отправить форму ещё раз.',
+          true
+        );
       }
 
       async function submitTourLeadDirect(bookingData, tourPayload, phone, eventType) {
@@ -537,6 +574,7 @@
         var result = await response.json().catch(function () { return {}; });
         if (!response.ok || !result.ok) throw new Error(result.error || 'submit_failed');
         leadSubmitted = true;
+        showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
       }
 
       function setupTourvisorBridge(bookingData) {
@@ -563,6 +601,7 @@
             submitTourLeadDirect(bookingData, tour, phone, eventType).catch(function () {
               syncTourvisorLead(bookingData, eventType).catch(function (error) {
                 console.error('rebooking: failed to submit lead', error);
+                showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
               });
             });
             return;
@@ -570,6 +609,7 @@
 
           syncTourvisorLead(bookingData, eventType).catch(function (error) {
             console.error('rebooking: failed to sync lead', error);
+            showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
           });
         });
       }

@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_order' }, { status: 400 });
   }
 
-  registerRebookingContext(parsed);
-  const rebooking = getRebookingContextByOrder(parsed.order) ?? { ...parsed, registeredAt: Date.now() };
+  await registerRebookingContext(parsed);
+  const rebooking = (await getRebookingContextByOrder(parsed.order)) ?? { ...parsed, registeredAt: Date.now() };
   const eventType = clamp(body.eventType, 40) || undefined;
   const visitId = clamp(body.visitId, 80) || undefined;
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       logPrefix: 'rebooking-lead-sync',
       rebooking,
       eventType,
-      maxAgeSeconds: 180,
+      maxAgeSeconds: 300,
     });
 
     if (result.skipped) {

@@ -261,3 +261,70 @@ export async function listRebookingVisits(options?: { order?: string; limit?: nu
   const limit = options?.limit ?? 500;
   return visits.slice(0, limit);
 }
+
+const VISIT_CONTEXT_MAX_AGE_MS = 30 * 60 * 1000;
+
+/** Fallback context from persisted visits when TV referer has no query params. */
+export async function findRecentRebookingVisitContext(maxAgeMs = VISIT_CONTEXT_MAX_AGE_MS) {
+  const visits = await readVisitsRaw();
+  const now = Date.now();
+  let best: RebookingVisit | undefined;
+  for (const visit of visits) {
+    const ts = Date.parse(visit.lastEventAt || visit.visitedAt);
+    if (!Number.isFinite(ts) || now - ts > maxAgeMs) continue;
+    if (!best) {
+      best = visit;
+      continue;
+    }
+    const bestTs = Date.parse(best.lastEventAt || best.visitedAt);
+    if (ts > bestTs) best = visit;
+  }
+  if (!best) return null;
+  return {
+    order: best.order,
+    cert: best.cert,
+    name: best.name,
+    people: best.people,
+    kids: best.kids,
+    price: best.price,
+    nights: best.nights,
+    date: best.date,
+    registeredAt: Date.parse(best.lastEventAt || best.visitedAt) || Date.now(),
+  };
+}
+
+export async function trackRebookingWebhookCall(input: {
+  tourvisorOrderId: string;
+  type: string;
+  result: string;
+  bitrixLeadId?: number;
+  order?: string;
+}) {
+  const visits = await readVisitsRaw();
+  let index = input.order ? findVisitIndex(visits, undefined, input.order) : -1;
+  if (index < 0) {
+    const now = Date.now();
+    let bestTs = 0;
+    visits.forEach((item, i) => {
+      const ts = Date.parse(item.lastEventAt || item.visitedAt);
+      if (!Number.isFinite(ts) || now - ts > VISIT_CONTEXT_MAX_AGE_MS) return;
+      if (item.bitrixLeadId) return;
+      if (ts >= bestTs) {
+        bestTs = ts;
+        index = i;
+      }
+    });
+  }
+  if (index < 0) return null;
+
+  visits[index] = patchVisit(visits[index], {
+    eventType: `webhook:${input.result}`,
+    lastEvent: `webhook tv#${input.tourvisorOrderId} ${input.result}`,
+    tourvisorOrderId: input.tourvisorOrderId,
+    bitrixLeadId: input.bitrixLeadId,
+    status: input.result === 'lead_created' ? 'submitted' : visits[index].status,
+    leadSource: input.result === 'lead_created' ? 'webhook' : visits[index].leadSource,
+  });
+  await writeVisits(visits);
+  return visits[index];
+}

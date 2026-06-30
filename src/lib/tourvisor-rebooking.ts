@@ -8,10 +8,10 @@ import {
 } from '@/lib/bitrix-rebooking-lead';
 import {
   findRecentRebookingContext,
-  getRebookingContextByOrder,
   parseRebookingParamsFromUrl,
   type RebookingContext,
 } from '@/lib/rebooking-context';
+import { findRecentRebookingVisitContext } from '@/lib/rebooking-visit-store';
 
 export type TourvisorOrderRecord = Record<string, unknown>;
 
@@ -135,7 +135,7 @@ export async function fetchRecentTourvisorOrders(limit = 5, type = '0'): Promise
   return extractOrderRecords(data);
 }
 
-function resolveRebookingFromTvOrder(tvOrder: TourvisorOrderRecord): RebookingContext | null {
+async function resolveRebookingFromTvOrder(tvOrder: TourvisorOrderRecord): Promise<RebookingContext | null> {
   const referer = pickString(tvOrder, ['referer', 'referrer', 'page', 'sourceurl', 'url']);
   if (referer) {
     const fromUrl = parseRebookingParamsFromUrl(referer);
@@ -144,8 +144,23 @@ function resolveRebookingFromTvOrder(tvOrder: TourvisorOrderRecord): RebookingCo
 
   const domain = pickString(tvOrder, ['domain']);
   if (domain && isMotripDomain(domain)) {
-    const recent = findRecentRebookingContext();
-    if (recent) return recent;
+    const fromContext = await findRecentRebookingContext();
+    if (fromContext) return fromContext;
+    const fromVisit = await findRecentRebookingVisitContext();
+    if (fromVisit) {
+      return {
+        order: fromVisit.order,
+        cert: fromVisit.cert,
+        name: fromVisit.name,
+        people: fromVisit.people,
+        kids: fromVisit.kids,
+        kidAges: [],
+        price: fromVisit.price,
+        nights: fromVisit.nights,
+        date: fromVisit.date,
+        registeredAt: fromVisit.registeredAt,
+      };
+    }
   }
 
   return null;
@@ -185,7 +200,7 @@ export async function submitTourvisorOrderToBitrix(options: {
     return { skipped: true as const, reason: 'duplicate' };
   }
 
-  const rebooking = options.rebooking ?? resolveRebookingFromTvOrder(tvOrder);
+  const rebooking = options.rebooking ?? (await resolveRebookingFromTvOrder(tvOrder));
   if (!rebooking) {
     return { skipped: true as const, reason: 'not_rebooking' };
   }
@@ -221,7 +236,7 @@ export async function submitTourvisorOrderToBitrix(options: {
   });
 
   markTourvisorOrderProcessed(tourvisorOrderId);
-  return { skipped: false as const, ...result };
+  return { skipped: false as const, ...result, order: rebooking.order };
 }
 
 export async function syncRecentTourvisorOrderToBitrix(options: {
@@ -265,4 +280,3 @@ export async function syncRecentTourvisorOrderToBitrix(options: {
   throw new Error('tourvisor_order_not_found');
 }
 
-export { getRebookingContextByOrder };
