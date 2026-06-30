@@ -57,7 +57,44 @@ const CAPTURE_SOURCE_LABELS: Record<RebookingCaptureSource, string> = {
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
-type AdminView = 'leads' | 'visits';
+type AdminView = 'leads' | 'visits' | 'annuls';
+
+type RebookingAnnulRecord = {
+  id: string;
+  createdAt: string;
+  order: string;
+  cert: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  people?: number;
+  kids?: number;
+  kidAges?: number[];
+  price?: number;
+  nights?: number;
+  date?: string;
+  bitrixStatus: 'sent' | 'failed';
+  bitrixItemId?: number;
+  bitrixError?: string;
+};
+
+const ANNUL_STATUS_LABELS: Record<RebookingAnnulRecord['bitrixStatus'], string> = {
+  sent: 'В Bitrix',
+  failed: 'Ошибка',
+};
+
+const VISIT_EVENT_LABELS: Record<string, string> = {
+  visit: 'Заход',
+  ANNUL_REQUEST: 'Аннуляция',
+  ORDERTOUR: 'Заявка на тур',
+  HELPTOUR: 'Помощь с туром',
+  NOTOUR: 'Нет туров',
+  HELPCART: 'Корзина',
+  TOURSELECTION: 'Выбор тура',
+  BOOKTOUR: 'Бронирование',
+  focus_sync: 'Синхронизация',
+  lead_submitted: 'Заявка отправлена',
+};
 
 type RebookingVisit = {
   id: string;
@@ -98,12 +135,21 @@ function formatPrice(value?: number) {
   return `${Math.round(value).toLocaleString('ru-RU')} ₽`;
 }
 
-function formatComposition(lead: RebookingQueuedLead) {
+function formatVisitEvent(event?: string) {
+  if (!event) return '—';
+  return VISIT_EVENT_LABELS[event] || event;
+}
+
+function formatCompositionFromVisit(visit: RebookingVisit | RebookingAnnulRecord) {
   const parts: string[] = [];
-  if (lead.people != null) parts.push(`${lead.people} чел.`);
-  if (lead.kids != null) parts.push(`детей: ${lead.kids}`);
-  if (lead.kidAges?.length) parts.push(`возрасты: ${lead.kidAges.join(', ')}`);
+  if (visit.people != null) parts.push(`${visit.people} чел.`);
+  if (visit.kids != null) parts.push(`детей: ${visit.kids}`);
+  if (visit.kidAges?.length) parts.push(`возрасты: ${visit.kidAges.join(', ')}`);
   return parts.join(' · ');
+}
+
+function formatComposition(lead: RebookingQueuedLead) {
+  return formatCompositionFromVisit(lead);
 }
 
 export function RebookingAdminClient() {
@@ -112,8 +158,10 @@ export function RebookingAdminClient() {
   const [view, setView] = useState<AdminView>('leads');
   const [leads, setLeads] = useState<RebookingQueuedLead[]>([]);
   const [visits, setVisits] = useState<RebookingVisit[]>([]);
+  const [annuls, setAnnuls] = useState<RebookingAnnulRecord[]>([]);
   const [orderFilter, setOrderFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | RebookingBitrixStatus>('all');
+  const [annulStatusFilter, setAnnulStatusFilter] = useState<'all' | 'sent' | 'failed'>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState('');
@@ -173,10 +221,31 @@ export function RebookingAdminClient() {
     }
   }, [orderFilter, password]);
 
+  const loadAnnuls = useCallback(async () => {
+    if (!password) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams({ password, limit: '500', status: annulStatusFilter });
+      if (orderFilter.trim()) params.set('order', orderFilter.trim());
+      const response = await fetch(`/api/rebooking-annuls?${params.toString()}`, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Не удалось загрузить аннуляции');
+      setAnnuls(Array.isArray(data.annuls) ? data.annuls : []);
+      setStatus(`Аннуляций: ${Array.isArray(data.annuls) ? data.annuls.length : 0}`);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Не удалось загрузить аннуляции');
+      setAnnuls([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [annulStatusFilter, orderFilter, password]);
+
   const loadData = useCallback(async () => {
     if (view === 'visits') await loadVisits();
+    else if (view === 'annuls') await loadAnnuls();
     else await loadLeads();
-  }, [loadLeads, loadVisits, view]);
+  }, [loadAnnuls, loadLeads, loadVisits, view]);
 
   const syncBitrix = useCallback(async (silent = false) => {
     if (!password) return;
@@ -222,6 +291,12 @@ export function RebookingAdminClient() {
     sent: leads.filter((lead) => lead.bitrixStatus === 'sent').length,
     failed: leads.filter((lead) => lead.bitrixStatus === 'failed').length,
   }), [leads]);
+
+  const annulStats = useMemo(() => ({
+    total: annuls.length,
+    sent: annuls.filter((item) => item.bitrixStatus === 'sent').length,
+    failed: annuls.filter((item) => item.bitrixStatus === 'failed').length,
+  }), [annuls]);
 
   function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -271,7 +346,7 @@ export function RebookingAdminClient() {
           <div>
             <h1 className={styles.title}>Перебронирование /rebooking</h1>
             <p className={styles.subtitle}>
-              Лиды — очередь в Bitrix. Визиты — кто заходил и что делал на странице (даже если лид ещё не создан).
+              Лиды — перебронь в Bitrix. Аннуляции — запросы с кнопки на лендинге. Визиты — все заходы на страницу.
             </p>
           </div>
           <button className={styles.secondaryButton} type="button" onClick={logout}>Выйти</button>
@@ -292,6 +367,13 @@ export function RebookingAdminClient() {
               onClick={() => setView('visits')}
             >
               Визиты
+            </button>
+            <button
+              className={view === 'annuls' ? styles.primaryButton : styles.secondaryButton}
+              type="button"
+              onClick={() => setView('annuls')}
+            >
+              Аннуляции
             </button>
           </div>
 
@@ -317,6 +399,20 @@ export function RebookingAdminClient() {
                 >
                   <option value="all">Все</option>
                   <option value="pending">В очереди</option>
+                  <option value="sent">В Bitrix</option>
+                  <option value="failed">Ошибка</option>
+                </select>
+              </label>
+              ) : null}
+              {view === 'annuls' ? (
+              <label className={styles.field}>
+                Статус
+                <select
+                  className={styles.input}
+                  value={annulStatusFilter}
+                  onChange={(event) => setAnnulStatusFilter(event.target.value as typeof annulStatusFilter)}
+                >
+                  <option value="all">Все</option>
                   <option value="sent">В Bitrix</option>
                   <option value="failed">Ошибка</option>
                 </select>
@@ -435,6 +531,83 @@ export function RebookingAdminClient() {
             </div>
           )}
           </>
+          ) : view === 'annuls' ? (
+          <>
+          <p className={styles.subtitle}>
+            Всего: {annulStats.total} · в Bitrix: {annulStats.sent} · ошибки: {annulStats.failed}
+          </p>
+
+          {isLoading ? (
+            <p className={styles.subtitle}>Загружаю аннуляции…</p>
+          ) : annuls.length === 0 ? (
+            <p className={styles.subtitle}>Запросов на аннуляцию пока нет.</p>
+          ) : (
+            <div className={styles.leadsTableWrap}>
+              <table className={styles.leadsTable}>
+                <thead>
+                  <tr>
+                    <th>Создан</th>
+                    <th>Заявка</th>
+                    <th>Клиент</th>
+                    <th>Bitrix</th>
+                    <th>Контакты</th>
+                    <th>Детали</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {annuls.map((item) => (
+                    <tr key={item.id}>
+                      <td>{formatDate(item.createdAt)}</td>
+                      <td>
+                        <strong>{item.order}</strong>
+                        {item.cert ? <span className={styles.hint}><br />{item.cert}</span> : null}
+                      </td>
+                      <td>
+                        {item.name}
+                        {formatCompositionFromVisit(item) ? (
+                          <span className={styles.hint}><br />{formatCompositionFromVisit(item)}</span>
+                        ) : null}
+                        {item.price != null ? (
+                          <span className={styles.hint}><br />бюджет: {formatPrice(item.price)}</span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <span className={`${styles.leadStatus} ${styles[`leadStatus_${item.bitrixStatus === 'sent' ? 'sent' : 'failed'}`]}`}>
+                          {ANNUL_STATUS_LABELS[item.bitrixStatus]}
+                        </span>
+                        {item.bitrixItemId ? (
+                          <span className={styles.hint}>
+                            <br />
+                            <a
+                              href={`https://crm.mosgortur.ru/crm/type/1302/details/${item.bitrixItemId}/`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              аннуляция #{item.bitrixItemId}
+                            </a>
+                          </span>
+                        ) : null}
+                        {item.bitrixError ? (
+                          <span className={styles.hint}><br />{item.bitrixError}</span>
+                        ) : null}
+                      </td>
+                      <td>
+                        {item.phone ? <a href={`tel:${item.phone}`}>{item.phone}</a> : '—'}
+                        {item.email ? (
+                          <span className={styles.hint}><br /><a href={`mailto:${item.email}`}>{item.email}</a></span>
+                        ) : null}
+                      </td>
+                      <td className={styles.hint}>
+                        {item.date ? `дата: ${item.date}` : null}
+                        {item.nights != null ? <><br />ночей: {item.nights}</> : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </>
           ) : isLoading ? (
             <p className={styles.subtitle}>Загружаю визиты…</p>
           ) : visits.length === 0 ? (
@@ -462,8 +635,20 @@ export function RebookingAdminClient() {
                       <td>{visit.name || '—'}</td>
                       <td>{visit.status}</td>
                       <td>
-                        {visit.lastEvent || '—'}
+                        {formatVisitEvent(visit.lastEvent)}
                         <span className={styles.hint}><br />{formatDate(visit.lastEventAt)}</span>
+                        {visit.lastEvent === 'ANNUL_REQUEST' && visit.bitrixLeadId ? (
+                          <span className={styles.hint}>
+                            <br />
+                            <a
+                              href={`https://crm.mosgortur.ru/crm/type/1302/details/${visit.bitrixLeadId}/`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              #{visit.bitrixLeadId}
+                            </a>
+                          </span>
+                        ) : null}
                       </td>
                       <td>{[visit.selectedHotel, visit.selectedCountry].filter(Boolean).join(' · ') || '—'}</td>
                       <td>{visit.phone || '—'}</td>

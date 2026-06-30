@@ -9,6 +9,7 @@ import {
   parsePositiveInt,
   submitRebookingAnnulment,
 } from '@/lib/bitrix-rebooking-lead';
+import { recordRebookingAnnul } from '@/lib/rebooking-annul-store';
 import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
@@ -38,30 +39,40 @@ export async function POST(request: Request) {
 
   const kids = parsePositiveInt(body.kids) ?? 0;
   const visitId = clamp(body.visitId, 80) || undefined;
+  const annulInput = {
+    order,
+    cert: clamp(body.cert, 100),
+    name: clamp(body.name, 200) || 'Клиент',
+    phone,
+    email: clamp(body.email, 120) || undefined,
+    comment: clamp(body.comment, 2000) || undefined,
+    people: parsePositiveInt(body.people),
+    kids,
+    kidAges: parseKidAges(body, kids),
+    price: parseBookingPrice(body.price),
+    nights: parsePositiveInt(body.nights),
+    date: clamp(body.date, 30) || undefined,
+    utm: parseLeadUtm(body),
+  };
 
   try {
     const result = await submitRebookingAnnulment({
       logPrefix: 'rebooking-annul',
-      order,
-      cert: clamp(body.cert, 100),
-      name: clamp(body.name, 200) || 'Клиент',
-      phone,
-      email: clamp(body.email, 120) || undefined,
-      comment: clamp(body.comment, 2000) || undefined,
-      people: parsePositiveInt(body.people),
-      kids,
-      kidAges: parseKidAges(body, kids),
-      price: parseBookingPrice(body.price),
-      nights: parsePositiveInt(body.nights),
-      date: clamp(body.date, 30) || undefined,
-      utm: parseLeadUtm(body),
+      ...annulInput,
+    });
+
+    const { record, duplicate } = await recordRebookingAnnul({
+      visitId,
+      ...annulInput,
+      bitrixStatus: 'sent',
+      bitrixItemId: result.itemId,
     });
 
     await markRebookingVisitSubmitted({
       visitId,
       order,
       phone,
-      email: clamp(body.email, 120) || undefined,
+      email: annulInput.email,
       leadSource: 'direct',
       eventType: 'ANNUL_REQUEST',
       bitrixLeadId: result.itemId,
@@ -70,10 +81,20 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       itemId: result.itemId,
+      recordId: record.id,
+      duplicate,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown';
     console.error('rebooking-annul: failed', message);
+
+    await recordRebookingAnnul({
+      visitId,
+      ...annulInput,
+      bitrixStatus: 'failed',
+      bitrixError: mapRebookingLeadError(message),
+    }).catch(() => {});
+
     return NextResponse.json(
       { ok: false, error: mapRebookingLeadError(message) },
       { status: 502 }
