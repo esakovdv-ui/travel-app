@@ -355,6 +355,30 @@
         document.getElementById('trip-meta').textContent = meta.join(' · ');
       }
 
+      function syncTourvisorSearchParamsToUrl(data) {
+        // Tourvisor v6 reads tourists/price from URL query (s_adults, child_age_N), not tv-kid* on the div.
+        var url = new URL(window.location.href);
+        if (data.adults != null && data.adults >= 1) url.searchParams.set('s_adults', String(data.adults));
+        if (data.kids >= 1 && data.kids <= 3) {
+          [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
+            if (age != null) url.searchParams.set('child_age_' + (index + 1), String(age));
+          });
+        }
+        if (data.date && data.date.tv) {
+          url.searchParams.set('s_j_date_from', data.date.tv);
+          url.searchParams.set('s_j_date_to', data.date.tv);
+        }
+        if (data.nights != null && data.nights > 0) {
+          url.searchParams.set('s_nights_from', String(data.nights));
+          url.searchParams.set('s_nights_to', String(data.nights));
+        }
+        if (data.price != null && data.price > 0) {
+          url.searchParams.set('s_price_from', '0');
+          url.searchParams.set('s_price_to', String(data.price));
+        }
+        history.replaceState(null, document.title, url.pathname + url.search + url.hash);
+      }
+
       function buildTourvisorAttrs(data) {
         var attrs = {
           class: 'tv-search-form tv-moduleid-9978253',
@@ -364,17 +388,6 @@
         };
         if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
         if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
-        if (data.adults != null && data.adults >= 1 && data.adults <= 6) attrs['tv-adults'] = String(data.adults);
-        if (data.kids >= 1 && data.kids <= 3) {
-          attrs['tv-kids'] = String(data.kids);
-          [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
-            if (age != null) attrs['tv-kid' + (index + 1)] = String(age);
-          });
-        }
-        if (data.price != null && data.price > 0) {
-          attrs['tv-pricefrom'] = '0';
-          attrs['tv-priceto'] = String(data.price);
-        }
         return attrs;
       }
 
@@ -385,6 +398,7 @@
       }
 
       function initTourvisorModule(data) {
+        syncTourvisorSearchParamsToUrl(data);
         var mount = document.getElementById('tourvisor-mount');
         mount.innerHTML = '';
         var el = document.createElement('div');
