@@ -466,15 +466,18 @@
           items.push({
             icon: iconPeople(),
             value: data.people + ' ' + plural(data.people, 'турист', 'туриста', 'туристов'),
-            caption: touristsCaption(data),
+            caption: '',
           });
         }
 
         document.getElementById('trip-grid').innerHTML = items.map(function (item) {
+          var captionHtml = item.caption
+            ? '<div class="trip-caption">' + escapeHtml(item.caption) + '</div>'
+            : '';
           return '<div class="trip-item">' +
             '<span class="trip-icon">' + item.icon + '</span>' +
             '<div><div class="trip-value">' + escapeHtml(item.value) + '</div>' +
-            '<div class="trip-caption">' + escapeHtml(item.caption) + '</div></div></div>';
+            captionHtml + '</div></div>';
         }).join('');
 
         var meta = [];
