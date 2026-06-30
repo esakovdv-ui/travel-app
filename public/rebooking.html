@@ -35,17 +35,6 @@
       line-height: 1.15;
       letter-spacing: -0.02em;
     }
-    .hero .lead {
-      margin: 0;
-      max-width: 720px;
-      color: var(--muted);
-      font-size: 17px;
-    }
-    .greeting {
-      margin: 0 0 8px;
-      color: var(--muted);
-      font-size: 15px;
-    }
     .trip-card {
       margin-top: 22px;
       background: var(--white);
@@ -101,11 +90,6 @@
       color: #98a2b3;
       line-height: 1.45;
     }
-    .instruction {
-      margin: 18px 0 0;
-      font-size: 15px;
-      color: #344054;
-    }
     .section { padding: 22px 0; }
     .tourvisor-wrap {
       min-height: 120px;
@@ -156,17 +140,13 @@
   <main id="main-content" class="hidden">
     <section class="hero">
       <div class="container">
-        <p class="greeting hidden" id="greeting"></p>
         <h1>Подберите новый тур вместо отменённой поездки</h1>
-        <p class="lead">Мы уже учли основные параметры вашего бронирования. Вам останется выбрать подходящий вариант отдыха.</p>
 
         <div class="trip-card">
           <h2>Параметры вашей поездки</h2>
           <div class="trip-grid" id="trip-grid"></div>
           <div class="trip-meta" id="trip-meta"></div>
         </div>
-
-        <p class="instruction">Используйте форму ниже для подбора тура — основные параметры поиска уже заполнены.</p>
       </div>
     </section>
 
@@ -288,12 +268,6 @@
           .slice(0, data.kids)
           .filter(function (age) { return age != null; });
         return { ok: true, data: data };
-      }
-
-      function firstName(fullName) {
-        var parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
-        if (parts.length >= 2) return parts[1];
-        return parts[0] || '';
       }
 
       function kidsText(data) {
@@ -661,13 +635,6 @@
 
       var bookingData = validation.data;
       document.getElementById('main-content').classList.remove('hidden');
-
-      var greetingName = firstName(bookingData.name);
-      if (greetingName) {
-        var greeting = document.getElementById('greeting');
-        greeting.textContent = 'Здравствуйте, ' + greetingName + '!';
-        greeting.classList.remove('hidden');
-      }
 
       renderTripCard(bookingData);
       registerRebookingContext(bookingData);
