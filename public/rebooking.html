@@ -91,6 +91,110 @@
       line-height: 1.45;
     }
     .section { padding: 22px 0; }
+    .choice-section { padding: 8px 0 4px; }
+    .choice-section h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .choice-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      width: 100%;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .choice-card:hover:not(:disabled) {
+      border-color: #d0d5dd;
+      box-shadow: 0 10px 28px rgba(16, 24, 40, 0.08);
+    }
+    .choice-card:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .choice-card strong {
+      font-size: 17px;
+      line-height: 1.25;
+    }
+    .choice-card span {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .choice-card--accent strong { color: var(--accent); }
+    .choice-card--danger strong { color: #b42318; }
+    .annul-done {
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #ecfdf3;
+      border: 1px solid #abefc6;
+      color: #027a48;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(16, 24, 40, 0.45);
+    }
+    .modal-card {
+      width: min(480px, 100%);
+      padding: 24px 22px 20px;
+      border-radius: 18px;
+      background: var(--white);
+      box-shadow: 0 24px 48px rgba(16, 24, 40, 0.18);
+    }
+    .modal-card h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+    .modal-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: #b42318; color: #fff; }
+    .btn-secondary { background: #f2f4f7; color: var(--text); }
     .tourvisor-wrap {
       min-height: 120px;
     }
@@ -125,6 +229,7 @@
       .trip-value { font-size: 15px; }
       .trip-item { gap: 10px; }
       .trip-icon { width: 32px; height: 32px; border-radius: 8px; }
+      .choice-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 400px) {
       .trip-grid { grid-template-columns: 1fr; }
@@ -140,22 +245,51 @@
   <main id="main-content" class="hidden">
     <section class="hero">
       <div class="container">
-        <h1>Подберите новый тур вместо отменённой поездки</h1>
+        <h1>Ваша поездка отменена</h1>
 
         <div class="trip-card">
           <h2>Параметры вашей поездки</h2>
           <div class="trip-grid" id="trip-grid"></div>
           <div class="trip-meta" id="trip-meta"></div>
         </div>
+
+        <div class="choice-section">
+          <h2>Что вы хотите сделать?</h2>
+          <div class="choice-grid">
+            <button type="button" class="choice-card choice-card--accent" id="btn-rebook">
+              <strong>Подобрать новый тур</strong>
+              <span>Поиск с учётом дат, состава и бюджета вашей поездки</span>
+            </button>
+            <button type="button" class="choice-card choice-card--danger" id="btn-annul">
+              <strong>Аннулировать заявку</strong>
+              <span>Запросить аннуляцию без подбора нового тура</span>
+            </button>
+          </div>
+          <div id="annul-done" class="annul-done hidden" role="status">
+            Запрос на аннуляцию принят. Менеджер свяжется с вами и подтвердит аннуляцию.
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="rebook-section">
       <div class="container">
+        <h2 style="margin:0 0 14px;font-size:18px;font-weight:800;">Подбор нового тура</h2>
         <div class="tourvisor-wrap" id="tourvisor-mount"></div>
       </div>
     </section>
   </main>
+
+  <div id="annul-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="annul-modal-title">
+    <div class="modal-card">
+      <h3 id="annul-modal-title">Подтвердить аннуляцию?</h3>
+      <p id="annul-modal-text">Мы зафиксируем ваш запрос на аннуляцию заявки. Менеджер свяжется с вами для подтверждения.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="annul-confirm">Да, аннулировать</button>
+        <button type="button" class="btn btn-secondary" id="annul-cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
   <div id="lead-toast" class="lead-toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -163,6 +297,7 @@
       var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
       var money = new Intl.NumberFormat('ru-RU');
       var leadSubmitted = false;
+      var annulSubmitted = false;
       var leadToastTimer;
 
       function showLeadToast(message, isError) {
@@ -591,6 +726,78 @@
         showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
       }
 
+      function setupChoiceActions(bookingData) {
+        var btnRebook = document.getElementById('btn-rebook');
+        var btnAnnul = document.getElementById('btn-annul');
+        var rebookSection = document.getElementById('rebook-section');
+        var annulModal = document.getElementById('annul-modal');
+        var annulConfirm = document.getElementById('annul-confirm');
+        var annulCancel = document.getElementById('annul-cancel');
+        var annulDone = document.getElementById('annul-done');
+        var annulModalText = document.getElementById('annul-modal-text');
+
+        if (annulModalText && bookingData.order) {
+          var parts = ['Заявка № ' + bookingData.order];
+          if (bookingData.cert) parts.push('сертификат № ' + bookingData.cert);
+          annulModalText.textContent =
+            'Мы зафиксируем запрос на аннуляцию (' + parts.join(', ') + '). Менеджер свяжется с вами для подтверждения.';
+        }
+
+        function openAnnulModal() {
+          if (annulSubmitted) return;
+          annulModal.classList.remove('hidden');
+        }
+
+        function closeAnnulModal() {
+          annulModal.classList.add('hidden');
+        }
+
+        async function submitAnnulRequest() {
+          if (annulSubmitted) return;
+          annulConfirm.disabled = true;
+          try {
+            var response = await fetch('/api/rebooking-annul', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), {
+                visitId: visitId || undefined,
+                website: '',
+              })),
+            });
+            var result = await response.json().catch(function () { return {}; });
+            if (!response.ok || !result.ok) throw new Error(result.error || 'annul_failed');
+
+            annulSubmitted = true;
+            closeAnnulModal();
+            annulDone.classList.remove('hidden');
+            btnAnnul.disabled = true;
+            trackRebookingEvent(bookingData, 'ANNUL_REQUEST').catch(function () {});
+
+            showLeadToast('Запрос на аннуляцию принят. Менеджер свяжется с вами.', false);
+          } catch (error) {
+            console.error('rebooking: annul failed', error);
+            showLeadToast('Не удалось отправить запрос. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
+          } finally {
+            annulConfirm.disabled = annulSubmitted;
+          }
+        }
+
+        if (btnRebook && rebookSection) {
+          btnRebook.addEventListener('click', function () {
+            rebookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+
+        if (btnAnnul) btnAnnul.addEventListener('click', openAnnulModal);
+        if (annulCancel) annulCancel.addEventListener('click', closeAnnulModal);
+        if (annulConfirm) annulConfirm.addEventListener('click', submitAnnulRequest);
+        if (annulModal) {
+          annulModal.addEventListener('click', function (event) {
+            if (event.target === annulModal) closeAnnulModal();
+          });
+        }
+      }
+
       function setupTourvisorBridge(bookingData) {
         var focusSyncStarted = false;
 
@@ -654,6 +861,7 @@
 
       renderTripCard(bookingData);
       registerRebookingContext(bookingData);
+      setupChoiceActions(bookingData);
       setupTourvisorBridge(bookingData);
       initTourvisorModule(bookingData);
     })();

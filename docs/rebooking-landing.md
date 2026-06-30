@@ -166,6 +166,7 @@ flowchart TD
 Все заявки создаются в смарт-процессе «Перебронирование Крым» ([`src/lib/bitrix-rebooking-lead.ts`](../src/lib/bitrix-rebooking-lead.ts)):
 
 - API: `crm.item.add` (`entityTypeId=1302`, стадия **Перебронь** `DT1302_61:NEW`)
+- Аннуляция с лендинга: `POST /api/rebooking-annul` → стадия **Аннуляция** `DT1302_61:UC_QEP35A`
 - Контакт: поиск/создание по телефону
 - В ленту элемента — полный комментарий (`crm.timeline.comment.add`)
 - Поле «Дополнительно об источнике» — тот же текст

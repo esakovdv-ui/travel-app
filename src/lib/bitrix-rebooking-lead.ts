@@ -129,19 +129,24 @@ function formatTourBlock(tour?: RebookingTourInfo): string[] {
   return lines;
 }
 
-function buildLeadTitle(input: RebookingLeadInput): string {
-  const tourLabel =
-    input.tour?.hotel ||
-    input.tour?.country ||
-    input.destination ||
-    'новый тур';
-  const namePart = input.name?.trim() || 'клиент';
-  return `Перебронирование ${input.order} — ${tourLabel} — ${namePart}`;
+type RebookingTripContext = Pick<
+  RebookingLeadInput,
+  'order' | 'cert' | 'name' | 'people' | 'kids' | 'kidAges' | 'price' | 'nights' | 'date' | 'comment' | 'utm'
+>;
+
+function formatAnnulTimestamp(): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    timeZone: 'Europe/Moscow',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
 }
 
-function buildComments(input: RebookingLeadInput): string {
+function buildTripContextLines(input: RebookingTripContext): string[] {
   const lines = [
-    'Тип: перебронирование',
     `Заявка: ${input.order}`,
     `Сертификат: ${input.cert || '—'}`,
     `ФИО: ${input.name || '—'}`,
@@ -154,19 +159,52 @@ function buildComments(input: RebookingLeadInput): string {
   if (input.price != null) lines.push(`Бюджет исходной поездки: ${formatPrice(input.price)}`);
   if (input.nights != null) lines.push(`Дней отдыха (исходные): ${input.nights}`);
   if (input.date) lines.push(`Дата начала (исходная): ${input.date}`);
-  if (input.destination) lines.push(`Выбранное направление: ${input.destination}`);
-
-  lines.push(...formatTourBlock(input.tour));
 
   if (input.comment?.trim()) {
-    lines.push('', `Комментарий: ${input.comment.trim()}`);
+    lines.push('', `Комментарий клиента: ${input.comment.trim()}`);
   }
-  lines.push('', 'Источник: /rebooking');
 
   const utmLines = Object.entries(input.utm ?? {}).map(([key, value]) => `${key}: ${value}`);
   if (utmLines.length) {
     lines.push('', 'UTM:', ...utmLines);
   }
+
+  return lines;
+}
+
+function buildLeadTitle(input: RebookingLeadInput): string {
+  const tourLabel =
+    input.tour?.hotel ||
+    input.tour?.country ||
+    input.destination ||
+    'новый тур';
+  const namePart = input.name?.trim() || 'клиент';
+  return `Перебронирование ${input.order} — ${tourLabel} — ${namePart}`;
+}
+
+function buildAnnulTitle(input: RebookingAnnulInput): string {
+  const namePart = input.name?.trim() || 'клиент';
+  return `Аннуляция ${input.order} — ${namePart}`;
+}
+
+function buildComments(input: RebookingLeadInput): string {
+  const lines = ['Тип: перебронирование', ...buildTripContextLines(input)];
+
+  if (input.destination) lines.push(`Выбранное направление: ${input.destination}`);
+  lines.push(...formatTourBlock(input.tour));
+  lines.push('', 'Источник: /rebooking');
+
+  return lines.join('\n');
+}
+
+function buildAnnulComments(input: RebookingAnnulInput): string {
+  const lines = [
+    'Тип: запрос аннуляции',
+    `Время запроса (МСК): ${formatAnnulTimestamp()}`,
+    ...buildTripContextLines(input),
+    '',
+    'Источник: /rebooking (кнопка «Аннулировать заявку»)',
+  ];
 
   return lines.join('\n');
 }
@@ -175,7 +213,26 @@ const DEFAULT_REBOOKING_ENTITY_TYPE_ID = 1302;
 const DEFAULT_REBOOKING_CATEGORY_ID = 61;
 /** Стадия «Перебронь» в смарт-процессе «Перебронирование Крым». */
 const DEFAULT_REBOOKING_STAGE_ID = 'DT1302_61:NEW';
+/** Стадия «Аннуляция» в том же смарт-процессе. */
+const DEFAULT_ANNUL_STAGE_ID = 'DT1302_61:UC_QEP35A';
 const DEFAULT_REBOOKING_ASSIGNED_BY_ID = 1;
+
+export type RebookingAnnulInput = {
+  logPrefix: string;
+  order: string;
+  cert: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  comment?: string;
+  people?: number;
+  kids?: number;
+  kidAges?: number[];
+  price?: number;
+  nights?: number;
+  date?: string;
+  utm?: UtmFields;
+};
 
 function getRebookingConfig() {
   const domain =
@@ -287,43 +344,54 @@ async function addRebookingTimelineComment(
   }
 }
 
-export async function submitRebookingLead(input: RebookingLeadInput) {
-  const { domain, token, entityTypeId, categoryId, stageId, assignedById } = getRebookingConfig();
-  const { name } = splitFullName(input.name || 'Клиент');
-  const email = input.email?.trim() || input.tour?.email?.trim();
-  const comments = buildComments(input);
-  const contactId = await resolveContactId(
-    input.logPrefix,
-    domain,
-    token,
-    name || input.name || 'Клиент',
-    input.phone,
-    email,
-    assignedById
-  );
+async function createRebookingSmartProcessItem(options: {
+  logPrefix: string;
+  title: string;
+  comments: string;
+  stageId: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  opportunity?: number;
+  utm?: UtmFields;
+}) {
+  const { domain, token, entityTypeId, categoryId, assignedById } = getRebookingConfig();
+  const { name } = splitFullName(options.name || 'Клиент');
+  let contactId: number | null = null;
+  if (options.phone) {
+    contactId = await resolveContactId(
+      options.logPrefix,
+      domain,
+      token,
+      name || options.name || 'Клиент',
+      options.phone,
+      options.email,
+      assignedById
+    );
+  }
 
   const fields: Record<string, unknown> = {
-    title: buildLeadTitle(input),
-    stageId,
+    title: options.title,
+    stageId: options.stageId,
     categoryId,
     opened: 'Y',
     assignedById,
-    sourceDescription: comments,
+    sourceDescription: options.comments,
   };
 
   if (contactId) fields.contactId = contactId;
-  if (input.tour?.price != null) {
-    fields.opportunity = Math.round(input.tour.price);
+  if (options.opportunity != null) {
+    fields.opportunity = Math.round(options.opportunity);
     fields.currencyId = 'RUB';
   }
-  if (input.utm?.utm_source) fields.utmSource = input.utm.utm_source;
-  if (input.utm?.utm_medium) fields.utmMedium = input.utm.utm_medium;
-  if (input.utm?.utm_campaign) fields.utmCampaign = input.utm.utm_campaign;
-  if (input.utm?.utm_content) fields.utmContent = input.utm.utm_content;
-  if (input.utm?.utm_term) fields.utmTerm = input.utm.utm_term;
+  if (options.utm?.utm_source) fields.utmSource = options.utm.utm_source;
+  if (options.utm?.utm_medium) fields.utmMedium = options.utm.utm_medium;
+  if (options.utm?.utm_campaign) fields.utmCampaign = options.utm.utm_campaign;
+  if (options.utm?.utm_content) fields.utmContent = options.utm.utm_content;
+  if (options.utm?.utm_term) fields.utmTerm = options.utm.utm_term;
 
   const result = await bitrixCall<{ item: { id: number } }>(
-    input.logPrefix,
+    options.logPrefix,
     domain,
     token,
     'crm.item.add',
@@ -334,15 +402,49 @@ export async function submitRebookingLead(input: RebookingLeadInput) {
   if (!itemId) throw new Error('bitrix_error:missing_item_id');
 
   await addRebookingTimelineComment(
-    input.logPrefix,
+    options.logPrefix,
     domain,
     token,
     entityTypeId,
     itemId,
-    comments
+    options.comments
   );
 
   return { itemId, leadId: itemId };
+}
+
+function getAnnulStageId(): string {
+  return process.env.REBOOKING_BITRIX_ANNUL_STAGE_ID?.trim() || DEFAULT_ANNUL_STAGE_ID;
+}
+
+export async function submitRebookingLead(input: RebookingLeadInput) {
+  const { stageId } = getRebookingConfig();
+  const email = input.email?.trim() || input.tour?.email?.trim();
+  return createRebookingSmartProcessItem({
+    logPrefix: input.logPrefix,
+    title: buildLeadTitle(input),
+    comments: buildComments(input),
+    stageId,
+    name: input.name || 'Клиент',
+    phone: input.phone,
+    email,
+    opportunity: input.tour?.price,
+    utm: input.utm,
+  });
+}
+
+export async function submitRebookingAnnulment(input: RebookingAnnulInput) {
+  return createRebookingSmartProcessItem({
+    logPrefix: input.logPrefix,
+    title: buildAnnulTitle(input),
+    comments: buildAnnulComments(input),
+    stageId: getAnnulStageId(),
+    name: input.name || 'Клиент',
+    phone: input.phone?.trim() || undefined,
+    email: input.email?.trim() || undefined,
+    opportunity: input.price,
+    utm: input.utm,
+  });
 }
 
 export function parseTourFromBody(raw: unknown): RebookingTourInfo | undefined {
