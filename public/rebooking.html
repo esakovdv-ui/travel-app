@@ -357,7 +357,9 @@
 
       function syncTourvisorSearchParamsToUrl(data) {
         // Tourvisor v6 reads tourists/price from URL query (s_adults, child_age_N), not tv-kid* on the div.
+        // ts_dosearch=0 is required so createModule merges URL params without auto-running search.
         var url = new URL(window.location.href);
+        url.searchParams.set('ts_dosearch', '0');
         if (data.adults != null && data.adults >= 1) url.searchParams.set('s_adults', String(data.adults));
         if (data.kids >= 1 && data.kids <= 3) {
           [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
