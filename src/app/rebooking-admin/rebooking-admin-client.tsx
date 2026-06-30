@@ -390,11 +390,11 @@ export function RebookingAdminClient() {
                           <span className={styles.hint}>
                             <br />
                             <a
-                              href={`https://crm.mosgortur.ru/crm/lead/details/${lead.bitrixLeadId}/`}
+                              href={`https://crm.mosgortur.ru/crm/type/1302/details/${lead.bitrixLeadId}/`}
                               target="_blank"
                               rel="noreferrer"
                             >
-                              лид #{lead.bitrixLeadId}
+                              перебронь #{lead.bitrixLeadId}
                             </a>
                           </span>
                         ) : null}

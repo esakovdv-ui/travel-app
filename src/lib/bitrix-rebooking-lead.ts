@@ -171,6 +171,12 @@ function buildComments(input: RebookingLeadInput): string {
   return lines.join('\n');
 }
 
+const DEFAULT_REBOOKING_ENTITY_TYPE_ID = 1302;
+const DEFAULT_REBOOKING_CATEGORY_ID = 61;
+/** Стадия «Перебронь» в смарт-процессе «Перебронирование Крым». */
+const DEFAULT_REBOOKING_STAGE_ID = 'DT1302_61:NEW';
+const DEFAULT_REBOOKING_ASSIGNED_BY_ID = 1;
+
 function getRebookingConfig() {
   const domain =
     process.env.REBOOKING_BITRIX_DOMAIN?.trim() ||
@@ -183,51 +189,160 @@ function getRebookingConfig() {
     process.env.WEBHOOK_TOKEN?.trim() ||
     '1981/0ly7df3o8j23eq30';
   if (!domain || !token) throw new Error('misconfigured');
-  return { domain, token };
+
+  const entityTypeId = parsePositiveInt(process.env.REBOOKING_BITRIX_ENTITY_TYPE_ID);
+  const categoryId = parsePositiveInt(process.env.REBOOKING_BITRIX_CATEGORY_ID);
+  const assignedById = parsePositiveInt(process.env.REBOOKING_BITRIX_ASSIGNED_BY_ID);
+
+  return {
+    domain,
+    token,
+    entityTypeId: entityTypeId ?? DEFAULT_REBOOKING_ENTITY_TYPE_ID,
+    categoryId: categoryId ?? DEFAULT_REBOOKING_CATEGORY_ID,
+    stageId: process.env.REBOOKING_BITRIX_STAGE_ID?.trim() || DEFAULT_REBOOKING_STAGE_ID,
+    assignedById: assignedById ?? DEFAULT_REBOOKING_ASSIGNED_BY_ID,
+  };
+}
+
+export function getBitrixRebookingItemUrl(itemId: number): string {
+  const entityTypeId =
+    parsePositiveInt(process.env.REBOOKING_BITRIX_ENTITY_TYPE_ID) ?? DEFAULT_REBOOKING_ENTITY_TYPE_ID;
+  const domain =
+    process.env.REBOOKING_BITRIX_DOMAIN?.trim() ||
+    process.env.BITRIX_DOMAIN?.trim() ||
+    'crm.mosgortur.ru';
+  const cleanDomain = domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  return `https://${cleanDomain}/crm/type/${entityTypeId}/details/${itemId}/`;
+}
+
+async function findContactByPhone(
+  logPrefix: string,
+  domain: string,
+  token: string,
+  phone: string
+): Promise<number | null> {
+  try {
+    const result = await bitrixCall<Array<{ ID?: string | number }>>(
+      logPrefix,
+      domain,
+      token,
+      'crm.contact.list',
+      { filter: { PHONE: phone }, select: ['ID'] }
+    );
+    const rawId = result?.[0]?.ID;
+    const id = typeof rawId === 'number' ? rawId : Number(rawId);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  } catch (error) {
+    console.warn(`${logPrefix}: contact list lookup failed for ${phone}`, error);
+    return null;
+  }
+}
+
+async function resolveContactId(
+  logPrefix: string,
+  domain: string,
+  token: string,
+  name: string,
+  phone: string,
+  email: string | undefined,
+  assignedById: number
+): Promise<number | null> {
+  const existingId = await findContactByPhone(logPrefix, domain, token, phone);
+  if (existingId) return existingId;
+
+  const fields: Record<string, unknown> = {
+    NAME: name || 'Клиент',
+    PHONE: [{ VALUE: phone, VALUE_TYPE: 'WORK' }],
+    SOURCE_ID: 'WEB',
+    ASSIGNED_BY_ID: assignedById,
+  };
+  if (email) fields.EMAIL = [{ VALUE: email, VALUE_TYPE: 'WORK' }];
+
+  try {
+    return await bitrixCall<number>(logPrefix, domain, token, 'crm.contact.add', { fields });
+  } catch (error) {
+    console.warn(`${logPrefix}: contact add failed`, error);
+    return null;
+  }
+}
+
+async function addRebookingTimelineComment(
+  logPrefix: string,
+  domain: string,
+  token: string,
+  entityTypeId: number,
+  itemId: number,
+  comment: string
+) {
+  try {
+    await bitrixCall<number>(logPrefix, domain, token, 'crm.timeline.comment.add', {
+      fields: {
+        ENTITY_ID: itemId,
+        ENTITY_TYPE: `dynamic_${entityTypeId}`,
+        COMMENT: comment,
+      },
+    });
+  } catch (error) {
+    console.warn(`${logPrefix}: timeline comment failed for item ${itemId}`, error);
+  }
 }
 
 export async function submitRebookingLead(input: RebookingLeadInput) {
-  const { domain, token } = getRebookingConfig();
-  const { name, lastName, secondName } = splitFullName(input.name || 'Клиент');
+  const { domain, token, entityTypeId, categoryId, stageId, assignedById } = getRebookingConfig();
+  const { name } = splitFullName(input.name || 'Клиент');
+  const email = input.email?.trim() || input.tour?.email?.trim();
+  const comments = buildComments(input);
+  const contactId = await resolveContactId(
+    input.logPrefix,
+    domain,
+    token,
+    name || input.name || 'Клиент',
+    input.phone,
+    email,
+    assignedById
+  );
 
   const fields: Record<string, unknown> = {
-    TITLE: buildLeadTitle(input),
-    NAME: name || 'Клиент',
-    LAST_NAME: lastName,
-    PHONE: [{ VALUE: input.phone, VALUE_TYPE: 'WORK' }],
-    COMMENTS: buildComments(input),
-    SOURCE_ID: 'WEB',
-    UF_CRM_LEAD_TYPE: 'rebooking',
+    title: buildLeadTitle(input),
+    stageId,
+    categoryId,
+    opened: 'Y',
+    assignedById,
+    sourceDescription: comments,
   };
 
-  if (secondName) fields.SECOND_NAME = secondName;
-  const email = input.email?.trim() || input.tour?.email?.trim();
-  if (email) fields.EMAIL = [{ VALUE: email, VALUE_TYPE: 'WORK' }];
+  if (contactId) fields.contactId = contactId;
   if (input.tour?.price != null) {
-    fields.OPPORTUNITY = Math.round(input.tour.price);
-    fields.CURRENCY_ID = 'RUB';
+    fields.opportunity = Math.round(input.tour.price);
+    fields.currencyId = 'RUB';
   }
-  if (input.utm?.utm_source) fields.UTM_SOURCE = input.utm.utm_source;
-  if (input.utm?.utm_medium) fields.UTM_MEDIUM = input.utm.utm_medium;
-  if (input.utm?.utm_campaign) fields.UTM_CAMPAIGN = input.utm.utm_campaign;
-  if (input.utm?.utm_content) fields.UTM_CONTENT = input.utm.utm_content;
-  if (input.utm?.utm_term) fields.UTM_TERM = input.utm.utm_term;
+  if (input.utm?.utm_source) fields.utmSource = input.utm.utm_source;
+  if (input.utm?.utm_medium) fields.utmMedium = input.utm.utm_medium;
+  if (input.utm?.utm_campaign) fields.utmCampaign = input.utm.utm_campaign;
+  if (input.utm?.utm_content) fields.utmContent = input.utm.utm_content;
+  if (input.utm?.utm_term) fields.utmTerm = input.utm.utm_term;
 
-  try {
-    const leadId = await bitrixCall<number>(input.logPrefix, domain, token, 'crm.lead.add', {
-      fields,
-    });
-    return { leadId };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '';
-    if (!message.includes('UF_CRM_LEAD_TYPE')) throw error;
+  const result = await bitrixCall<{ item: { id: number } }>(
+    input.logPrefix,
+    domain,
+    token,
+    'crm.item.add',
+    { entityTypeId, fields }
+  );
 
-    const { UF_CRM_LEAD_TYPE: _removed, ...fieldsWithoutCustom } = fields;
-    const leadId = await bitrixCall<number>(input.logPrefix, domain, token, 'crm.lead.add', {
-      fields: fieldsWithoutCustom,
-    });
-    return { leadId };
-  }
+  const itemId = result?.item?.id;
+  if (!itemId) throw new Error('bitrix_error:missing_item_id');
+
+  await addRebookingTimelineComment(
+    input.logPrefix,
+    domain,
+    token,
+    entityTypeId,
+    itemId,
+    comments
+  );
+
+  return { itemId, leadId: itemId };
 }
 
 export function parseTourFromBody(raw: unknown): RebookingTourInfo | undefined {

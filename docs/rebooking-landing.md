@@ -163,9 +163,12 @@ flowchart TD
 
 ## Мосты в Bitrix24
 
-Все лиды создаются через `crm.lead.add` ([`src/lib/bitrix-rebooking-lead.ts`](../src/lib/bitrix-rebooking-lead.ts)):
+Все заявки создаются в смарт-процессе «Перебронирование Крым» ([`src/lib/bitrix-rebooking-lead.ts`](../src/lib/bitrix-rebooking-lead.ts)):
 
-- `UF_CRM_LEAD_TYPE: rebooking` (если поле недоступно — повтор без него)
+- API: `crm.item.add` (`entityTypeId=1302`, стадия **Перебронь** `DT1302_61:NEW`)
+- Контакт: поиск/создание по телефону
+- В ленту элемента — полный комментарий (`crm.timeline.comment.add`)
+- Поле «Дополнительно об источнике» — тот же текст
 - `SOURCE_ID: WEB`
 - `TITLE`: `Перебронирование {order} — {отель/страна} — {ФИО}`
 - `COMMENTS`: исходная поездка + выбранный тур + UTM + «Источник: /rebooking»
