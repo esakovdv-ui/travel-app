@@ -31,6 +31,8 @@ export type RebookingLeadInput = {
   /** Телефон из письма / ссылки рассылки (оригинал из таблицы). */
   sourcePhone?: string;
   email?: string;
+  /** ID исходной сделки B2C из таблицы рассылки. */
+  dealId?: string;
   comment?: string;
   people?: number;
   kids?: number;
@@ -139,6 +141,7 @@ type RebookingTripContext = Pick<
   | 'sourcePhone'
   | 'phone'
   | 'email'
+  | 'dealId'
   | 'people'
   | 'kids'
   | 'kidAges'
@@ -159,12 +162,31 @@ function formatPhoneLines(input: { sourcePhone?: string; phone?: string }): stri
   return lines;
 }
 
+function buildDealLine(dealId?: string): string[] {
+  const id = dealId?.trim();
+  if (!id) return [];
+  const domain =
+    process.env.REBOOKING_BITRIX_DOMAIN?.trim() ||
+    process.env.BITRIX_DOMAIN?.trim() ||
+    'crm.mosgortur.ru';
+  const cleanDomain = domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  return [
+    `Сделка B2C (из рассылки): ${id}`,
+    `Ссылка на сделку: https://${cleanDomain}/crm/deal/details/${id}/`,
+  ];
+}
+
 function buildTripContextLines(input: RebookingTripContext): string[] {
   const lines = [
     `Заявка: ${input.order}`,
     `Сертификат: ${input.cert || '—'}`,
     `ФИО: ${input.name || '—'}`,
   ];
+
+  const dealLines = buildDealLine(input.dealId);
+  if (dealLines.length) {
+    lines.push('', ...dealLines);
+  }
 
   const phoneLines = formatPhoneLines({ sourcePhone: input.sourcePhone, phone: input.phone });
   if (phoneLines.length) {
@@ -267,6 +289,8 @@ export type RebookingAnnulInput = {
   sourcePhone?: string;
   phone?: string;
   email?: string;
+  /** ID исходной сделки B2C из таблицы рассылки. */
+  dealId?: string;
   comment?: string;
   people?: number;
   kids?: number;

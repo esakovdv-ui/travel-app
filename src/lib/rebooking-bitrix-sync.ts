@@ -28,6 +28,7 @@ async function syncOneLead(lead: RebookingQueuedLead) {
     phone: lead.phone,
     sourcePhone: lead.sourcePhone || lead.phone,
     email: lead.email,
+    dealId: lead.dealId,
     comment: lead.comment,
     people: lead.people,
     kids: lead.kids,

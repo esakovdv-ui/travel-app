@@ -40,6 +40,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
+  const dealIdRaw = clamp(body.dealId, 40) || clamp(body.deal_id, 40) || clamp(body.deal, 40);
+  const dealId = dealIdRaw ? dealIdRaw.replace(/\D/g, '') || undefined : undefined;
+
   const comment = clamp(body.comment, 2000);
   const destination = clamp(body.destination, 120);
 
@@ -70,6 +73,7 @@ export async function POST(request: Request) {
       phone,
       sourcePhone: sourcePhone || phone,
       email,
+      dealId,
       comment,
       destination: destination || undefined,
       people,

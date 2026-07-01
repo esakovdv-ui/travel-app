@@ -15,6 +15,7 @@ export const rebookingAnnulRecordSchema = z.object({
   name: z.string().min(1),
   phone: z.string().optional(),
   email: z.string().optional(),
+  dealId: z.string().optional(),
   comment: z.string().optional(),
   people: z.number().int().nonnegative().optional(),
   kids: z.number().int().nonnegative().optional(),
@@ -68,6 +69,7 @@ export type RecordRebookingAnnulInput = {
   name: string;
   phone?: string;
   email?: string;
+  dealId?: string;
   comment?: string;
   people?: number;
   kids?: number;
@@ -112,6 +114,7 @@ export async function recordRebookingAnnul(
     name: input.name || 'Клиент',
     phone: input.phone?.slice(0, 30),
     email: input.email?.slice(0, 120),
+    dealId: input.dealId?.slice(0, 40),
     comment: input.comment?.slice(0, 2000),
     people: input.people,
     kids: input.kids,

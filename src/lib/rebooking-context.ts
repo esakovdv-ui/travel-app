@@ -14,6 +14,7 @@ export type RebookingContext = {
   name: string;
   phone?: string;
   email?: string;
+  dealId?: string;
   people?: number;
   kids?: number;
   kidAges: number[];
@@ -29,6 +30,7 @@ const contextSchema = z.object({
   name: z.string(),
   phone: z.string().optional(),
   email: z.string().optional(),
+  dealId: z.string().optional(),
   people: z.number().int().nonnegative().optional(),
   kids: z.number().int().nonnegative().optional(),
   kidAges: z.array(z.number()),
@@ -37,6 +39,12 @@ const contextSchema = z.object({
   date: z.string().optional(),
   registeredAt: z.number(),
 });
+
+function normalizeDealId(raw: unknown): string | undefined {
+  if (raw == null) return undefined;
+  const digits = String(raw).trim().replace(/\D/g, '');
+  return digits.length ? digits : undefined;
+}
 
 const TTL_MS = 30 * 60 * 1000;
 const MAX_CONTEXTS = 2000;
@@ -106,6 +114,7 @@ export function parseRebookingParamsFromUrl(rawUrl: string): Omit<RebookingConte
       name: params.get('name')?.trim() || '',
       phone: normalizeLeadPhone(params.get('phone')?.trim() || '') || undefined,
       email: params.get('email')?.trim() || undefined,
+      dealId: normalizeDealId(params.get('dealId') || params.get('deal_id') || params.get('deal')),
       people: parsePositiveInt(params.get('people')),
       kids,
       kidAges: parseKidAges(
@@ -136,6 +145,7 @@ export function parseRebookingContextFromBody(body: Record<string, unknown>): Om
     phone:
       normalizeLeadPhone(typeof body.phone === 'string' ? body.phone.trim() : '') || undefined,
     email: typeof body.email === 'string' ? body.email.trim() : undefined,
+    dealId: normalizeDealId(body.dealId ?? body.deal_id ?? body.deal),
     people: parsePositiveInt(body.people),
     kids,
     kidAges: parseKidAges(body, kids),

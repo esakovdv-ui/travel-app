@@ -99,6 +99,9 @@ function buildRebookingLink(row) {
       params.set(key, String(value).trim());
     }
   });
+  if (row.deal_id != null && String(row.deal_id).trim() !== '') {
+    params.set('dealId', String(row.deal_id).trim());
+  }
   Object.entries(UTM).forEach(([key, value]) => {
     if (value) params.set(key, value);
   });

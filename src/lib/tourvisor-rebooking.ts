@@ -245,6 +245,7 @@ export async function captureTourvisorOrderAsLead(options: {
     phone,
     sourcePhone: sourcePhone || phone,
     email: tour.email,
+    dealId: rebooking.dealId,
     people: rebooking.people,
     kids: rebooking.kids,
     kidAges: rebooking.kidAges,

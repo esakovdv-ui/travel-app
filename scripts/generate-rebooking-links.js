@@ -66,6 +66,10 @@ function buildLink(row) {
       params.set(key, String(value).trim());
     }
   });
+  const dealId = row.deal_id || row.dealid || row.deal || '';
+  if (dealId != null && String(dealId).trim() !== '') {
+    params.set('dealId', String(dealId).trim());
+  }
   return `${BASE_URL}?${params.toString()}`;
 }
 

@@ -39,6 +39,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
   }
 
+  const dealIdRaw = clamp(body.dealId, 40) || clamp(body.deal_id, 40) || clamp(body.deal, 40);
+  const dealId = dealIdRaw ? dealIdRaw.replace(/\D/g, '') || undefined : undefined;
+
   const kids = parsePositiveInt(body.kids) ?? 0;
   const visitId = clamp(body.visitId, 80) || undefined;
   const annulInput = {
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
     sourcePhone,
     phone: tourPhone,
     email: clamp(body.email, 120) || undefined,
+    dealId,
     comment: clamp(body.comment, 2000) || undefined,
     people: parsePositiveInt(body.people),
     kids,
