@@ -6,8 +6,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DEAL_CATEGORY_ID = 12;
-const DEAL_STAGE_ID = 'C12:NEW';
+const DEAL_CATEGORY_ID = 22;
+const DEAL_STAGE_ID = 'C22:NEW';
 const ASSIGNED_BY_ID = 1;
 
 const LANDING_TITLES = {
