@@ -34,6 +34,7 @@ pm2 restart all
 - `NEXT_PUBLIC_WL_BASE_URL=https://russia.mosgortur.ru` — базовый URL White Label
 - `FONT_DIR=./scripts/fonts` — путь к шрифтам для PDF-генератора
 - `BITRIX_DOMAIN` — домен портала Bitrix24 (например `crm.mosgortur.ru`)
+- `BITRIX_REST_BASE_URL` — прокси REST (`https://it.mosgortur.ru/b24catch`), если прямой доступ с VPS к CRM заблокирован; при деплое скрипт `scripts/configure-bitrix-hosts.sh` прописывает `81.23.1.216` в `/etc/hosts` и автоматически убирает прокси, когда прямой REST отвечает
 - `WEBHOOK_TOKEN` — часть URL вебхука после `/rest/` (например `1981/xxxxxxxx`)
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
 - `REBOOKING_BITRIX_DOMAIN` — домен Б24 для `/rebooking` (по умолчанию как `BITRIX_DOMAIN`)
