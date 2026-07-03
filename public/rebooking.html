@@ -388,6 +388,7 @@
           phone: normalizePhoneFromUrl(params.get('phone')),
           dealId: (params.get('dealId') || params.get('deal_id') || params.get('deal') || '').trim(),
           people: parseIntParam(params.get('people')),
+          adults: parseIntParam(params.get('adults')),
           kids: kids,
           kid1: kidAgeSlots[0],
           kid2: kidAgeSlots[1],
@@ -410,8 +411,13 @@
           console.warn('rebooking: kids count exceeds people count');
           data.kids = data.people;
         }
-        data.adults =
-          data.people != null && data.kids != null ? Math.max(data.people - data.kids, 0) : undefined;
+        if (data.adults != null && data.adults < 0) data.adults = 0;
+        if (data.adults == null && data.people != null && data.kids != null) {
+          data.adults = Math.max(data.people - data.kids, 0);
+        }
+        if (data.people == null && data.adults != null && data.kids != null) {
+          data.people = data.adults + data.kids;
+        }
         if (data.adults != null && data.adults > 6) {
           console.warn('rebooking: adults count capped at 6 for Tourvisor');
           data.adults = 6;
@@ -493,6 +499,7 @@
         url.searchParams.set('s_hotel_services', TV_INSTANT_CONFIRMATION_SERVICE_ID);
         if (data.adults != null && data.adults >= 1) url.searchParams.set('s_adults', String(data.adults));
         if (data.kids >= 1 && data.kids <= 3) {
+          url.searchParams.set('s_child', String(data.kids));
           [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
             if (age != null) url.searchParams.set('child_age_' + (index + 1), String(age));
           });

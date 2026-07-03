@@ -29,11 +29,12 @@
 | `name` | Нет | ФИО, URL-encoded | `Иванов%20Иван%20Иванович` | Приветствие «Здравствуйте, {имя}!» (берётся **второе** слово при ≥2 словах, иначе первое); fallback имени клиента в лиде |
 | `phone` | Нет, но желательно | `+79001234567` или `89001234567` | **Не показывается** на странице. Сохраняется в контексте и при аннуляции / перебронировании уходит в Bitrix как **оригинальный телефон из рассылки** (`Телефон (из письма)`). Контакт в CRM привязывается по этому номеру, даже если клиент в Tourvisor укажет другой. |
 | `dealId` | Нет, но желательно | целое (ID сделки B2C), напр. `108076` | **Не показывается** на странице. Сохраняется в контексте и при аннуляции / перебронировании выводится в комментарий Bitrix: «Сделка B2C (из рассылки): {id}» + ссылка на карточку сделки. Синонимы в URL: `deal_id`, `deal`. |
-| `people` | Нет | целое ≥ 0 | `3` | Карточка «N туристов»; расчёт `adults = people - kids`; атрибут `tv-adults` (если 1–4) |
-| `kids` | Нет | целое ≥ 0, default `0` | `1` | Подпись состава (взрослые + дети); `tv-kids` (если 1–3). Если `kids > people` — сбрасывается в `0`, возрасты детей очищаются |
-| `kid1` | Нет* | целое 0–15 | `7` | Возраст 1-го ребёнка → `tv-kid1`; подпись в карточке |
-| `kid2` | Нет* | целое 0–15 | `5` | Возраст 2-го ребёнка → `tv-kid2` |
-| `kid3` | Нет* | целое 0–15 | `3` | Возраст 3-го ребёнка → `tv-kid3` |
+| `people` | Нет | целое ≥ 0 | `3` | Карточка «N туристов»; если `adults` не задан — `adults = people - kids` |
+| `adults` | Нет | целое 1–6 | `2` | Явное число взрослых для Tourvisor (`s_adults`); приоритет над расчётом из `people` |
+| `kids` | Нет | целое ≥ 0, default `0` | `1` | Число детей в поиске (`s_child`, max 3). Если `kids > people` — сбрасывается |
+| `kid1` | Нет* | целое 0–15 | `7` | Возраст 1-го ребёнка → `child_age_1` в URL Tourvisor |
+| `kid2` | Нет* | целое 0–15 | `5` | Возраст 2-го ребёнка → `child_age_2` |
+| `kid3` | Нет* | целое 0–15 | `3` | Возраст 3-го ребёнка → `child_age_3` |
 | `price` | Нет | целое ≥ 0 (руб.) | `185000` | Карточка «бюджет поездки»; `tv-pricefrom=0`, `tv-priceto={price}` |
 | `nights` | Нет | целое > 0 | `10` | Карточка «N ночей»; `tv-nights={n},{n}` |
 | `date` | Нет | `YYYY-MM-DD` или `DD.MM.YYYY` | `2026-07-14` | Карточка даты; `tv-flydates={dd.mm.yyyy},{dd.mm.yyyy}` |
@@ -58,10 +59,11 @@
 
 ```bash
 node scripts/generate-rebooking-links.js [input.csv] [output.csv]
+node scripts/generate-krym-all-rebooking-links.mjs "/path/to/Крым Все.xlsx"
 ```
 
-CSV-колонки: `order,cert,name,phone,people,kids,kid1,kid2,kid3,nights,date`.  
-Переменная `REBOOKING_BASE_URL` (default: `https://online.mosgortur.ru/new/rebooking`).
+CSV-колонки (ручной CSV): `order,cert,name,phone,people,adults,kids,kid1,kid2,kid3,nights,date`.  
+Выгрузка «Крым Все.xlsx»: колонка «Детализация по детям» парсится автоматически; при 4+ детях в ссылку попадают **3 самых старших** возраста (0–15 лет).
 
 Телефон в ссылке нормализуется в формат `+7XXXXXXXXXX` (как в скрипте Excel-рассылки).
 
@@ -111,8 +113,8 @@ flowchart TD
 | — | `tv-formmodes` | всегда | `1` (в UI доступен только режим отелей) |
 | `date` | `tv-flydates` + `s_j_date_from` / `s_j_date_to` | если дата распознана | `{dd.mm.yyyy}` |
 | `nights` | `tv-nights` + `s_nights_from` / `s_nights_to` | `nights > 0` | `{n},{n}` |
-| adults | `s_adults` | `adults` от 1 до 6 | число в query URL |
-| `kids` + `kid1`…`kid3` | `child_age_1`…`child_age_3` | при наличии валидных возрастов | число в query URL |
+| adults | `s_adults` | `adults` от 1 до 6 (или `people - kids`) | число в query URL |
+| `kids` + `kid1`…`kid3` | `s_child` + `child_age_1`…`child_age_3` | при наличии валидных возрастов | число в query URL |
 | `price` | `s_price_from` / `s_price_to` | `price > 0` | `0` / `{price}` |
 
 **Module ID:** `9978253`  
