@@ -185,7 +185,7 @@ export function VlasevoPromoAdminClient() {
   const [password, setPassword] = useState('');
   const [isAuthed, setIsAuthed] = useState(false);
   const [shifts, setShifts] = useState<VlasevoPromoShift[]>([]);
-  const [bookingMode, setBookingMode] = useState<BookingMode>('direct');
+  const [bookingMode, setBookingMode] = useState<BookingMode>('lead');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
@@ -224,7 +224,7 @@ export function VlasevoPromoAdminClient() {
         const data = await response.json();
         if (!ignore) {
           const list = Array.isArray(data) ? data : data.shifts;
-          setBookingMode(!Array.isArray(data) && data.bookingMode === 'lead' ? 'lead' : 'direct');
+          setBookingMode(!Array.isArray(data) && data.bookingMode === 'direct' ? 'direct' : 'lead');
           setShifts((list ?? []).map((shift: Partial<VlasevoPromoShift>) => ({
             ...blankShift,
             ...shift,
@@ -267,7 +267,7 @@ export function VlasevoPromoAdminClient() {
     setIsAuthed(false);
     setPassword('');
     setShifts([]);
-    setBookingMode('direct');
+    setBookingMode('lead');
   }
 
   function updateShift(index: number, patch: Partial<VlasevoPromoShift>) {
@@ -321,7 +321,7 @@ export function VlasevoPromoAdminClient() {
     if (!response.ok) throw new Error(data.error || 'Не удалось сохранить смены');
     return {
       shifts: data.shifts as VlasevoPromoShift[],
-      bookingMode: (data.bookingMode === 'lead' ? 'lead' : 'direct') as BookingMode,
+      bookingMode: (data.bookingMode === 'direct' ? 'direct' : 'lead') as BookingMode,
     };
   }
 

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   const store = await writeVlasevoPromoStore({
-    bookingMode: parsed.data.bookingMode ?? 'direct',
+    bookingMode: parsed.data.bookingMode ?? 'lead',
     shifts: parsed.data.shifts,
   });
 

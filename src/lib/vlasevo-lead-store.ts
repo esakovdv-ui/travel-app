@@ -1,10 +1,42 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import type { CampLanding, UtmFields } from '@/lib/bitrix-camp-lead';
+import type { CampLanding, CampLeadQualification, UtmFields } from '@/lib/bitrix-camp-lead';
 
 export const bitrixStatusSchema = z.enum(['pending', 'sent', 'failed']);
 export type VlasevoLeadBitrixStatus = z.infer<typeof bitrixStatusSchema>;
+
+const qualificationStepSchema = z.enum(['contacts', 'intent', 'payment', 'documents', 'transfer', 'questions']);
+const documentSchema = z.object({
+  seriesNumber: z.string().optional(),
+  issueDate: z.string().optional(),
+  issuer: z.string().optional(),
+  departmentCode: z.string().optional(),
+});
+const qualificationSchema = z.object({
+  flow: z.enum(['ready', 'questions']).optional(),
+  status: z.enum(['not_started', 'in_progress', 'completed', 'questions']).optional(),
+  currentStep: qualificationStepSchema.optional(),
+  completedSteps: z.array(qualificationStepSchema).optional(),
+  readinessPercent: z.number().int().min(0).max(100).optional(),
+  updatedAt: z.string().optional(),
+  applicantFullName: z.string().optional(),
+  contactPhone: z.string().optional(),
+  email: z.string().optional(),
+  shiftDecision: z.enum(['yes', 'no', 'changes']).optional(),
+  shiftChangeRequest: z.string().optional(),
+  paymentType: z.enum(['certificate', 'self']).optional(),
+  childFullName: z.string().optional(),
+  childBirthDate: z.string().optional(),
+  childDocumentType: z.enum(['birth_certificate', 'passport']).optional(),
+  applicantPassport: documentSchema.optional(),
+  childDocument: documentSchema.optional(),
+  transferNeeded: z.enum(['yes', 'no']).optional(),
+  transferAddress: z.string().optional(),
+  transferTrafficData: z.string().optional(),
+  consultationQuestion: z.string().optional(),
+  preferredContactTime: z.enum(['morning', 'day', 'evening']).optional(),
+});
 
 export const vlasevoLeadSchema = z.object({
   id: z.string().min(1),
@@ -28,6 +60,7 @@ export const vlasevoLeadSchema = z.object({
   bitrixDealId: z.number().optional(),
   bitrixContactId: z.number().optional(),
   bitrixError: z.string().optional(),
+  qualification: qualificationSchema.optional(),
 });
 
 export type VlasevoLead = z.infer<typeof vlasevoLeadSchema>;
@@ -104,6 +137,48 @@ export async function updateVlasevoLeadBitrix(
     ...leads[index],
     ...patch,
     bitrixError: patch.bitrixError?.slice(0, 240),
+  });
+  await writeLeads(leads);
+  return leads[index];
+}
+
+export async function getVlasevoLeadById(leadId: string): Promise<VlasevoLead | null> {
+  const leads = await readLeadsRaw();
+  return leads.find((item) => item.id === leadId) ?? null;
+}
+
+function mergeDocument(
+  current: CampLeadQualification['applicantPassport'],
+  patch: CampLeadQualification['applicantPassport']
+) {
+  if (!patch) return current;
+  return {
+    ...(current ?? {}),
+    ...patch,
+  };
+}
+
+export async function updateVlasevoLeadQualification(
+  leadId: string,
+  patch: {
+    qualification: CampLeadQualification;
+  }
+): Promise<VlasevoLead | null> {
+  const leads = await readLeadsRaw();
+  const index = leads.findIndex((item) => item.id === leadId);
+  if (index < 0) return null;
+
+  const currentQualification = leads[index].qualification ?? {};
+  const nextQualification = qualificationSchema.parse({
+    ...currentQualification,
+    ...patch.qualification,
+    applicantPassport: mergeDocument(currentQualification.applicantPassport, patch.qualification.applicantPassport),
+    childDocument: mergeDocument(currentQualification.childDocument, patch.qualification.childDocument),
+  });
+
+  leads[index] = vlasevoLeadSchema.parse({
+    ...leads[index],
+    qualification: nextQualification,
   });
   await writeLeads(leads);
   return leads[index];

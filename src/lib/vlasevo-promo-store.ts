@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const DEFAULT_PROMO_ACCENT_TEXT = 'Летние смены по специальной цене';
 export const DEFAULT_SPECIAL_TERMS_TEXT = 'Спецусловия до 7 июня';
 export const DEFAULT_BENEFIT_LABEL = 'Специальная цена';
-export const DEFAULT_BOOKING_MODE = 'direct' as const;
+export const DEFAULT_BOOKING_MODE = 'lead' as const;
 
 export const bookingModeSchema = z.enum(['direct', 'lead']);
 export type VlasevoPromoBookingMode = z.infer<typeof bookingModeSchema>;

@@ -6,9 +6,14 @@ import {
   parseBookingPrice,
   parseLeadUtm,
   submitCampLead,
+  updateCampLead,
   type CampLanding,
 } from '@/lib/bitrix-camp-lead';
-import { saveVlasevoLead, updateVlasevoLeadBitrix } from '@/lib/vlasevo-lead-store';
+import {
+  getVlasevoLeadById,
+  saveVlasevoLead,
+  updateVlasevoLeadBitrix,
+} from '@/lib/vlasevo-lead-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,6 +105,23 @@ export async function POST(request: Request) {
       }).catch((updateError) => {
         console.error('vlasevo-lead: failed to mark lead sent', updateError);
       });
+      const latestLead = await getVlasevoLeadById(savedLead.id).catch(() => null);
+      if (latestLead?.qualification) {
+        await updateCampLead({
+          logPrefix: 'vlasevo-lead',
+          dealId: result.dealId,
+          landing,
+          name: latestLead.name,
+          phone: latestLead.phone,
+          shift: latestLead.shift,
+          bookingPrice: latestLead.bookingPrice,
+          source: latestLead.source,
+          utm: latestLead.utm,
+          qualification: latestLead.qualification,
+        }).catch((updateError) => {
+          console.error('vlasevo-lead: failed to sync qualification after deal creation', updateError);
+        });
+      }
       return { status: 'sent' as const, result };
     })
     .catch(async (e) => {

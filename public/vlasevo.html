@@ -544,7 +544,9 @@
     .form-card { padding: 20px; }
     .field { margin-bottom: 12px; }
     .field label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); font-weight: 900; }
-    .field input, .field select { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--panel); padding: 0 12px; font-weight: 700; }
+    .field input, .field select, .field textarea { width: 100%; border: 0; border-radius: 12px; background: var(--panel); font-weight: 700; font: inherit; box-sizing: border-box; }
+    .field input, .field select { min-height: 48px; padding: 0 12px; }
+    .field textarea { min-height: 120px; padding: 12px; resize: vertical; line-height: 1.45; }
     .form-note { min-height: 22px; margin: 10px 0 0; color: var(--green); font-size: 14px; font-weight: 900; }
     .form-note.error { color: #c62828; }
     .form-note.is-error { color: #c62828; }
@@ -630,6 +632,160 @@
       line-height: 1.45;
     }
     .modal-form-body.is-hidden { display: none; }
+    .qualify-branch {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .qualify-hint {
+      color: var(--muted) !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      line-height: 1.5 !important;
+    }
+    .qualify-progress {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .qualify-body {
+      display: grid;
+      gap: 14px;
+    }
+    .qualify-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .qualify-radio-group {
+      display: grid;
+      gap: 10px;
+    }
+    .qualify-radio {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border: 1px solid rgba(31, 85, 60, .16);
+      border-radius: 14px;
+      background: rgba(255,255,255,.88);
+    }
+    .qualify-radio input {
+      margin-top: 3px;
+    }
+    .qualify-radio strong,
+    .qualify-step-title {
+      color: var(--text);
+    }
+    .qualify-radio span,
+    .qualify-step-copy,
+    .qualify-step-copy p,
+    .qualify-step-copy li,
+    .qualify-step-copy small {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .qualify-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .qualify-grid .field {
+      margin: 0;
+    }
+    .qualify-grid .field--full {
+      grid-column: 1 / -1;
+    }
+    .qualify-summary {
+      display: grid;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(31, 85, 60, .06);
+    }
+    .qualify-summary p,
+    .qualify-summary li {
+      color: var(--text) !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      line-height: 1.5 !important;
+    }
+    .qualify-section {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(31, 85, 60, .14);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .6);
+    }
+    .qualify-section-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .qualify-shift-card {
+      display: grid;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(31, 85, 60, .07);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .qualify-shift-card strong {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 900;
+      text-transform: none;
+      letter-spacing: -.01em;
+    }
+    .qualify-inline-note {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+    .qualify-note-card {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(31, 85, 60, .07);
+      border: 1px solid rgba(31, 85, 60, .12);
+    }
+    .qualify-note-card .qualify-inline-note {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .qualify-comment-box {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .72);
+      border: 1px solid rgba(31, 85, 60, .14);
+    }
+    .qualify-comment-box textarea {
+      min-height: 132px;
+      resize: vertical;
+    }
+    @media (max-width: 640px) {
+      .qualify-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .modal--qualify { width: min(100%, 640px); }
+    @media (min-width: 641px) {
+      .modal--qualify { padding: 28px 28px 24px; }
+    }
     .modal--wide { width: min(100%, 760px); padding: 0; }
     .modal--camp .modal-close { z-index: 2; }
     .camp-info-body {
@@ -732,6 +888,7 @@
     .sticky-cta { position: fixed; left: 12px; right: 12px; bottom: 10px; z-index: 40; display: none; padding: 10px; border-radius: 14px; box-shadow: 0 14px 24px rgba(0,0,0,.14); background: rgba(255,255,255,.95); backdrop-filter: blur(3px); }
     .sticky-cta .btn { width: 100%; }
     .hidden { display: none !important; }
+    [hidden] { display: none !important; }
     @media (max-width: 980px) {
       .hero-grid, .lead-block, .timer-panel, .urgency { grid-template-columns: 1fr; }
       .grid { grid-template-columns: repeat(2,1fr); }
@@ -979,7 +1136,17 @@
       <h2 id="modal-title">Забронировать смену</h2>
       <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
       <div class="modal-success" id="modal-success">
-        <p>Спасибо! Мы получили заявку и скоро свяжемся с вами.</p>
+        <div class="qualify-branch">
+          <button class="btn" type="button" id="qualify-ready-btn">Готов(а) бронировать</button>
+          <p class="qualify-hint">Заполните детали сейчас — это ускорит бронирование.</p>
+          <button class="btn btn-secondary" type="button" id="qualify-questions-btn">Есть вопросы</button>
+          <p class="qualify-hint">Менеджер свяжется в течение дня и поможет уточнить детали.</p>
+        </div>
+      </div>
+      <div class="modal-success" id="modal-qualify">
+        <div class="qualify-progress" id="qualify-progress"></div>
+        <div class="qualify-body" id="qualify-body"></div>
+        <p class="form-note" id="qualify-note" aria-live="polite"></p>
       </div>
       <form class="form-card modal-form-body" id="modal-form" style="padding: 0; box-shadow: none;">
         <div class="field">
@@ -1311,6 +1478,9 @@
     }
 
     const reserveModal = document.getElementById('reserve-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalLead = reserveModal?.querySelector('.modal-lead');
+    const modalCard = reserveModal?.querySelector('.modal');
     const modalForm = document.getElementById('modal-form');
     const modalFormBody = modalForm;
     const modalSuccess = document.getElementById('modal-success');
@@ -1321,9 +1491,16 @@
     const modalSubmit = document.getElementById('modal-submit');
     const modalClose = document.getElementById('modal-close');
     const modalPhoneError = document.getElementById('modal-phone-error');
+    const modalQualify = document.getElementById('modal-qualify');
+    const qualifyBody = document.getElementById('qualify-body');
+    const qualifyProgress = document.getElementById('qualify-progress');
+    const qualifyNote = document.getElementById('qualify-note');
+    const qualifyReadyBtn = document.getElementById('qualify-ready-btn');
+    const qualifyQuestionsBtn = document.getElementById('qualify-questions-btn');
 
     let shiftsLoaded = false;
     let activeReserveShift = null;
+    let currentLeadSession = null;
 
     const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
     const PHONE_MIN_CURSOR = 4;
@@ -1367,6 +1544,76 @@
         if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
       }
       return formatted.length;
+    }
+
+    function formatPassportSeriesNumber(raw) {
+      const digits = String(raw || '').replace(/\D/g, '').slice(0, 10);
+      if (!digits) return '';
+      if (digits.length <= 4) return digits;
+      return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+    }
+
+    function formatDepartmentCode(raw) {
+      const digits = String(raw || '').replace(/\D/g, '').slice(0, 6);
+      if (!digits) return '';
+      if (digits.length <= 3) return digits;
+      return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    }
+
+    function formatBirthCertificateSeriesNumber(raw) {
+      const value = String(raw || '').toUpperCase().replace(/[^0-9A-ZА-Я]/g, '');
+      if (!value) return '';
+      const letters = value.replace(/\d/g, '').slice(0, 4);
+      const digits = value.replace(/\D/g, '').slice(0, 6);
+      let prefix = letters;
+      if (letters.length > 2) {
+        prefix = `${letters.slice(0, 2)}-${letters.slice(2)}`;
+      }
+      return [prefix, digits].filter(Boolean).join(' ').trim();
+    }
+
+    function countMaskUnits(value, pattern) {
+      let count = 0;
+      for (const char of String(value || '')) {
+        if (pattern.test(char)) count += 1;
+      }
+      return count;
+    }
+
+    function caretAfterMaskUnits(formatted, count, pattern) {
+      if (count <= 0) return 0;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (pattern.test(formatted[i])) {
+          seen += 1;
+          if (seen === count) return i + 1;
+        }
+      }
+      return formatted.length;
+    }
+
+    function bindMaskedInput(input, formatter, unitPattern = /\d/) {
+      if (!input) return;
+      input.__maskFormatter = formatter;
+      input.__maskUnitPattern = unitPattern;
+      if (input.__maskBound) {
+        input.value = formatter(input.value);
+        return;
+      }
+      const applyMask = () => {
+        const activeFormatter = input.__maskFormatter;
+        const pattern = input.__maskUnitPattern || /\d/;
+        if (typeof activeFormatter !== 'function') return;
+        const start = input.selectionStart ?? input.value.length;
+        const unitsBefore = countMaskUnits(input.value.slice(0, start), pattern);
+        input.value = activeFormatter(input.value);
+        const caret = caretAfterMaskUnits(input.value, unitsBefore, pattern);
+        input.setSelectionRange(caret, caret);
+      };
+      input.__maskBound = true;
+      input.addEventListener('input', applyMask);
+      input.addEventListener('blur', applyMask);
+      input.value = formatter(input.value);
     }
 
     function createPhoneMaskController(input, errorEl) {
@@ -1492,6 +1739,9 @@
           return true;
         },
         reset() { digits = ''; input.value = ''; clearError(); },
+        initFromValue(raw) {
+          setDigits(normalizePastedDigits(raw || ''), normalizePastedDigits(raw || '').length);
+        },
         showMask() { render(0); input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR); },
       };
     }
@@ -1543,6 +1793,491 @@
       button.textContent = busy ? 'Отправляем…' : label;
     }
 
+    const READY_STEP_ORDER = ['contacts', 'intent', 'payment', 'documents', 'transfer'];
+
+    function ensureModalOpen() {
+      if (!reserveModal) return;
+      reserveModal.classList.add('is-open');
+      reserveModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function setModalCopy(title, leadText = '') {
+      if (modalTitle) modalTitle.textContent = title;
+      if (modalLead) modalLead.textContent = leadText;
+    }
+
+    function resetQualificationFlow() {
+      currentLeadSession = null;
+      modalCard?.classList.remove('modal--qualify');
+      setModalCopy('Забронировать смену', 'Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку');
+      modalSuccess.classList.remove('is-visible');
+      modalQualify?.classList.remove('is-visible');
+      qualifyProgress.textContent = '';
+      qualifyBody.innerHTML = '';
+      setFormNote(qualifyNote, '', false);
+      if (qualifyReadyBtn) qualifyReadyBtn.disabled = false;
+      if (qualifyQuestionsBtn) qualifyQuestionsBtn.disabled = false;
+    }
+
+    function qualificationRequest(path, payload) {
+      return fetch(path, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          throw new Error('Не удалось сохранить данные. Попробуйте ещё раз.');
+        }
+        return data;
+      });
+    }
+
+    function formatBirthDate(value) {
+      const raw = String(value || '');
+      if (!raw) return '';
+      const [year, month, day] = raw.split('-');
+      if (!year || !month || !day) return raw;
+      return `${day}.${month}.${year}`;
+    }
+
+    function getChildDocumentType(value) {
+      const raw = String(value || '');
+      if (!raw) return '';
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return '';
+      const now = new Date();
+      let age = now.getFullYear() - date.getFullYear();
+      const monthDelta = now.getMonth() - date.getMonth();
+      if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < date.getDate())) age -= 1;
+      return age >= 14 ? 'passport' : 'birth_certificate';
+    }
+
+    function getDocumentTypeLabel(value) {
+      if (value === 'passport') return 'паспорт';
+      if (value === 'birth_certificate') return 'свидетельство о рождении';
+      return '';
+    }
+
+    function getReadySummary(data) {
+      const lines = [];
+      if (data.applicantFullName) lines.push(`Заявитель: ${data.applicantFullName}`);
+      if (data.email) lines.push(`Email: ${data.email}`);
+      if (data.shiftDecision === 'yes') lines.push('Смена подтверждена');
+      if (data.shiftDecision === 'changes' && data.shiftChangeRequest) lines.push(`Нужны изменения: ${data.shiftChangeRequest}`);
+      if (data.paymentType === 'certificate') lines.push('Оплата: по сертификату');
+      if (data.paymentType === 'self') lines.push('Оплата: за собственные средства');
+      if (data.childFullName) lines.push(`Ребёнок: ${data.childFullName}`);
+      if (data.childBirthDate) lines.push(`Дата рождения ребёнка: ${formatBirthDate(data.childBirthDate)}`);
+      if (data.transferNeeded === 'yes') lines.push('Трансфер: нужен');
+      if (data.transferNeeded === 'no') lines.push('Трансфер: не нужен');
+      return lines;
+    }
+
+    function showQualificationChoice(session) {
+      currentLeadSession = {
+        ...session,
+        mode: null,
+        stepIndex: 0,
+        data: {
+          applicantFullName: session.name || '',
+          contactPhone: session.phone || '',
+          email: '',
+          shiftDecision: 'yes',
+          shiftChangeRequest: '',
+          paymentType: '',
+          childFullName: '',
+          childBirthDate: '',
+          applicantPassport: { seriesNumber: '', issueDate: '', issuer: '', departmentCode: '' },
+          childDocument: { seriesNumber: '', issueDate: '', issuer: '', departmentCode: '' },
+          transferNeeded: '',
+          transferAddress: '',
+          transferTrafficData: '',
+          consultationQuestion: '',
+        },
+      };
+      setModalCopy('Заявка отправлена', 'Если готовы продолжить, можно сразу передать менеджеру детали для ускоренного бронирования.');
+      modalCard?.classList.add('modal--qualify');
+      ensureModalOpen();
+      modalFormBody.classList.add('is-hidden');
+      modalQualify?.classList.remove('is-visible');
+      modalSuccess.classList.add('is-visible');
+      setFormNote(qualifyNote, '', false);
+    }
+
+    function renderQualificationComplete(message) {
+      setModalCopy('Готово', 'Менеджер уже увидит сохранённые данные в заявке.');
+      modalSuccess.classList.remove('is-visible');
+      modalQualify.classList.add('is-visible');
+      qualifyProgress.textContent = 'Готово';
+      qualifyBody.innerHTML = `
+        <div class="qualify-summary">
+          <p>${message}</p>
+          <ul>
+            ${getReadySummary(currentLeadSession?.data || {}).map((line) => `<li>${line}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="qualify-actions">
+          <button class="btn" type="button" id="qualify-close-btn">Закрыть</button>
+        </div>
+      `;
+      document.getElementById('qualify-close-btn')?.addEventListener('click', () => closeReserveModal(true));
+    }
+
+    function renderQuestionsFlow() {
+      setModalCopy('Есть вопросы', 'Оставьте вопрос, и менеджер свяжется с вами в течение дня.');
+      currentLeadSession.mode = 'questions';
+      modalSuccess.classList.remove('is-visible');
+      modalQualify.classList.add('is-visible');
+      qualifyProgress.textContent = 'Вопросы';
+      qualifyBody.innerHTML = `
+        <form id="qualify-step-form">
+          <div class="qualify-note-card">
+            <p class="qualify-inline-note">Менеджер свяжется с вами в течение дня. Если хотите, заранее напишите вопрос или важную деталь.</p>
+          </div>
+          <div class="qualify-comment-box">
+            <label for="consultation-question">Комментарий</label>
+            <textarea id="consultation-question" rows="5" placeholder="Например: нужна помощь с выбором смены, оплатой по сертификату или выбором даты.">${currentLeadSession.data.consultationQuestion || ''}</textarea>
+          </div>
+          <div class="qualify-actions">
+            <button class="btn" type="submit" id="qualify-save-btn">Передать менеджеру</button>
+            <button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('qualify-back-btn')?.addEventListener('click', () => {
+        modalQualify.classList.remove('is-visible');
+        modalSuccess.classList.add('is-visible');
+      });
+      document.getElementById('qualify-step-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = document.getElementById('qualify-save-btn');
+        setSubmitBusy(submitButton, true, 'Передать менеджеру');
+        currentLeadSession.data.consultationQuestion = document.getElementById('consultation-question').value.trim();
+        try {
+          await qualificationRequest(`/api/vlasevo-lead/${currentLeadSession.leadId}`, {
+            flow: 'questions',
+            step: 'questions',
+            consultationQuestion: currentLeadSession.data.consultationQuestion,
+          });
+          renderQualificationComplete('Спасибо! Менеджер получит ваш вопрос и свяжется с вами в течение дня.');
+        } catch (error) {
+          setFormNote(qualifyNote, error instanceof Error ? error.message : 'Не удалось сохранить данные.', true);
+          setSubmitBusy(submitButton, false, 'Передать менеджеру');
+        }
+      });
+    }
+
+    function renderReadyStep() {
+      currentLeadSession.mode = 'ready';
+      const step = READY_STEP_ORDER[currentLeadSession.stepIndex];
+      const stepNumber = currentLeadSession.stepIndex + 1;
+      const stepTitles = {
+        contacts: 'Контактные данные',
+        intent: 'Подтверждение смены',
+        payment: 'Финансовые условия',
+        documents: 'Данные ребёнка и документы',
+        transfer: 'Трансфер',
+      };
+      const stepLeads = {
+        contacts: 'Передадим менеджеру полные контакты для быстрого бронирования.',
+        intent: 'Подтвердите, готовы ли бронировать выбранную смену.',
+        payment: 'Выберите способ оплаты.',
+        documents: 'Соберём данные заранее, чтобы менеджер быстрее подготовил бронирование.',
+        transfer: 'Если трансфер нужен, сразу сохраним адрес прописки.',
+      };
+      setModalCopy(stepTitles[step], stepLeads[step]);
+      modalSuccess.classList.remove('is-visible');
+      modalSuccess.setAttribute('aria-hidden', 'true');
+      modalQualify.classList.add('is-visible');
+      modalQualify.removeAttribute('aria-hidden');
+      qualifyProgress.textContent = `Шаг ${stepNumber} из ${READY_STEP_ORDER.length}`;
+      const data = currentLeadSession.data;
+      const childDocumentType = getChildDocumentType(data.childBirthDate);
+      if (childDocumentType) data.childDocumentType = childDocumentType;
+      if (step === 'contacts') {
+        qualifyBody.innerHTML = `
+          <form id="qualify-step-form">
+            <div class="qualify-section">
+              <div class="field"><label for="q-full-name">ФИО заявителя</label><input id="q-full-name" type="text" value="${data.applicantFullName || ''}" placeholder="Иванова Анна Сергеевна" required></div>
+              <div class="qualify-grid">
+                <div class="field"><label for="q-phone">Телефон</label><input id="q-phone" type="tel" inputmode="tel" autocomplete="tel" value="${data.contactPhone || ''}" placeholder="+7 (___) ___-__-__" aria-describedby="q-phone-error" required><p class="field-error" id="q-phone-error" aria-live="polite"></p></div>
+                <div class="field"><label for="q-email">Email</label><input id="q-email" type="email" value="${data.email || ''}" placeholder="name@example.com" required></div>
+              </div>
+            </div>
+            <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Сохранить и далее</button></div>
+          </form>
+        `;
+      } else if (step === 'intent') {
+        qualifyBody.innerHTML = `
+          <form id="qualify-step-form">
+            <div class="qualify-shift-card">Выбранная смена<strong>${currentLeadSession.shift}</strong></div>
+            <div class="qualify-radio-group">
+              <label class="qualify-radio"><input type="radio" name="shift-decision" value="yes" ${data.shiftDecision === 'yes' ? 'checked' : ''}><span><strong>Да, бронирую эти даты</strong><br>Готов(а) бронировать выбранную смену</span></label>
+              <label class="qualify-radio"><input type="radio" name="shift-decision" value="no" ${data.shiftDecision === 'no' ? 'checked' : ''}><span><strong>Нет</strong><br>Эта смена не подходит</span></label>
+              <label class="qualify-radio"><input type="radio" name="shift-decision" value="changes" ${data.shiftDecision === 'changes' ? 'checked' : ''}><span><strong>Нужны изменения</strong><br>Подскажите, какие даты лучше рассмотреть</span></label>
+            </div>
+            <div class="field" id="q-shift-change-wrap" ${data.shiftDecision === 'yes' ? 'hidden' : ''}><label for="q-shift-change">Комментарий по датам</label><textarea id="q-shift-change" rows="3" placeholder="Заполните, если выбрали «Нет» или «Нужны изменения»">${data.shiftChangeRequest || ''}</textarea></div>
+            <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Сохранить и далее</button><button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button></div>
+          </form>
+        `;
+      } else if (step === 'payment') {
+        qualifyBody.innerHTML = `
+          <form id="qualify-step-form">
+            <div class="qualify-radio-group">
+              <label class="qualify-radio"><input type="radio" name="payment-type" value="certificate" ${data.paymentType === 'certificate' ? 'checked' : ''}><span><strong>По сертификату</strong><br>Оплата сертификатом МОСГОРТУР</span></label>
+              <label class="qualify-radio"><input type="radio" name="payment-type" value="self" ${data.paymentType === 'self' ? 'checked' : ''}><span><strong>За собственные средства</strong><br>Оплата напрямую</span></label>
+            </div>
+            <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Сохранить и далее</button><button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button></div>
+          </form>
+        `;
+      } else if (step === 'documents') {
+        qualifyBody.innerHTML = `
+          <form id="qualify-step-form">
+            <div class="qualify-section">
+              <p class="qualify-section-title">Ребёнок</p>
+              <div class="field"><label for="q-child-name">ФИО ребёнка</label><input id="q-child-name" type="text" value="${data.childFullName || ''}" placeholder="Иванов Максим Андреевич" required></div>
+              <div class="qualify-grid">
+                <div class="field"><label for="q-child-birthdate">Дата рождения</label><input id="q-child-birthdate" type="date" value="${data.childBirthDate || ''}" required></div>
+              </div>
+            </div>
+            <div class="qualify-section">
+              <p class="qualify-section-title">Паспорт заявителя</p>
+              <div class="qualify-grid">
+                <div class="field"><label for="q-app-passport-number">Серия и номер</label><input id="q-app-passport-number" type="text" value="${data.applicantPassport.seriesNumber || ''}" placeholder="0000 000000" required></div>
+                <div class="field"><label for="q-app-passport-date">Дата выдачи</label><input id="q-app-passport-date" type="date" value="${data.applicantPassport.issueDate || ''}" required></div>
+              </div>
+              <div class="field"><label for="q-app-passport-issuer">Кем выдан</label><input id="q-app-passport-issuer" type="text" value="${data.applicantPassport.issuer || ''}" placeholder="Например: ГУ МВД России по г. Москве" required></div>
+              <div class="qualify-grid">
+                <div class="field"><label for="q-app-passport-code">Код подразделения</label><input id="q-app-passport-code" type="text" value="${data.applicantPassport.departmentCode || ''}" placeholder="000-000" required></div>
+              </div>
+            </div>
+            <p class="qualify-inline-note" id="q-child-doc-hint" ${childDocumentType ? 'hidden' : ''}>Укажите дату рождения — подберём нужный тип документа.</p>
+            <div class="qualify-section" id="q-child-doc-section" ${childDocumentType ? '' : 'hidden'}>
+              <p class="qualify-section-title" id="q-child-doc-section-title">${childDocumentType === 'passport' ? 'Паспорт ребёнка' : 'Свидетельство о рождении ребёнка'}</p>
+              <div class="qualify-grid">
+                <div class="field"><label for="q-child-doc-number">Серия и номер</label><input id="q-child-doc-number" type="text" value="${data.childDocument.seriesNumber || ''}" placeholder="${childDocumentType === 'passport' ? '0000 000000' : 'II-АБ 123456'}" required></div>
+                <div class="field"><label for="q-child-doc-date">Дата выдачи</label><input id="q-child-doc-date" type="date" value="${data.childDocument.issueDate || ''}" required></div>
+              </div>
+              <div class="field"><label for="q-child-doc-issuer">Кем выдан</label><input id="q-child-doc-issuer" type="text" value="${data.childDocument.issuer || ''}" required></div>
+              <div class="qualify-grid" id="q-child-doc-code-wrap" ${childDocumentType === 'passport' ? '' : 'hidden'}><div class="field"><label for="q-child-doc-code">Код подразделения</label><input id="q-child-doc-code" type="text" value="${data.childDocument.departmentCode || ''}" placeholder="000-000" ${childDocumentType === 'passport' ? 'required' : ''}></div></div>
+            </div>
+            <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Сохранить и далее</button><button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button></div>
+          </form>
+        `;
+      } else if (step === 'transfer') {
+        qualifyBody.innerHTML = `
+          <form id="qualify-step-form">
+            <div class="qualify-radio-group">
+              <label class="qualify-radio"><input type="radio" name="transfer-needed" value="yes" ${data.transferNeeded === 'yes' ? 'checked' : ''}><span><strong>Да, нужен трансфер</strong><br>1 500 ₽ в одну сторону</span></label>
+              <label class="qualify-radio"><input type="radio" name="transfer-needed" value="no" ${data.transferNeeded === 'no' ? 'checked' : ''}><span><strong>Нет, трансфер не нужен</strong></span></label>
+            </div>
+            <div class="qualify-section" id="q-transfer-fields-wrap" ${data.transferNeeded === 'yes' ? '' : 'hidden'}>
+              <p class="qualify-section-title">Данные для трансфера</p>
+              <div class="field"><label for="q-transfer-address">Адрес прописки (нужно для ГИБДД)</label><textarea id="q-transfer-address" rows="2" placeholder="Заполните, если трансфер нужен">${data.transferAddress || ''}</textarea></div>
+              <p class="qualify-inline-note">Данные по трансферу можно уточнить и позже — за 3–5 дней до выезда.</p>
+            </div>
+            <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Завершить</button><button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button></div>
+          </form>
+        `;
+      }
+
+      if (step === 'contacts') {
+        const qPhone = document.getElementById('q-phone');
+        const qPhoneError = document.getElementById('q-phone-error');
+        currentLeadSession.phoneCtrl = createPhoneMaskController(qPhone, qPhoneError);
+        currentLeadSession.phoneCtrl.initFromValue(data.contactPhone || qPhone?.value || '');
+      }
+
+      if (step === 'intent') {
+        const shiftChangeWrap = document.getElementById('q-shift-change-wrap');
+        const syncShiftComment = () => {
+          const decision = document.querySelector('input[name="shift-decision"]:checked')?.value || '';
+          if (shiftChangeWrap) shiftChangeWrap.hidden = decision === 'yes';
+        };
+        document.querySelectorAll('input[name="shift-decision"]').forEach((radio) => {
+          radio.addEventListener('change', syncShiftComment);
+        });
+        syncShiftComment();
+      }
+
+      if (step === 'transfer') {
+        const transferFieldsWrap = document.getElementById('q-transfer-fields-wrap');
+        const syncTransferFields = () => {
+          const needed = document.querySelector('input[name="transfer-needed"]:checked')?.value === 'yes';
+          if (transferFieldsWrap) transferFieldsWrap.hidden = !needed;
+        };
+        document.querySelectorAll('input[name="transfer-needed"]').forEach((radio) => {
+          radio.addEventListener('change', syncTransferFields);
+        });
+        syncTransferFields();
+      }
+
+      if (step === 'documents') {
+        const birthdateInput = document.getElementById('q-child-birthdate');
+        const childDocumentSection = document.getElementById('q-child-doc-section');
+        const childDocumentHint = document.getElementById('q-child-doc-hint');
+        const childDocumentSectionTitle = document.getElementById('q-child-doc-section-title');
+        const applicantPassportNumberInput = document.getElementById('q-app-passport-number');
+        const applicantPassportCodeInput = document.getElementById('q-app-passport-code');
+        const childDocumentNumberInput = document.getElementById('q-child-doc-number');
+        const childDocumentCodeInput = document.getElementById('q-child-doc-code');
+        const childDocumentCodeWrap = document.getElementById('q-child-doc-code-wrap');
+        bindMaskedInput(applicantPassportNumberInput, formatPassportSeriesNumber);
+        bindMaskedInput(applicantPassportCodeInput, formatDepartmentCode);
+        const syncChildDocumentType = () => {
+          const nextType = getChildDocumentType(birthdateInput?.value || '');
+          if (childDocumentSection) childDocumentSection.hidden = !nextType;
+          if (childDocumentHint) childDocumentHint.hidden = !!nextType;
+          if (childDocumentSectionTitle) {
+            childDocumentSectionTitle.textContent = nextType === 'passport'
+              ? 'Паспорт ребёнка'
+              : 'Свидетельство о рождении ребёнка';
+          }
+          if (childDocumentNumberInput) {
+            childDocumentNumberInput.placeholder = nextType === 'passport' ? '0000 000000' : 'II-АБ 123456';
+            childDocumentNumberInput.value = nextType === 'passport'
+              ? formatPassportSeriesNumber(childDocumentNumberInput.value)
+              : formatBirthCertificateSeriesNumber(childDocumentNumberInput.value);
+          }
+          if (childDocumentCodeWrap) {
+            childDocumentCodeWrap.hidden = nextType !== 'passport';
+          }
+          if (childDocumentCodeInput) {
+            childDocumentCodeInput.required = nextType === 'passport';
+            childDocumentCodeInput.value = formatDepartmentCode(childDocumentCodeInput.value);
+          }
+          bindMaskedInput(
+            childDocumentNumberInput,
+            nextType === 'passport' ? formatPassportSeriesNumber : formatBirthCertificateSeriesNumber,
+            nextType === 'passport' ? /\d/ : /[0-9A-ZА-ЯЁ]/i
+          );
+          bindMaskedInput(childDocumentCodeInput, formatDepartmentCode);
+        };
+        syncChildDocumentType();
+        birthdateInput?.addEventListener('input', syncChildDocumentType);
+        birthdateInput?.addEventListener('change', syncChildDocumentType);
+      }
+
+      document.getElementById('qualify-back-btn')?.addEventListener('click', () => {
+        currentLeadSession.stepIndex = Math.max(0, currentLeadSession.stepIndex - 1);
+        renderReadyStep();
+      });
+
+      document.getElementById('qualify-step-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = document.getElementById('qualify-next-btn');
+        setFormNote(qualifyNote, '', false);
+        if (step === 'contacts') {
+          data.applicantFullName = document.getElementById('q-full-name').value.trim();
+          data.contactPhone = currentLeadSession.phoneCtrl?.getValue() || document.getElementById('q-phone').value.trim();
+          data.email = document.getElementById('q-email').value.trim();
+          if (!data.applicantFullName || !data.email) {
+            setFormNote(qualifyNote, 'Заполните ФИО и email.', true);
+            return;
+          }
+          currentLeadSession.phoneCtrl?.initFromValue(document.getElementById('q-phone').value);
+          if (!currentLeadSession.phoneCtrl?.validate()) {
+            setFormNote(qualifyNote, 'Введите номер телефона полностью.', true);
+            return;
+          }
+        }
+        if (step === 'intent') {
+          data.shiftDecision = document.querySelector('input[name="shift-decision"]:checked')?.value || '';
+          data.shiftChangeRequest = document.getElementById('q-shift-change').value.trim();
+          if (!data.shiftDecision) {
+            setFormNote(qualifyNote, 'Подтвердите, готовы ли бронировать выбранные даты.', true);
+            return;
+          }
+          if ((data.shiftDecision === 'no' || data.shiftDecision === 'changes') && !data.shiftChangeRequest) {
+            setFormNote(qualifyNote, 'Напишите, какие даты или изменения нужны.', true);
+            return;
+          }
+        }
+        if (step === 'payment') {
+          data.paymentType = document.querySelector('input[name="payment-type"]:checked')?.value || '';
+          if (!data.paymentType) {
+            setFormNote(qualifyNote, 'Выберите вариант оплаты.', true);
+            return;
+          }
+        }
+        if (step === 'documents') {
+          data.childFullName = document.getElementById('q-child-name').value.trim();
+          data.childBirthDate = document.getElementById('q-child-birthdate').value;
+          data.childDocumentType = getChildDocumentType(data.childBirthDate);
+          data.applicantPassport = {
+            seriesNumber: document.getElementById('q-app-passport-number').value.trim(),
+            issueDate: document.getElementById('q-app-passport-date').value,
+            issuer: document.getElementById('q-app-passport-issuer').value.trim(),
+            departmentCode: document.getElementById('q-app-passport-code').value.trim(),
+          };
+          data.childDocument = {
+            seriesNumber: document.getElementById('q-child-doc-number').value.trim(),
+            issueDate: document.getElementById('q-child-doc-date').value,
+            issuer: document.getElementById('q-child-doc-issuer').value.trim(),
+            departmentCode: document.getElementById('q-child-doc-code')?.value.trim() || '',
+          };
+          if (!data.childFullName || !data.childBirthDate || !data.childDocumentType) {
+            setFormNote(qualifyNote, 'Заполните данные ребёнка.', true);
+            return;
+          }
+          const applicantPassportReady = data.applicantPassport.seriesNumber && data.applicantPassport.issueDate && data.applicantPassport.issuer && data.applicantPassport.departmentCode;
+          const childDocumentReady = data.childDocument.seriesNumber && data.childDocument.issueDate && data.childDocument.issuer && (data.childDocumentType === 'passport' ? data.childDocument.departmentCode : true);
+          if (!applicantPassportReady || !childDocumentReady) {
+            setFormNote(qualifyNote, 'Заполните паспорт заявителя и документ ребёнка.', true);
+            return;
+          }
+        }
+        if (step === 'transfer') {
+          data.transferNeeded = document.querySelector('input[name="transfer-needed"]:checked')?.value || '';
+          data.transferAddress = document.getElementById('q-transfer-address').value.trim();
+          if (!data.transferNeeded) {
+            setFormNote(qualifyNote, 'Укажите, нужен ли трансфер.', true);
+            return;
+          }
+          if (data.transferNeeded === 'yes' && !data.transferAddress) {
+            setFormNote(qualifyNote, 'Для трансфера укажите адрес прописки.', true);
+            return;
+          }
+        }
+
+        const payload = {
+          flow: 'ready',
+          step,
+          applicantFullName: data.applicantFullName,
+          contactPhone: data.contactPhone,
+          email: data.email,
+          shiftDecision: data.shiftDecision,
+          shiftChangeRequest: data.shiftChangeRequest,
+          paymentType: data.paymentType,
+          childFullName: data.childFullName,
+          childBirthDate: data.childBirthDate,
+          childDocumentType: data.childDocumentType,
+          applicantPassport: data.applicantPassport,
+          childDocument: data.childDocument,
+          transferNeeded: data.transferNeeded,
+          transferAddress: data.transferAddress,
+          transferTrafficData: data.transferTrafficData,
+        };
+
+        setSubmitBusy(submitButton, true, step === 'transfer' ? 'Завершить' : 'Сохранить и далее');
+        try {
+          await qualificationRequest(`/api/vlasevo-lead/${currentLeadSession.leadId}`, payload);
+          if (step === 'transfer') {
+            renderQualificationComplete('Спасибо! Подробная информация сохранена и уже передана менеджеру для быстрого бронирования.');
+            return;
+          }
+          currentLeadSession.stepIndex += 1;
+          renderReadyStep();
+          setFormNote(qualifyNote, 'Шаг сохранён. Если остановитесь сейчас, уже введённые данные останутся в заявке.', false);
+        } catch (error) {
+          setFormNote(qualifyNote, error instanceof Error ? error.message : 'Не удалось сохранить данные.', true);
+          setSubmitBusy(submitButton, false, step === 'transfer' ? 'Завершить' : 'Сохранить и далее');
+        }
+      });
+    }
+
     async function submitVlasevoLead({ name, phone, shift, bookingPrice, source, website = '' }) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), LEAD_REQUEST_TIMEOUT_MS);
@@ -1579,7 +2314,7 @@
 
     function openReserveModal(shift) {
       activeReserveShift = shift;
-      modalSuccess.classList.remove('is-visible');
+      resetQualificationFlow();
       modalFormBody.classList.remove('is-hidden');
       modalShift.value = formatShiftLabel(shift);
       modalPhoneCtrl.reset();
@@ -1602,7 +2337,7 @@
       url.searchParams.delete('shift');
       url.searchParams.delete('shift_id');
       window.history.replaceState({}, '', `${url.pathname}${url.search ? `?${url.searchParams.toString()}` : ''}${url.hash}`);
-      modalSuccess.classList.remove('is-visible');
+      resetQualificationFlow();
       modalFormBody.classList.remove('is-hidden');
       if (clearShift) {
         modalForm.reset();
@@ -1638,6 +2373,17 @@
         if (event.target === reserveModal) closeReserveModal(true);
       });
     }
+    if (qualifyReadyBtn) {
+      qualifyReadyBtn.addEventListener('click', () => {
+        currentLeadSession.stepIndex = 0;
+        renderReadyStep();
+      });
+    }
+    if (qualifyQuestionsBtn) {
+      qualifyQuestionsBtn.addEventListener('click', () => {
+        renderQuestionsFlow();
+      });
+    }
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && reserveModal?.classList.contains('is-open')) closeReserveModal(true);
     });
@@ -1646,6 +2392,7 @@
       modalForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         setFormNote(modalFormNote, '', false);
+        modalPhoneCtrl.initFromValue(modalPhone.value);
         if (!modalPhoneCtrl.validate()) {
           modalPhone.focus();
           modalPhoneCtrl.showMask();
@@ -1654,7 +2401,7 @@
         let succeeded = false;
         setSubmitBusy(modalSubmit, true);
         try {
-          await submitVlasevoLead({
+          const result = await submitVlasevoLead({
             name: modalName.value.trim(),
             phone: modalPhoneCtrl.getValue(),
             shift: modalShift.value.trim(),
@@ -1663,11 +2410,14 @@
             website: document.getElementById('modal-website').value,
           });
           succeeded = true;
-          modalFormBody.classList.add('is-hidden');
-          modalSuccess.classList.add('is-visible');
+          showQualificationChoice({
+            leadId: result.leadId,
+            name: modalName.value.trim(),
+            phone: modalPhoneCtrl.getValue(),
+            shift: modalShift.value.trim(),
+          });
           modalName.value = '';
           modalPhoneCtrl.reset();
-          setTimeout(() => closeReserveModal(true), 15000);
         } catch (error) {
           const message = error instanceof Error ? error.message : LEAD_SUBMIT_ERROR;
           setFormNote(modalFormNote, message, true);
@@ -1722,6 +2472,7 @@
         const submitButton = landingForm.querySelector('button[type="submit"]:not(.hidden)');
         const submitLabel = submitButton?.textContent?.trim() || 'Забронировать';
         setFormNote(note, '', false);
+        landingPhoneCtrl.initFromValue(landingPhone.value);
         if (!landingPhoneCtrl.validate()) {
           landingPhone.focus();
           landingPhoneCtrl.showMask();
@@ -1730,19 +2481,28 @@
         let succeeded = false;
         setSubmitBusy(submitButton, true, submitLabel);
         try {
-          await submitVlasevoLead({
-            name: landingForm.name.value.trim(),
-            phone: landingPhoneCtrl.getValue(),
-            shift: shiftSelect.value.trim(),
+          const leadName = landingForm.name.value.trim();
+          const leadPhone = landingPhoneCtrl.getValue();
+          const leadShift = shiftSelect.value.trim();
+          const result = await submitVlasevoLead({
+            name: leadName,
+            phone: leadPhone,
+            shift: leadShift,
             bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
             source: 'landing',
             website: document.getElementById('website').value,
           });
           succeeded = true;
-          setFormNote(note, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
+          setFormNote(note, 'Спасибо! Заявка отправлена. Откроем окно, где можно ускорить бронирование.', false);
           landingForm.name.value = '';
           landingPhoneCtrl.reset();
           shiftSelect.value = '';
+          showQualificationChoice({
+            leadId: result.leadId,
+            name: leadName,
+            phone: leadPhone,
+            shift: leadShift,
+          });
         } catch (error) {
           const message = error instanceof Error ? error.message : LEAD_SUBMIT_ERROR;
           setFormNote(note, message, true);

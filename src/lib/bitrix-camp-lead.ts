@@ -3,6 +3,51 @@ export type UtmFields = Partial<
 >;
 
 export type CampLanding = 'raduga' | 'vlasevo' | 'vlasevo-promo';
+export type QualificationStep =
+  | 'contacts'
+  | 'intent'
+  | 'payment'
+  | 'documents'
+  | 'transfer'
+  | 'questions';
+export type QualificationFlow = 'ready' | 'questions';
+export type ShiftDecision = 'yes' | 'no' | 'changes';
+export type PaymentType = 'certificate' | 'self';
+export type TransferNeed = 'yes' | 'no';
+export type ChildDocumentType = 'birth_certificate' | 'passport';
+export type PreferredContactTime = 'morning' | 'day' | 'evening';
+
+export type CampLeadDocument = {
+  seriesNumber?: string;
+  issueDate?: string;
+  issuer?: string;
+  departmentCode?: string;
+};
+
+export type CampLeadQualification = {
+  flow?: QualificationFlow;
+  status?: 'not_started' | 'in_progress' | 'completed' | 'questions';
+  currentStep?: QualificationStep;
+  completedSteps?: QualificationStep[];
+  readinessPercent?: number;
+  updatedAt?: string;
+  applicantFullName?: string;
+  contactPhone?: string;
+  email?: string;
+  shiftDecision?: ShiftDecision;
+  shiftChangeRequest?: string;
+  paymentType?: PaymentType;
+  childFullName?: string;
+  childBirthDate?: string;
+  childDocumentType?: ChildDocumentType;
+  applicantPassport?: CampLeadDocument;
+  childDocument?: CampLeadDocument;
+  transferNeeded?: TransferNeed;
+  transferAddress?: string;
+  transferTrafficData?: string;
+  consultationQuestion?: string;
+  preferredContactTime?: PreferredContactTime;
+};
 
 const DEAL_CATEGORY_ID = 22;
 const DEAL_STAGE_ID = 'C22:NEW';
@@ -124,6 +169,20 @@ export type SubmitCampLeadInput = {
   bookingPrice?: number;
   source?: string;
   utm?: UtmFields;
+  qualification?: CampLeadQualification;
+};
+
+type UpdateCampLeadInput = {
+  logPrefix: string;
+  dealId: number;
+  landing: CampLanding;
+  name: string;
+  phone: string;
+  shift: string;
+  bookingPrice?: number;
+  source?: string;
+  utm?: UtmFields;
+  qualification?: CampLeadQualification;
 };
 
 function formatBookingPrice(price: number): string {
@@ -143,16 +202,71 @@ export function parseBookingPrice(raw: unknown): number | undefined {
   return undefined;
 }
 
-export async function submitCampLead({
-  logPrefix,
+function normalizeQualificationStep(step: string): string {
+  const labels: Record<QualificationStep, string> = {
+    contacts: 'Контакты',
+    intent: 'Подтверждение смены',
+    payment: 'Оплата',
+    documents: 'Документы',
+    transfer: 'Трансфер',
+    questions: 'Вопросы',
+  };
+  return labels[step as QualificationStep] ?? step;
+}
+
+function normalizePreferredContactTime(value: PreferredContactTime | string | undefined): string | undefined {
+  if (value === 'morning') return 'утром';
+  if (value === 'day') return 'днём';
+  if (value === 'evening') return 'вечером';
+  return undefined;
+}
+
+function normalizeShiftDecision(value: ShiftDecision | string | undefined): string | undefined {
+  if (value === 'yes') return 'да, готовы бронировать выбранные даты';
+  if (value === 'no') return 'нет';
+  if (value === 'changes') return 'нужны изменения';
+  return undefined;
+}
+
+function normalizePaymentType(value: PaymentType | string | undefined): string | undefined {
+  if (value === 'certificate') return 'по сертификату';
+  if (value === 'self') return 'за собственные средства';
+  return undefined;
+}
+
+function normalizeDocumentType(value: ChildDocumentType | string | undefined): string | undefined {
+  if (value === 'birth_certificate') return 'свидетельство о рождении';
+  if (value === 'passport') return 'паспорт';
+  return undefined;
+}
+
+function normalizeTransferNeed(value: TransferNeed | string | undefined): string | undefined {
+  if (value === 'yes') return 'да';
+  if (value === 'no') return 'нет';
+  return undefined;
+}
+
+function pushDocumentLines(lines: string[], title: string, document?: CampLeadDocument) {
+  if (!document) return;
+  const docLines = [
+    document.seriesNumber ? `серия и номер: ${document.seriesNumber}` : '',
+    document.issueDate ? `дата выдачи: ${document.issueDate}` : '',
+    document.issuer ? `кем выдан: ${document.issuer}` : '',
+    document.departmentCode ? `код подразделения: ${document.departmentCode}` : '',
+  ].filter(Boolean);
+  if (docLines.length) {
+    lines.push(`${title}:`, ...docLines.map((line) => `  - ${line}`));
+  }
+}
+
+export function buildCampLeadComments({
   landing,
-  name,
-  phone,
   shift,
   bookingPrice,
   source,
   utm = {},
-}: SubmitCampLeadInput) {
+  qualification,
+}: Pick<SubmitCampLeadInput, 'landing' | 'shift' | 'bookingPrice' | 'source' | 'utm' | 'qualification'>) {
   const commentLines = [`Смена: ${shift}`];
   if (bookingPrice != null) {
     commentLines.push(`Цена бронирования: ${formatBookingPrice(bookingPrice)}`);
@@ -165,11 +279,77 @@ export async function submitCampLead({
   } else if (landing === 'vlasevo') {
     commentLines.push('Лендинг: /vlasevo');
   }
+
+  if (qualification && qualification.status && qualification.status !== 'not_started') {
+    commentLines.push('', 'Ускоренная заявка:');
+    if (qualification.flow === 'questions') {
+      commentLines.push('Формат: есть вопросы');
+      const preferredTime = normalizePreferredContactTime(qualification.preferredContactTime);
+      if (preferredTime) commentLines.push(`Когда связаться: ${preferredTime}`);
+      if (qualification.consultationQuestion) {
+        commentLines.push(`Вопрос клиента: ${qualification.consultationQuestion}`);
+      }
+    } else {
+      commentLines.push('Формат: готов(а) бронировать');
+      if (qualification.status === 'completed') {
+        commentLines.push('Статус анкеты: заполнена');
+      } else if (qualification.currentStep) {
+        commentLines.push(`Статус анкеты: в процессе, последний шаг «${normalizeQualificationStep(qualification.currentStep)}»`);
+      } else {
+        commentLines.push('Статус анкеты: в процессе');
+      }
+      if (typeof qualification.readinessPercent === 'number') {
+        commentLines.push(`Готовность: ${qualification.readinessPercent}%`);
+      }
+      if (qualification.applicantFullName) commentLines.push(`ФИО заявителя: ${qualification.applicantFullName}`);
+      if (qualification.contactPhone) commentLines.push(`Телефон для связи: ${qualification.contactPhone}`);
+      if (qualification.email) commentLines.push(`Email: ${qualification.email}`);
+      const shiftDecision = normalizeShiftDecision(qualification.shiftDecision);
+      if (shiftDecision) commentLines.push(`Подтверждение по смене: ${shiftDecision}`);
+      if (qualification.shiftChangeRequest) commentLines.push(`Нужны изменения: ${qualification.shiftChangeRequest}`);
+      const paymentType = normalizePaymentType(qualification.paymentType);
+      if (paymentType) commentLines.push(`Оплата: ${paymentType}`);
+      if (qualification.childFullName) commentLines.push(`ФИО ребёнка: ${qualification.childFullName}`);
+      if (qualification.childBirthDate) commentLines.push(`Дата рождения ребёнка: ${qualification.childBirthDate}`);
+      const documentType = normalizeDocumentType(qualification.childDocumentType);
+      if (documentType) commentLines.push(`Документ ребёнка: ${documentType}`);
+      pushDocumentLines(commentLines, 'Паспорт заявителя', qualification.applicantPassport);
+      pushDocumentLines(commentLines, 'Документ ребёнка', qualification.childDocument);
+      const transferNeeded = normalizeTransferNeed(qualification.transferNeeded);
+      if (transferNeeded) commentLines.push(`Трансфер: ${transferNeeded}`);
+      if (qualification.transferAddress) commentLines.push(`Адрес прописки: ${qualification.transferAddress}`);
+      if (qualification.transferNeeded === 'yes') {
+        commentLines.push('Важно: данные по трансферу можно дополнить за 3-5 дней до выезда.');
+      }
+    }
+  }
+
   const utmLines = Object.entries(utm).map(([key, value]) => `${key}: ${value}`);
   if (utmLines.length) {
     commentLines.push('', 'UTM:', ...utmLines);
   }
-  const comments = commentLines.join('\n');
+  return commentLines.join('\n');
+}
+
+export async function submitCampLead({
+  logPrefix,
+  landing,
+  name,
+  phone,
+  shift,
+  bookingPrice,
+  source,
+  utm = {},
+  qualification,
+}: SubmitCampLeadInput) {
+  const comments = buildCampLeadComments({
+    landing,
+    shift,
+    bookingPrice,
+    source,
+    utm,
+    qualification,
+  });
   const landingTitle = LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo;
 
   const { contactId, contactCreated } = await resolveContactId(logPrefix, name, phone);
@@ -193,6 +373,42 @@ export async function submitCampLead({
   const dealId = await bitrixCall<number>(logPrefix, 'crm.deal.add', { fields: dealFields });
 
   return { dealId, contactId, contactCreated };
+}
+
+export async function updateCampLead({
+  logPrefix,
+  dealId,
+  landing,
+  name,
+  phone,
+  shift,
+  bookingPrice,
+  source,
+  utm = {},
+  qualification,
+}: UpdateCampLeadInput) {
+  const comments = buildCampLeadComments({
+    landing,
+    shift,
+    bookingPrice,
+    source,
+    utm,
+    qualification,
+  });
+  await bitrixCall(logPrefix, 'crm.deal.update', {
+    id: dealId,
+    fields: {
+      TITLE: `Заявка с лендинга «${LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo}» — ${name}`,
+      COMMENTS: comments,
+      UTM_SOURCE: utm.utm_source ?? '',
+      UTM_MEDIUM: utm.utm_medium ?? '',
+      UTM_CAMPAIGN: utm.utm_campaign ?? '',
+      UTM_CONTENT: utm.utm_content ?? '',
+      UTM_TERM: utm.utm_term ?? '',
+    },
+  });
+  const contactId = await findContactByPhone(logPrefix, phone);
+  return { dealId, contactId };
 }
 
 export { clamp };
