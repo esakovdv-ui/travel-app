@@ -561,6 +561,7 @@
           meal: source.meal || '',
           operator: source.operator || source.operatorname || '',
           operatorLink: source.operatorLink || source.operatorlink || source.operlink || source.tourlink || '',
+          tourId: source.tourId || source.tour_id || source.tourid || source.offer_id || source.offerid || '',
           tourvisorOrderId: source.orderId || source.id || '',
           raw: source,
         };
@@ -641,6 +642,7 @@
             region: tourPayload.region || undefined,
             operator: tourPayload.operator || undefined,
             operatorLink: tourPayload.operatorLink || undefined,
+            tourId: tourPayload.tourId || undefined,
             tourvisorOrderId: tourPayload.tourvisorOrderId || undefined,
           };
           if (tourPayload.tourvisorOrderId) lastTourvisorOrderId = String(tourPayload.tourvisorOrderId);

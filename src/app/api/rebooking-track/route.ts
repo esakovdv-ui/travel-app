@@ -15,6 +15,9 @@ const bodySchema = z.object({
       hotel: z.string().optional(),
       country: z.string().optional(),
       region: z.string().optional(),
+      operator: z.string().optional(),
+      operatorLink: z.string().optional(),
+      tourId: z.string().optional(),
       tourvisorOrderId: z.string().optional(),
     })
     .optional(),

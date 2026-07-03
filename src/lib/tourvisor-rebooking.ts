@@ -84,11 +84,33 @@ export function mapTourvisorOrderToTour(order: TourvisorOrderRecord): RebookingT
     operator: pickString(order, ['operator', 'operatorname']) || undefined,
     operatorLink:
       pickString(order, ['operatorlink', 'operatorLink', 'operlink', 'tourlink']) || undefined,
+    tourId: pickString(order, ['tourid', 'tour_id', 'tourId', 'offer_id', 'offerid']) || undefined,
     tourvisorOrderId: pickString(order, ['id', 'orderid']),
     orderTypeName: typename || undefined,
     email: pickString(order, ['email', 'mail']) || undefined,
     raw: order,
   };
+}
+
+async function fetchOperatorLinkFromSearchApi(tourId: string): Promise<string | undefined> {
+  const token = process.env.TOURVISOR_TOKEN?.trim();
+  if (!token) return undefined;
+
+  try {
+    const url = new URL(`https://api.tourvisor.ru/search/api/v1/tours/${encodeURIComponent(tourId)}`);
+    url.searchParams.set('currency', 'RUB');
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    if (!response.ok) return undefined;
+    const data = (await response.json()) as { operatorLink?: string };
+    const link = data.operatorLink?.trim();
+    return link || undefined;
+  } catch (error) {
+    console.warn('tourvisor-rebooking: search api tour detail failed', tourId, error);
+    return undefined;
+  }
 }
 
 /** Дополняет тур operator/operatorLink из Export API Tourvisor, если в postMessage их не было. */
@@ -97,32 +119,41 @@ export async function enrichTourFromTourvisorOrder(
   tourvisorOrderId?: string,
   type = '0'
 ): Promise<RebookingTourInfo> {
-  if (tour.operatorLink) return tour;
+  let enriched = tour;
   const orderId = tourvisorOrderId || tour.tourvisorOrderId;
-  if (!orderId) return tour;
 
-  try {
-    const tvOrder = await fetchTourvisorOrderById(orderId, type);
-    const fromOrder = mapTourvisorOrderToTour(tvOrder);
-    return {
-      ...tour,
-      operator: tour.operator || fromOrder.operator,
-      operatorLink: fromOrder.operatorLink,
-      hotel: tour.hotel || fromOrder.hotel,
-      country: tour.country || fromOrder.country,
-      region: tour.region || fromOrder.region,
-      dateFrom: tour.dateFrom || fromOrder.dateFrom,
-      nights: tour.nights ?? fromOrder.nights,
-      price: tour.price ?? fromOrder.price,
-      placement: tour.placement || fromOrder.placement,
-      meal: tour.meal || fromOrder.meal,
-      orderTypeName: tour.orderTypeName || fromOrder.orderTypeName,
-      email: tour.email || fromOrder.email,
-    };
-  } catch (error) {
-    console.warn('tourvisor-rebooking: enrich tour from order failed', orderId, error);
-    return tour;
+  if (!enriched.operatorLink && orderId) {
+    try {
+      const tvOrder = await fetchTourvisorOrderById(orderId, type);
+      const fromOrder = mapTourvisorOrderToTour(tvOrder);
+      enriched = {
+        ...enriched,
+        operator: enriched.operator || fromOrder.operator,
+        operatorLink: fromOrder.operatorLink,
+        hotel: enriched.hotel || fromOrder.hotel,
+        country: enriched.country || fromOrder.country,
+        region: enriched.region || fromOrder.region,
+        dateFrom: enriched.dateFrom || fromOrder.dateFrom,
+        nights: enriched.nights ?? fromOrder.nights,
+        price: enriched.price ?? fromOrder.price,
+        placement: enriched.placement || fromOrder.placement,
+        meal: enriched.meal || fromOrder.meal,
+        orderTypeName: enriched.orderTypeName || fromOrder.orderTypeName,
+        email: enriched.email || fromOrder.email,
+        tourId: enriched.tourId || pickString(tvOrder, ['tourid', 'tour_id', 'tourId']),
+        raw: enriched.raw || fromOrder.raw,
+      };
+    } catch (error) {
+      console.warn('tourvisor-rebooking: enrich tour from order failed', orderId, error);
+    }
   }
+
+  if (!enriched.operatorLink && enriched.tourId) {
+    const fromSearch = await fetchOperatorLinkFromSearchApi(enriched.tourId);
+    if (fromSearch) enriched = { ...enriched, operatorLink: fromSearch };
+  }
+
+  return enriched;
 }
 
 function extractOrderRecords(data: Record<string, unknown>): TourvisorOrderRecord[] {
@@ -271,6 +302,7 @@ export async function captureTourvisorOrderAsLead(options: {
   if (!tour.hotel && !tour.country) {
     tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
   }
+  const enrichedTour = await enrichTourFromTourvisorOrder(tour, tourvisorOrderId);
 
   const sourcePhone = normalizeLeadPhone(rebooking.phone || '') || undefined;
   const clientName = buildClientName(tvOrder, rebooking.name);
@@ -289,7 +321,7 @@ export async function captureTourvisorOrderAsLead(options: {
     price: rebooking.price,
     nights: rebooking.nights,
     date: rebooking.date || undefined,
-    tour,
+    tour: enrichedTour,
     comment: buildComment(tvOrder, eventType),
     captureSource,
     tourvisorOrderId,

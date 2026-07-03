@@ -5,6 +5,7 @@ import {
   type RebookingQueuedLead,
 } from '@/lib/rebooking-lead-store';
 import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
+import { enrichTourFromTourvisorOrder } from '@/lib/tourvisor-rebooking';
 
 export type RebookingBitrixSyncResult = {
   processed: number;
@@ -20,6 +21,10 @@ export type RebookingBitrixSyncResult = {
 };
 
 async function syncOneLead(lead: RebookingQueuedLead) {
+  const tour = lead.tour
+    ? await enrichTourFromTourvisorOrder(lead.tour, lead.tourvisorOrderId || lead.tour.tourvisorOrderId)
+    : undefined;
+
   const result = await submitRebookingLead({
     logPrefix: 'rebooking-bitrix-sync',
     order: lead.order,
@@ -37,7 +42,7 @@ async function syncOneLead(lead: RebookingQueuedLead) {
     nights: lead.nights,
     date: lead.date,
     destination: lead.destination,
-    tour: lead.tour,
+    tour,
     utm: lead.utm,
   });
 
@@ -51,7 +56,7 @@ async function syncOneLead(lead: RebookingQueuedLead) {
     order: lead.order,
     phone: lead.sourcePhone || lead.phone,
     email: lead.email,
-    tour: lead.tour,
+    tour: tour,
     leadSource: lead.captureSource,
     bitrixLeadId: result.leadId,
     eventType: lead.eventType || 'bitrix_sync',

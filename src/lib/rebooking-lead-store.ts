@@ -25,6 +25,7 @@ const tourSchema = z.object({
   email: z.string().optional(),
   operator: z.string().optional(),
   operatorLink: z.string().optional(),
+  tourId: z.string().optional(),
 });
 
 export const rebookingQueuedLeadSchema = z.object({
@@ -158,6 +159,7 @@ export async function enqueueRebookingLead(
         email: input.tour.email,
         operator: input.tour.operator,
         operatorLink: input.tour.operatorLink,
+        tourId: input.tour.tourId,
       })
     : undefined;
 
