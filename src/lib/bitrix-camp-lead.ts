@@ -14,6 +14,7 @@ export type QualificationFlow = 'ready' | 'questions';
 export type ShiftDecision = 'yes' | 'no' | 'changes';
 export type PaymentType = 'certificate' | 'self';
 export type TransferNeed = 'yes' | 'no';
+export type TransferDirection = 'none' | 'to_camp' | 'from_camp' | 'round_trip';
 export type ChildDocumentType = 'birth_certificate' | 'passport';
 export type PreferredContactTime = 'morning' | 'day' | 'evening';
 
@@ -43,6 +44,7 @@ export type CampLeadQualification = {
   applicantPassport?: CampLeadDocument;
   childDocument?: CampLeadDocument;
   transferNeeded?: TransferNeed;
+  transferDirection?: TransferDirection;
   transferAddress?: string;
   transferTrafficData?: string;
   consultationQuestion?: string;
@@ -240,9 +242,23 @@ function normalizeDocumentType(value: ChildDocumentType | string | undefined): s
   return undefined;
 }
 
-function normalizeTransferNeed(value: TransferNeed | string | undefined): string | undefined {
-  if (value === 'yes') return 'да';
-  if (value === 'no') return 'нет';
+
+function getTransferSurcharge(direction: TransferDirection | string | undefined): number | undefined {
+  if (direction === 'to_camp' || direction === 'from_camp') return 1500;
+  if (direction === 'round_trip') return 3000;
+  return undefined;
+}
+
+function normalizeTransferDirection(
+  direction: TransferDirection | string | undefined,
+  legacyNeeded?: TransferNeed | string
+): string | undefined {
+  if (direction === 'none') return 'не нужен';
+  if (direction === 'to_camp') return 'только туда (+1 500 ₽ к стоимости)';
+  if (direction === 'from_camp') return 'только обратно (+1 500 ₽ к стоимости)';
+  if (direction === 'round_trip') return 'туда и обратно (+3 000 ₽ к стоимости)';
+  if (legacyNeeded === 'yes') return 'нужен (направление не указано)';
+  if (legacyNeeded === 'no') return 'не нужен';
   return undefined;
 }
 
@@ -315,10 +331,20 @@ export function buildCampLeadComments({
       if (documentType) commentLines.push(`Документ ребёнка: ${documentType}`);
       pushDocumentLines(commentLines, 'Паспорт заявителя', qualification.applicantPassport);
       pushDocumentLines(commentLines, 'Документ ребёнка', qualification.childDocument);
-      const transferNeeded = normalizeTransferNeed(qualification.transferNeeded);
-      if (transferNeeded) commentLines.push(`Трансфер: ${transferNeeded}`);
+      const transferLabel = normalizeTransferDirection(
+        qualification.transferDirection,
+        qualification.transferNeeded
+      );
+      if (transferLabel) commentLines.push(`Трансфер: ${transferLabel}`);
+      const transferSurcharge = getTransferSurcharge(qualification.transferDirection);
+      if (transferSurcharge) {
+        commentLines.push(`Доплата за трансфер: ${transferSurcharge.toLocaleString('ru-RU')} ₽`);
+      }
       if (qualification.transferAddress) commentLines.push(`Адрес прописки: ${qualification.transferAddress}`);
-      if (qualification.transferNeeded === 'yes') {
+      if (
+        qualification.transferDirection &&
+        qualification.transferDirection !== 'none'
+      ) {
         commentLines.push('Важно: данные по трансферу можно дополнить за 3-5 дней до выезда.');
       }
     }

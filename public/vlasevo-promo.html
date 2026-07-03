@@ -495,6 +495,20 @@
       font-size: 14px;
       line-height: 1.5;
     }
+    .qualify-radio-price {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(236, 119, 16, .12);
+      color: #c45f00;
+      font-size: 13px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    .qualify-radio input:checked + span .qualify-radio-price {
+      background: rgba(236, 119, 16, .2);
+    }
     .qualify-grid {
       display: grid;
       gap: 12px;
@@ -1470,6 +1484,36 @@
     }
 
     const READY_STEP_ORDER = ['contacts', 'intent', 'payment', 'documents', 'transfer'];
+    const TRANSFER_DIRECTION_OPTIONS = [
+      { value: 'to_camp', title: 'Только туда', hint: 'Из Москвы в лагерь', price: '+1 500 ₽' },
+      { value: 'from_camp', title: 'Только обратно', hint: 'Из лагеря в Москву', price: '+1 500 ₽' },
+      { value: 'round_trip', title: 'Туда и обратно', hint: 'В обе стороны', price: '+3 000 ₽' },
+      { value: 'none', title: 'Трансфер не нужен', hint: 'Доедем самостоятельно', price: 'без доплаты' },
+    ];
+
+    function transferNeedsAddress(direction) {
+      return direction === 'to_camp' || direction === 'from_camp' || direction === 'round_trip';
+    }
+
+    function getTransferDirectionSummary(direction) {
+      const option = TRANSFER_DIRECTION_OPTIONS.find((item) => item.value === direction);
+      if (!option) return '';
+      if (direction === 'none') return 'Трансфер: не нужен';
+      return `Трансфер: ${option.title.toLowerCase()} (${option.price} к стоимости)`;
+    }
+
+    function renderTransferDirectionRadios(selected) {
+      return TRANSFER_DIRECTION_OPTIONS.map((option) => `
+        <label class="qualify-radio">
+          <input type="radio" name="transfer-direction" value="${option.value}" ${selected === option.value ? 'checked' : ''}>
+          <span>
+            <strong>${option.title}</strong>
+            <span class="qualify-radio-price">${option.price}</span>
+            <br>${option.hint}${option.value === 'none' ? '' : ' · доплата к стоимости смены'}
+          </span>
+        </label>
+      `).join('');
+    }
 
     function ensureModalOpen() {
       if (!reserveModal) return;
@@ -1546,8 +1590,7 @@
       if (data.paymentType === 'self') lines.push('Оплата: за собственные средства');
       if (data.childFullName) lines.push(`Ребёнок: ${data.childFullName}`);
       if (data.childBirthDate) lines.push(`Дата рождения ребёнка: ${formatBirthDate(data.childBirthDate)}`);
-      if (data.transferNeeded === 'yes') lines.push('Трансфер: нужен');
-      if (data.transferNeeded === 'no') lines.push('Трансфер: не нужен');
+      if (data.transferDirection) lines.push(getTransferDirectionSummary(data.transferDirection));
       return lines;
     }
 
@@ -1567,9 +1610,8 @@
           childBirthDate: '',
           applicantPassport: { seriesNumber: '', issueDate: '', issuer: '', departmentCode: '' },
           childDocument: { seriesNumber: '', issueDate: '', issuer: '', departmentCode: '' },
-          transferNeeded: '',
+          transferDirection: '',
           transferAddress: '',
-          transferTrafficData: '',
           consultationQuestion: '',
         },
       };
@@ -1661,7 +1703,7 @@
         intent: 'Подтвердите, готовы ли бронировать выбранную смену.',
         payment: 'Выберите способ оплаты.',
         documents: 'Соберём данные заранее, чтобы менеджер быстрее подготовил бронирование.',
-        transfer: 'Если трансфер нужен, сразу сохраним адрес прописки.',
+        transfer: 'Выберите направление трансфера. Доплата: 1 500 ₽ в одну сторону или 3 000 ₽ туда и обратно.',
       };
       setModalCopy(stepTitles[step], stepLeads[step]);
       modalSuccess.classList.remove('is-visible');
@@ -1746,13 +1788,12 @@
         qualifyBody.innerHTML = `
           <form id="qualify-step-form">
             <div class="qualify-radio-group">
-              <label class="qualify-radio"><input type="radio" name="transfer-needed" value="yes" ${data.transferNeeded === 'yes' ? 'checked' : ''}><span><strong>Да, нужен трансфер</strong><br>1 500 ₽ в одну сторону</span></label>
-              <label class="qualify-radio"><input type="radio" name="transfer-needed" value="no" ${data.transferNeeded === 'no' ? 'checked' : ''}><span><strong>Нет, трансфер не нужен</strong></span></label>
+              ${renderTransferDirectionRadios(data.transferDirection)}
             </div>
-            <div class="qualify-section" id="q-transfer-fields-wrap" ${data.transferNeeded === 'yes' ? '' : 'hidden'}>
-              <p class="qualify-section-title">Данные для трансфера</p>
-              <div class="field"><label for="q-transfer-address">Адрес прописки (нужно для ГИБДД)</label><textarea id="q-transfer-address" rows="2" placeholder="Заполните, если трансфер нужен">${data.transferAddress || ''}</textarea></div>
-              <p class="qualify-inline-note">Данные по трансферу можно уточнить и позже — за 3–5 дней до выезда.</p>
+            <div class="qualify-section" id="q-transfer-fields-wrap" ${transferNeedsAddress(data.transferDirection) ? '' : 'hidden'}>
+              <p class="qualify-section-title">Адрес для трансфера</p>
+              <div class="field"><label for="q-transfer-address">Адрес прописки (нужно для ГИБДД)</label><textarea id="q-transfer-address" rows="2" placeholder="Укажите адрес прописки для оформления трансфера">${data.transferAddress || ''}</textarea></div>
+              <p class="qualify-inline-note">Адрес можно уточнить позже — за 3–5 дней до выезда.</p>
             </div>
             <div class="qualify-actions"><button class="btn" type="submit" id="qualify-next-btn">Завершить</button><button class="btn btn-secondary" type="button" id="qualify-back-btn">Назад</button></div>
           </form>
@@ -1781,10 +1822,10 @@
       if (step === 'transfer') {
         const transferFieldsWrap = document.getElementById('q-transfer-fields-wrap');
         const syncTransferFields = () => {
-          const needed = document.querySelector('input[name="transfer-needed"]:checked')?.value === 'yes';
-          if (transferFieldsWrap) transferFieldsWrap.hidden = !needed;
+          const direction = document.querySelector('input[name="transfer-direction"]:checked')?.value || '';
+          if (transferFieldsWrap) transferFieldsWrap.hidden = !transferNeedsAddress(direction);
         };
-        document.querySelectorAll('input[name="transfer-needed"]').forEach((radio) => {
+        document.querySelectorAll('input[name="transfer-direction"]').forEach((radio) => {
           radio.addEventListener('change', syncTransferFields);
         });
         syncTransferFields();
@@ -1906,13 +1947,13 @@
           }
         }
         if (step === 'transfer') {
-          data.transferNeeded = document.querySelector('input[name="transfer-needed"]:checked')?.value || '';
-          data.transferAddress = document.getElementById('q-transfer-address').value.trim();
-          if (!data.transferNeeded) {
-            setFormNote(qualifyNote, 'Укажите, нужен ли трансфер.', true);
+          data.transferDirection = document.querySelector('input[name="transfer-direction"]:checked')?.value || '';
+          data.transferAddress = document.getElementById('q-transfer-address')?.value.trim() || '';
+          if (!data.transferDirection) {
+            setFormNote(qualifyNote, 'Выберите вариант трансфера.', true);
             return;
           }
-          if (data.transferNeeded === 'yes' && !data.transferAddress) {
+          if (transferNeedsAddress(data.transferDirection) && !data.transferAddress) {
             setFormNote(qualifyNote, 'Для трансфера укажите адрес прописки.', true);
             return;
           }
@@ -1932,9 +1973,8 @@
           childDocumentType: data.childDocumentType,
           applicantPassport: data.applicantPassport,
           childDocument: data.childDocument,
-          transferNeeded: data.transferNeeded,
+          transferDirection: data.transferDirection,
           transferAddress: data.transferAddress,
-          transferTrafficData: data.transferTrafficData,
         };
 
         setSubmitBusy(submitButton, true, step === 'transfer' ? 'Завершить' : 'Сохранить и далее');

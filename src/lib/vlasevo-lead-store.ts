@@ -32,6 +32,7 @@ const qualificationSchema = z.object({
   applicantPassport: documentSchema.optional(),
   childDocument: documentSchema.optional(),
   transferNeeded: z.enum(['yes', 'no']).optional(),
+  transferDirection: z.enum(['none', 'to_camp', 'from_camp', 'round_trip']).optional(),
   transferAddress: z.string().optional(),
   transferTrafficData: z.string().optional(),
   consultationQuestion: z.string().optional(),

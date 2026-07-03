@@ -12,7 +12,7 @@ import {
   type QualificationFlow,
   type QualificationStep,
   type ShiftDecision,
-  type TransferNeed,
+  type TransferDirection,
 } from '@/lib/bitrix-camp-lead';
 import {
   getVlasevoLeadById,
@@ -47,8 +47,13 @@ function parseChildDocumentType(value: unknown): ChildDocumentType | undefined {
     : undefined;
 }
 
-function parseTransferNeed(value: unknown): TransferNeed | undefined {
-  return value === 'yes' || value === 'no' ? (value as TransferNeed) : undefined;
+function parseTransferDirection(value: unknown): TransferDirection | undefined {
+  return value === 'none' ||
+    value === 'to_camp' ||
+    value === 'from_camp' ||
+    value === 'round_trip'
+    ? (value as TransferDirection)
+    : undefined;
 }
 
 function parsePreferredContactTime(value: unknown): PreferredContactTime | undefined {
@@ -83,7 +88,7 @@ function calculateReadinessPercent(qualification: CampLeadQualification): number
   if (qualification.shiftDecision) score += 15;
   if (qualification.paymentType) score += 10;
   if (qualification.childFullName && qualification.childBirthDate) score += 15;
-  if (qualification.transferNeeded) score += 10;
+  if (qualification.transferDirection || qualification.transferNeeded) score += 10;
   const applicantPassport = qualification.applicantPassport;
   const childDocument = qualification.childDocument;
   if (applicantPassport?.seriesNumber && childDocument?.seriesNumber) score += 10;
@@ -152,7 +157,7 @@ export async function PATCH(
       qualificationPatch.childDocument = parseDocument(body.childDocument);
     }
     if (step === 'transfer') {
-      qualificationPatch.transferNeeded = parseTransferNeed(body.transferNeeded);
+      qualificationPatch.transferDirection = parseTransferDirection(body.transferDirection);
       qualificationPatch.transferAddress = clamp(body.transferAddress, 300);
       qualificationPatch.transferTrafficData = clamp(body.transferTrafficData, 500);
     }
