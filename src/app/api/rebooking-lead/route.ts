@@ -9,6 +9,7 @@ import {
   parseTourFromBody,
 } from '@/lib/bitrix-rebooking-lead';
 import { enqueueRebookingLead } from '@/lib/rebooking-lead-store';
+import { enrichTourFromTourvisorOrder } from '@/lib/tourvisor-rebooking';
 import { markRebookingVisitSubmitted } from '@/lib/rebooking-visit-store';
 
 export const dynamic = 'force-dynamic';
@@ -53,6 +54,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_tour' }, { status: 400 });
   }
 
+  const enrichedTour = await enrichTourFromTourvisorOrder(
+    tour,
+    tour.tourvisorOrderId || clamp(body.tourvisorOrderId, 40) || undefined
+  );
+
   const people = parsePositiveInt(body.people);
   const kids = parsePositiveInt(body.kids) ?? 0;
   const kidAges = parseKidAges(body, kids);
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
   const date = clamp(body.date, 30);
 
   const visitId = clamp(body.visitId, 80) || undefined;
-  const email = clamp(body.email, 120) || tour.email || undefined;
+  const email = clamp(body.email, 120) || enrichedTour.email || undefined;
   const eventType = clamp(body.eventType, 40) || undefined;
 
   try {
@@ -82,10 +88,10 @@ export async function POST(request: Request) {
       price,
       nights,
       date: date || undefined,
-      tour,
+      tour: enrichedTour,
       utm: parseLeadUtm(body.utm),
       captureSource: 'direct',
-      tourvisorOrderId: tour.tourvisorOrderId,
+      tourvisorOrderId: enrichedTour.tourvisorOrderId,
       eventType,
     });
 
@@ -94,7 +100,7 @@ export async function POST(request: Request) {
       order,
       phone: sourcePhone || phone,
       email,
-      tour,
+      tour: enrichedTour,
       leadSource: 'direct',
       eventType: eventType || 'ORDERTOUR',
     }).catch(() => {});

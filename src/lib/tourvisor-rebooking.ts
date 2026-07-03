@@ -81,11 +81,48 @@ export function mapTourvisorOrderToTour(order: TourvisorOrderRecord): RebookingT
     price: parseBookingPrice(order.price ?? order.tourprice ?? order.cost),
     placement: pickString(order, ['placement']) || pickString(hotelRecord, ['placement']) || undefined,
     meal: pickString(order, ['meal']) || pickString(hotelRecord, ['meal']) || undefined,
+    operator: pickString(order, ['operator', 'operatorname']) || undefined,
+    operatorLink:
+      pickString(order, ['operatorlink', 'operatorLink', 'operlink', 'tourlink']) || undefined,
     tourvisorOrderId: pickString(order, ['id', 'orderid']),
     orderTypeName: typename || undefined,
     email: pickString(order, ['email', 'mail']) || undefined,
     raw: order,
   };
+}
+
+/** Дополняет тур operator/operatorLink из Export API Tourvisor, если в postMessage их не было. */
+export async function enrichTourFromTourvisorOrder(
+  tour: RebookingTourInfo,
+  tourvisorOrderId?: string,
+  type = '0'
+): Promise<RebookingTourInfo> {
+  if (tour.operatorLink) return tour;
+  const orderId = tourvisorOrderId || tour.tourvisorOrderId;
+  if (!orderId) return tour;
+
+  try {
+    const tvOrder = await fetchTourvisorOrderById(orderId, type);
+    const fromOrder = mapTourvisorOrderToTour(tvOrder);
+    return {
+      ...tour,
+      operator: tour.operator || fromOrder.operator,
+      operatorLink: fromOrder.operatorLink,
+      hotel: tour.hotel || fromOrder.hotel,
+      country: tour.country || fromOrder.country,
+      region: tour.region || fromOrder.region,
+      dateFrom: tour.dateFrom || fromOrder.dateFrom,
+      nights: tour.nights ?? fromOrder.nights,
+      price: tour.price ?? fromOrder.price,
+      placement: tour.placement || fromOrder.placement,
+      meal: tour.meal || fromOrder.meal,
+      orderTypeName: tour.orderTypeName || fromOrder.orderTypeName,
+      email: tour.email || fromOrder.email,
+    };
+  } catch (error) {
+    console.warn('tourvisor-rebooking: enrich tour from order failed', orderId, error);
+    return tour;
+  }
 }
 
 function extractOrderRecords(data: Record<string, unknown>): TourvisorOrderRecord[] {

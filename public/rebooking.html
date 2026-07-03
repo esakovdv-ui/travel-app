@@ -559,6 +559,8 @@
           price: source.price || source.tourprice || source.cost || undefined,
           placement: source.placement || '',
           meal: source.meal || '',
+          operator: source.operator || source.operatorname || '',
+          operatorLink: source.operatorLink || source.operatorlink || source.operlink || source.tourlink || '',
           tourvisorOrderId: source.orderId || source.id || '',
           raw: source,
         };
@@ -637,6 +639,8 @@
             hotel: tourPayload.hotel || undefined,
             country: tourPayload.country || undefined,
             region: tourPayload.region || undefined,
+            operator: tourPayload.operator || undefined,
+            operatorLink: tourPayload.operatorLink || undefined,
             tourvisorOrderId: tourPayload.tourvisorOrderId || undefined,
           };
           if (tourPayload.tourvisorOrderId) lastTourvisorOrderId = String(tourPayload.tourvisorOrderId);

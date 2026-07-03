@@ -19,6 +19,8 @@ export type RebookingTourInfo = {
   tourvisorOrderId?: string;
   orderTypeName?: string;
   email?: string;
+  operator?: string;
+  operatorLink?: string;
   raw?: Record<string, unknown>;
 };
 
@@ -128,6 +130,8 @@ function formatTourBlock(tour?: RebookingTourInfo): string[] {
   if (tour.placement) lines.push(`Размещение: ${tour.placement}`);
   if (tour.meal) lines.push(`Питание: ${tour.meal}`);
   if (tour.price != null) lines.push(`Цена тура: ${formatPrice(tour.price)}`);
+  if (tour.operator) lines.push(`Туроператор: ${tour.operator}`);
+  if (tour.operatorLink) lines.push(`Ссылка на тур у оператора: ${tour.operatorLink}`);
   if (tour.orderTypeName) lines.push(`Тип заявки Tourvisor: ${tour.orderTypeName}`);
   if (tour.tourvisorOrderId) lines.push(`Заявка Tourvisor: ${tour.tourvisorOrderId}`);
   return lines;
@@ -532,6 +536,12 @@ export function parseTourFromBody(raw: unknown): RebookingTourInfo | undefined {
     meal: clamp(source.meal, 120) || undefined,
     orderTypeName: clamp(source.orderTypeName, 120) || clamp(source.typename, 120) || undefined,
     email: clamp(source.email, 200) || undefined,
+    operator: clamp(source.operator, 120) || undefined,
+    operatorLink:
+      clamp(source.operatorLink, 500) ||
+      clamp(source.operatorlink, 500) ||
+      clamp(source.operlink, 500) ||
+      undefined,
     tourvisorOrderId:
       clamp(source.tourvisorOrderId, 40) || clamp(source.orderId, 40) || clamp(source.id, 40) || undefined,
   };
