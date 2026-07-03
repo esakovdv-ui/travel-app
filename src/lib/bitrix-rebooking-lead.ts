@@ -106,6 +106,18 @@ function formatPrice(price: number): string {
   return `${Math.round(price).toLocaleString('ru-RU')} ₽`;
 }
 
+function isAleanOperator(operator?: string): boolean {
+  const normalized = operator?.trim().toLowerCase().replace(/ё/g, 'е') || '';
+  return normalized.includes('alean') || normalized.includes('алеан');
+}
+
+function buildTourvisorProOrderUrl(orderId: string): string {
+  const template =
+    process.env.REBOOKING_TOURVISOR_PRO_ORDER_URL?.trim() ||
+    'https://pro.tourvisor.ru/orders/{orderId}';
+  return template.replace(/\{orderId\}/g, orderId);
+}
+
 function formatComposition(people?: number, kids?: number, kidAges?: number[]): string {
   const adults =
     people != null && kids != null ? Math.max(people - kids, 0) : people != null ? people : undefined;
@@ -135,6 +147,8 @@ function formatTourBlock(tour?: RebookingTourInfo): string[] {
   if (tour.operator) lines.push(`Туроператор: ${tour.operator}`);
   if (tour.operatorLink) {
     lines.push(`Ссылка на тур у оператора: ${tour.operatorLink}`);
+  } else if (isAleanOperator(tour.operator) && tour.tourvisorOrderId) {
+    lines.push(`Ссылка на тур в Tourvisor: ${buildTourvisorProOrderUrl(tour.tourvisorOrderId)}`);
   } else if (tour.operator) {
     lines.push(
       `Ссылка на тур у оператора: не передана Tourvisor (оператор «${tour.operator}»${tour.tourvisorOrderId ? `, заявка TV ${tour.tourvisorOrderId}` : ''})`
