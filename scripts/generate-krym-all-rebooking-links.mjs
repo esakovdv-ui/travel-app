@@ -118,7 +118,7 @@ function mapExcelRow(values) {
     nights: parseIntValue(values[8]),
     date: parseDateToIso(values[9]),
     cert: String(values[10] || '').trim(),
-    deal_id: String(values[11] || '').trim(),
+    deal_id: String(values[11] || '').trim(), // dg_key МГТ, не Bitrix ID — для CRM см. import-rebooking-links-bitrix-by-order.mjs
     children_raw: childrenRaw,
     warnings: tourists.warnings.join(';'),
   };

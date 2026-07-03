@@ -62,7 +62,25 @@ node scripts/generate-rebooking-campaign-xlsx.js file.xlsx
 
 ## Шаг 3. Импорт ссылок в сделки
 
-**CRM → Сделки → Импорт**
+### Вариант A: CSV с **Bitrix deal ID** (колонка `deal_id` из URL сделки)
+
+```bash
+REBOOKING_LINK_FIELD=UF_CRM_1782832678147 \
+node scripts/import-rebooking-links-bitrix.mjs path/to.csv
+```
+
+### Вариант B: выгрузка «Крым Все.xlsx» (колонка «Сделка» = **ID договора МГТ**, не Bitrix)
+
+Импорт **по номеру заявки** в названии сделки (`Заявка из ТОФ #9502-…`):
+
+```bash
+REBOOKING_LINK_FIELD=UF_CRM_1782832678147 \
+node scripts/import-rebooking-links-bitrix-by-order.mjs "/path/to/Крым Все_rebooking_ссылки.csv"
+```
+
+Скрипт сам подставит правильный `dealId` в URL ссылки.
+
+### Вариант C: ручной импорт в CRM
 
 1. Загрузить `крым_срочные_июль_полный_bitrix_рассылка.csv`
 2. Сопоставить колонки:
