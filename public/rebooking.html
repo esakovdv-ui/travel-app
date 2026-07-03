@@ -198,6 +198,11 @@
     .tourvisor-wrap {
       min-height: 120px;
     }
+    /* Гарантия мест в отеле: включена по умолчанию, чекбокс скрыт от пользователя */
+    .tourvisor-wrap .TVInstantConfirmationFilter,
+    .tourvisor-wrap .TVInstantConfirmationControl {
+      display: none !important;
+    }
     .error-page {
       padding: 56px 0;
       text-align: center;
@@ -478,11 +483,14 @@
         document.getElementById('trip-meta').textContent = meta.join(' · ');
       }
 
+      var TV_INSTANT_CONFIRMATION_SERVICE_ID = '46';
+
       function syncTourvisorSearchParamsToUrl(data) {
         // Tourvisor v6 reads tourists from URL query (s_adults, child_age_N), not tv-kid* on the div.
         // ts_dosearch=0 is required so createModule merges URL params without auto-running search.
         var url = new URL(window.location.href);
         url.searchParams.set('ts_dosearch', '0');
+        url.searchParams.set('s_hotel_services', TV_INSTANT_CONFIRMATION_SERVICE_ID);
         if (data.adults != null && data.adults >= 1) url.searchParams.set('s_adults', String(data.adults));
         if (data.kids >= 1 && data.kids <= 3) {
           [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
@@ -506,6 +514,7 @@
           id: 'tourvisor-search',
           'tv-formmode': '1',
           'tv-formmodes': '1',
+          'tv-hotelservices': TV_INSTANT_CONFIRMATION_SERVICE_ID,
         };
         if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
         if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
@@ -518,6 +527,26 @@
         });
       }
 
+      function lockTourvisorInstantConfirmation() {
+        var mount = document.getElementById('tourvisor-mount');
+        if (!mount || mount._tvInstantLockObserver) return;
+
+        function enforce() {
+          mount.querySelectorAll('.TVInstantConfirmationFilter input[type="checkbox"]').forEach(function (input) {
+            if (!input.checked) input.checked = true;
+            input.disabled = true;
+            input.setAttribute('aria-hidden', 'true');
+            var row = input.closest('.TVInstantConfirmationFilter');
+            if (row) row.style.display = 'none';
+          });
+        }
+
+        enforce();
+        var observer = new MutationObserver(enforce);
+        observer.observe(mount, { childList: true, subtree: true, attributes: true, attributeFilter: ['checked'] });
+        mount._tvInstantLockObserver = observer;
+      }
+
       function initTourvisorModule(data) {
         syncTourvisorSearchParamsToUrl(data);
         var mount = document.getElementById('tourvisor-mount');
@@ -525,6 +554,7 @@
         var el = document.createElement('div');
         applyAttrs(el, buildTourvisorAttrs(data));
         mount.appendChild(el);
+        lockTourvisorInstantConfirmation();
 
         var oldScript = document.getElementById('tourvisor-init-script');
         if (oldScript) oldScript.parentNode.removeChild(oldScript);
