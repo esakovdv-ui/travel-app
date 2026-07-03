@@ -28,6 +28,15 @@ const UTM = {
 const HEADER_SKIP_ROWS = 2;
 
 function parseDateToIso(raw) {
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return raw.toISOString().slice(0, 10);
+  }
+  const n = Number(raw);
+  if (Number.isFinite(n) && n > 40000 && n < 60000) {
+    const utc = Math.round((n - 25569) * 86400 * 1000);
+    const d = new Date(utc);
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
   const s = String(raw || '').trim();
   if (!s) return '';
   const isoDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
@@ -143,7 +152,7 @@ function main() {
     process.argv[3] || path.join(outputDir, `${baseName}_rebooking_ссылки.csv`)
   );
 
-  const workbook = XLSX.readFile(resolvedInput, { cellDates: false });
+  const workbook = XLSX.readFile(resolvedInput, { cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
