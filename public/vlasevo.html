@@ -643,6 +643,17 @@
       font-weight: 700 !important;
       line-height: 1.5 !important;
     }
+    .qualify-hours-notice {
+      margin: 0 0 4px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(236, 119, 16, .1);
+      border: 1px solid rgba(236, 119, 16, .25);
+      color: #8a4b00 !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      line-height: 1.5 !important;
+    }
     .qualify-progress {
       margin: 0 0 16px;
       color: var(--muted);
@@ -1150,6 +1161,7 @@
       <h2 id="modal-title">Забронировать смену</h2>
       <p class="modal-lead">Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку</p>
       <div class="modal-success" id="modal-success">
+        <p class="qualify-hours-notice" id="qualify-hours-notice" hidden></p>
         <div class="qualify-branch">
           <button class="btn" type="button" id="qualify-ready-btn">Готов(а) бронировать</button>
           <p class="qualify-hint">Заполните детали сейчас — это ускорит бронирование.</p>
@@ -1498,6 +1510,7 @@
     const modalForm = document.getElementById('modal-form');
     const modalFormBody = modalForm;
     const modalSuccess = document.getElementById('modal-success');
+    const qualifyHoursNotice = document.getElementById('qualify-hours-notice');
     const modalName = document.getElementById('modal-name');
     const modalPhone = document.getElementById('modal-phone');
     const modalShift = document.getElementById('modal-shift');
@@ -1851,12 +1864,48 @@
       if (modalLead) modalLead.textContent = leadText;
     }
 
+    function isOutsideManagerContactHours(date = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Moscow',
+        weekday: 'short',
+        hour: 'numeric',
+        hour12: false,
+      }).formatToParts(date);
+      const weekday = parts.find((part) => part.type === 'weekday')?.value || '';
+      const hour = Number(parts.find((part) => part.type === 'hour')?.value || 0);
+      const isWeekend = weekday === 'Sat' || weekday === 'Sun';
+      return isWeekend || hour < 9 || hour >= 18;
+    }
+
+    function getManagerContactHoursNotice(date = new Date()) {
+      if (!isOutsideManagerContactHours(date)) return '';
+      const weekday = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Moscow',
+        weekday: 'short',
+      }).format(date);
+      if (weekday === 'Sat' || weekday === 'Sun') {
+        return 'Сейчас выходной. Менеджер свяжется с вами в ближайший будний день с 9:00 до 18:00.';
+      }
+      return 'Сейчас нерабочее время. Менеджер свяжется с вами в ближайший будний день с 9:00 до 18:00.';
+    }
+
+    function updateManagerContactHoursNotice() {
+      if (!qualifyHoursNotice) return;
+      const text = getManagerContactHoursNotice();
+      qualifyHoursNotice.textContent = text;
+      qualifyHoursNotice.hidden = !text;
+    }
+
     function resetQualificationFlow() {
       currentLeadSession = null;
       modalCard?.classList.remove('modal--qualify');
       setModalCopy('Забронировать смену', 'Оставьте контакты — менеджер свяжется с вами и поможет оформить заявку');
       modalSuccess.classList.remove('is-visible');
       modalQualify?.classList.remove('is-visible');
+      if (qualifyHoursNotice) {
+        qualifyHoursNotice.textContent = '';
+        qualifyHoursNotice.hidden = true;
+      }
       qualifyProgress.textContent = '';
       qualifyBody.innerHTML = '';
       setFormNote(qualifyNote, '', false);
@@ -1940,6 +1989,7 @@
         },
       };
       setModalCopy('Заявка отправлена', 'Если готовы продолжить, можно сразу передать менеджеру детали для ускоренного бронирования.');
+      updateManagerContactHoursNotice();
       modalCard?.classList.add('modal--qualify');
       ensureModalOpen();
       modalFormBody.classList.add('is-hidden');
