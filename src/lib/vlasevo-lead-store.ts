@@ -98,6 +98,22 @@ export type SaveVlasevoLeadInput = {
   utm?: UtmFields;
 };
 
+type LeadTopLevelPatch = Partial<Pick<VlasevoLead, 'name' | 'landing' | 'bookingPrice' | 'source' | 'utm'>>;
+
+const DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+function isRecentEnough(createdAt: string, now = Date.now()) {
+  const createdAtMs = Date.parse(createdAt);
+  return Number.isFinite(createdAtMs) && now - createdAtMs >= 0 && now - createdAtMs <= DUPLICATE_WINDOW_MS;
+}
+
+function preferLeadForDedup(currentBest: VlasevoLead | null, candidate: VlasevoLead): VlasevoLead {
+  if (!currentBest) return candidate;
+  if (candidate.bitrixDealId && !currentBest.bitrixDealId) return candidate;
+  if (!candidate.bitrixDealId && currentBest.bitrixDealId) return currentBest;
+  return Date.parse(candidate.createdAt) > Date.parse(currentBest.createdAt) ? candidate : currentBest;
+}
+
 export async function saveVlasevoLead(input: SaveVlasevoLeadInput): Promise<VlasevoLead> {
   const lead: VlasevoLead = vlasevoLeadSchema.parse({
     id: makeLeadId(),
@@ -119,6 +135,22 @@ export async function saveVlasevoLead(input: SaveVlasevoLeadInput): Promise<Vlas
   }
   await writeLeads(leads);
   return lead;
+}
+
+export async function findRecentDuplicateVlasevoLead(input: {
+  phone: string;
+  shift: string;
+  now?: number;
+}): Promise<VlasevoLead | null> {
+  const leads = await readLeadsRaw();
+  const now = input.now ?? Date.now();
+  let bestMatch: VlasevoLead | null = null;
+  for (const lead of leads) {
+    if (lead.phone !== input.phone || lead.shift !== input.shift) continue;
+    if (!isRecentEnough(lead.createdAt, now)) continue;
+    bestMatch = preferLeadForDedup(bestMatch, lead);
+  }
+  return bestMatch;
 }
 
 export async function updateVlasevoLeadBitrix(
@@ -146,6 +178,32 @@ export async function updateVlasevoLeadBitrix(
 export async function getVlasevoLeadById(leadId: string): Promise<VlasevoLead | null> {
   const leads = await readLeadsRaw();
   return leads.find((item) => item.id === leadId) ?? null;
+}
+
+export async function updateVlasevoLeadTopLevel(
+  leadId: string,
+  patch: LeadTopLevelPatch
+): Promise<VlasevoLead | null> {
+  const leads = await readLeadsRaw();
+  const index = leads.findIndex((item) => item.id === leadId);
+  if (index < 0) return null;
+
+  const currentLead = leads[index];
+  const nextLead = vlasevoLeadSchema.parse({
+    ...currentLead,
+    name: patch.name || currentLead.name,
+    landing: patch.landing ?? currentLead.landing,
+    bookingPrice: patch.bookingPrice ?? currentLead.bookingPrice,
+    source: patch.source ?? currentLead.source,
+    utm:
+      patch.utm && Object.keys(patch.utm).length
+        ? { ...(currentLead.utm ?? {}), ...patch.utm }
+        : currentLead.utm,
+  });
+
+  leads[index] = nextLead;
+  await writeLeads(leads);
+  return nextLead;
 }
 
 function mergeDocument(

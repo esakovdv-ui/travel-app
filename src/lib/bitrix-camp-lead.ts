@@ -174,7 +174,7 @@ export type SubmitCampLeadInput = {
   qualification?: CampLeadQualification;
 };
 
-type UpdateCampLeadInput = {
+export type UpdateCampLeadInput = {
   logPrefix: string;
   dealId: number;
   landing: CampLanding;
@@ -185,6 +185,10 @@ type UpdateCampLeadInput = {
   source?: string;
   utm?: UtmFields;
   qualification?: CampLeadQualification;
+};
+
+export type SyncCampLeadInput = SubmitCampLeadInput & {
+  dealId?: number;
 };
 
 function formatBookingPrice(price: number): string {
@@ -357,6 +361,37 @@ export function buildCampLeadComments({
   return commentLines.join('\n');
 }
 
+function buildCampDealFields({
+  landing,
+  name,
+  phone,
+  shift,
+  bookingPrice,
+  source,
+  utm = {},
+  qualification,
+}: Pick<SubmitCampLeadInput, 'landing' | 'name' | 'phone' | 'shift' | 'bookingPrice' | 'source' | 'utm' | 'qualification'>) {
+  const comments = buildCampLeadComments({
+    landing,
+    shift,
+    bookingPrice,
+    source,
+    utm,
+    qualification,
+  });
+  const landingTitle = LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo;
+  const fields: Record<string, unknown> = {
+    TITLE: `Заявка с лендинга «${landingTitle}» — ${name}`,
+    COMMENTS: comments,
+    UTM_SOURCE: utm.utm_source ?? '',
+    UTM_MEDIUM: utm.utm_medium ?? '',
+    UTM_CAMPAIGN: utm.utm_campaign ?? '',
+    UTM_CONTENT: utm.utm_content ?? '',
+    UTM_TERM: utm.utm_term ?? '',
+  };
+  return fields;
+}
+
 export async function submitCampLead({
   logPrefix,
   landing,
@@ -368,33 +403,26 @@ export async function submitCampLead({
   utm = {},
   qualification,
 }: SubmitCampLeadInput) {
-  const comments = buildCampLeadComments({
-    landing,
-    shift,
-    bookingPrice,
-    source,
-    utm,
-    qualification,
-  });
-  const landingTitle = LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo;
-
   const { contactId, contactCreated } = await resolveContactId(logPrefix, name, phone);
 
   const dealFields: Record<string, unknown> = {
-    TITLE: `Заявка с лендинга «${landingTitle}» — ${name}`,
+    ...buildCampDealFields({
+      landing,
+      name,
+      phone,
+      shift,
+      bookingPrice,
+      source,
+      utm,
+      qualification,
+    }),
     CATEGORY_ID: DEAL_CATEGORY_ID,
     STAGE_ID: DEAL_STAGE_ID,
     TYPE_ID: '1',
     CONTACT_ID: contactId,
     SOURCE_ID: 'WEBFORM',
     ASSIGNED_BY_ID,
-    COMMENTS: comments,
   };
-  if (utm.utm_source) dealFields.UTM_SOURCE = utm.utm_source;
-  if (utm.utm_medium) dealFields.UTM_MEDIUM = utm.utm_medium;
-  if (utm.utm_campaign) dealFields.UTM_CAMPAIGN = utm.utm_campaign;
-  if (utm.utm_content) dealFields.UTM_CONTENT = utm.utm_content;
-  if (utm.utm_term) dealFields.UTM_TERM = utm.utm_term;
 
   const dealId = await bitrixCall<number>(logPrefix, 'crm.deal.add', { fields: dealFields });
 
@@ -413,28 +441,34 @@ export async function updateCampLead({
   utm = {},
   qualification,
 }: UpdateCampLeadInput) {
-  const comments = buildCampLeadComments({
-    landing,
-    shift,
-    bookingPrice,
-    source,
-    utm,
-    qualification,
-  });
   await bitrixCall(logPrefix, 'crm.deal.update', {
     id: dealId,
-    fields: {
-      TITLE: `Заявка с лендинга «${LANDING_TITLES[landing] ?? LANDING_TITLES.vlasevo}» — ${name}`,
-      COMMENTS: comments,
-      UTM_SOURCE: utm.utm_source ?? '',
-      UTM_MEDIUM: utm.utm_medium ?? '',
-      UTM_CAMPAIGN: utm.utm_campaign ?? '',
-      UTM_CONTENT: utm.utm_content ?? '',
-      UTM_TERM: utm.utm_term ?? '',
-    },
+    fields: buildCampDealFields({
+      landing,
+      name,
+      phone,
+      shift,
+      bookingPrice,
+      source,
+      utm,
+      qualification,
+    }),
   });
   const contactId = await findContactByPhone(logPrefix, phone);
   return { dealId, contactId };
+}
+
+export async function syncCampLead({
+  dealId,
+  ...input
+}: SyncCampLeadInput) {
+  if (dealId) {
+    return updateCampLead({
+      ...input,
+      dealId,
+    });
+  }
+  return submitCampLead(input);
 }
 
 export { clamp };

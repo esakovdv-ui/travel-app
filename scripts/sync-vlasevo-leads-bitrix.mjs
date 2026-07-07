@@ -15,6 +15,7 @@ const LANDING_TITLES = {
   vlasevo: 'Власьево',
   'vlasevo-promo': 'Власьево',
 };
+const DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 function buildBitrixUrl(domain, token, method) {
   const cleanToken = token.trim().replace(/^\/+/, '').replace(/\/+$/, '');
@@ -78,7 +79,7 @@ async function resolveContactId(name, phone) {
   }
 }
 
-async function submitLeadToBitrix(lead) {
+function buildLeadComments(lead) {
   const commentLines = [`Смена: ${lead.shift}`];
   if (lead.bookingPrice != null) {
     commentLines.push(`Цена бронирования: ${Math.round(lead.bookingPrice).toLocaleString('ru-RU')} ₽`);
@@ -90,28 +91,95 @@ async function submitLeadToBitrix(lead) {
     const utmLines = Object.entries(lead.utm).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
     if (utmLines.length) commentLines.push('', 'UTM:', ...utmLines);
   }
+  return commentLines.join('\n');
+}
 
+function buildDealFields(lead, contactId) {
   const landingTitle = LANDING_TITLES[lead.landing] ?? LANDING_TITLES.vlasevo;
+  const dealFields = {
+    TITLE: `Заявка с лендинга «${landingTitle}» — ${lead.name}`,
+    COMMENTS: buildLeadComments(lead),
+    UTM_SOURCE: lead.utm?.utm_source ?? '',
+    UTM_MEDIUM: lead.utm?.utm_medium ?? '',
+    UTM_CAMPAIGN: lead.utm?.utm_campaign ?? '',
+    UTM_CONTENT: lead.utm?.utm_content ?? '',
+    UTM_TERM: lead.utm?.utm_term ?? '',
+  };
+  if (contactId) dealFields.CONTACT_ID = contactId;
+  return dealFields;
+}
+
+async function submitLeadToBitrix(lead) {
   const { contactId } = await resolveContactId(lead.name, lead.phone);
 
   const dealFields = {
-    TITLE: `Заявка с лендинга «${landingTitle}» — ${lead.name}`,
+    ...buildDealFields(lead, contactId),
     CATEGORY_ID: DEAL_CATEGORY_ID,
     STAGE_ID: DEAL_STAGE_ID,
     TYPE_ID: '1',
-    CONTACT_ID: contactId,
     SOURCE_ID: 'WEBFORM',
     ASSIGNED_BY_ID,
-    COMMENTS: commentLines.join('\n'),
   };
-  if (lead.utm?.utm_source) dealFields.UTM_SOURCE = lead.utm.utm_source;
-  if (lead.utm?.utm_medium) dealFields.UTM_MEDIUM = lead.utm.utm_medium;
-  if (lead.utm?.utm_campaign) dealFields.UTM_CAMPAIGN = lead.utm.utm_campaign;
-  if (lead.utm?.utm_content) dealFields.UTM_CONTENT = lead.utm.utm_content;
-  if (lead.utm?.utm_term) dealFields.UTM_TERM = lead.utm.utm_term;
 
   const dealId = await bitrixCall('crm.deal.add', { fields: dealFields });
   return { dealId, contactId };
+}
+
+async function updateLeadInBitrix(lead, dealId) {
+  await bitrixCall('crm.deal.update', {
+    id: dealId,
+    fields: buildDealFields(lead),
+  });
+  const contactId = await findContactByPhone(lead.phone);
+  return { dealId, contactId };
+}
+
+async function syncLeadToBitrix(lead) {
+  if (lead.bitrixDealId) {
+    return updateLeadInBitrix(lead, lead.bitrixDealId);
+  }
+  return submitLeadToBitrix(lead);
+}
+
+function isRecentEnough(createdAt, now = Date.now()) {
+  const createdAtMs = Date.parse(createdAt);
+  return Number.isFinite(createdAtMs) && now - createdAtMs >= 0 && now - createdAtMs <= DUPLICATE_WINDOW_MS;
+}
+
+function preferLeadForDedup(currentBest, candidate) {
+  if (!currentBest) return candidate;
+  if (candidate.bitrixDealId && !currentBest.bitrixDealId) return candidate;
+  if (!candidate.bitrixDealId && currentBest.bitrixDealId) return currentBest;
+  return Date.parse(candidate.createdAt) > Date.parse(currentBest.createdAt) ? candidate : currentBest;
+}
+
+function findRecentDuplicateLead(leads, targetLead) {
+  let bestMatch = null;
+  for (const lead of leads) {
+    if (lead.id === targetLead.id) continue;
+    if (lead.phone !== targetLead.phone || lead.shift !== targetLead.shift) continue;
+    if (!isRecentEnough(lead.createdAt)) continue;
+    bestMatch = preferLeadForDedup(bestMatch, lead);
+  }
+  return bestMatch;
+}
+
+function mergeLeadData(baseLead, incomingLead) {
+  return {
+    ...baseLead,
+    name: incomingLead.name || baseLead.name,
+    landing: incomingLead.landing ?? baseLead.landing,
+    bookingPrice: incomingLead.bookingPrice ?? baseLead.bookingPrice,
+    source: incomingLead.source ?? baseLead.source,
+    utm:
+      incomingLead.utm && typeof incomingLead.utm === 'object'
+        ? { ...(baseLead.utm ?? {}), ...incomingLead.utm }
+        : baseLead.utm,
+    qualification: {
+      ...(baseLead.qualification ?? {}),
+      ...(incomingLead.qualification ?? {}),
+    },
+  };
 }
 
 function readLeads(filePath) {
@@ -141,13 +209,32 @@ async function main() {
   for (const lead of leads) {
     if (lead.bitrixStatus === 'sent') continue;
     try {
-      const result = await submitLeadToBitrix(lead);
+      const duplicateLead = findRecentDuplicateLead(leads, lead);
+      const leadForSync = duplicateLead ? mergeLeadData(duplicateLead, lead) : lead;
+      const inheritedDealId = lead.bitrixDealId ?? duplicateLead?.bitrixDealId;
+      const inheritedContactId = lead.bitrixContactId ?? duplicateLead?.bitrixContactId;
+      const result = await syncLeadToBitrix({
+        ...leadForSync,
+        bitrixDealId: inheritedDealId,
+      });
       lead.bitrixStatus = 'sent';
-      lead.bitrixDealId = result.dealId;
-      lead.bitrixContactId = result.contactId;
+      lead.bitrixDealId = result.dealId ?? inheritedDealId;
+      lead.bitrixContactId = result.contactId ?? inheritedContactId;
       delete lead.bitrixError;
+      if (duplicateLead && duplicateLead.id !== lead.id) {
+        duplicateLead.bitrixStatus = 'sent';
+        duplicateLead.bitrixDealId = lead.bitrixDealId;
+        duplicateLead.bitrixContactId = lead.bitrixContactId;
+        duplicateLead.name = leadForSync.name;
+        duplicateLead.landing = leadForSync.landing;
+        duplicateLead.bookingPrice = leadForSync.bookingPrice;
+        duplicateLead.source = leadForSync.source;
+        duplicateLead.utm = leadForSync.utm;
+        duplicateLead.qualification = leadForSync.qualification;
+        delete duplicateLead.bitrixError;
+      }
       synced += 1;
-      console.log(`OK ${lead.id} -> deal ${result.dealId}`);
+      console.log(`OK ${lead.id} -> deal ${lead.bitrixDealId}`);
     } catch (error) {
       lead.bitrixStatus = 'failed';
       lead.bitrixError = (error instanceof Error ? error.message : 'unknown').slice(0, 240);
