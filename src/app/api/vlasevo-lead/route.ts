@@ -23,6 +23,25 @@ import {
 export const dynamic = 'force-dynamic';
 
 const RESPONSE_BUDGET_MS = 5000;
+const phoneSubmitLocks = new Map<string, Promise<void>>();
+
+async function withPhoneSubmitLock<T>(phone: string, fn: () => Promise<T>): Promise<T> {
+  const previous = phoneSubmitLocks.get(phone) ?? Promise.resolve();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  phoneSubmitLocks.set(phone, previous.then(() => gate));
+  await previous;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (phoneSubmitLocks.get(phone) === gate) {
+      phoneSubmitLocks.delete(phone);
+    }
+  }
+}
 
 function resolveLanding(body: Record<string, unknown>): CampLanding {
   const landing = clamp(body.landing, 30);
@@ -113,6 +132,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
   }
 
+  return withPhoneSubmitLock(phone, async () => {
   const landing = resolveLanding(body);
   const bookingPrice = parseBookingPrice(body.bookingPrice);
   const source = typeof body.source === 'string' ? body.source : undefined;
@@ -122,6 +142,7 @@ export async function POST(request: Request) {
   if (duplicateLead) {
     const mergedLead = await updateVlasevoLeadTopLevel(duplicateLead.id, {
       name,
+      shift,
       landing: landing === 'vlasevo-promo' ? 'vlasevo-promo' : 'vlasevo',
       bookingPrice,
       source,
@@ -277,5 +298,6 @@ export async function POST(request: Request) {
     saved: true,
     leadId: savedLead.id,
     bitrixPending: true,
+  });
   });
 }

@@ -54,6 +54,7 @@ export type CampLeadQualification = {
 const DEAL_CATEGORY_ID = 22;
 const DEAL_STAGE_ID = 'C22:NEW';
 const ASSIGNED_BY_ID = 1;
+export const CAMP_LEAD_DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 const LANDING_TITLES: Record<CampLanding, string> = {
   raduga: 'Радуга',
@@ -114,19 +115,88 @@ async function bitrixCall<T = unknown>(
   return data.result as T;
 }
 
-async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
+export function normalizeShiftKey(shift: string): string {
+  return shift
+    .toLowerCase()
+    .replace(/[·•]/g, ' ')
+    .replace(/[—–-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isVlasevoDealText(title: string, comments: string): boolean {
+  const text = `${title} ${comments}`.toLowerCase();
+  return text.includes('власьево');
+}
+
+async function findContactIdsByPhone(logPrefix: string, phone: string): Promise<number[]> {
   try {
     const result = await bitrixCall<Array<{ ID?: string | number }>>(logPrefix, 'crm.contact.list', {
       filter: { PHONE: phone },
       select: ['ID'],
     });
-    const rawId = result?.[0]?.ID;
-    const id = typeof rawId === 'number' ? rawId : Number(rawId);
-    return Number.isFinite(id) && id > 0 ? id : null;
+    return (result ?? [])
+      .map((item) => (typeof item.ID === 'number' ? item.ID : Number(item.ID)))
+      .filter((id) => Number.isFinite(id) && id > 0);
   } catch (error) {
     console.warn(`${logPrefix}: contact list lookup failed for ${phone}`, error);
-    return null;
+    return [];
   }
+}
+
+async function findContactByPhone(logPrefix: string, phone: string): Promise<number | null> {
+  const ids = await findContactIdsByPhone(logPrefix, phone);
+  return ids[0] ?? null;
+}
+
+async function findRecentOpenCampDeal(
+  logPrefix: string,
+  phone: string
+): Promise<number | null> {
+  const contactIds = await findContactIdsByPhone(logPrefix, phone);
+  if (!contactIds.length) return null;
+
+  const now = Date.now();
+  let bestDealId: number | null = null;
+  let bestCreatedAt = 0;
+
+  for (const contactId of contactIds) {
+    try {
+      const result = await bitrixCall<
+        Array<{
+          ID?: string | number;
+          TITLE?: string;
+          COMMENTS?: string;
+          STAGE_SEMANTIC_ID?: string;
+          DATE_CREATE?: string;
+        }>
+      >(logPrefix, 'crm.deal.list', {
+        filter: { CONTACT_ID: contactId, CATEGORY_ID: DEAL_CATEGORY_ID },
+        select: ['ID', 'TITLE', 'COMMENTS', 'STAGE_SEMANTIC_ID', 'DATE_CREATE'],
+        order: { DATE_CREATE: 'DESC' },
+      });
+
+      for (const deal of result ?? []) {
+        if (!isVlasevoDealText(deal.TITLE ?? '', deal.COMMENTS ?? '')) continue;
+        const semantic = deal.STAGE_SEMANTIC_ID ?? '';
+        if (semantic === 'S' || semantic === 'F') continue;
+
+        const createdAt = Date.parse(deal.DATE_CREATE ?? '');
+        if (!Number.isFinite(createdAt) || now - createdAt > CAMP_LEAD_DUPLICATE_WINDOW_MS) continue;
+
+        const id = typeof deal.ID === 'number' ? deal.ID : Number(deal.ID);
+        if (!Number.isFinite(id) || id <= 0) continue;
+        if (createdAt >= bestCreatedAt) {
+          bestCreatedAt = createdAt;
+          bestDealId = id;
+        }
+      }
+    } catch (error) {
+      console.warn(`${logPrefix}: open deal lookup failed for contact ${contactId}`, error);
+    }
+  }
+
+  return bestDealId;
 }
 
 async function resolveContactId(
@@ -134,6 +204,9 @@ async function resolveContactId(
   name: string,
   phone: string
 ): Promise<{ contactId: number; contactCreated: boolean }> {
+  const existingId = await findContactByPhone(logPrefix, phone);
+  if (existingId) return { contactId: existingId, contactCreated: false };
+
   try {
     const contactId = await bitrixCall<number>(logPrefix, 'crm.contact.add', {
       fields: {
@@ -145,8 +218,8 @@ async function resolveContactId(
     });
     return { contactId, contactCreated: true };
   } catch (error) {
-    const existingId = await findContactByPhone(logPrefix, phone);
-    if (existingId) return { contactId: existingId, contactCreated: false };
+    const fallbackId = await findContactByPhone(logPrefix, phone);
+    if (fallbackId) return { contactId: fallbackId, contactCreated: false };
     throw error;
   }
 }
@@ -462,10 +535,11 @@ export async function syncCampLead({
   dealId,
   ...input
 }: SyncCampLeadInput) {
-  if (dealId) {
+  const resolvedDealId = dealId ?? (await findRecentOpenCampDeal(input.logPrefix, input.phone));
+  if (resolvedDealId) {
     return updateCampLead({
       ...input,
-      dealId,
+      dealId: resolvedDealId,
     });
   }
   return submitCampLead(input);

@@ -98,7 +98,7 @@ export type SaveVlasevoLeadInput = {
   utm?: UtmFields;
 };
 
-type LeadTopLevelPatch = Partial<Pick<VlasevoLead, 'name' | 'landing' | 'bookingPrice' | 'source' | 'utm'>>;
+type LeadTopLevelPatch = Partial<Pick<VlasevoLead, 'name' | 'shift' | 'landing' | 'bookingPrice' | 'source' | 'utm'>>;
 
 const DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
@@ -139,14 +139,14 @@ export async function saveVlasevoLead(input: SaveVlasevoLeadInput): Promise<Vlas
 
 export async function findRecentDuplicateVlasevoLead(input: {
   phone: string;
-  shift: string;
+  shift?: string;
   now?: number;
 }): Promise<VlasevoLead | null> {
   const leads = await readLeadsRaw();
   const now = input.now ?? Date.now();
   let bestMatch: VlasevoLead | null = null;
   for (const lead of leads) {
-    if (lead.phone !== input.phone || lead.shift !== input.shift) continue;
+    if (lead.phone !== input.phone) continue;
     if (!isRecentEnough(lead.createdAt, now)) continue;
     bestMatch = preferLeadForDedup(bestMatch, lead);
   }
@@ -192,6 +192,7 @@ export async function updateVlasevoLeadTopLevel(
   const nextLead = vlasevoLeadSchema.parse({
     ...currentLead,
     name: patch.name || currentLead.name,
+    shift: patch.shift || currentLead.shift,
     landing: patch.landing ?? currentLead.landing,
     bookingPrice: patch.bookingPrice ?? currentLead.bookingPrice,
     source: patch.source ?? currentLead.source,
