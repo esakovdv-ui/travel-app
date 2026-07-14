@@ -1,0 +1,47 @@
+name: Check GitHub access from VPS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/check-github-from-vps.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test GitHub reachability from VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 3m
+          script: |
+            set -e
+            echo "=== DNS github.com ==="
+            getent hosts github.com || true
+            command -v dig >/dev/null && dig +short github.com || true
+            echo ""
+            echo "=== curl -sI https://github.com ==="
+            curl -sI --connect-timeout 15 --max-time 20 https://github.com 2>&1 | head -8 || echo "curl failed"
+            echo ""
+            echo "=== curl status ==="
+            curl -s -o /dev/null -w "HTTP:%{http_code} TIME:%{time_total}s\n" --connect-timeout 15 --max-time 20 https://github.com 2>&1 || echo "curl status failed"
+            echo ""
+            echo "=== TCP 443 github.com ==="
+            timeout 10 bash -c 'cat < /dev/null > /dev/tcp/github.com/443' && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED/timeout"
+            echo ""
+            echo "=== git ls-remote (travel-app) ==="
+            timeout 20 git ls-remote https://github.com/esakovdv-ui/travel-app.git HEAD 2>&1 | head -3 || echo "git ls-remote failed"
+            echo ""
+            if [ -d /home/travel-app/.git ]; then
+              echo "=== travel-app git remote ==="
+              cd /home/travel-app
+              git remote -v
+              echo "=== git fetch --dry-run ==="
+              timeout 30 git fetch origin --dry-run 2>&1 | head -10 || echo "git fetch dry-run failed"
+            fi
+            echo "=== END ==="
