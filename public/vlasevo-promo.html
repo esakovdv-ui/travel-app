@@ -156,14 +156,12 @@
     .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
     section { padding: 34px 0; }
     #shifts {
+      padding-top: 10px;
       padding-bottom: 14px;
     }
     #shifts + section {
       padding-top: 10px;
       padding-bottom: 10px;
-    }
-    #about {
-      padding-top: 14px;
     }
     .section-title { margin: 0 0 14px; font-size: clamp(28px, 3.5vw, 46px); line-height: 1.08; letter-spacing: -.02em; }
     .shifts-intro {
@@ -223,8 +221,8 @@
       justify-content: center;
       text-decoration: none;
     }
-    .card .btn.reserve-btn { width: 100%; }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card .btn.reserve-btn { width: 100%; }
     .card-img.sold-out img { filter: grayscale(30%) brightness(.45); }
     .sold-out-overlay {
       position: absolute;
@@ -315,6 +313,222 @@
     .urgency { padding: 22px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; }
     .urgency h2 { margin: 0 0 6px; font-size: clamp(24px,3vw,36px); line-height: 1.1; }
     .urgency p { margin: 0; color: var(--muted); font-weight: 700; }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: #dff7bf;
+      color: #216e1f;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+      line-height: 1.2;
+    }
+    .hero-badge--brand {
+      background: rgba(255, 133, 0, .12);
+      color: var(--orange-dark);
+    }
+    .camp-overview { padding: 0 0 10px; }
+    .timer-section { padding: 0 0 10px; }
+    .camp-overview-panel { padding: clamp(20px, 3.5vw, 32px); }
+    .camp-overview-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .camp-overview-eyebrow {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .camp-overview-head .section-title { margin-bottom: 10px; }
+    .camp-overview-lead {
+      margin: 0 auto;
+      max-width: 720px;
+      color: #475569;
+      font-size: clamp(16px, 1.7vw, 18px);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .camp-overview-more { flex-shrink: 0; }
+    .camp-overview-slider-wrap {
+      width: 100%;
+      margin-bottom: 18px;
+    }
+    .camp-overview-slider {
+      width: 100%;
+      height: 450px;
+      position: relative;
+      overflow: hidden;
+    }
+    .camp-overview-slider .swiper-wrapper {
+      align-items: center;
+    }
+    .camp-slider-slide {
+      width: min(780px, calc(100% - 40px));
+      display: flex;
+      justify-content: center;
+    }
+    .camp-slider-card {
+      width: 100%;
+      height: 400px;
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
+    }
+    .camp-slider-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .camp-slider-arrows {
+      width: min(876px, calc(100% - 24px));
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      height: 60px;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    .camp-slider-arrow {
+      pointer-events: auto;
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .12);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--orange);
+      transition: background .2s, color .2s;
+    }
+    .camp-slider-arrow:hover {
+      background: var(--orange);
+      color: #fff;
+    }
+    .camp-slider-arrow svg {
+      width: 20px;
+      height: 20px;
+    }
+    .camp-slider-arrow--next svg {
+      transform: scaleX(-1);
+    }
+    .camp-slider-pagination {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .camp-slider-bullet {
+      cursor: pointer;
+      width: 10px;
+      height: 10px;
+      background: #ffd54f;
+      box-shadow: 0 4px 12px rgba(255, 133, 0, .25);
+      border-radius: 50px;
+      border: 0;
+      padding: 0;
+      transition: background .2s;
+    }
+    .camp-slider-bullet.is-active {
+      background: var(--orange);
+    }
+    .camp-pillars {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .camp-pillar {
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+      border: 1px solid rgba(0, 0, 0, .06);
+    }
+    .camp-pillar-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: rgba(255, 133, 0, .12);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .camp-pillar h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+    }
+    .camp-pillar p {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .camp-infra-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .camp-infra-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--panel);
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .camp-location {
+      margin: 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--green-soft);
+      color: #216e1f;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.45;
+      text-align: center;
+    }
     .about-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
     .about-card { padding: 20px; }
     .about-card h3 { margin: 0 0 10px; font-size: 24px; }
@@ -723,6 +937,20 @@
       .hero-grid, .lead-block, .timer-panel, .urgency { grid-template-columns: 1fr; }
       .grid { grid-template-columns: repeat(2,1fr); }
       .about-grid { grid-template-columns: 1fr; }
+      .camp-pillars { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 1024px) {
+      .camp-overview-slider { height: 400px; }
+      .camp-slider-slide { width: min(728px, calc(100% - 40px)); }
+      .camp-slider-card { height: 400px; }
+      .camp-slider-arrows {
+        width: min(824px, calc(100% - 24px));
+        height: 40px;
+        top: auto;
+        bottom: 12px;
+        transform: translateX(-50%);
+      }
+      .camp-slider-pagination { display: flex; }
     }
     @media (max-width: 680px) {
       .container { width: min(100% - 20px, var(--max)); }
@@ -749,11 +977,17 @@
         padding: 11px 16px;
       }
       .camp-more .btn { width: 100%; max-width: none; }
+      .camp-pillars { grid-template-columns: 1fr; }
       .price-promo { font-size: 32px; }
       .sticky-cta { display: block; }
       body { padding-bottom: 86px; }
+      .camp-overview-slider { height: 250px; }
+      .camp-slider-slide { width: min(350px, calc(100% - 32px)); }
+      .camp-slider-card { height: 200px; }
+      .camp-slider-arrows { width: min(446px, calc(100% - 16px)); }
     }
   </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
 <body>
   <main>
@@ -762,15 +996,21 @@
         <div class="hero-grid">
           <div class="hero-main panel">
             <div>
-              <h1>Летние смены во «Власьево»</h1>
+              <div class="hero-badges">
+                <span class="hero-badge hero-badge--brand">ЛОК «Власьево»</span>
+                <span class="hero-badge">7–17 лет</span>
+                <span class="hero-badge">МОСГОРТУР</span>
+              </div>
+              <h1>Летний отдых в лесном оздоровительном комплексе</h1>
               <div class="promo-hero-price" aria-label="Специальные цены от 39 900 рублей">
                 <span class="promo-hero-price-icon" aria-hidden="true">🔥</span>
                 <span>Специальные цены от 39 900 ₽</span>
               </div>
-              <p class="lead">Проживание, питание и насыщенная программа для детей от 7 до 17 лет.</p>
+              <p class="lead">Загородный комплекс в экологически чистом лесу Подмосковья: комфортные корпуса, пятиразовое питание, спорт и творчество на закрытой территории. Программа в концепции «обучение через развлечение».</p>
             </div>
             <div class="hero-actions">
               <a class="btn btn-primary cta-primary" href="#shifts">Смотреть смены</a>
+              <button type="button" class="btn btn-secondary" id="camp-hero-more">О лагере</button>
               <a class="btn btn-secondary cta-primary" href="#lead-form">Забронировать</a>
               <a class="btn btn-secondary cta-neutral hidden" href="#shifts">Выбрать смену</a>
             </div>
@@ -779,6 +1019,74 @@
             <img src="/vlasevo-hero-final.png" alt="Лагерь Власьево">
           </aside>
         </div>
+      </div>
+    </section>
+
+    <section id="camp-overview" class="camp-overview">
+      <div class="container">
+        <div class="camp-overview-panel panel">
+          <div class="camp-overview-head">
+            <div>
+              <span class="camp-overview-eyebrow">О комплексе</span>
+              <h2 class="section-title">Всё, что нужно ребёнку для лета</h2>
+              <p class="camp-overview-lead">Лесной оздоровительный комплекс «Власьево» — полностью оборудованная площадка МОСГОРТУРа для детского отдыха: от уютных номеров и вкусного питания до спортивных площадок, мастерских и концертного зала.</p>
+            </div>
+            <button type="button" class="btn btn-secondary camp-overview-more" id="camp-overview-link">Фото и подробности →</button>
+          </div>
+
+          <div class="camp-overview-slider-wrap">
+            <div class="swiper camp-overview-slider" id="camp-overview-slider">
+              <div class="swiper-wrapper"></div>
+              <div class="camp-slider-arrows" id="camp-slider-arrows">
+                <button type="button" class="camp-slider-arrow camp-slider-arrow--prev" aria-label="Предыдущее фото">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+                </button>
+                <button type="button" class="camp-slider-arrow camp-slider-arrow--next" aria-label="Следующее фото">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+                </button>
+              </div>
+              <div class="camp-slider-pagination" id="camp-slider-pagination"></div>
+            </div>
+          </div>
+
+          <div class="camp-pillars">
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🏠</span>
+              <h3>Размещение</h3>
+              <p>Корпуса на 4–5 человек, ортопедические матрасы, Wi‑Fi, душевые на этаже, досуговые холлы с мультимедиа.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🍽</span>
+              <h3>Питание</h3>
+              <p>5 раз в день по СанПиН: натуральные молочные и мясные продукты, сезонные овощи и фрукты от сертифицированных поставщиков.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🩺</span>
+              <h3>Медицина</h3>
+              <p>Медпункт на территории, круглосуточное наблюдение за здоровьем детей и оперативная первая помощь.</p>
+            </article>
+            <article class="camp-pillar">
+              <span class="camp-pillar-icon" aria-hidden="true">🎯</span>
+              <h3>Инфраструктура</h3>
+              <p>Спорт, творческие мастерские, игротека, концертный зал и большая сцена — всё на одной закрытой территории.</p>
+            </article>
+          </div>
+
+          <div class="camp-infra-tags" aria-label="Инфраструктура лагеря">
+            <span class="camp-infra-tag">⚽ Спортивные площадки</span>
+            <span class="camp-infra-tag">🎨 Творческие мастерские</span>
+            <span class="camp-infra-tag">🎲 Игротека</span>
+            <span class="camp-infra-tag">🎬 Концертный зал</span>
+            <span class="camp-infra-tag">🎤 Большая сцена</span>
+          </div>
+
+          <p class="camp-location">📍 Московская область, городской округ Луховицы — лесная территория оздоровительного комплекса</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="timer-section">
+      <div class="container">
         <div class="timer-panel panel promo-accent" id="timer-panel">
           <h2>Специальные условия до 7 июня</h2>
           <div class="timer" aria-live="polite">
@@ -795,7 +1103,7 @@
       <div class="container">
         <div class="shifts-intro">
           <h2 class="section-title">Летние смены по специальной цене</h2>
-          <p class="lead">В стоимость входит проживание, питание, участие во всех мероприятиях смены и сопровождение команды лагеря.</p>
+          <p class="lead">10 дней отдыха «всё включено»: проживание, питание 5 раз в день, программа мероприятий и сопровождение команды лагеря на закрытой лесной территории.</p>
         </div>
         <div class="grid" id="shift-grid"></div>
       </div>
@@ -814,32 +1122,12 @@
       </div>
     </section>
 
-    <section id="about">
-      <div class="container">
-        <h2 class="section-title">О лагере «Власьево»</h2>
-        <div class="about-grid">
-          <article class="about-card panel">
-            <h3>Загородный лагерь</h3>
-            <p>Лесная территория в Московской области, комфортное размещение и условия для полноценного летнего отдыха детей.</p>
-          </article>
-          <article class="about-card panel">
-            <h3>Все включено</h3>
-            <p>В стоимость смены входит проживание, питание, ежедневная программа мероприятий и участие во всех активностях лагеря.</p>
-          </article>
-          <article class="about-card panel">
-            <h3>МОСГОРТУР</h3>
-            <p>Организованный детский отдых от крупнейшего оператора детских программ Москвы с многолетним опытом проведения смен.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <section id="camp-more" class="camp-more-section">
       <div class="container">
         <div class="camp-more panel">
-          <h2 class="camp-more-title">Хотите узнать больше о лагере?</h2>
-          <p class="camp-more-text">Посмотрите фотографии территории, условия проживания, инфраструктуру, программу отдыха и другую полезную информацию о комплексе «Власьево».</p>
-          <button type="button" class="btn btn-primary" id="camp-more-link">Подробнее о лагере →</button>
+          <h2 class="camp-more-title">Хотите увидеть больше?</h2>
+          <p class="camp-more-text">Откройте полную галерею с фотографиями номеров, столовой, медпункта и всей инфраструктуры комплекса.</p>
+          <button type="button" class="btn btn-primary" id="camp-more-link">Смотреть все фото и детали →</button>
         </div>
       </div>
     </section>
@@ -999,7 +1287,94 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   <script>
+    const CAMP_OVERVIEW_IMAGES = [
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/3cd2f64e-9858-4557-8308-246ce71b0e4a.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/24511283-5e6a-4e78-b39e-3144f3612589.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/1039c02c-b8dd-4dd8-8e29-f277e5f4829f.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/0dcc6e0c-fee0-45da-aa8e-ef37d05428a0.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_244264.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_298459.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/7a65f8cb-18cd-431b-b029-124f1bd5cfc6.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/965404bb-d9a4-4eb2-a636-6894909f52a1.jpg', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/thumb_1280_244391.png', alt: 'Лагерь «Власьево»' },
+      { src: 'https://camp.mosreg.ru/media/camps/images/original/1764e54c-b6dd-440b-9622-f443be378022.jpg', alt: 'Лагерь «Власьево»' },
+    ];
+
+    function initCampOverviewSlider() {
+      const root = document.getElementById('camp-overview-slider');
+      const wrapper = root?.querySelector('.swiper-wrapper');
+      const paginationEl = document.getElementById('camp-slider-pagination');
+      const arrowsEl = document.getElementById('camp-slider-arrows');
+      if (!root || !wrapper || typeof Swiper === 'undefined') return;
+
+      const list = CAMP_OVERVIEW_IMAGES;
+      const count = list.length;
+      if (!count) return;
+
+      const useCarousel = count >= 3;
+      const slides = useCarousel ? list.concat(list, list) : list;
+
+      wrapper.innerHTML = slides.map((item) => `
+        <div class="swiper-slide camp-slider-slide">
+          <div class="camp-slider-card">
+            <img src="${item.src}" alt="${item.alt}" loading="lazy">
+          </div>
+        </div>
+      `).join('');
+
+      const swiper = new Swiper(root, {
+        centeredSlides: useCarousel,
+        centerInsufficientSlides: true,
+        allowTouchMove: useCarousel,
+        initialSlide: useCarousel ? count : 0,
+        spaceBetween: 45,
+        slidesPerView: 'auto',
+        watchOverflow: true,
+        on: {
+          slideChangeTransitionEnd(sw) {
+            if (!useCarousel || sw.animating) return;
+            const idx = sw.activeIndex;
+            if (idx < count) sw.slideTo(idx + count, 0, false);
+            else if (idx >= count * 2) sw.slideTo(idx - count, 0, false);
+          },
+        },
+      });
+
+      swiper.update();
+
+      function syncBullet(idx) {
+        const active = ((idx % count) + count) % count;
+        paginationEl?.querySelectorAll('.camp-slider-bullet').forEach((btn, i) => {
+          btn.classList.toggle('is-active', i === active);
+          btn.setAttribute('aria-current', i === active ? 'true' : 'false');
+        });
+      }
+
+      if (paginationEl && useCarousel) {
+        paginationEl.innerHTML = list.map((_, i) => `
+          <button type="button" class="camp-slider-bullet${i === 0 ? ' is-active' : ''}" aria-label="Фото ${i + 1}" aria-current="${i === 0 ? 'true' : 'false'}"></button>
+        `).join('');
+        paginationEl.querySelectorAll('.camp-slider-bullet').forEach((btn, i) => {
+          btn.addEventListener('click', () => swiper.slideTo(count + i));
+        });
+        swiper.on('slideChange', () => syncBullet(swiper.activeIndex));
+        syncBullet(swiper.activeIndex);
+      } else if (paginationEl) {
+        paginationEl.hidden = true;
+      }
+
+      if (arrowsEl && useCarousel) {
+        arrowsEl.querySelector('.camp-slider-arrow--prev')?.addEventListener('click', () => swiper.slidePrev());
+        arrowsEl.querySelector('.camp-slider-arrow--next')?.addEventListener('click', () => swiper.slideNext());
+      } else if (arrowsEl) {
+        arrowsEl.hidden = true;
+      }
+    }
+
+    initCampOverviewSlider();
+
     const money = new Intl.NumberFormat('ru-RU');
     const PROMO_PRICE_10_DAYS = 39900;
     const shiftGrid = document.getElementById('shift-grid');
@@ -1178,7 +1553,31 @@
       tryOpenShiftFromUrl();
     }
 
+    const reserveModal = document.getElementById('reserve-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalLead = reserveModal?.querySelector('.modal-lead');
+    const modalCard = reserveModal?.querySelector('.modal');
+    const modalForm = document.getElementById('modal-form');
+    const modalFormBody = modalForm;
+    const modalSuccess = document.getElementById('modal-success');
+    const qualifyHoursNotice = document.getElementById('qualify-hours-notice');
+    const modalName = document.getElementById('modal-name');
+    const modalPhone = document.getElementById('modal-phone');
+    const modalShift = document.getElementById('modal-shift');
+    const modalFormNote = document.getElementById('modal-form-note');
+    const modalSubmit = document.getElementById('modal-submit');
+    const modalClose = document.getElementById('modal-close');
+    const modalPhoneError = document.getElementById('modal-phone-error');
+    const modalQualify = document.getElementById('modal-qualify');
+    const qualifyBody = document.getElementById('qualify-body');
+    const qualifyProgress = document.getElementById('qualify-progress');
+    const qualifyNote = document.getElementById('qualify-note');
+    const qualifyReadyBtn = document.getElementById('qualify-ready-btn');
+    const qualifyQuestionsBtn = document.getElementById('qualify-questions-btn');
+
     let shiftsLoaded = false;
+    let activeReserveShift = null;
+    let currentLeadSession = null;
 
     const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
     const PHONE_MIN_CURSOR = 4;
@@ -1425,32 +1824,7 @@
     }
 
     const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
-
-    const reserveModal = document.getElementById('reserve-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalLead = reserveModal?.querySelector('.modal-lead');
-    const modalCard = reserveModal?.querySelector('.modal');
-    const modalForm = document.getElementById('modal-form');
-    const modalFormBody = modalForm;
-    const modalSuccess = document.getElementById('modal-success');
-    const qualifyHoursNotice = document.getElementById('qualify-hours-notice');
-    const modalName = document.getElementById('modal-name');
-    const modalPhone = document.getElementById('modal-phone');
-    const modalShift = document.getElementById('modal-shift');
-    const modalFormNote = document.getElementById('modal-form-note');
-    const modalSubmit = document.getElementById('modal-submit');
-    const modalClose = document.getElementById('modal-close');
-    const modalPhoneError = document.getElementById('modal-phone-error');
-    const modalQualify = document.getElementById('modal-qualify');
-    const qualifyBody = document.getElementById('qualify-body');
-    const qualifyProgress = document.getElementById('qualify-progress');
-    const qualifyNote = document.getElementById('qualify-note');
-    const qualifyReadyBtn = document.getElementById('qualify-ready-btn');
-    const qualifyQuestionsBtn = document.getElementById('qualify-questions-btn');
     const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
-
-    let activeReserveShift = null;
-    let currentLeadSession = null;
 
     function formatShiftLabel(shift) {
       return `${shift.title} — ${shift.dates}`;
@@ -2078,22 +2452,6 @@
       return data;
     }
 
-    function tryOpenShiftFromUrl() {
-      if (!shiftsLoaded) return;
-      const params = new URLSearchParams(window.location.search);
-      const shiftId = params.get('shift') || params.get('shift_id');
-      if (!shiftId) return;
-      const shift = findShiftById(shiftId);
-      if (!shift || shift.isSoldOut) return;
-      if (isLeadBookingMode()) {
-        openReserveModal(shift);
-        return;
-      }
-      if (shift.url) {
-        window.location.href = shiftBookingHref(shift, `shift_${shift.id}`);
-      }
-    }
-
     function openReserveModal(shift) {
       activeReserveShift = shift;
       resetQualificationFlow();
@@ -2129,6 +2487,23 @@
       }
     }
 
+    function tryOpenShiftFromUrl() {
+      if (!shiftsLoaded) return;
+      if (isLeadBookingMode() && reserveModal?.classList.contains('is-open')) return;
+      const params = new URLSearchParams(window.location.search);
+      const shiftId = params.get('shift') || params.get('shift_id');
+      if (!shiftId) return;
+      const shift = findShiftById(shiftId);
+      if (!shift || shift.isSoldOut) return;
+      if (isLeadBookingMode()) {
+        openReserveModal(shift);
+        return;
+      }
+      if (shift.url) {
+        window.location.href = shiftBookingHref(shift, `shift_${shift.id}`);
+      }
+    }
+
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');
       if (!button || !isLeadBookingMode()) return;
@@ -2156,6 +2531,9 @@
         renderQuestionsFlow();
       });
     }
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && reserveModal?.classList.contains('is-open')) closeReserveModal(true);
+    });
 
     if (modalForm) {
       modalForm.addEventListener('submit', async (event) => {
@@ -2282,6 +2660,8 @@
     }
 
     const campMoreLink = document.getElementById('camp-more-link');
+    const campOverviewLink = document.getElementById('camp-overview-link');
+    const campHeroMore = document.getElementById('camp-hero-more');
     const campInfoModal = document.getElementById('camp-info-modal');
     const campInfoClose = document.getElementById('camp-info-close');
 
@@ -2306,6 +2686,12 @@
     if (campMoreLink) {
       campMoreLink.addEventListener('click', () => openCampInfoModal());
     }
+    if (campOverviewLink) {
+      campOverviewLink.addEventListener('click', () => openCampInfoModal());
+    }
+    if (campHeroMore) {
+      campHeroMore.addEventListener('click', () => openCampInfoModal());
+    }
     if (campInfoClose) {
       campInfoClose.addEventListener('click', () => closeCampInfoModal());
     }
@@ -2317,7 +2703,6 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
-      if (reserveModal?.classList.contains('is-open')) closeReserveModal(true);
       if (campInfoModal?.classList.contains('is-open')) closeCampInfoModal();
     });
 
