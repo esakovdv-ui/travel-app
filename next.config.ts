@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
         source: '/rebooking',
         destination: '/rebooking.html',
       },
+      {
+        source: '/podbor',
+        destination: '/podbor.html',
+      },
+      {
+        source: '/podbor-prototype',
+        destination: '/podbor-prototype.html',
+      },
     ];
   },
   typescript: {
