@@ -72,16 +72,41 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ## 4. Handoff
 
-| Формат | Регион | URL |
-|--------|--------|-----|
-| Тур | море | `/tours/#module6?…` moduleId `68ea30c6-…`, beachLines, ticketsIncluded |
-| любой | Подмосковье | `/hotels#module6?…` moduleId `18ff2377-…`, resorts=3799 |
-| Отель | иначе | `/new/russia-hotels` |
-| Тур | иначе | `/tours` |
+После итога — **сразу выдача**, не пустая форма поиска.
 
-Прокидываем: adults, kids/kidsAges, min/max nights, maxPrice=бюджет, minHotelRating (0/3/4), dateFrom/dateTo (+14 дней), utm_source=podbor_wizard.
+### Матрица
 
-**Caveat:** `/hotels` → meta-refresh на `/new/russia-hotels` может съесть hash.
+| Формат | Регион | Куда | Выдача |
+|--------|--------|------|--------|
+| Тур | любой | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Модуль поиска туров с параметрами |
+| Тур | у моря | тот же hash + `beachLines=1,2,3&ticketsIncluded=true` | Туры у моря |
+| Отель | любой | `russia.mosgortur.ru/search/Any-RU-to-{City}-RU-…` | Список отелей Level.Travel |
+| Тур | Подмосковье | `russia.mosgortur.ru/search/…` (city=Moscow) | Отели Подмосковья — hash `/hotels` теряется при meta-refresh |
+
+**Не используем:** голый `/tours`, `/new/russia-hotels`, `/hotels#module6` (hash съедается redirect).
+
+### Параметры
+
+**Туры** (`buildTourSearchUrl`):
+
+- `adults`, `minNights` / `maxNights`, `dateFrom` / `dateTo` (+14 дней от сегодня)
+- `minHotelRating`: 0 / 3 / 4 из класса (simple / usual / higher)
+- `maxPrice` не передаём — бюджет только в UTM
+- UTM: `utm_source=podbor_wizard&utm_campaign={format}_{region}_{nights}_{level}`
+
+**Отели** (`buildHotelSearchUrl`):
+
+- Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-0-kids-{stars}-stars-hotel-type`
+- City: Sochi (море / другой / не знаю), Moscow (Подмосковье)
+- Stars: simple `1..3`, usual `3..4`, higher `4..5`
+- Дети: в path всегда `0-kids` (иначе Level.Travel отдаёт 302); `kids` и `kids_ages` — в query UTM для аналитики
+
+### Проверено (curl 200)
+
+1. Тур + море → `/tours/#module6?action=search&…&beachLines=1,2,3`
+2. Тур + другой → `/tours/#module6?action=search&…` (не лендинг)
+3. Отель + море → `russia.mosgortur.ru/search/…Sochi…`
+4. Отель + Подмосковье → `russia.mosgortur.ru/search/…Moscow…`
 
 ---
 

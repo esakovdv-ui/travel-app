@@ -13,31 +13,20 @@
   <meta property="og:url" content="https://motrip.ru/podbor" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- Yandex.Metrika counter -->
-  <script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
-    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-  </script>
-  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-  <!-- /Yandex.Metrika counter -->
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0a0a0a;
-      --bg-2: #141414;
-      --yellow: #ffcc00;
-      --orange: #ff6a00;
-      --orange-hover: #ff8124;
+      --bg: #f5f5f5;
+      --bg-2: #ffffff;
+      --yellow: #FFCC00;
+      --orange: #FF6600;
+      --orange-hover: #e55a00;
       --white: #ffffff;
-      --muted: #a3a3a3;
-      --line: #2a2a2a;
+      --text: #212121;
+      --muted: #666666;
+      --line: #DFE1E5;
       --card: #ffffff;
-      --ink: #0d0d0d;
+      --ink: #212121;
       --ok: #1a7f37;
       --warn: #b45309;
       --bad: #9f1239;
@@ -45,45 +34,45 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: Manrope, system-ui, sans-serif;
+      font-family: Mulish, "PT Sans", system-ui, sans-serif;
       background: var(--bg);
-      color: var(--white);
+      color: var(--text);
       line-height: 1.35;
     }
     .shell { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
     body.embedded .brand { padding-top: 12px; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 20px 0 8px; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 20px 0 8px; }
     .brand-mark {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: linear-gradient(135deg, #e11, #c00);
-      display: grid; place-items: center; font-size: 11px; font-weight: 800;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--yellow);
+      display: grid; place-items: center; font-size: 11px; font-weight: 900; color: var(--text);
     }
-    .brand span { font-size: 13px; color: var(--muted); }
+    .brand span { font-size: 13px; color: var(--muted); font-weight: 600; }
     .hero {
-      background: var(--yellow); color: var(--ink);
-      border-radius: 0 0 28px 28px; margin: 0 -16px 28px; padding: 28px 16px 32px;
+      background: var(--yellow); color: var(--text);
+      border-radius: 0 0 40px 40px; margin: 0 -16px 28px; padding: 28px 16px 36px;
     }
     @media (min-width: 752px) {
-      .hero { margin-left: 0; margin-right: 0; border-radius: 24px; padding: 36px 32px; }
+      .hero { margin-left: 0; margin-right: 0; border-radius: 0 0 40px 40px; padding: 36px 32px; }
     }
     .hero h1 {
       margin: 0 0 10px; font-size: clamp(28px, 6vw, 40px);
-      font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+      font-weight: 900; letter-spacing: -0.03em; line-height: 1.1;
     }
-    .hero p { margin: 0 0 22px; font-size: 17px; max-width: 28em; }
+    .hero p { margin: 0 0 22px; font-size: 17px; max-width: 28em; color: var(--text); }
     .progress { display: flex; gap: 6px; margin-bottom: 18px; }
-    .progress i { flex: 1; height: 4px; border-radius: 99px; background: #333; }
+    .progress i { flex: 1; height: 4px; border-radius: 99px; background: var(--line); }
     .progress i.on { background: var(--orange); }
-    .progress i.done { background: #555; }
-    .step-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    .progress i.done { background: #ccc; }
+    .step-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
     h2 {
       margin: 0 0 8px; font-size: clamp(22px, 4vw, 28px);
-      font-weight: 800; letter-spacing: -0.02em;
+      font-weight: 900; letter-spacing: -0.02em; color: var(--text);
     }
     .sub { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
     .hint {
-      margin: -8px 0 16px; padding: 12px 14px; border-radius: 12px;
-      background: #1a120c; border: 1px solid #3a2a1a; color: #f3d5b5; font-size: 13px;
+      margin: -8px 0 16px; padding: 12px 14px; border-radius: 15px;
+      background: #fff8f0; border: 1px solid #ffe0c2; color: #7a4a1a; font-size: 13px;
     }
     .grid { display: grid; gap: 12px; }
     @media (min-width: 560px) {
@@ -92,16 +81,16 @@
     }
     .card {
       appearance: none; width: 100%; text-align: left;
-      border: 2px solid transparent; border-radius: 18px;
-      background: var(--card); color: var(--ink);
+      border: 2px solid var(--line); border-radius: 15px;
+      background: var(--card); color: var(--text);
       padding: 18px; cursor: pointer; font: inherit;
-      transition: border-color .15s, transform .15s, opacity .15s;
+      transition: border-color .15s, transform .15s, box-shadow .15s;
     }
-    .card:hover:not(:disabled) { transform: translateY(-1px); }
+    .card:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
     .card.selected { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
     .card:disabled { opacity: .45; cursor: not-allowed; }
     .card .title { display: block; font-weight: 800; font-size: 18px; margin-bottom: 4px; }
-    .card .desc { display: block; font-size: 14px; color: #555; }
+    .card .desc { display: block; font-size: 14px; color: var(--muted); }
     .card .fit {
       display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 700;
       padding: 4px 8px; border-radius: 99px;
@@ -117,7 +106,7 @@
       background: #fff3e6; color: #b34a00;
       padding: 4px 8px; border-radius: 99px;
     }
-    .region { position: relative; overflow: hidden; min-height: 120px; padding: 0; background: #222; }
+    .region { position: relative; overflow: hidden; min-height: 120px; padding: 0; background: #eee; border-color: transparent; }
     .region img { width: 100%; height: 120px; object-fit: cover; display: block; filter: brightness(0.72); }
     .region .overlay {
       position: absolute; inset: 0; display: flex; flex-direction: column;
@@ -125,33 +114,35 @@
     }
     .region .title { color: #fff; margin: 0; }
     .region .desc { color: rgba(255,255,255,.85); }
+    .region.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
     .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .chip {
-      border: 2px solid var(--line); background: var(--bg-2); color: var(--white);
-      border-radius: 16px; padding: 16px 14px; font: inherit; font-weight: 700;
+      border: 2px solid var(--line); background: var(--white); color: var(--text);
+      border-radius: 15px; padding: 16px 14px; font: inherit; font-weight: 700;
       font-size: 16px; cursor: pointer; text-align: left;
     }
     .chip small { display: block; margin-top: 4px; font-weight: 500; font-size: 12px; color: var(--muted); }
     .chip .fit { margin-top: 8px; }
-    .chip.selected { border-color: var(--orange); background: #1a120c; }
+    .chip.selected { border-color: var(--orange); background: #fff8f0; }
     .chip:disabled { opacity: .4; cursor: not-allowed; }
     .counters { display: grid; gap: 14px; }
     .counter {
       display: flex; align-items: center; justify-content: space-between;
-      background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
+      background: var(--white); border: 1px solid var(--line); border-radius: 15px; padding: 14px 16px;
     }
-    .counter .label { font-weight: 700; }
+    .counter .label { font-weight: 800; color: var(--text); }
     .counter .label small { display: block; font-weight: 500; color: var(--muted); margin-top: 2px; }
     .counter .ctrl { display: flex; align-items: center; gap: 12px; }
     .counter button {
       width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
-      background: #222; color: #fff; font-size: 20px; line-height: 1; cursor: pointer;
+      background: var(--white); color: var(--text); font-size: 20px; line-height: 1; cursor: pointer;
     }
+    .counter button:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
     .counter button:disabled { opacity: .35; cursor: not-allowed; }
     .counter .val { min-width: 1.5em; text-align: center; font-weight: 800; font-size: 18px; }
     .kids-ages {
       display: none; margin-top: 4px; padding: 16px;
-      background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px;
+      background: var(--white); border: 1px solid var(--line); border-radius: 15px;
     }
     .kids-ages.visible { display: grid; gap: 12px; }
     .kids-ages .ages-title {
@@ -164,15 +155,15 @@
     .kid-age-row select {
       flex: 1; max-width: 180px; min-width: 0;
       appearance: none; -webkit-appearance: none;
-      background: #222 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a3a3a3' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+      background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
       border: 1px solid var(--line); border-radius: 12px;
-      color: var(--white); font: inherit; font-weight: 700; font-size: 15px;
+      color: var(--text); font: inherit; font-weight: 700; font-size: 15px;
       padding: 12px 36px 12px 14px; outline: none; cursor: pointer;
     }
     .kid-age-row select:focus { border-color: var(--orange); }
     .summary {
-      background: var(--bg-2); border: 1px solid var(--line);
-      border-radius: 18px; padding: 18px; margin-bottom: 16px;
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 15px; padding: 18px; margin-bottom: 16px;
     }
     .summary dl { margin: 0; display: grid; gap: 10px; }
     .summary div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
@@ -182,12 +173,13 @@
     .note a { color: var(--orange); }
     .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
     .btn {
-      appearance: none; border: 0; border-radius: 999px;
+      appearance: none; border: 0; border-radius: 16px;
       padding: 14px 22px; font: inherit; font-weight: 800; font-size: 16px; cursor: pointer;
     }
     .btn-primary { background: var(--orange); color: #fff; }
     .btn-primary:hover { background: var(--orange-hover); }
-    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .btn-ghost { background: var(--white); color: var(--muted); border: 1px solid var(--line); }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
     .screen { display: none; animation: in .25s ease; }
     .screen.active { display: block; }
     @keyframes in {
@@ -198,33 +190,34 @@
       margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
       font-size: 13px; color: var(--muted);
     }
+    .footer-cert a { color: var(--orange); }
     .budget-panel {
-      background: var(--bg-2); border: 1px solid var(--line);
-      border-radius: 20px; padding: 22px 18px 18px;
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 15px; padding: 22px 18px 18px;
     }
     .budget-value {
-      font-size: clamp(32px, 8vw, 44px); font-weight: 800;
-      letter-spacing: -0.03em; line-height: 1; margin: 0 0 6px;
+      font-size: clamp(32px, 8vw, 44px); font-weight: 900;
+      letter-spacing: -0.03em; line-height: 1; margin: 0 0 6px; color: var(--text);
     }
     .budget-value span { color: var(--orange); }
     .budget-note { margin: 0 0 22px; font-size: 14px; color: var(--muted); }
-    .budget-note strong { color: var(--yellow); font-weight: 700; }
+    .budget-note strong { color: var(--text); font-weight: 800; }
     .slider-wrap { position: relative; padding: 8px 0 36px; }
     .budget-range {
       -webkit-appearance: none; appearance: none;
       width: 100%; height: 6px; border-radius: 99px;
-      background: linear-gradient(to right, var(--orange) 0%, var(--orange) var(--pct, 0%), #333 var(--pct, 0%), #333 100%);
+      background: linear-gradient(to right, var(--orange) 0%, var(--orange) var(--pct, 0%), #e0e0e0 var(--pct, 0%), #e0e0e0 100%);
       outline: none; cursor: pointer;
     }
     .budget-range::-webkit-slider-thumb {
       -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%;
-      background: var(--yellow); border: 3px solid var(--ink);
-      box-shadow: 0 2px 8px rgba(0,0,0,.35); cursor: grab;
+      background: var(--yellow); border: 3px solid var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); cursor: grab;
     }
     .budget-range::-moz-range-thumb {
       width: 28px; height: 28px; border-radius: 50%;
-      background: var(--yellow); border: 3px solid var(--ink);
-      box-shadow: 0 2px 8px rgba(0,0,0,.35); cursor: grab;
+      background: var(--yellow); border: 3px solid var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); cursor: grab;
     }
     .budget-ticks {
       display: flex; justify-content: space-between;
@@ -236,10 +229,10 @@
       color: var(--muted); min-width: 0;
     }
     .budget-tick::before {
-      content: ""; width: 2px; height: 8px; border-radius: 99px; background: #444;
+      content: ""; width: 2px; height: 8px; border-radius: 99px; background: #ccc;
     }
     .budget-tick.active::before { background: var(--orange); height: 10px; }
-    .budget-tick.active { color: var(--yellow); }
+    .budget-tick.active { color: var(--orange); font-weight: 800; }
     .budget-tick span { font-size: 10px; font-weight: 700; white-space: nowrap; }
     @media (min-width: 560px) { .budget-tick span { font-size: 11px; } }
     .budget-custom {
@@ -251,14 +244,26 @@
     .budget-custom-row { display: flex; gap: 8px; align-items: center; }
     .budget-custom input {
       flex: 1; min-width: 0;
-      background: #222; border: 1px solid var(--line); border-radius: 12px;
-      color: var(--white); font: inherit; font-weight: 700; font-size: 16px;
+      background: var(--white); border: 1px solid var(--line); border-radius: 12px;
+      color: var(--text); font: inherit; font-weight: 700; font-size: 16px;
       padding: 12px 14px; outline: none;
     }
     .budget-custom input:focus { border-color: var(--orange); }
-    .budget-custom input::placeholder { color: #666; font-weight: 500; }
+    .budget-custom input::placeholder { color: #aaa; font-weight: 500; }
     .budget-custom .suffix { font-size: 14px; color: var(--muted); font-weight: 600; white-space: nowrap; }
   </style>
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
+    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
 </head>
 <body>
   <div class="shell">
@@ -883,13 +888,17 @@
       return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
     }
 
+    function formatDateDot(d) {
+      return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+    }
+
     function tripDates(minNights) {
       const from = new Date();
       from.setHours(12, 0, 0, 0);
       from.setDate(from.getDate() + 14);
       const to = new Date(from);
       to.setDate(to.getDate() + Math.max(1, minNights));
-      return { dateFrom: formatDateDMY(from), dateTo: formatDateDMY(to) };
+      return { dateFrom: formatDateDMY(from), dateTo: formatDateDMY(to), departureDot: formatDateDot(from) };
     }
 
     function nightsRange(nightsId) {
@@ -905,19 +914,56 @@
       return 0;
     }
 
-    function kidsQuery() {
-      if (!state.kids) return '';
-      // ages as comma list for modules that accept it
-      const ages = state.kidsAges.join(',');
-      return `&kids=${state.kids}&kidsAges=${encodeURIComponent(ages)}`;
+    function nightsMid(nightsId) {
+      const [minN, maxN] = nightsRange(nightsId);
+      return Math.round((minN + maxN) / 2);
     }
 
-    function buildHandoffUrl() {
+    function levelStars(levelId) {
+      if (levelId === 'higher') return '4..5';
+      if (levelId === 'usual') return '3..4';
+      return '1..3';
+    }
+
+    function hotelCitySlug(region) {
+      if (region === 'podmos') return 'Moscow';
+      return 'Sochi';
+    }
+
+    function buildHotelSearchUrl() {
+      const nights = state.nights || '5-7';
+      const n = nightsMid(nights);
+      const { departureDot } = tripDates(n);
+      const adults = state.adults;
+      const kids = state.kids;
+      // Level.Travel rejects non-zero kids in path (302 → homepage); ages go in UTM only
+      const kidsSegment = '0-kids';
+      const stars = levelStars(state.level || 'usual');
+      const city = hotelCitySlug(state.region);
+      const campaign = [
+        state.format || 'any',
+        state.region || 'any',
+        nights,
+        state.level || 'usual',
+      ].join('_');
+      const path = `Any-RU-to-${city}-RU-departure-${departureDot}-for-${n}-nights-${adults}-adults-${kidsSegment}-${stars}-stars-hotel-type`;
+      const qs = new URLSearchParams({
+        utm_source: 'podbor_wizard',
+        utm_campaign: campaign,
+        utm_medium: 'wizard',
+      });
+      if (kids > 0) {
+        qs.set('kids', String(kids));
+        if (state.kidsAges.length) qs.set('kids_ages', state.kidsAges.join(','));
+      }
+      return `https://russia.mosgortur.ru/search/${path}?${qs}`;
+    }
+
+    function buildTourSearchUrl() {
       const nights = state.nights || '5-7';
       const [minN, maxN] = nightsRange(nights);
       const { dateFrom, dateTo } = tripDates(minN);
       const adults = state.adults;
-      const budgetTo = state.budget || 80000;
       const rating = levelRating(state.level || 'usual');
       const campaign = [
         state.format || 'any',
@@ -925,41 +971,41 @@
         nights,
         state.level || 'usual',
       ].join('_');
-      const utm = `utm_source=podbor_wizard&utm_campaign=${encodeURIComponent(campaign)}`;
-      const kids = kidsQuery();
-      const baseTour = 'https://online.mosgortur.ru/tours/#module6?action=search'
-        + '&moduleId=68ea30c6-f7a0-4a8c-9775-ccd5a3063a02'
-        + '&country=150&city=832'
-        + `&adults=${adults}${kids}`
-        + `&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`
-        + `&minNights=${minN}&maxNights=${maxN}`
-        + `&minPrice=0&maxPrice=${budgetTo}`
-        + `&minHotelRating=${rating}`
-        + '&currency=RUB&moduleType=mgt'
-        + '&isOnlyCharter=false&isOnlyRegular=false&isInstantBook=true'
-        + '&isOnlyAccommodation=false&isRailwaySupported=false'
-        + `&${utm}`;
-      const baseHotelPodmos = 'https://online.mosgortur.ru/hotels#module6?action=search'
-        + '&moduleId=18ff2377-4055-4f60-b31c-baa9d92230e9'
-        + '&country=150&city=832&resorts=3799'
-        + `&adults=${adults}${kids}`
-        + `&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`
-        + `&minNights=${minN}&maxNights=${maxN}`
-        + `&minPrice=0&maxPrice=${budgetTo}`
-        + `&minHotelRating=${rating}`
-        + '&currency=RUB&moduleType=mgt'
-        + '&isOnlyAccommodation=false&ticketsIncluded=false'
-        + `&${utm}`;
+      const params = new URLSearchParams({
+        action: 'search',
+        moduleId: '68ea30c6-f7a0-4a8c-9775-ccd5a3063a02',
+        country: '150',
+        city: '832',
+        adults: String(adults),
+        dateFrom,
+        dateTo,
+        minNights: String(minN),
+        maxNights: String(maxN),
+        minPrice: '0',
+        minHotelRating: String(rating),
+        currency: 'RUB',
+        moduleType: 'mgt',
+        isOnlyCharter: 'false',
+        isOnlyRegular: 'false',
+        isInstantBook: 'true',
+        isOnlyAccommodation: 'false',
+        isRailwaySupported: 'false',
+        tourFormRequiredFields: '0',
+        utm_source: 'podbor_wizard',
+        utm_campaign: campaign,
+      });
+      if (state.region === 'sea') {
+        params.set('beachLines', '1,2,3');
+        params.set('ticketsIncluded', 'true');
+      }
+      return `https://online.mosgortur.ru/tours/#module6?${params.toString()}`;
+    }
 
-      // Подмосковье на сайте = отельный модуль resorts=3799
-      if (state.region === 'podmos') return baseHotelPodmos;
-      if (state.format === 'tour' && state.region === 'sea') {
-        return baseTour + '&beachLines=1,2,3&ticketsIncluded=true&tourFormRequiredFields=0';
+    function buildHandoffUrl() {
+      if (state.format === 'hotel' || state.region === 'podmos') {
+        return buildHotelSearchUrl();
       }
-      if (state.format === 'hotel') {
-        return `https://online.mosgortur.ru/new/russia-hotels?${utm}`;
-      }
-      return `https://online.mosgortur.ru/tours?${utm}`;
+      return buildTourSearchUrl();
     }
 
     function openHandoff(url) {
