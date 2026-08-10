@@ -303,8 +303,8 @@
     </section>
 
     <section class="screen" data-screen="people">
-      <div class="progress" data-step="1"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div class="step-label">Шаг 1 из 6</div>
+      <div class="progress" data-step="1"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 1 из 5</div>
       <h2>Сколько человек едет?</h2>
       <p class="sub">От этого зависят цены и свободные номера.</p>
       <div class="counters">
@@ -333,8 +333,8 @@
     </section>
 
     <section class="screen" data-screen="budget">
-      <div class="progress" data-step="2"><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
-      <div class="step-label">Шаг 2 из 6</div>
+      <div class="progress" data-step="2"><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 2 из 5</div>
       <h2>Какой бюджет на поездку?</h2>
       <p class="sub">На всех, кто едет. Двигайте шкалу или укажите свою сумму.</p>
       <div class="budget-panel" id="budgetPanel">
@@ -362,8 +362,8 @@
     </section>
 
     <section class="screen" data-screen="format">
-      <div class="progress" data-step="3"><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
-      <div class="step-label">Шаг 3 из 6</div>
+      <div class="progress" data-step="3"><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 3 из 5</div>
       <h2>Что ищете?</h2>
       <p class="sub">От этого зависит, куда мы вас направим.</p>
       <div class="grid two" role="group">
@@ -383,8 +383,8 @@
     </section>
 
     <section class="screen" data-screen="region">
-      <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i></div>
-      <div class="step-label">Шаг 4 из 6</div>
+      <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
+      <div class="step-label">Шаг 4 из 5</div>
       <h2>Куда хотите поехать?</h2>
       <p class="sub">Сначала самые частые направления — остальное рядом.</p>
       <div class="grid regions region-primary" role="group" aria-label="Основные направления">
@@ -412,33 +412,20 @@
     </section>
 
     <section class="screen" data-screen="nights">
-      <div class="progress" data-step="5"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
-      <div class="step-label">Шаг 5 из 6</div>
+      <div class="progress" data-step="5"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i></div>
+      <div class="step-label">Шаг 5 из 5</div>
       <h2>На сколько ночей?</h2>
       <p class="sub">Подписи показывают, что обычно влезает в ваш бюджет.</p>
       <div class="hint" id="nightsHint" hidden></div>
       <div class="chips" role="group" id="nightsGroup"></div>
       <div class="actions">
         <button type="button" class="btn btn-ghost" data-go="region">Назад</button>
-        <button type="button" class="btn btn-primary" data-go="level" data-need="nights">Выбрать размещение</button>
-      </div>
-    </section>
-
-    <section class="screen" data-screen="level">
-      <div class="progress" data-step="6"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i></div>
-      <div class="step-label">Шаг 6 из 6</div>
-      <h2>Какое размещение нужно?</h2>
-      <p class="sub">Сначала то, что обычно по карману. Дороже — можно выбрать, если готовы доплатить.</p>
-      <div class="hint" id="levelHint" hidden></div>
-      <div class="grid" role="group" id="levelGroup"></div>
-      <div class="actions">
-        <button type="button" class="btn btn-ghost" data-go="nights">Назад</button>
-        <button type="button" class="btn btn-primary" data-go="summary" data-need="level">Посмотреть запрос</button>
+        <button type="button" class="btn btn-primary" data-go="summary" data-need="nights">Посмотреть запрос</button>
       </div>
     </section>
 
     <section class="screen" data-screen="summary">
-      <div class="progress" data-step="7"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i></div>
+      <div class="progress" data-step="6"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i></div>
       <h2>Ваш запрос</h2>
       <p class="sub">Проверьте и откройте подборку.</p>
       <div class="summary">
@@ -448,12 +435,11 @@
           <div><dt>Формат</dt><dd id="out-format">—</dd></div>
           <div><dt>Куда</dt><dd id="out-region">—</dd></div>
           <div><dt>Ночей</dt><dd id="out-nights">—</dd></div>
-          <div><dt>Размещение</dt><dd id="out-level">—</dd></div>
         </dl>
       </div>
       <p class="hint" id="summaryFit" hidden></p>
       <div class="actions">
-        <button type="button" class="btn btn-ghost" data-go="level">Назад</button>
+        <button type="button" class="btn btn-ghost" data-go="nights">Назад</button>
         <button type="button" class="btn btn-primary" id="goResults">Показать варианты</button>
       </div>
       <p class="footer-cert">Сертификатом можно оплатить часть суммы — до 40&nbsp;000&nbsp;₽ на человека. <a href="https://online.mosgortur.ru/for-tourists/how-get-certificate/" target="_blank" rel="noopener">Как это работает</a></p>
@@ -470,8 +456,9 @@
       format: null,
       region: null,
       nights: null,
-      level: null,
     };
+
+    const DEFAULT_LEVEL = 'usual';
 
     const BUDGET_MIN = 40000;
     const BUDGET_MAX = 360000;
@@ -496,11 +483,6 @@
         '8-10': '8–10',
         '11+': '11+',
       },
-      level: {
-        simple: 'Проще',
-        usual: 'Как обычно',
-        higher: 'Выше классом',
-      },
     };
 
     const nightsMeta = [
@@ -509,11 +491,7 @@
       { id: '8-10', mid: 9, why: 'Успеете осмотреться' },
       { id: '11+', mid: 12, why: 'Длинный отдых' },
     ];
-    const levelMeta = [
-      { id: 'simple', mult: 1, desc: 'Базовый номер, без лишнего' },
-      { id: 'usual', mult: 1.35, desc: 'Нормальный номер и питание' },
-      { id: 'higher', mult: 1.85, desc: 'Лучше номер или место' },
-    ];
+    const levelMult = { simple: 1, usual: 1.35, higher: 1.85 };
     const regionMult = {
       sea: 1.25,
       podmos: 0.75,
@@ -572,16 +550,15 @@
           const idx = Number(sel.dataset.kidAge);
           state.kidsAges[idx] = Number(sel.value);
           state.nights = null;
-          state.level = null;
           updateBudgetUI();
         });
       });
     }
 
     /** Rough trip cost estimate for prototype guidance only */
-    function estimateCost(nightsId, levelId) {
+    function estimateCost(nightsId) {
       const n = nightsMeta.find((x) => x.id === nightsId)?.mid || 6;
-      const l = levelMeta.find((x) => x.id === levelId)?.mult || 1.35;
+      const l = levelMult[DEFAULT_LEVEL] || 1.35;
       const basePerPersonNight = 4500;
       return basePerPersonNight
         * n
@@ -609,7 +586,6 @@
       state.budget = num;
       state.budgetCustom = fromCustom || num > BUDGET_MAX;
       state.nights = null;
-      state.level = null;
       updateBudgetUI();
     }
 
@@ -684,9 +660,9 @@
       updateBudgetUI();
     }
 
-    function fitOf(nightsId, levelId) {
+    function fitOf(nightsId) {
       const budget = state.budget || BUDGET_MIN;
-      const cost = estimateCost(nightsId, levelId);
+      const cost = estimateCost(nightsId);
       const ratio = cost / budget;
       if (ratio <= 1.05) return 'ok';
       if (ratio <= 1.35) return 'stretch';
@@ -702,17 +678,9 @@
     function bestDefaultNights() {
       let best = nightsMeta[0].id;
       for (const n of nightsMeta) {
-        const fit = fitOf(n.id, 'usual');
+        const fit = fitOf(n.id);
         if (fit === 'ok') best = n.id;
         else if (fit === 'stretch' && best === nightsMeta[0].id) best = n.id;
-      }
-      return best;
-    }
-
-    function bestDefaultLevel(nightsId) {
-      let best = 'simple';
-      for (const l of levelMeta) {
-        if (fitOf(nightsId, l.id) === 'ok') best = l.id;
       }
       return best;
     }
@@ -724,7 +692,7 @@
       if (!state.nights) state.nights = bestDefaultNights();
 
       nightsMeta.forEach((n) => {
-        const fit = fitOf(n.id, state.level || 'usual');
+        const fit = fitOf(n.id);
         const fl = fitLabel(fit);
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -734,56 +702,15 @@
         btn.innerHTML = `${labels.nights[n.id]} ночей<small>${n.why}</small><span class="fit ${fl.cls}">${fl.text}</span>`;
         btn.addEventListener('click', () => {
           state.nights = n.id;
-          // If current level becomes "over", drop to best that fits
-          if (fitOf(n.id, state.level) === 'over') {
-            state.level = bestDefaultLevel(n.id);
-          }
           renderNights();
         });
         group.appendChild(btn);
       });
 
-      const longFit = fitOf('11+', 'usual');
+      const longFit = fitOf('11+');
       if (longFit === 'over') {
         hint.hidden = false;
         hint.textContent = 'При вашем бюджете длинные поездки часто выходят дороже. Можно выбрать короче — или смотреть варианты с доплатой.';
-      } else {
-        hint.hidden = true;
-      }
-    }
-
-    function renderLevel() {
-      const group = document.getElementById('levelGroup');
-      const hint = document.getElementById('levelHint');
-      group.innerHTML = '';
-      if (!state.nights) state.nights = bestDefaultNights();
-      if (!state.level) state.level = bestDefaultLevel(state.nights);
-
-      const recommended = bestDefaultLevel(state.nights);
-
-      levelMeta.forEach((l) => {
-        const fit = fitOf(state.nights, l.id);
-        const fl = fitLabel(fit);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'card' + (state.level === l.id ? ' selected' : '') + (l.id === recommended ? ' rec' : '');
-        btn.dataset.key = 'level';
-        btn.dataset.value = l.id;
-        // Keep selectable even if over — honest upsell path
-        btn.innerHTML = `<span class="title">${labels.level[l.id]}</span><span class="desc">${l.desc}</span><span class="fit ${fl.cls}">${fl.text}</span>`;
-        btn.addEventListener('click', () => {
-          state.level = l.id;
-          renderLevel();
-        });
-        group.appendChild(btn);
-      });
-
-      const selFit = fitOf(state.nights, state.level);
-      if (selFit === 'stretch' || selFit === 'over') {
-        hint.hidden = false;
-        hint.textContent = selFit === 'stretch'
-          ? 'Этот вариант может быть чуть дороже вашего бюджета. В подборке увидите точные цены.'
-          : 'По ориентиру это выше бюджета. Всё равно можно смотреть — вдруг найдётся акция или вы готовы доплатить.';
       } else {
         hint.hidden = true;
       }
@@ -795,7 +722,6 @@
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
       if (name === 'nights') renderNights();
-      if (name === 'level') renderLevel();
       if (name === 'summary') renderSummary();
       syncCounters();
       if (name !== 'entry') track('podbor_step_' + name);
@@ -818,9 +744,8 @@
       document.getElementById('out-format').textContent = labels.format[state.format] || '—';
       document.getElementById('out-region').textContent = labels.region[state.region] || '—';
       document.getElementById('out-nights').textContent = labels.nights[state.nights] || '—';
-      document.getElementById('out-level').textContent = labels.level[state.level] || '—';
 
-      const fit = fitOf(state.nights, state.level);
+      const fit = fitOf(state.nights);
       const box = document.getElementById('summaryFit');
       if (fit === 'ok') {
         box.hidden = false;
@@ -830,7 +755,7 @@
         box.textContent = 'По ориентиру может понадобиться небольшая доплата. Точные цены — в подборке.';
       } else {
         box.hidden = false;
-        box.textContent = 'По ориентиру это выше бюджета. Можно вернуться и выбрать короче или проще — или смотреть варианты с доплатой.';
+        box.textContent = 'По ориентиру это выше бюджета. Можно вернуться и выбрать короче — или смотреть варианты с доплатой.';
       }
 
       const btn = document.getElementById('goResults');
@@ -843,7 +768,6 @@
       el.classList.add('selected');
       if (key === 'format' || key === 'region') {
         state.nights = null;
-        state.level = null;
       }
     }
 
@@ -902,7 +826,6 @@
           syncKidsAges();
         }
         state.nights = null;
-        state.level = null;
         updateBudgetUI();
         syncCounters();
       });
@@ -980,13 +903,13 @@
       const kids = state.kids;
       // Level.Travel rejects non-zero kids in path (302 → homepage); ages go in UTM only
       const kidsSegment = '0-kids';
-      const stars = levelStars(state.level || 'usual');
+      const stars = levelStars(DEFAULT_LEVEL);
       const city = hotelCitySlug(state.region);
       const campaign = [
         state.format || 'any',
         state.region || 'any',
         nights,
-        state.level || 'usual',
+        DEFAULT_LEVEL,
       ].join('_');
       const path = `Any-RU-to-${city}-RU-departure-${departureDot}-for-${n}-nights-${adults}-adults-${kidsSegment}-${stars}-stars-hotel-type`;
       const qs = new URLSearchParams({
@@ -1006,12 +929,12 @@
       const [minN, maxN] = nightsRange(nights);
       const { dateFrom, dateTo } = tripDates(minN);
       const adults = state.adults;
-      const rating = levelRating(state.level || 'usual');
+      const rating = levelRating(DEFAULT_LEVEL);
       const campaign = [
         state.format || 'any',
         state.region || 'any',
         nights,
-        state.level || 'usual',
+        DEFAULT_LEVEL,
       ].join('_');
       const params = new URLSearchParams({
         action: 'search',
@@ -1055,7 +978,6 @@
         format: state.format,
         region: state.region,
         nights: state.nights,
-        level: state.level,
         budget: state.budget,
         adults: state.adults,
         kids: state.kids,
