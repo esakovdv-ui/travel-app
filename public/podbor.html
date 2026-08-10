@@ -289,6 +289,13 @@
       margin: 0 0 14px; text-align: center; font-size: 15px; font-weight: 800; color: var(--text);
     }
     .dates-nights span { color: var(--orange); }
+    .dates-fit {
+      display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700;
+      padding: 4px 8px; border-radius: 99px;
+    }
+    .hint.fit-ok { background: #e8f7ee; border-color: #b7e4c7; color: var(--ok); }
+    .hint.fit-stretch { background: #fff3e6; border-color: #ffe0c2; color: var(--warn); }
+    .hint.fit-over { background: #fce7ef; border-color: #f5c2d0; color: var(--bad); }
     .cal-nav {
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
     }
@@ -477,6 +484,7 @@
           </div>
         </div>
         <p class="dates-nights" id="datesNightsLabel"><span>6</span> ночей</p>
+        <p class="dates-nights" style="margin-top:-6px"><span class="dates-fit fit-ok" id="datesFitBadge" hidden></span></p>
         <div class="cal-nav">
           <button type="button" id="calPrev" aria-label="Предыдущий месяц">‹</button>
           <h3 id="calMonthTitle"></h3>
@@ -581,15 +589,15 @@
       },
     };
 
-    const levelMult = 1.35;
-    const regionMult = {
-      sea: 1.25,
-      podmos: 0.75,
-      spb: 1.1,
-      kaliningrad: 1.15,
-      kazan: 1,
-      other: 1,
-      any: 1.05,
+    // Ср. цена чел./ночь по оплаченным семейным турам РФ 2026 (взвешено по чел.-ночам)
+    const regionPricePerPersonNight = {
+      sea: 5020,          // Краснодар + Крым + Дагестан + Ставрополье
+      podmos: 7880,       // МО + Москва + Тверь
+      spb: 6710,          // Санкт-Петербург
+      kaliningrad: 6950,  // Калининградская область
+      kazan: 6840,        // Татарстан
+      other: 5620,        // среднее по России
+      any: 5620,
     };
     const formatMult = { tour: 1, hotel: 0.88 };
 
@@ -659,12 +667,10 @@
 
     function estimateCost(nights) {
       const n = nights || tripNights();
-      const basePerPersonNight = 4500;
-      return basePerPersonNight
+      const ppn = regionPricePerPersonNight[state.region] || regionPricePerPersonNight.any;
+      return ppn
         * n
-        * levelMult
         * peopleCount()
-        * (regionMult[state.region] || 1)
         * (formatMult[state.format] || 1);
     }
 
@@ -768,6 +774,18 @@
       return 'over';
     }
 
+    function fitHintText(fit, nights) {
+      const cost = Math.round(estimateCost(nights));
+      const costLabel = formatRub(cost);
+      if (fit === 'ok') {
+        return `По средним ценам на это направление обычно около ${costLabel} ₽ — в вашем бюджете.`;
+      }
+      if (fit === 'stretch') {
+        return `По средним ценам обычно около ${costLabel} ₽ — может понадобиться доплата. Точные цены — в подборке.`;
+      }
+      return `По средним ценам обычно около ${costLabel} ₽ — выше вашего бюджета. Можно выбрать короче или смотреть варианты с доплатой.`;
+    }
+
     function pad2(n) { return String(n).padStart(2, '0'); }
 
     function formatDateSlash(d) {
@@ -803,16 +821,22 @@
       document.getElementById('pillCheckIn').classList.toggle('active', state.picking === 'in');
       document.getElementById('pillCheckOut').classList.toggle('active', state.picking === 'out');
 
-      const hint = document.getElementById('datesHint');
       const fit = fitOf(n);
-      if (fit === 'over') {
-        hint.hidden = false;
-        hint.textContent = 'При вашем бюджете такая длительность часто выходит дороже. Можно выбрать короче — или смотреть варианты с доплатой.';
-      } else if (fit === 'stretch') {
-        hint.hidden = false;
-        hint.textContent = 'По ориентиру может понадобиться небольшая доплата. Точные цены — в подборке.';
-      } else {
+      const badge = document.getElementById('datesFitBadge');
+      badge.hidden = false;
+      badge.className = 'dates-fit fit-' + fit;
+      if (fit === 'ok') badge.textContent = 'Обычно в бюджете';
+      else if (fit === 'stretch') badge.textContent = 'Может понадобиться доплата';
+      else badge.textContent = 'Скорее выше бюджета';
+
+      const hint = document.getElementById('datesHint');
+      if (fit === 'ok') {
         hint.hidden = true;
+        hint.className = 'hint';
+      } else {
+        hint.hidden = false;
+        hint.className = 'hint fit-' + fit;
+        hint.textContent = fitHintText(fit, n);
       }
     }
 
@@ -943,16 +967,9 @@
 
       const fit = fitOf(tripNights());
       const box = document.getElementById('summaryFit');
-      if (fit === 'ok') {
-        box.hidden = false;
-        box.textContent = 'По ориентиру это близко к вашему бюджету.';
-      } else if (fit === 'stretch') {
-        box.hidden = false;
-        box.textContent = 'По ориентиру может понадобиться небольшая доплата. Точные цены — в подборке.';
-      } else {
-        box.hidden = false;
-        box.textContent = 'По ориентиру это выше бюджета. Можно вернуться и выбрать короче — или смотреть варианты с доплатой.';
-      }
+      box.hidden = false;
+      box.textContent = fitHintText(fit, tripNights());
+      box.className = 'hint fit-' + fit;
 
       const btn = document.getElementById('goResults');
       btn.textContent = state.format === 'hotel' ? 'Показать отели' : 'Показать туры';
