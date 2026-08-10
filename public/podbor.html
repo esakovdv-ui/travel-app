@@ -115,6 +115,27 @@
     .region .title { color: #fff; margin: 0; }
     .region .desc { color: rgba(255,255,255,.85); }
     .region.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
+    .region-primary { margin-bottom: 12px; }
+    .more-label {
+      margin: 4px 0 10px; font-size: 13px; font-weight: 700; color: var(--muted);
+    }
+    .region-more {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .region-more .chip {
+      font-weight: 800;
+    }
+    .region-more .chip.selected {
+      box-shadow: 0 0 0 1px var(--orange);
+    }
+    .unsure {
+      display: block; width: 100%; margin: 18px 0 0; padding: 0;
+      border: 0; background: none; color: var(--muted);
+      font: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+      text-align: center;
+    }
+    .unsure:hover, .unsure.selected { color: var(--orange); }
     .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .chip {
       border: 2px solid var(--line); background: var(--white); color: var(--text);
@@ -365,25 +386,25 @@
       <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i></div>
       <div class="step-label">Шаг 4 из 6</div>
       <h2>Куда хотите поехать?</h2>
-      <p class="sub">Можно выбрать позже — тогда покажем больше направлений.</p>
-      <div class="grid regions" role="group">
-        <button type="button" class="card region" data-key="region" data-value="podmos">
-          <img src="https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80" alt="" />
-          <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко, на выходные или неделю</span></span>
-        </button>
+      <p class="sub">Сначала самые частые направления — остальное рядом.</p>
+      <div class="grid regions region-primary" role="group" aria-label="Основные направления">
         <button type="button" class="card region" data-key="region" data-value="sea">
           <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=640&q=80" alt="" />
-          <span class="overlay"><span class="title">У моря</span><span class="desc">Юг России</span></span>
+          <span class="overlay"><span class="title">У моря</span><span class="desc">Краснодарский край, Крым, Кавказ</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="other">
-          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=640&q=80" alt="" />
-          <span class="overlay"><span class="title">Другой регион</span><span class="desc">Алтай, Карелия и другие</span></span>
-        </button>
-        <button type="button" class="card region" data-key="region" data-value="any">
-          <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=640&q=80" alt="" />
-          <span class="overlay"><span class="title">Пока не знаю</span><span class="desc">Покажем разные варианты</span></span>
+        <button type="button" class="card region" data-key="region" data-value="podmos">
+          <img src="https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко — на выходные или неделю</span></span>
         </button>
       </div>
+      <p class="more-label">Ещё направления</p>
+      <div class="region-more" role="group" aria-label="Другие направления">
+        <button type="button" class="chip" data-key="region" data-value="spb">Санкт-Петербург<small>Город и пригороды</small></button>
+        <button type="button" class="chip" data-key="region" data-value="kaliningrad">Калининград<small>Балтика</small></button>
+        <button type="button" class="chip" data-key="region" data-value="kazan">Казань<small>Татарстан</small></button>
+        <button type="button" class="chip" data-key="region" data-value="other">Другой регион<small>Алтай, Карелия…</small></button>
+      </div>
+      <button type="button" class="unsure" data-key="region" data-value="any">Пока не знаю — покажите разные варианты</button>
       <div class="actions">
         <button type="button" class="btn btn-ghost" data-go="format">Назад</button>
         <button type="button" class="btn btn-primary" data-go="nights" data-need="region">Выбрать длительность</button>
@@ -461,8 +482,11 @@
     const labels = {
       format: { tour: 'Тур', hotel: 'Отель' },
       region: {
-        podmos: 'Подмосковье',
         sea: 'У моря',
+        podmos: 'Подмосковье',
+        spb: 'Санкт-Петербург',
+        kaliningrad: 'Калининград',
+        kazan: 'Казань',
         other: 'Другой регион',
         any: 'Пока не знаю',
       },
@@ -490,7 +514,15 @@
       { id: 'usual', mult: 1.35, desc: 'Нормальный номер и питание' },
       { id: 'higher', mult: 1.85, desc: 'Лучше номер или место' },
     ];
-    const regionMult = { podmos: 0.75, sea: 1.25, other: 1, any: 1.05 };
+    const regionMult = {
+      sea: 1.25,
+      podmos: 0.75,
+      spb: 1.1,
+      kaliningrad: 1.15,
+      kazan: 1,
+      other: 1,
+      any: 1.05,
+    };
     const formatMult = { tour: 1, hotel: 0.88 };
 
     function peopleCount() {
@@ -927,7 +959,17 @@
 
     function hotelCitySlug(region) {
       if (region === 'podmos') return 'Moscow';
+      if (region === 'spb') return 'Saint_Petersburg';
+      if (region === 'kaliningrad') return 'Kaliningrad';
+      if (region === 'kazan') return 'Kazan';
       return 'Sochi';
+    }
+
+    function usesHotelSearch(region) {
+      return region === 'podmos'
+        || region === 'spb'
+        || region === 'kaliningrad'
+        || region === 'kazan';
     }
 
     function buildHotelSearchUrl() {
@@ -1002,7 +1044,7 @@
     }
 
     function buildHandoffUrl() {
-      if (state.format === 'hotel' || state.region === 'podmos') {
+      if (state.format === 'hotel' || usesHotelSearch(state.region)) {
         return buildHotelSearchUrl();
       }
       return buildTourSearchUrl();

@@ -56,7 +56,11 @@ flowchart TD
 
 ### Шаг 4 — Регион
 
-Подмосковье / у моря / другой / пока не знаю.
+Крупно: **У моря** (Краснодарский край, Крым, Кавказ) → **Подмосковье**.
+
+Ниже блоки: Санкт-Петербург, Калининград, Казань, Другой регион.
+
+«Пока не знаю» — текстовая ссылка внизу.
 
 ### Шаг 5–6 — Ночи и класс
 
@@ -78,10 +82,12 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 | Формат | Регион | Куда | Выдача |
 |--------|--------|------|--------|
-| Тур | любой | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Модуль поиска туров с параметрами |
-| Тур | у моря | тот же hash + `beachLines=1,2,3&ticketsIncluded=true` | Туры у моря |
-| Отель | любой | `russia.mosgortur.ru/search/Any-RU-to-{City}-RU-…` | Список отелей Level.Travel |
-| Тур | Подмосковье | `russia.mosgortur.ru/search/…` (city=Moscow) | Отели Подмосковья — hash `/hotels` теряется при meta-refresh |
+| Тур | у моря | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` + `beachLines` | Туры у моря |
+| Тур | другой / не знаю | тот же hash без beachLines | Широкий поиск туров |
+| Отель | любой | `russia.mosgortur.ru/search/Any-RU-to-{City}-RU-…` | Список отелей |
+| любой | Подмосковье | city=`Moscow` | Отели МО |
+| любой | СПб / Калининград / Казань | city=`Saint_Petersburg` / `Kaliningrad` / `Kazan` | Отели города |
+| Отель | море / другой / не знаю | city=`Sochi` (дефолт выдачи) | Отели у моря |
 
 **Не используем:** голый `/tours`, `/new/russia-hotels`, `/hotels#module6` (hash съедается redirect).
 
@@ -97,9 +103,10 @@ CTA «Показать туры» / «Показать отели». Из iframe
 **Отели** (`buildHotelSearchUrl`):
 
 - Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-0-kids-{stars}-stars-hotel-type`
-- City: Sochi (море / другой / не знаю), Moscow (Подмосковье)
+- City: Sochi (море / другой / не знаю), Moscow (Подмосковье), Saint_Petersburg, Kaliningrad, Kazan
 - Stars: simple `1..3`, usual `3..4`, higher `4..5`
 - Дети: в path всегда `0-kids` (иначе Level.Travel отдаёт 302); `kids` и `kids_ages` — в query UTM для аналитики
+- СПб / Калининград / Казань / Подмосковье → всегда hotel search (даже если выбран тур), чтобы сразу была выдача по городу
 
 ### Проверено (curl 200)
 
