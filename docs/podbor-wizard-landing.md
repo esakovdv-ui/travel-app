@@ -114,9 +114,9 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 **Отели** (`buildHotelSearchUrl`):
 
-- Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-0-kids-1..5-stars-hotel-type`
+- Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-{kidsSeg}-1..5-stars-hotel-type`
 - Дата = заезд, `n` = ночи из календаря, stars всегда `1..5`
-- Дети: в path всегда `0-kids` (иначе Level.Travel отдаёт 302); `kids` / `kids_ages` в query для аналитики
+- Дети в path (формат Level.Travel): без детей — `0-kids`; с детьми — `1(7)-kids`, `2(5,8)-kids` (число + возрасты в скобках через запятую). Варианты вроде `1-kids-7y` дают 302 на главную.
 
 ### Проверено
 

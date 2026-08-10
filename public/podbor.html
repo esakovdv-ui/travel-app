@@ -1066,13 +1066,19 @@
       return 'Sochi';
     }
 
+    function hotelKidsPathSegment() {
+      const ages = state.kidsAges.filter((a) => Number.isFinite(a));
+      if (!ages.length) return '0-kids';
+      // Level.Travel SEO: 1(7)-kids, 2(5,8)-kids — иначе 302 на главную
+      return `${ages.length}(${ages.join(',')})-kids`;
+    }
+
     function buildHotelSearchUrl() {
       ensureDates();
       const n = tripNights();
       const departureDot = formatDateDot(state.checkIn);
       const adults = state.adults;
-      const kids = state.kids;
-      const kidsSegment = '0-kids';
+      const kidsSegment = hotelKidsPathSegment();
       const stars = '1..5';
       const city = hotelCitySlug(state.region);
       const campaign = [
@@ -1086,10 +1092,6 @@
         utm_campaign: campaign,
         utm_medium: 'wizard',
       });
-      if (kids > 0) {
-        qs.set('kids', String(kids));
-        if (state.kidsAges.length) qs.set('kids_ages', state.kidsAges.join(','));
-      }
       return `https://russia.mosgortur.ru/search/${path}?${qs}`;
     }
 
