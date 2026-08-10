@@ -1,6 +1,6 @@
 # Лендинг-визард подбора туров/отелей
 
-Человек отвечает на вопросы → кнопка открывает готовую подборку на `online.mosgortur.ru`. Цель бизнеса: выше средний чек (больше ночей / выше класс), не «уложиться в сертификат».
+Человек отвечает на вопросы → кнопка открывает готовую подборку на `online.mosgortur.ru` / `russia.mosgortur.ru`. Цель бизнеса: выше средний чек (больше ночей), не «уложиться в сертификат».
 
 **Статус:** логика согласована. Прод: [`public/podbor.html`](../public/podbor.html) → `https://motrip.ru/podbor`.  
 **Прототип:** [`public/podbor-prototype.html`](../public/podbor-prototype.html).
@@ -11,7 +11,7 @@
 
 | Делаем | Не делаем |
 |--------|-----------|
-| Помочь выбрать: кто едет, бюджет, тур/отель, регион, ночи | Резать выдачу «только до 40 000 ₽» |
+| Помочь выбрать: кто едет, бюджет, тур/отель, регион, даты | Резать выдачу «только до 40 000 ₽» |
 | Перейти сразу в нужную подборку | Свой каталог вместо Туры/Отели |
 | Сертификат — коротко в футере | Писать про сертификат на шаге бюджета |
 
@@ -36,8 +36,8 @@ flowchart TD
   people --> budget[2. Бюджет — шкала]
   budget --> format[3. Тур / отель → сразу дальше]
   format --> region[4. Регион]
-  region --> nights[5. Ночи + fit]
-  nights --> summary[6. Итог]
+  region --> dates[5. Даты на календаре]
+  dates --> summary[6. Итог]
   summary --> handoff[Туры / Отели]
 ```
 
@@ -61,13 +61,11 @@ flowchart TD
 
 «Пока не знаю» — текстовая ссылка внизу.
 
-### Шаг 5 — Ночи
+### Шаг 5 — Даты
 
-Все варианты видны. Пометки: обычно в бюджете / может понадобиться доплата / скорее выше бюджета. Дефолт — самый длинный, ещё в бюджете.
+Календарь: заезд + выезд. Ночи считаются сами. Дефолт: заезд сегодня+14, выезд +6 ночей.
 
-Fit v1: клиентская формула-ориентир (класс размещения в поиске — «как обычно»). Позже — коридоры из поиска.
-
-Шаг «класс размещения» убран: в handoff всегда usual (3★ / 3..4 stars).
+Fit v1: клиентская формула-ориентир по числу ночей. Шаг «класс размещения» убран.
 
 ### Шаг 6 — Итог → handoff
 
@@ -77,44 +75,43 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ## 4. Handoff
 
-После итога — **сразу выдача**, не пустая форма поиска.
+После итога — **сразу выдача**, не пустая форма поиска.  
+Ветка только по **формату**: тур → `/tours`, отель → `russia.mosgortur.ru/search`.
 
 ### Матрица
 
 | Формат | Регион | Куда | Выдача |
 |--------|--------|------|--------|
-| Тур | у моря | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` + `beachLines` | Туры у моря |
-| Тур | другой / не знаю | тот же hash без beachLines | Широкий поиск туров |
+| Тур | любой | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
+| Тур | у моря | + `beachLines=1,2,3&ticketsIncluded=true` | Туры у моря |
+| Тур | Подмосковье | + `resorts=3799` | Туры/курорты МО |
 | Отель | любой | `russia.mosgortur.ru/search/Any-RU-to-{City}-RU-…` | Список отелей |
-| любой | Подмосковье | city=`Moscow` | Отели МО |
-| любой | СПб / Калининград / Казань | city=`Saint_Petersburg` / `Kaliningrad` / `Kazan` | Отели города |
-| Отель | море / другой / не знаю | city=`Sochi` (дефолт выдачи) | Отели у моря |
+| Отель | море / другой / не знаю | city=`Sochi` | Отели у моря |
+| Отель | Подмосковье | city=`Moscow` | Отели МО |
+| Отель | СПб / Калининград / Казань | city=`Saint_Petersburg` / `Kaliningrad` / `Kazan` | Отели города |
 
-**Не используем:** голый `/tours`, `/new/russia-hotels`, `/hotels#module6` (hash съедается redirect).
+**Не используем:** голый `/tours`, `/new/russia-hotels`, `/hotels#module6`, увод тура на russia по региону.
 
 ### Параметры
 
-**Туры** (`buildTourSearchUrl`):
+**Туры** (`buildTourSearchUrl`) — hash Sletat:
 
-- `adults`, `minNights` / `maxNights`, `dateFrom` / `dateTo` (+14 дней от сегодня)
-- `minHotelRating`: 0 / 3 / 4 из класса (simple / usual / higher)
-- `maxPrice` не передаём — бюджет только в UTM
-- UTM: `utm_source=podbor_wizard&utm_campaign={format}_{region}_{nights}_{level}`
+- `adults`, `kids` = возрасты через запятую (`7,10`), не количество
+- `dateFrom` = `dateTo` = заезд (`DD/MM/YYYY`); `minNights` = `maxNights` = число ночей
+- `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
+- UTM: `utm_source=podbor_wizard`
 
 **Отели** (`buildHotelSearchUrl`):
 
-- Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-0-kids-{stars}-stars-hotel-type`
-- City: Sochi (море / другой / не знаю), Moscow (Подмосковье), Saint_Petersburg, Kaliningrad, Kazan
-- Stars: simple `1..3`, usual `3..4`, higher `4..5`
-- Дети: в path всегда `0-kids` (иначе Level.Travel отдаёт 302); `kids` и `kids_ages` — в query UTM для аналитики
-- СПб / Калининград / Казань / Подмосковье → всегда hotel search (даже если выбран тур), чтобы сразу была выдача по городу
+- Path: `Any-RU-to-{City}-RU-departure-{dd.mm.yyyy}-for-{n}-nights-{adults}-adults-0-kids-1..5-stars-hotel-type`
+- Дата = заезд, `n` = ночи из календаря, stars всегда `1..5`
+- Дети: в path всегда `0-kids` (иначе Level.Travel отдаёт 302); `kids` / `kids_ages` в query для аналитики
 
-### Проверено (curl 200)
+### Проверено
 
-1. Тур + море → `/tours/#module6?action=search&…&beachLines=1,2,3`
-2. Тур + другой → `/tours/#module6?action=search&…` (не лендинг)
-3. Отель + море → `russia.mosgortur.ru/search/…Sochi…`
-4. Отель + Подмосковье → `russia.mosgortur.ru/search/…Moscow…`
+1. Тур + море → `/tours/#module6?action=search&…&beachLines=1,2,3` + kids ages  
+2. Тур + другой → тот же модуль с датами/людьми  
+3. Отель + море / МО / СПб → `russia.mosgortur.ru/search/…` с датой и ночами  
 
 ---
 
