@@ -470,6 +470,7 @@
       <h2>Когда хотите поехать?</h2>
       <p class="sub">Выберите день заезда и день выезда на календаре.</p>
       <div class="hint" id="datesHint" hidden></div>
+      <div class="hint" id="datesCertHint"></div>
       <div class="dates-panel">
         <div class="dates-summary">
           <div class="dates-pill active" id="pillCheckIn">
@@ -840,6 +841,15 @@
         hint.className = 'hint fit-' + fit;
         hint.textContent = fitHintText(fit, n);
       }
+
+      const certHint = document.getElementById('datesCertHint');
+      const certDeadline = new Date(state.checkOut.getFullYear(), 10, 15);
+      const isCertLate = startOfDay(state.checkOut) > startOfDay(certDeadline);
+      certHint.hidden = false;
+      certHint.className = isCertLate ? 'hint fit-over' : 'hint';
+      certHint.textContent = isCertLate
+        ? 'С этими датами сертификат МОСГОРТУР не подойдёт: купить тур нужно до 31.10, а вернуться с отдыха — до 15.11.'
+        : 'Если планируете оплатить сертификатом МОСГОРТУР: купить тур нужно до 31.10, а вернуться с отдыха — до 15.11.';
     }
 
     function renderCalendar() {
