@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
+import { reachGoal, StaffGoals } from '@/lib/metrika'
 import styles from '../page.module.css'
 
 interface Country { id: number; name: string }
@@ -183,6 +184,14 @@ export function HeaderSearchBar({
   const handleSearch = useCallback(() => {
     if (!form.countryId || !form.targetDate) return
     setSubmitting(true)
+    reachGoal(StaffGoals.searchSubmit, {
+      country_id: form.countryId,
+      country: selectedCountry?.name || '',
+      nights_from: form.nightsFrom,
+      nights_to: form.nightsTo,
+      adults: form.adults,
+      source: 'header',
+    })
     const qs = new URLSearchParams({
       countryId: String(form.countryId),
       countryName: selectedCountry?.name || '',
