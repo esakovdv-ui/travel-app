@@ -65,6 +65,7 @@ fi
 echo "=== docs on staff-landing ==="
 ls -la "$DST/docs" || true
 
+rm -rf .next
 npm install
 npm run build
 pm2 restart staff-landing
