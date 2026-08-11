@@ -4,6 +4,14 @@ set -euo pipefail
 SRC=/home/travel-app/apps/staff-landing
 DST=/var/www/staff-landing
 
+# Подтянуть актуальный monorepo (включая docs/) перед копированием
+if [ -d /home/travel-app/.git ]; then
+  cd /home/travel-app
+  git fetch origin
+  git checkout main
+  git reset --hard origin/main
+fi
+
 if [ ! -d "$SRC" ]; then
   echo "Missing $SRC — pull travel-app main first"
   exit 1
@@ -38,7 +46,19 @@ set_env_var() {
 }
 set_env_var STAFF_ADMIN_PASSWORD 'staff_mgt_2026'
 
+# Документация для людей/ИИ на сервере staff
+mkdir -p "$DST/docs"
+cp -f /home/travel-app/AGENTS.md /home/travel-app/PROJECT.md /home/travel-app/README.md "$DST/docs/" 2>/dev/null || true
+cp -f /home/travel-app/docs/*.md "$DST/docs/" 2>/dev/null || true
+if [ -f "$SRC/README.md" ]; then
+  cp -f "$SRC/README.md" "$DST/docs/staff-landing.md"
+fi
+echo "=== docs on staff-landing ==="
+ls -la "$DST/docs" || true
+
 npm install
 npm run build
 pm2 restart staff-landing
 pm2 status staff-landing
+echo "=== docs on travel-app ==="
+ls -la /home/travel-app/docs /home/travel-app/PROJECT.md /home/travel-app/AGENTS.md 2>/dev/null || true
