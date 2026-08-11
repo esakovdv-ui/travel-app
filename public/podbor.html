@@ -682,8 +682,12 @@
       return `${formatRub(state.budget)} ₽`;
     }
 
+    function headcount() {
+      return Math.max(1, state.adults + state.kids);
+    }
+
     function budgetNote() {
-      const perPerson = Math.round(state.budget / peopleCount());
+      const perPerson = Math.round(state.budget / headcount());
       return `Примерно <strong>${formatRub(perPerson)} ₽</strong> на человека.`;
     }
 
