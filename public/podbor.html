@@ -1105,9 +1105,11 @@
         `${n}n`,
       ].join('_');
       const path = `Any-RU-to-${city}-RU-departure-${departureDot}-for-${n}-nights-${adults}-adults-${kidsSegment}-${stars}-stars-hotel-type`;
+      const maxPrice = state.budget || 80000;
+      const minPrice = Math.round(maxPrice * 0.7);
       const qs = new URLSearchParams({
-        filter_price_min: '0',
-        filter_price_max: String(state.budget || 80000),
+        filter_price_min: String(minPrice),
+        filter_price_max: String(maxPrice),
         utm_source: 'podbor_wizard',
         utm_campaign: campaign,
         utm_medium: 'wizard',
@@ -1126,6 +1128,8 @@
         state.region || 'any',
         `${n}n`,
       ].join('_');
+      const maxPrice = state.budget || 80000;
+      const minPrice = Math.round(maxPrice * 0.7);
       const params = new URLSearchParams({
         action: 'search',
         moduleId: '68ea30c6-f7a0-4a8c-9775-ccd5a3063a02',
@@ -1136,8 +1140,8 @@
         dateTo,
         minNights: String(n),
         maxNights: String(n),
-        minPrice: '0',
-        maxPrice: String(state.budget || 80000),
+        minPrice: String(minPrice),
+        maxPrice: String(maxPrice),
         minHotelRating: '0',
         currency: 'RUB',
         moduleType: 'mgt',
