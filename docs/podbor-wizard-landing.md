@@ -152,4 +152,29 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ## 6. Метрики
 
-Goals: `podbor_start`, `podbor_step_*`, `podbor_handoff` + средний чек / апгрейд.
+Счётчик визарда: **109401746** (`motrip.ru/podbor`).  
+Клики с баннера/popup на сайте МГТ — счётчик **90662828** (отдельно).
+
+### Воронка визарда (109401746)
+
+Каждый шаг — JS-цель, один раз за сессию (повтор при «Назад» не дублирует).
+
+| ID | reachGoal | Когда срабатывает | Параметры |
+|----|-----------|-------------------|-----------|
+| 595566508 | `podbor_start` | Открыли страницу визарда | `embedded` |
+| 595566509 | `podbor_step_people` | Дошли до шага «кто едет» | `adults`, `kids` |
+| 595566510 | `podbor_step_budget` | Дошли до шага бюджета | `budget` |
+| 595566511 | `podbor_step_format` | Дошли до шага тур/отель | `format` |
+| 595566512 | `podbor_step_region` | Дошли до шага направления | `format`, `region` |
+| 595566513 | `podbor_step_dates` | Дошли до шага дат | `nights`, `checkIn`, `checkOut` |
+| 595566514 | `podbor_step_summary` | Дошли до итога | `format`, `region`, `nights`, `budget`, `adults`, `kids` |
+| 595566515 | `podbor_handoff` | Нажали «Показать туры/отели» | те же + даты |
+
+### Вход с сайта МГТ (90662828)
+
+| ID | reachGoal | Когда |
+|----|-----------|-------|
+| 595574818 | `podbor_banner_click` | Клик по баннеру |
+| 595574819 | `podbor_popup_click` | Клик по popup |
+
+В Метрике: отчёт «Воронка» по целям `podbor_start` → `podbor_step_*` → `podbor_handoff`.

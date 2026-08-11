@@ -943,6 +943,42 @@
       }
     }
 
+    const trackedSteps = new Set();
+    let podborStarted = false;
+
+    function stepParams(name) {
+      if (name === 'people') return { adults: state.adults, kids: state.kids };
+      if (name === 'budget') return { budget: state.budget };
+      if (name === 'format') return { format: state.format };
+      if (name === 'region') return { format: state.format, region: state.region };
+      if (name === 'dates') {
+        ensureDates();
+        return {
+          nights: tripNights(),
+          checkIn: formatDateDot(state.checkIn),
+          checkOut: formatDateDot(state.checkOut),
+        };
+      }
+      if (name === 'summary') {
+        ensureDates();
+        return {
+          format: state.format,
+          region: state.region,
+          nights: tripNights(),
+          budget: state.budget,
+          adults: state.adults,
+          kids: state.kids,
+        };
+      }
+      return {};
+    }
+
+    function trackStep(name) {
+      if (name === 'entry' || trackedSteps.has(name)) return;
+      trackedSteps.add(name);
+      track('podbor_step_' + name, stepParams(name));
+    }
+
     function show(name) {
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
@@ -953,7 +989,7 @@
       }
       if (name === 'summary') renderSummary();
       syncCounters();
-      if (name !== 'entry') track('podbor_step_' + name);
+      trackStep(name);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1074,6 +1110,14 @@
       try {
         if (typeof ym === 'function') ym(109401746, 'reachGoal', goal, params || {});
       } catch (_) { /* ignore */ }
+    }
+
+    function trackStart() {
+      if (podborStarted) return;
+      podborStarted = true;
+      track('podbor_start', {
+        embedded: document.body.classList.contains('embedded'),
+      });
     }
 
     function hotelCitySlug(region) {
@@ -1212,7 +1256,7 @@
     syncCounters();
     initBudgetSlider();
     initCalendar();
-    track('podbor_start');
+    trackStart();
   </script>
 </body>
 </html>
