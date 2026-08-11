@@ -1128,6 +1128,14 @@
       return 'Sochi';
     }
 
+    const SEA_TOUR_RESORTS = [
+      '19',    // Адлер
+      '63',    // Анапа
+      '322',   // Геленджик
+      '663',   // Лазаревское
+      '1475',  // Туапсе
+    ].join(',');
+
     const OTHER_TOUR_RESORTS = [
       '536',   // Карелия
       '3027',  // Ленинградская область
@@ -1141,6 +1149,7 @@
 
     // Sletat GetCities (country=150). Parent id разворачивается в дочерние курорты.
     function tourResortsParam(region) {
+      if (region === 'sea') return SEA_TOUR_RESORTS;
       if (region === 'spb') return '1264';
       if (region === 'kaliningrad') return '3788';
       if (region === 'kazan') return '495';
