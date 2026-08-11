@@ -1,0 +1,135 @@
+.page {
+  min-height: 100vh;
+  padding: 32px 16px;
+  background: #f5f1e8;
+}
+
+.card,
+.panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(20, 20, 43, 0.08);
+}
+
+.card {
+  padding: 32px;
+  max-width: 420px;
+}
+
+.panel {
+  padding: 24px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  color: #0c2461;
+}
+
+.sub {
+  margin: 0 0 20px;
+  color: #667085;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(20, 20, 43, 0.12);
+  border-radius: 12px;
+  font: inherit;
+}
+
+.button,
+.secondary {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.button {
+  background: #e8272a;
+  color: #fff;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary {
+  background: rgba(12, 36, 97, 0.08);
+  color: #0c2461;
+}
+
+.error {
+  color: #e8272a;
+  font-size: 0.9rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.table th,
+.table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(20, 20, 43, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: #667085;
+  font-weight: 600;
+}
+
+.empty {
+  text-align: center;
+  color: #667085;
+}
+
+.ok {
+  color: #027a48;
+  font-weight: 600;
+}
+
+.fail {
+  color: #e8272a;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .header {
+    flex-direction: column;
+  }
+}
