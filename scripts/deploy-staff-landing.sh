@@ -27,9 +27,16 @@ fi
 if ! grep -q '^COOKIE_SECURE=' .env.local; then
   echo 'COOKIE_SECURE=true' >> .env.local
 fi
-if ! grep -q '^STAFF_ADMIN_PASSWORD=.' .env.local; then
-  echo "WARNING: set STAFF_ADMIN_PASSWORD in $DST/.env.local for /admin access"
-fi
+set_env_var() {
+  key="$1"
+  val="$2"
+  if grep -q "^${key}=" .env.local; then
+    sed -i.bak "s|^${key}=.*|${key}=${val}|" .env.local
+  else
+    printf '%s=%s\n' "$key" "$val" >> .env.local
+  fi
+}
+set_env_var STAFF_ADMIN_PASSWORD 'staff_mgt_2026'
 
 npm install
 npm run build
