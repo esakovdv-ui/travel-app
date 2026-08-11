@@ -111,6 +111,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 - `adults`, `kids` = возрасты через запятую (`7,10`), не количество
 - `dateFrom` = `dateTo` = заезд (`DD/MM/YYYY`); `minNights` = `maxNights` = число ночей
+- `minPrice=0`, `maxPrice` = бюджет визарда (сумма на поездку)
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - UTM: `utm_source=podbor_wizard`
 
