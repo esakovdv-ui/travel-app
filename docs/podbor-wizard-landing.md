@@ -109,6 +109,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 |--------|--------|------|--------|
 | Тур | любой (кроме МО) | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
 | Тур | у моря | + `beachLines=1,2,3&ticketsIncluded=true` | Туры у моря |
+| Тур | СПб / Калининград / Казань | + `resorts=1264` / `3788` / `495` | Только выбранное направление |
 | Отель | любой | `russia.mosgortur.ru/search/Any-RU-to-{City}-RU-…` | Список отелей |
 | Отель | море / другой / не знаю | city=`Sochi` | Отели Сочи (не Крым) |
 | Отель | Подмосковье | city=`Moscow` | Отели МО |
@@ -124,6 +125,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 - `dateFrom` = `dateTo` = заезд (`DD/MM/YYYY`); `minNights` = `maxNights` = число ночей
 - `maxPrice` = бюджет визарда (сумма на поездку), `minPrice` = 70% от max
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
+- Регион: море → `beachLines`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой / не знаю — без `resorts`
 - UTM: `utm_source=podbor_wizard`
 
 **Отели** (`buildHotelSearchUrl`):

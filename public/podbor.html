@@ -1084,6 +1084,14 @@
       return 'Sochi';
     }
 
+    // Sletat GetCities (country=150). Parent id разворачивается в дочерние курорты.
+    function tourResortsParam(region) {
+      if (region === 'spb') return '1264';
+      if (region === 'kaliningrad') return '3788';
+      if (region === 'kazan') return '495';
+      return null;
+    }
+
     function hotelKidsPathSegment() {
       const ages = state.kidsAges.filter((a) => Number.isFinite(a));
       if (!ages.length) return '0-kids';
@@ -1161,6 +1169,8 @@
         params.set('beachLines', '1,2,3');
         params.set('ticketsIncluded', 'true');
       }
+      const resorts = tourResortsParam(state.region);
+      if (resorts) params.set('resorts', resorts);
       return `https://online.mosgortur.ru/tours/#module6?${params.toString()}`;
     }
 
