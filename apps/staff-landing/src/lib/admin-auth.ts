@@ -1,11 +1,26 @@
 import { timingSafeEqual } from 'crypto'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import type { NextRequest } from 'next/server'
 
 export const STAFF_ADMIN_COOKIE = 'staff_admin'
 
+function readPasswordFromEnvFile(): string | null {
+  try {
+    const raw = readFileSync(join(process.cwd(), '.env.local'), 'utf8')
+    const line = raw.split(/\r?\n/).find(l => l.startsWith('STAFF_ADMIN_PASSWORD='))
+    if (!line) return null
+    return line.slice('STAFF_ADMIN_PASSWORD='.length).trim().replace(/^['"]|['"]$/g, '') || null
+  } catch {
+    return null
+  }
+}
+
 function adminPassword(): string | null {
-  const value = process.env.STAFF_ADMIN_PASSWORD?.trim()
-  return value || null
+  // Динамический доступ + файл — чтобы Next не «запекал» пустое значение на билде
+  const fromEnv = process.env['STAFF_ADMIN_PASSWORD']?.trim()
+  if (fromEnv) return fromEnv
+  return readPasswordFromEnvFile()
 }
 
 function safeEqual(a: string, b: string): boolean {
