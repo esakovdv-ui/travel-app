@@ -1,10 +1,12 @@
-Фото направлений для /podbor (Wikimedia Commons).
+# Фото регионов для шага «Куда»
 
-| Файл | Место | Источник |
+Локальные копии с Wikimedia Commons (CC / public domain).
+
+| Файл | Сюжет | Источник |
 |------|--------|----------|
-| sea.jpg | Чёрное море у Сочи | Black Sea near Sochi.jpg |
-| podmos.jpg | Царицыно, Москва | Moscow, Russia, Tsaritsyno, Lawns.jpg |
-| spb.jpg | Зимний дворец, СПб | RUS-2016-Aerial-SPB-Winter Palace (crop).jpg |
-| kaliningrad.jpg | Рыбная деревня, Калининград | Fish Village Kaliningrad 1.jpg |
-| kazan.jpg | Мечеть Кул-Шариф, Казань | Kazan Kremlin Qolsharif… |
-| other.jpg | Катунь, Алтай | Katun River - Chemal village… |
+| sea.jpg | Чёрное море у Сочи | Black Sea in Sochi… |
+| podmos.jpg | Царицыно | Tsaritsyno Park… |
+| spb.jpg | Зимний дворец сверху | Aerial view of the Winter Palace… |
+| kaliningrad.jpg | Рыбная деревня | Fish village in Kaliningrad… |
+| kazan.jpg | Казанский кремль | Kazan Kremlin - panoramio (6) |
+| other.jpg | Катунь, Алтай | Katun river Altai… |
