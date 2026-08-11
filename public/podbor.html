@@ -75,12 +75,10 @@
       background: #fff8f0; border: 1px solid #ffe0c2; color: #7a4a1a; font-size: 13px;
     }
     .grid { display: grid; gap: 12px; }
+    .grid.regions { grid-template-columns: 1fr 1fr; }
     @media (min-width: 560px) {
       .grid.two { grid-template-columns: 1fr 1fr; }
-      .grid.regions { grid-template-columns: 1fr 1fr; }
-      .grid.regions.single-primary { grid-template-columns: 1fr; }
     }
-    .grid.regions.single-primary .region[data-value="podmos"] { display: none; }
     .card {
       appearance: none; width: 100%; text-align: left;
       border: 2px solid var(--line); border-radius: 15px;
@@ -117,19 +115,8 @@
     .region .title { color: #fff; margin: 0; }
     .region .desc { color: rgba(255,255,255,.85); }
     .region.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
-    .region-primary { margin-bottom: 12px; }
-    .more-label {
-      margin: 4px 0 10px; font-size: 13px; font-weight: 700; color: var(--muted);
-    }
-    .region-more {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
-    .region-more .chip {
-      font-weight: 800;
-    }
-    .region-more .chip.selected {
-      box-shadow: 0 0 0 1px var(--orange);
-    }
+    .region[hidden] { display: none !important; }
+    .regions { margin-bottom: 4px; }
     .unsure {
       display: block; width: 100%; margin: 18px 0 0; padding: 0;
       border: 0; background: none; color: var(--muted);
@@ -443,8 +430,8 @@
       <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
       <div class="step-label">Шаг 4 из 5</div>
       <h2>Куда хотите поехать?</h2>
-      <p class="sub">Сначала самые частые направления — остальное рядом.</p>
-      <div class="grid regions region-primary" role="group" aria-label="Основные направления">
+      <p class="sub">Выберите направление — дальше подберём даты и варианты.</p>
+      <div class="grid regions" role="group" aria-label="Направления">
         <button type="button" class="card region" data-key="region" data-value="sea">
           <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=640&q=80" alt="" />
           <span class="overlay"><span class="title">У моря</span><span class="desc">Краснодарский край, Кавказ</span></span>
@@ -453,13 +440,22 @@
           <img src="https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80" alt="" />
           <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко — на выходные или неделю</span></span>
         </button>
-      </div>
-      <p class="more-label">Ещё направления</p>
-      <div class="region-more" role="group" aria-label="Другие направления">
-        <button type="button" class="chip" data-key="region" data-value="spb">Санкт-Петербург<small>Город и пригороды</small></button>
-        <button type="button" class="chip" data-key="region" data-value="kaliningrad">Калининград<small>Балтика</small></button>
-        <button type="button" class="chip" data-key="region" data-value="kazan">Казань<small>Татарстан</small></button>
-        <button type="button" class="chip" data-key="region" data-value="other">Другой регион<small>Алтай, Карелия…</small></button>
+        <button type="button" class="card region" data-key="region" data-value="spb">
+          <img src="https://images.unsplash.com/photo-1556610961-2fecc5930177?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Санкт-Петербург</span><span class="desc">Город и пригороды</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="kaliningrad">
+          <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Калининград</span><span class="desc">Балтика</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="kazan">
+          <img src="https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Казань</span><span class="desc">Татарстан</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="other">
+          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Другой регион</span><span class="desc">Алтай, Карелия и не только</span></span>
+        </button>
       </div>
       <button type="button" class="unsure" data-key="region" data-value="any">Пока не знаю — покажите разные варианты</button>
       <div class="actions">
@@ -936,14 +932,12 @@
     const screens = [...document.querySelectorAll('.screen')];
 
     function syncRegionOptions() {
-      const primary = document.querySelector('.grid.regions.region-primary');
       const podmos = document.querySelector('[data-key="region"][data-value="podmos"]');
       const tourOnlyHotel = state.format === 'tour';
       if (podmos) {
         podmos.hidden = tourOnlyHotel;
         if (tourOnlyHotel) podmos.classList.remove('selected');
       }
-      primary?.classList.toggle('single-primary', tourOnlyHotel);
       if (tourOnlyHotel && state.region === 'podmos') {
         state.region = null;
       }
@@ -1038,7 +1032,7 @@
           }
         } else if (need && !state[need]) {
           const group = document.querySelector(`[data-key="${need}"]`);
-          group?.closest('.grid, .chips, .region-more')?.animate(
+          group?.closest('.grid, .chips')?.animate(
             [{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }],
             { duration: 280 }
           );
