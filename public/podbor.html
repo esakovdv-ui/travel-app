@@ -1106,6 +1106,8 @@
       ].join('_');
       const path = `Any-RU-to-${city}-RU-departure-${departureDot}-for-${n}-nights-${adults}-adults-${kidsSegment}-${stars}-stars-hotel-type`;
       const qs = new URLSearchParams({
+        filter_price_min: '0',
+        filter_price_max: String(state.budget || 80000),
         utm_source: 'podbor_wizard',
         utm_campaign: campaign,
         utm_medium: 'wizard',
