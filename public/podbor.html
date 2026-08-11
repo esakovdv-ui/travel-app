@@ -78,7 +78,9 @@
     @media (min-width: 560px) {
       .grid.two { grid-template-columns: 1fr 1fr; }
       .grid.regions { grid-template-columns: 1fr 1fr; }
+      .grid.regions.single-primary { grid-template-columns: 1fr; }
     }
+    .grid.regions.single-primary .region[data-value="podmos"] { display: none; }
     .card {
       appearance: none; width: 100%; text-align: left;
       border: 2px solid var(--line); border-radius: 15px;
@@ -933,9 +935,24 @@
 
     const screens = [...document.querySelectorAll('.screen')];
 
+    function syncRegionOptions() {
+      const primary = document.querySelector('.grid.regions.region-primary');
+      const podmos = document.querySelector('[data-key="region"][data-value="podmos"]');
+      const tourOnlyHotel = state.format === 'tour';
+      if (podmos) {
+        podmos.hidden = tourOnlyHotel;
+        if (tourOnlyHotel) podmos.classList.remove('selected');
+      }
+      primary?.classList.toggle('single-primary', tourOnlyHotel);
+      if (tourOnlyHotel && state.region === 'podmos') {
+        state.region = null;
+      }
+    }
+
     function show(name) {
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
+      if (name === 'region') syncRegionOptions();
       if (name === 'dates') {
         calMonth = new Date(state.checkIn.getFullYear(), state.checkIn.getMonth(), 1);
         renderCalendar();
@@ -992,7 +1009,10 @@
     document.querySelectorAll('[data-key]').forEach((el) => {
       el.addEventListener('click', () => {
         select(el.dataset.key, el.dataset.value, el);
-        if (el.dataset.key === 'format') show('region');
+        if (el.dataset.key === 'format') {
+          syncRegionOptions();
+          show('region');
+        }
         if (el.dataset.key === 'region') show('dates');
       });
     });
@@ -1139,9 +1159,6 @@
       if (state.region === 'sea') {
         params.set('beachLines', '1,2,3');
         params.set('ticketsIncluded', 'true');
-      }
-      if (state.region === 'podmos') {
-        params.set('resorts', '3799');
       }
       return `https://online.mosgortur.ru/tours/#module6?${params.toString()}`;
     }
