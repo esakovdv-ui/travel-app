@@ -19,6 +19,7 @@ import {
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
 import { staffFetch } from '@/lib/staff-client'
+import { reachGoal, StaffGoals } from '@/lib/metrika'
 import type { HotelSearchResult, HotelDescription, HotelRoom, TourSummary, TourDetail } from '@/lib/tourvisor/types'
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false })
@@ -613,8 +614,14 @@ function HotelModal({
         }),
       })
       if (!res.ok) throw new Error(await res.text())
+      reachGoal(StaffGoals.leadSuccess, {
+        hotel: hotel.name,
+        price: selectedTour.price,
+        nights: selectedTour.nights,
+      })
       setBookDone(true)
     } catch (err) {
+      reachGoal(StaffGoals.leadFail)
       setBookError(err instanceof Error ? err.message : 'Ошибка, попробуйте ещё раз')
     } finally {
       setBookSubmitting(false)
@@ -826,7 +833,10 @@ function HotelModal({
                 <div className={styles.stickyFooterPrice}>{formatPrice(selectedTour.price)}</div>
                 <button
                   className={styles.stickyFooterBtn}
-                  onClick={() => setBookFormOpen(true)}
+                  onClick={() => {
+                    reachGoal(StaffGoals.bookOpen, { hotel: hotel.name })
+                    setBookFormOpen(true)
+                  }}
                 >
                   Оставить заявку
                 </button>
@@ -1026,6 +1036,14 @@ function ToursContent() {
     setMobileSubmitting(true)
     const offsetDate = (s: string, d: number) => { const dt = new Date(s); dt.setDate(dt.getDate() + d); return dt.toISOString().split('T')[0] }
     const country = mobileCountries.find(c => c.id === mobileForm.countryId)
+    reachGoal(StaffGoals.searchSubmit, {
+      country_id: mobileForm.countryId,
+      country: country?.name || '',
+      nights_from: mobileForm.nightsFrom,
+      nights_to: mobileForm.nightsTo,
+      adults: mobileForm.adults,
+      source: 'mobile',
+    })
     const qs = new URLSearchParams({
       countryId: String(mobileForm.countryId),
       countryName: country?.name || '',
@@ -1098,6 +1116,7 @@ function ToursContent() {
           if (!contRes.ok) {
             await fetchResults(searchId)
             setPhase('done')
+            reachGoal(StaffGoals.toursResults, { country: countryName || '', phase: 1 })
             return
           }
           setPhase('phase2')
@@ -1106,6 +1125,7 @@ function ToursContent() {
           await fetchResults(searchId)
           setProgress(100)
           setPhase('done')
+          reachGoal(StaffGoals.toursResults, { country: countryName || '', phase: 2 })
         }
       } else {
         pollTimer.current = setTimeout(() => pollStatus(searchId, isPhase2), POLL_INTERVAL_MS)
@@ -1114,7 +1134,7 @@ function ToursContent() {
       setErrorMsg(e instanceof Error ? e.message : 'Ошибка поиска')
       setPhase('error')
     }
-  }, [fetchResults])
+  }, [fetchResults, countryName])
 
   // ── Старт поиска ───────────────────────────────────────────────────────────
 
@@ -1294,7 +1314,15 @@ function ToursContent() {
                   key={hotel.id}
                   hotel={hotel}
                   selected={selectedId === hotel.id}
-                  onClick={() => { setSelectedId(hotel.id); setModalHotel(hotel) }}
+                  onClick={() => {
+                    setSelectedId(hotel.id)
+                    setModalHotel(hotel)
+                    reachGoal(StaffGoals.hotelOpen, {
+                      hotel: hotel.name,
+                      stars: hotel.category ?? 0,
+                      price: hotel.price ?? 0,
+                    })
+                  }}
                 />
               ))}
             </>
@@ -1306,7 +1334,16 @@ function ToursContent() {
             <MapView
               hotels={filtered}
               selectedId={selectedId}
-              onSelect={hotel => { setSelectedId(hotel.id); setModalHotel(hotel) }}
+              onSelect={hotel => {
+                setSelectedId(hotel.id)
+                setModalHotel(hotel)
+                reachGoal(StaffGoals.hotelOpen, {
+                  hotel: hotel.name,
+                  stars: hotel.category ?? 0,
+                  price: hotel.price ?? 0,
+                  source: 'map',
+                })
+              }}
             />
           ) : (
             <div className={styles.mapPlaceholder}>

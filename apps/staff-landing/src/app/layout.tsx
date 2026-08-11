@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Manrope, Unbounded } from 'next/font/google'
+import { YandexMetrika } from '@/components/YandexMetrika'
 import './globals.css'
 
 const manrope = Manrope({
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <body className={`${manrope.variable} ${unbounded.variable}`}>{children}</body>
+      <body className={`${manrope.variable} ${unbounded.variable}`}>
+        <YandexMetrika />
+        {children}
+      </body>
     </html>
   )
 }

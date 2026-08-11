@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { staffFetch, setStaffSessionToken } from '@/lib/staff-client'
+import { reachGoal, StaffGoals } from '@/lib/metrika'
 import { BrandLogo } from './components/Brand'
 import { MobileSearchSheet } from './components/MobileSearchSheet'
 import styles from './page.module.css'
@@ -207,6 +208,7 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    reachGoal(StaffGoals.loginAttempt)
     try {
       const res = await staffFetch('/api/auth', {
         method: 'POST',
@@ -216,12 +218,15 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
       if (res.ok) {
         const data = await res.json().catch(() => ({}))
         if (typeof data.token === 'string') setStaffSessionToken(data.token)
+        reachGoal(StaffGoals.loginSuccess)
         onUnlock()
       } else {
+        reachGoal(StaffGoals.loginFail)
         setError('Неверный пароль')
         setVal('')
       }
     } catch {
+      reachGoal(StaffGoals.loginFail)
       setError('Ошибка соединения')
     } finally {
       setLoading(false)
@@ -366,6 +371,13 @@ export default function StaffPage() {
   const handleSearch = useCallback(() => {
     if (!form.countryId || !form.targetDate) return
     setSubmitting(true)
+    reachGoal(StaffGoals.searchSubmit, {
+      country_id: form.countryId,
+      country: selectedCountry?.name || '',
+      nights_from: form.nightsFrom,
+      nights_to: form.nightsTo,
+      adults: form.adults,
+    })
     const qs = new URLSearchParams({
       countryId: String(form.countryId),
       countryName: selectedCountry?.name || '',
