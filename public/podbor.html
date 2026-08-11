@@ -1128,11 +1128,23 @@
       return 'Sochi';
     }
 
+    const OTHER_TOUR_RESORTS = [
+      '536',   // Карелия
+      '3027',  // Ленинградская область
+      '3824',  // Ярославская область
+      '3801',  // Нижегородская область
+      '3737',  // Калужская область
+      '3781',  // Владимирская область
+      '7064',  // Республика Алтай
+      '42',    // Алтайский край
+    ].join(',');
+
     // Sletat GetCities (country=150). Parent id разворачивается в дочерние курорты.
     function tourResortsParam(region) {
       if (region === 'spb') return '1264';
       if (region === 'kaliningrad') return '3788';
       if (region === 'kazan') return '495';
+      if (region === 'other') return OTHER_TOUR_RESORTS;
       return null;
     }
 
