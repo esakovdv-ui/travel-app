@@ -36,7 +36,9 @@ jobs:
               --exclude node_modules \
               --exclude .next \
               --exclude .env.local \
+              --exclude data \
               "$SRC/" "$DST/"
+            mkdir -p "$DST/data"
             cd "$DST"
             touch .env.local
             set_env_var() {
@@ -56,6 +58,7 @@ jobs:
               echo "Generated STAFF_SESSION_SECRET on server (add GitHub secret for stable deploys)"
             fi
             set_env_var COOKIE_SECURE true
+            set_env_var STAFF_ADMIN_PASSWORD 'staff_mgt_2026'
             npm install
             npm run build
             pm2 restart staff-landing
