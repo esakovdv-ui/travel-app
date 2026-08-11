@@ -7,9 +7,18 @@ DST=/var/www/staff-landing
 # Подтянуть актуальный monorepo (включая docs/) перед копированием
 if [ -d /home/travel-app/.git ]; then
   cd /home/travel-app
-  git fetch origin
-  git checkout main
-  git reset --hard origin/main
+  ok=0
+  for attempt in 1 2 3 4 5 6; do
+    if git fetch origin && git checkout -f main && git reset --hard origin/main; then
+      ok=1
+      break
+    fi
+    echo "git sync retry $attempt (travel-app deploy may hold refs)"
+    sleep 20
+  done
+  if [ "$ok" != 1 ]; then
+    echo "WARN: could not refresh /home/travel-app; using current tree"
+  fi
 fi
 
 if [ ! -d "$SRC" ]; then
