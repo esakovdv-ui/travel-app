@@ -1,4 +1,4 @@
-import { YM_COUNTER_ID } from '@/lib/metrika'
+import { YM_COUNTER_ID } from '@/lib/metrika-config'
 
 const metrikaScript = `
 (function(m,e,t,r,i,k,a){
