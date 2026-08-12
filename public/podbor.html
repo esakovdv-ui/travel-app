@@ -42,6 +42,7 @@
     .shell { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
     body.embedded .brand { padding-top: 12px; }
     .brand { display: flex; align-items: center; gap: 12px; padding: 20px 0 8px; }
+    .brand-empty { min-height: 36px; }
     .brand-mark {
       width: 40px; height: 40px; border-radius: 10px;
       background: var(--yellow);
@@ -332,10 +333,7 @@
 </head>
 <body>
   <div class="shell">
-    <div class="brand">
-      <div class="brand-mark">МГТ</div>
-      <span>МОСГОРТУР · подбор отдыха</span>
-    </div>
+    <div class="brand brand-empty" aria-hidden="true"></div>
 
     <section class="screen active" data-screen="entry">
       <div class="hero">
@@ -343,7 +341,6 @@
         <p>Скажите, сколько вас и какой бюджет. Потом покажем подходящие туры или отели.</p>
         <button type="button" class="btn btn-primary" data-go="people">Подобрать отдых</button>
       </div>
-      <p class="footer-cert">Есть сертификат МОСГОРТУР? Им можно оплатить часть стоимости — до 40&nbsp;000&nbsp;₽ на человека. <a href="https://online.mosgortur.ru/for-tourists/how-get-certificate/" target="_blank" rel="noopener">Как это работает</a></p>
     </section>
 
     <section class="screen" data-screen="people">
