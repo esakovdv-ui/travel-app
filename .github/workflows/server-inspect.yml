@@ -65,7 +65,17 @@ jobs:
             ping -c 4 -W 5 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" || true
             echo "=== traceroute (max 15 hops) ==="
             command -v traceroute >/dev/null && traceroute -m 15 -w 2 "${BITRIX_DOMAIN:-crm.mosgortur.ru}" 2>/dev/null | head -20 || true
-            echo "=== ICMP traceroute to 81.23.1.210 ==="
+            echo "=== ICMP traceroute to 81.23.1.216 (dedicated B24) ==="
+            traceroute -n -m 30 -w 2 81.23.1.216 || true
+            echo "=== TCP traceroute to 81.23.1.216:443 ==="
+            traceroute -T -p 443 -n -m 30 -w 2 81.23.1.216 || true
+            echo "=== MTR TCP/443 81.23.1.216 ==="
+            command -v mtr >/dev/null 2>&1 && mtr -n -r -c 5 -T -P 443 81.23.1.216 || echo "mtr not available"
+            echo "=== TCP connect 443 81.23.1.216 ==="
+            timeout 8 bash -c 'cat < /dev/null > /dev/tcp/81.23.1.216/443' && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED/timeout"
+            echo "=== /etc/hosts Bitrix override ==="
+            grep crm.mosgortur.ru /etc/hosts 2>/dev/null || echo "no hosts override"
+            echo "=== ICMP traceroute to 81.23.1.210 (legacy DNS) ==="
             command -v traceroute >/dev/null 2>&1 || (apt-get update -y >/dev/null 2>&1 && apt-get install -y traceroute >/dev/null 2>&1) || true
             traceroute -n -m 30 -w 2 81.23.1.210 || true
             echo "=== TCP traceroute to 81.23.1.210:443 ==="
@@ -89,6 +99,8 @@ jobs:
             echo "EGRESS_IPV4=$(curl -4 -s -m 8 ifconfig.me || echo unknown)"
             probe(){ host="$1"; ip="$2"; echo "--- $host ($ip) ---"; curl -s -o /dev/null -m 8 -w "curl HTTP:%{http_code} TIME:%{time_total}s\n" "https://$host/" || echo "curl: timeout"; if [ -n "$ip" ]; then tgt="$ip"; else tgt="$host"; fi; timeout 8 bash -c "cat < /dev/null > /dev/tcp/$tgt/443" && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED"; }
             echo "### CRM target (baseline failure) ###"
+            probe crm.mosgortur.ru 81.23.1.216
+            echo "### CRM legacy DNS IP ###"
             probe crm.mosgortur.ru 81.23.1.210
             echo "### CRM subnet neighbors (raw TCP/443 by IP) ###"
             echo "--- 81.23.1.209 ---"; timeout 8 bash -c "cat < /dev/null > /dev/tcp/81.23.1.209/443" && echo "TCP/443 OPEN" || echo "TCP/443 BLOCKED"
