@@ -109,11 +109,29 @@
     }
     .region {
       position: relative; overflow: hidden; min-height: 120px; padding: 0;
-      background-color: #8a8a8a; background-size: cover; background-position: center;
       border-color: transparent;
     }
-    .region::before {
-      content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.28); z-index: 0;
+    .region-media {
+      position: absolute; inset: 0; z-index: 0;
+      background-color: #7a7a7a; background-size: cover; background-position: center;
+    }
+    .screen[data-screen="region"].active .region[data-value="sea"] .region-media {
+      background-image: url('/podbor-regions/sea.jpg');
+    }
+    .screen[data-screen="region"].active .region[data-value="podmos"] .region-media {
+      background-image: url('/podbor-regions/podmos.jpg');
+    }
+    .screen[data-screen="region"].active .region[data-value="spb"] .region-media {
+      background-image: url('/podbor-regions/spb.jpg');
+    }
+    .screen[data-screen="region"].active .region[data-value="kaliningrad"] .region-media {
+      background-image: url('/podbor-regions/kaliningrad.jpg');
+    }
+    .screen[data-screen="region"].active .region[data-value="kazan"] .region-media {
+      background-image: url('/podbor-regions/kazan.jpg?v=3');
+    }
+    .screen[data-screen="region"].active .region[data-value="other"] .region-media {
+      background-image: url('/podbor-regions/other.jpg');
     }
     .region .overlay {
       position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column;
@@ -436,22 +454,28 @@
       <h2>Куда хотите поехать?</h2>
       <p class="sub">Выберите направление — дальше подберём даты и варианты.</p>
       <div class="grid regions" role="group" aria-label="Направления">
-        <button type="button" class="card region" data-key="region" data-value="sea" data-region-bg="/podbor-regions/sea.jpg">
+        <button type="button" class="card region" data-key="region" data-value="sea">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">У моря</span><span class="desc">Краснодарский край, Кавказ</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="podmos" data-region-bg="/podbor-regions/podmos.jpg">
+        <button type="button" class="card region" data-key="region" data-value="podmos">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко — на выходные или неделю</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="spb" data-region-bg="/podbor-regions/spb.jpg">
+        <button type="button" class="card region" data-key="region" data-value="spb">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">Санкт-Петербург</span><span class="desc">Город и пригороды</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="kaliningrad" data-region-bg="/podbor-regions/kaliningrad.jpg">
+        <button type="button" class="card region" data-key="region" data-value="kaliningrad">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">Калининград</span><span class="desc">Балтика</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="kazan" data-region-bg="/podbor-regions/kazan.jpg?v=3">
+        <button type="button" class="card region" data-key="region" data-value="kazan">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">Казань</span><span class="desc">Татарстан</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="other" data-region-bg="/podbor-regions/other.jpg">
+        <button type="button" class="card region" data-key="region" data-value="other">
+          <span class="region-media" aria-hidden="true"></span>
           <span class="overlay"><span class="title">Другой регион</span><span class="desc">Карелия, Калуга, Алтай и другие</span></span>
         </button>
       </div>
@@ -951,22 +975,6 @@
       }
     }
 
-    function loadRegionImages() {
-      document.querySelectorAll('.region[data-region-bg]').forEach((el) => {
-        if (el.hidden) return;
-        const url = el.dataset.regionBg;
-        if (!url || el.dataset.bgLoaded === url) return;
-        el.style.backgroundImage = 'url("' + url + '")';
-        el.dataset.bgLoaded = url;
-      });
-    }
-
-    function scheduleRegionImages() {
-      requestAnimationFrame(() => {
-        loadRegionImages();
-      });
-    }
-
     const trackedSteps = new Set();
     let podborStarted = false;
 
@@ -1006,10 +1014,7 @@
     function show(name) {
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
-      if (name === 'region') {
-        syncRegionOptions();
-        scheduleRegionImages();
-      }
+      if (name === 'region') syncRegionOptions();
       if (name === 'dates') {
         calMonth = new Date(state.checkIn.getFullYear(), state.checkIn.getMonth(), 1);
         renderCalendar();
