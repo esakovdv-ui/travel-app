@@ -107,10 +107,16 @@
       background: #fff3e6; color: #b34a00;
       padding: 4px 8px; border-radius: 99px;
     }
-    .region { position: relative; overflow: hidden; min-height: 120px; padding: 0; background: #c8c8c8; border-color: transparent; }
-    .region img { width: 100%; height: 120px; object-fit: cover; display: block; filter: brightness(0.72); }
+    .region {
+      position: relative; overflow: hidden; min-height: 120px; padding: 0;
+      background-color: #8a8a8a; background-size: cover; background-position: center;
+      border-color: transparent;
+    }
+    .region::before {
+      content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.28); z-index: 0;
+    }
     .region .overlay {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
+      position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column;
       justify-content: flex-end; padding: 14px; color: #fff;
       background: linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.62) 100%);
     }
@@ -430,28 +436,22 @@
       <h2>Куда хотите поехать?</h2>
       <p class="sub">Выберите направление — дальше подберём даты и варианты.</p>
       <div class="grid regions" role="group" aria-label="Направления">
-        <button type="button" class="card region" data-key="region" data-value="sea">
-          <img data-src="/podbor-regions/sea.jpg" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="sea" data-region-bg="/podbor-regions/sea.jpg">
           <span class="overlay"><span class="title">У моря</span><span class="desc">Краснодарский край, Кавказ</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="podmos">
-          <img data-src="/podbor-regions/podmos.jpg" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="podmos" data-region-bg="/podbor-regions/podmos.jpg">
           <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко — на выходные или неделю</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="spb">
-          <img data-src="/podbor-regions/spb.jpg" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="spb" data-region-bg="/podbor-regions/spb.jpg">
           <span class="overlay"><span class="title">Санкт-Петербург</span><span class="desc">Город и пригороды</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="kaliningrad">
-          <img data-src="/podbor-regions/kaliningrad.jpg" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="kaliningrad" data-region-bg="/podbor-regions/kaliningrad.jpg">
           <span class="overlay"><span class="title">Калининград</span><span class="desc">Балтика</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="kazan">
-          <img data-src="/podbor-regions/kazan.jpg?v=3" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="kazan" data-region-bg="/podbor-regions/kazan.jpg?v=3">
           <span class="overlay"><span class="title">Казань</span><span class="desc">Татарстан</span></span>
         </button>
-        <button type="button" class="card region" data-key="region" data-value="other">
-          <img data-src="/podbor-regions/other.jpg" alt="" width="360" height="120" decoding="async" />
+        <button type="button" class="card region" data-key="region" data-value="other" data-region-bg="/podbor-regions/other.jpg">
           <span class="overlay"><span class="title">Другой регион</span><span class="desc">Карелия, Калуга, Алтай и другие</span></span>
         </button>
       </div>
@@ -952,12 +952,18 @@
     }
 
     function loadRegionImages() {
-      document.querySelectorAll('.region img[data-src]').forEach((img) => {
-        if (img.dataset.loaded) return;
-        const url = img.dataset.src;
-        if (!url) return;
-        img.src = url;
-        img.dataset.loaded = '1';
+      document.querySelectorAll('.region[data-region-bg]').forEach((el) => {
+        if (el.hidden) return;
+        const url = el.dataset.regionBg;
+        if (!url || el.dataset.bgLoaded === url) return;
+        el.style.backgroundImage = 'url("' + url + '")';
+        el.dataset.bgLoaded = url;
+      });
+    }
+
+    function scheduleRegionImages() {
+      requestAnimationFrame(() => {
+        loadRegionImages();
       });
     }
 
@@ -1000,10 +1006,9 @@
     function show(name) {
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
-      if (name === 'format') loadRegionImages();
       if (name === 'region') {
-        loadRegionImages();
         syncRegionOptions();
+        scheduleRegionImages();
       }
       if (name === 'dates') {
         calMonth = new Date(state.checkIn.getFullYear(), state.checkIn.getMonth(), 1);
