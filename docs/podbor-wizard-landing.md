@@ -229,6 +229,8 @@ npm run podbor:export-responses -- --from=2026-08-13 --status=completed
 curl -o podbor.tsv "https://motrip.ru/api/podbor-responses?password=podbor2026&format=tsv&from=2026-08-13"
 ```
 
+**Админка:** [motrip.ru/podbor-admin](https://motrip.ru/podbor-admin) — сводка, разбивка по формату/региону, таблица сессий, скачивание TSV. Пароль тот же (`PODBOR_ADMIN_PASSWORD`).
+
 ### Google Sheet — отчётность
 
 Таблица: [воронка podbor](https://docs.google.com/spreadsheets/d/1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ/edit)
