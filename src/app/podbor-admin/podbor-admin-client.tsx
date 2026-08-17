@@ -71,13 +71,15 @@ function formatRub(value?: number) {
   return `${Math.round(value).toLocaleString('ru-RU')} ₽`;
 }
 
-function countBy<T extends string>(items: T[]) {
+function countBy<T extends string>(items: T[], labels?: Record<string, string>) {
   const map = new Map<string, number>();
   for (const item of items) {
-    const key = item || '—';
+    const key = item || '__empty__';
     map.set(key, (map.get(key) ?? 0) + 1);
   }
-  return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  return [...map.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => [labels?.[key] || (key === '__empty__' ? 'Не выбрано' : key), count] as const);
 }
 
 function avg(nums: number[]) {
@@ -146,12 +148,8 @@ export function PodborAdminClient() {
     const embedded = sessions.filter((s) => s.embedded).length;
     const budgets = sessions.map((s) => s.answers.budget).filter((n): n is number => Number.isFinite(n));
     const nights = sessions.map((s) => s.answers.nights).filter((n): n is number => Number.isFinite(n));
-    const formats = sessions
-      .map((s) => s.answers.format)
-      .filter((v): v is 'tour' | 'hotel' => v === 'tour' || v === 'hotel');
-    const regions = sessions
-      .map((s) => s.answers.region)
-      .filter((v): v is string => typeof v === 'string' && v.length > 0);
+    const formats = sessions.map((s) => s.answers.format || '');
+    const regions = sessions.map((s) => s.answers.region || '');
 
     return {
       total,
@@ -162,8 +160,10 @@ export function PodborAdminClient() {
       completionRate: total ? Math.round((completed / total) * 100) : 0,
       avgBudget: avg(budgets),
       avgNights: avg(nights),
-      byFormat: countBy(formats),
-      byRegion: countBy(regions),
+      byFormat: countBy(formats, FORMAT_LABELS),
+      byRegion: countBy(regions, REGION_LABELS),
+      withoutFormat: formats.filter((f) => !f).length,
+      withoutRegion: regions.filter((r) => !r).length,
     };
   }, [sessions]);
 
@@ -234,23 +234,25 @@ export function PodborAdminClient() {
             Всего: {stats.total} · handoff: {stats.completed} ({stats.completionRate}%) · в процессе: {stats.inProgress} · только старт: {stats.started} · iframe: {stats.embedded}
             {stats.avgBudget != null ? ` · ср. бюджет: ${formatRub(stats.avgBudget)}` : ''}
             {stats.avgNights != null ? ` · ср. ночей: ${stats.avgNights}` : ''}
+            {stats.withoutFormat ? ` · без формата: ${stats.withoutFormat}` : ''}
+            {stats.withoutRegion ? ` · без региона: ${stats.withoutRegion}` : ''}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             <div>
               <strong>Формат</strong>
               <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-                {stats.byFormat.length ? stats.byFormat.map(([key, count]) => (
-                  <li key={key}>{FORMAT_LABELS[key] || key}: {count}</li>
-                )) : <li>—</li>}
+                {stats.byFormat.map(([label, count]) => (
+                  <li key={label}>{label}: {count}</li>
+                ))}
               </ul>
             </div>
             <div>
               <strong>Регион</strong>
               <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-                {stats.byRegion.length ? stats.byRegion.map(([key, count]) => (
-                  <li key={key}>{REGION_LABELS[key] || key}: {count}</li>
-                )) : <li>—</li>}
+                {stats.byRegion.map(([label, count]) => (
+                  <li key={label}>{label}: {count}</li>
+                ))}
               </ul>
             </div>
           </div>

@@ -71,7 +71,13 @@ async function writeSessions(sessions: PodborSession[]) {
 
 function mergeAnswers(current: PodborAnswers, patch?: PodborAnswers): PodborAnswers {
   if (!patch) return current;
-  return podborAnswersSchema.parse({ ...current, ...patch });
+  const merged: PodborAnswers = { ...current };
+  for (const [key, value] of Object.entries(patch) as [keyof PodborAnswers, PodborAnswers[keyof PodborAnswers]][]) {
+    if (value !== null && value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  return podborAnswersSchema.parse(merged);
 }
 
 export function isPodborAdminPassword(password: string): boolean {

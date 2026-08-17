@@ -1143,6 +1143,9 @@
       state[key] = value;
       document.querySelectorAll(`[data-key="${key}"]`).forEach((n) => n.classList.remove('selected'));
       el.classList.add('selected');
+      if (key === 'format' || key === 'region') {
+        logPodbor('step', { step: key, answers: snapshotAnswers() });
+      }
     }
 
     function datesReady() {
