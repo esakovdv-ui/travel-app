@@ -997,6 +997,66 @@
 
     const trackedSteps = new Set();
     let podborStarted = false;
+    const PODBOR_SESSION_KEY = 'podbor_session_id';
+
+    function getSessionId() {
+      try {
+        let id = sessionStorage.getItem(PODBOR_SESSION_KEY);
+        if (!id) {
+          id = 'pb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+          sessionStorage.setItem(PODBOR_SESSION_KEY, id);
+        }
+        return id;
+      } catch (_) {
+        return 'pb-' + Date.now().toString(36);
+      }
+    }
+
+    function parseUtm() {
+      const p = new URLSearchParams(location.search);
+      const utm = {
+        utm_source: p.get('utm_source') || undefined,
+        utm_medium: p.get('utm_medium') || undefined,
+        utm_campaign: p.get('utm_campaign') || undefined,
+        utm_content: p.get('utm_content') || undefined,
+        utm_term: p.get('utm_term') || undefined,
+      };
+      return Object.values(utm).some(Boolean) ? utm : undefined;
+    }
+
+    function snapshotAnswers(handoffUrl) {
+      ensureDates();
+      return {
+        adults: state.adults,
+        kids: state.kids,
+        kidsAges: state.kidsAges.slice(),
+        budget: state.budget,
+        budgetCustom: state.budgetCustom,
+        format: state.format,
+        region: state.region,
+        checkIn: formatDateDot(state.checkIn),
+        checkOut: formatDateDot(state.checkOut),
+        nights: tripNights(),
+        handoffUrl: handoffUrl || undefined,
+      };
+    }
+
+    function logPodbor(type, extra) {
+      const payload = Object.assign({
+        sessionId: getSessionId(),
+        type: type,
+        embedded: document.body.classList.contains('embedded'),
+        utm: parseUtm(),
+      }, extra || {});
+      try {
+        fetch('/api/podbor-track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(function () { /* ignore */ });
+      } catch (_) { /* ignore */ }
+    }
 
     function stepParams(name) {
       if (name === 'people') return { adults: state.adults, kids: state.kids };
@@ -1029,6 +1089,7 @@
       if (name === 'entry' || trackedSteps.has(name)) return;
       trackedSteps.add(name);
       track('podbor_step_' + name, stepParams(name));
+      logPodbor('step', { step: name, answers: snapshotAnswers() });
     }
 
     function show(name) {
@@ -1170,6 +1231,7 @@
       track('podbor_start', {
         embedded: document.body.classList.contains('embedded'),
       });
+      logPodbor('start', { answers: snapshotAnswers() });
     }
 
     function hotelCitySlug(region) {
@@ -1310,6 +1372,7 @@
         adults: state.adults,
         kids: state.kids,
       });
+      logPodbor('handoff', { step: 'handoff', answers: snapshotAnswers(url) });
       try {
         if (window.top && window.top !== window) {
           window.top.location.href = url;

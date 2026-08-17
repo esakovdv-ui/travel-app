@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "rebooking:campaign-xlsx": "node scripts/generate-rebooking-campaign-xlsx.js",
     "podbor:funnel-sync": "node scripts/sync-podbor-funnel-sheet.mjs",
-    "podbor:setup-automation": "node scripts/setup-podbor-automation.mjs"
+    "podbor:setup-automation": "node scripts/setup-podbor-automation.mjs",
+    "podbor:export-responses": "node scripts/export-podbor-responses.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

@@ -192,13 +192,42 @@ Handoff ставит `utm_source=podbor_wizard`. Нижняя часть вор�
 | Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` |
 | Туры: выдача | 90662828 | Пользователи с URL модуля визарда + `action=search` + даты (не UTM: он был в hash) |
 | Туры: карточка | 90662828 | Пользователи с URL модуля + `action=tourCard` |
-| Туры: корзина | 90662828 | цель **328431134** «Перешел в корзину (Спец)» + UTM |
-| Туры: бронь | 90662828 | цель **328431171** «Забронировал тур (Спец)» + UTM |
+| Туры: корзина | 90662828 | цель **326738951** `click-buyonline` в сессии с moduleId визарда |
+| Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
 | Туры: оплата | 90662828 | цель **321612203** в сессии с moduleId визарда (допущение: это подбор) |
 | Отели: выдача | 97107007 | URL `russia.mosgortur.ru/search` + UTM |
 | Отели: корзина | 97107007 | URL `/packages/` (без `/success`) + UTM |
 | Отели: чекаут | 97107007 | цель **579160037** `lt_checkout_start` + UTM |
 | Отели: покупка | 97107007 | цель **579160040** `lt_purchase` + UTM |
+
+### Журнал ответов визарда (сервер)
+
+До деплоя этого блока ответы хранились только в Метрике (агрегаты по шагам, без выгрузки «кто что выбрал»).
+
+**Хранилище:** `storage/podbor-responses.json` на сервере (до 10 000 сессий, переживает рестарт PM2).
+
+**Что пишется на каждую сессию:** взрослые/дети/возрасты, бюджет, тур/отель, регион, даты, handoff URL, UTM, referer, embedded.
+
+| API | Назначение |
+|-----|------------|
+| `POST /api/podbor-track` | клиент визарда шлёт `start` / `step` / `handoff` |
+| `GET /api/podbor-responses?password=…` | JSON со списком сессий |
+| `GET /api/podbor-responses?password=…&format=tsv` | TSV для Excel/Sheets |
+
+Пароль: `PODBOR_ADMIN_PASSWORD` (default `podbor2026`).
+
+**Выгрузка с сервера (SSH):**
+
+```bash
+npm run podbor:export-responses
+npm run podbor:export-responses -- --from=2026-08-13 --status=completed
+```
+
+**Выгрузка по HTTP:**
+
+```bash
+curl -o podbor.tsv "https://motrip.ru/api/podbor-responses?password=podbor2026&format=tsv&from=2026-08-13"
+```
 
 ### Google Sheet — отчётность
 

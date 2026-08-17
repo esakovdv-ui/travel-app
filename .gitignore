@@ -3,3 +3,8 @@ node_modules
 dist
 .env
 .env.local
+storage/podbor-bootstrap-once.gs
+storage/cdp-*.txt
+storage/cdp-*.json
+storage/.podbor-metrika-token.tmp
+storage/podbor-responses.json
