@@ -179,3 +179,51 @@ CTA «Показать туры» / «Показать отели». Из iframe
 | 595574819 | `podbor_popup_click` | Клик по popup |
 
 В Метрике: отчёт «Воронка» по целям `podbor_start` → `podbor_step_*` → `podbor_handoff`.
+
+### После handoff — прокси-воронка (UTM `podbor_wizard`)
+
+Handoff ставит `utm_source=podbor_wizard`. Нижняя часть воронки считается **отдельно** (нет join user-level между счётчиками 109401746 и 90662828/97107007).
+
+| Слой | Счётчик | Метрика |
+|------|---------|---------|
+| Туры: выдача | 90662828 | URL `/tours` + `action=search` + UTM |
+| Туры: карточка | 90662828 | URL `action=tourCard` + UTM |
+| Туры: корзина | 90662828 | цель **328431134** «Перешел в корзину (Спец)» + UTM |
+| Туры: бронь | 90662828 | цель **328431171** «Забронировал тур (Спец)» + UTM |
+| Туры: оплата | 90662828 | цель **321612203** «Успешная оплата» + UTM |
+| Отели: выдача | 97107007 | URL `russia.mosgortur.ru/search` + UTM |
+| Отели: корзина | 97107007 | URL `/packages/` (без `/success`) + UTM |
+| Отели: чекаут | 97107007 | цель **579160037** `lt_checkout_start` + UTM |
+| Отели: покупка | 97107007 | цель **579160040** `lt_purchase` + UTM |
+
+### Google Sheet — отчётность
+
+Таблица: [воронка podbor](https://docs.google.com/spreadsheets/d/1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ/edit)
+
+Листы: **Воронка** (недели × этапы), **Справочник** (ID целей и фильтры).
+
+Обновление:
+
+```bash
+npm run podbor:funnel-sync          # локально: Metrika → TSV (+ embedded .gs)
+npm run podbor:setup-automation     # sync + storage/podbor-bootstrap-once.gs для Apps Script
+```
+
+Переменные: `YANDEX_METRIKA_TOKEN` (или `YANDEX_API_KEY` из yandex-metrika-mcp/.env), опционально `GOOGLE_SERVICE_ACCOUNT_JSON` для автозаливки.
+
+**Старт учёта:** `PODBOR_FUNNEL_START=2026-08-13` (по умолчанию). Недели, которые целиком раньше этой даты, в таблицу не попадают. Метрика отдаёт данные по дням, не по часам.
+
+### Автообновление (настроено)
+
+**Apps Script (рекомендуется, без Google SA):**
+
+1. `npm run podbor:setup-automation`
+2. Extensions → Apps Script → вставить `storage/podbor-bootstrap-once.gs`
+3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **понедельник 09:00 МСK** → `setupAndSync`
+
+**GitHub Actions:** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron пн 09:00 МСK. Secret `YANDEX_METRIKA_TOKEN` задан. Для записи в Sheet добавьте `GOOGLE_SERVICE_ACCOUNT_JSON` (email SA → редактор таблицы).
+
+Без Google SA:
+
+1. **Разовый импорт:** `npm run podbor:funnel-sync` → `storage/podbor-import-embedded.gs` → Run `importEmbeddedFunnelData()`.
+2. **Live sync:** `scripts/podbor-funnel-apps-script.js` + `YANDEX_METRIKA_TOKEN` в Script Properties → `setupAll()`.
