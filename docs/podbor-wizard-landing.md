@@ -198,7 +198,7 @@ Handoff ставит `utm_source=podbor_wizard`. Нижняя часть вор�
 | Отели: выдача | 97107007 | URL `russia.mosgortur.ru/search` + UTM |
 | Отели: корзина | 97107007 | URL `/packages/` (без `/success`) + UTM |
 | Отели: чекаут | 97107007 | цель **579160037** `lt_checkout_start` + UTM |
-| Отели: покупка | 97107007 | цель **579160040** `lt_purchase` + UTM |
+| Отели: покупка | 97107007 | **579160040** `lt_purchase` по пути: чекаут с `podbor_wizard` → покупка (clientID; UTM на оплате часто пропадает) |
 
 ### Журнал ответов визарда (сервер)
 

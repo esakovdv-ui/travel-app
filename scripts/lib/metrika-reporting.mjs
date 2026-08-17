@@ -202,3 +202,108 @@ export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter, met
   }
   return byWeek;
 }
+
+/**
+ * Hotel purchases attributed to podbor by client journey:
+ * lt_checkout with podbor_wizard (any time from funnelStart) → lt_purchase in report week.
+ * Returns Map weekStart (Monday) -> unique buyer count.
+ */
+export async function queryWeeklyHotelPodborJourneyPurchases(
+  counterId,
+  dateFrom,
+  dateTo,
+  {
+    funnelStart,
+    checkoutGoalId = 579160037,
+    purchaseGoalId = 579160040,
+    utmFilter = "ym:s:UTMSource=='podbor_wizard'",
+  } = {}
+) {
+  const checkoutFrom = funnelStart && funnelStart > dateFrom ? funnelStart : dateFrom;
+  const checkoutFilter = `${utmFilter} AND ym:s:goal${checkoutGoalId}reaches>0`;
+  const checkoutData = await metrikaApi(
+    `/stat/v1/data?id=${counterId}&date1=${checkoutFrom}&date2=${dateTo}` +
+      `&metrics=ym:s:goal${checkoutGoalId}reaches&dimensions=ym:s:clientID&limit=10000` +
+      `&filters=${encFilter(checkoutFilter)}`
+  );
+
+  const checkoutClients = new Set(
+    (checkoutData.data ?? []).map((row) => row.dimensions[0].name).filter(Boolean)
+  );
+  const byWeek = new Map();
+  if (checkoutClients.size === 0) return byWeek;
+
+  const chunks = [];
+  const ids = [...checkoutClients];
+  for (let i = 0; i < ids.length; i += 40) {
+    chunks.push(ids.slice(i, i + 40));
+  }
+
+  for (const chunk of chunks) {
+    const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
+    const purchaseData = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=ym:s:goal${purchaseGoalId}reaches` +
+        `&dimensions=ym:s:startOfWeek,ym:s:clientID&group=week&limit=10000` +
+        `&filters=${encFilter(`(${orFilter}) AND ym:s:goal${purchaseGoalId}reaches>0`)}`
+    );
+    for (const row of purchaseData.data ?? []) {
+      const weekStart = row.dimensions[0].name;
+      const clientId = row.dimensions[1].name;
+      if (!weekStart || !clientId) continue;
+      if (!byWeek.has(weekStart)) byWeek.set(weekStart, new Set());
+      byWeek.get(weekStart).add(clientId);
+    }
+    await sleep(200);
+  }
+
+  const counts = new Map();
+  for (const [weekStart, clients] of byWeek) {
+    counts.set(weekStart, clients.size);
+  }
+  return counts;
+}
+
+/** Unique buyers: podbor checkout (from funnelStart) + lt_purchase in [purchaseFrom, purchaseTo]. */
+export async function queryHotelPodborJourneyPurchaseCount(
+  counterId,
+  purchaseFrom,
+  purchaseTo,
+  {
+    funnelStart,
+    checkoutGoalId = 579160037,
+    purchaseGoalId = 579160040,
+    utmFilter = "ym:s:UTMSource=='podbor_wizard'",
+  } = {}
+) {
+  const checkoutFrom = funnelStart && funnelStart > purchaseFrom ? funnelStart : purchaseFrom;
+  const checkoutFilter = `${utmFilter} AND ym:s:goal${checkoutGoalId}reaches>0`;
+  const checkoutData = await metrikaApi(
+    `/stat/v1/data?id=${counterId}&date1=${checkoutFrom}&date2=${purchaseTo}` +
+      `&metrics=ym:s:goal${checkoutGoalId}reaches&dimensions=ym:s:clientID&limit=10000` +
+      `&filters=${encFilter(checkoutFilter)}`
+  );
+  const checkoutClients = new Set(
+    (checkoutData.data ?? []).map((row) => row.dimensions[0].name).filter(Boolean)
+  );
+  if (checkoutClients.size === 0) return 0;
+
+  const chunks = [];
+  const ids = [...checkoutClients];
+  for (let i = 0; i < ids.length; i += 40) chunks.push(ids.slice(i, i + 40));
+
+  const buyers = new Set();
+  for (const chunk of chunks) {
+    const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
+    const purchaseData = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${purchaseFrom}&date2=${purchaseTo}` +
+        `&metrics=ym:s:goal${purchaseGoalId}reaches&dimensions=ym:s:clientID&limit=10000` +
+        `&filters=${encFilter(`(${orFilter}) AND ym:s:goal${purchaseGoalId}reaches>0`)}`
+    );
+    for (const row of purchaseData.data ?? []) {
+      if (row.dimensions[0]?.name) buyers.add(row.dimensions[0].name);
+    }
+    await sleep(200);
+  }
+  return buyers.size;
+}

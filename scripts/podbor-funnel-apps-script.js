@@ -66,6 +66,35 @@ function usersCount_(counter, d1, d2, filter) {
   return metrikaGet_(path).totals[0] || 0;
 }
 
+/** Отели: покупка по пути checkout podbor → lt_purchase (clientID). */
+function hotelJourneyPurchaseCount_(purchaseFrom, purchaseTo) {
+  const checkoutFrom = PODBOR_FUNNEL_START > purchaseFrom ? PODBOR_FUNNEL_START : purchaseFrom;
+  const checkoutFilter = UTM_PODBOR + ' AND ym:s:goal579160037reaches>0';
+  let path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + checkoutFrom + '&date2=' + purchaseTo +
+    '&metrics=ym:s:goal579160037reaches&dimensions=ym:s:clientID&limit=10000' +
+    '&filters=' + encodeURIComponent(checkoutFilter);
+  var checkoutRows = metrikaGet_(path).data || [];
+  var checkoutClients = {};
+  checkoutRows.forEach(function (row) {
+    if (row.dimensions[0] && row.dimensions[0].name) checkoutClients[row.dimensions[0].name] = true;
+  });
+  var ids = Object.keys(checkoutClients);
+  if (!ids.length) return 0;
+
+  var buyers = {};
+  for (var i = 0; i < ids.length; i += 40) {
+    var chunk = ids.slice(i, i + 40);
+    var orFilter = chunk.map(function (cid) { return "ym:s:clientID=='" + cid + "'"; }).join(' OR ');
+    path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + purchaseFrom + '&date2=' + purchaseTo +
+      '&metrics=ym:s:goal579160040reaches&dimensions=ym:s:clientID&limit=10000' +
+      '&filters=' + encodeURIComponent('(' + orFilter + ') AND ym:s:goal579160040reaches>0');
+    (metrikaGet_(path).data || []).forEach(function (row) {
+      if (row.dimensions[0] && row.dimensions[0].name) buyers[row.dimensions[0].name] = true;
+    });
+  }
+  return Object.keys(buyers).length;
+}
+
 function weekStartMonday_(dayKey) {
   const d = new Date(dayKey + 'T12:00:00+03:00');
   const dow = d.getUTCDay();
@@ -133,8 +162,8 @@ function fetchWeek_(week) {
     "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
   m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
     "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=tourCard'");
-  m.t_cart = goalReaches_(COUNTERS.mgt, 328431134, week.from, week.to, UTM_PODBOR);
-  m.t_book = goalReaches_(COUNTERS.mgt, 328431171, week.from, week.to, UTM_PODBOR);
+  m.t_cart = goalReaches_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+  m.t_book = goalReaches_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
   m.t_pay = goalReaches_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
   m.h_search = usersVisits_(COUNTERS.hotels, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/search'");
@@ -142,8 +171,7 @@ function fetchWeek_(week) {
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
   m.h_checkout = goalReaches_(COUNTERS.hotels, 579160037, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru'");
-  m.h_purchase = goalReaches_(COUNTERS.hotels, 579160040, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru'");
+  m.h_purchase = hotelJourneyPurchaseCount_(week.from, week.to);
   return m;
 }
 
@@ -165,9 +193,10 @@ function setupReference_(ss) {
     [COUNTERS.wizard, '595566515', 'podbor_handoff', 'Handoff'],
     [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
     [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
-    [COUNTERS.mgt, '328431134', 'Корзина тур', 'UTM podbor_wizard'],
-    [COUNTERS.mgt, '321612203', 'Успешная оплата', 'UTM podbor_wizard'],
-    [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели + UTM'],
+    [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId'],
+    [COUNTERS.mgt, '321609998', 'buying_submit', 'Туры: бронь по moduleId'],
+    [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
+    [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели: покупка checkout podbor → purchase'],
     ['', '', '', ''],
     ['UTM фильтр', UTM_PODBOR, '', 'Прокси-воронка без join счётчиков'],
     ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],

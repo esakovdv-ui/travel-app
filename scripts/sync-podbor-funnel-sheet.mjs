@@ -26,6 +26,8 @@ import {
   queryWeeklyGoalReaches,
   queryWeeklyGoals,
   queryWeeklyVisits,
+  queryWeeklyHotelPodborJourneyPurchases,
+  queryHotelPodborJourneyPurchaseCount,
   sleep,
 } from './lib/metrika-reporting.mjs';
 import {
@@ -122,10 +124,7 @@ const MGT_TOUR_GOALS = [
   { key: 'tours_booking', id: POST_HANDOFF.tours_booking.goalId },
 ];
 
-const HOTEL_GOALS = [
-  { key: 'hotels_checkout', id: POST_HANDOFF.hotels_checkout.goalId },
-  { key: 'hotels_purchase', id: POST_HANDOFF.hotels_purchase.goalId },
-];
+const HOTEL_GOALS = [{ key: 'hotels_checkout', id: POST_HANDOFF.hotels_checkout.goalId }];
 
 function pickWeek(map, weekFrom) {
   if (map.has(weekFrom)) return map.get(weekFrom) ?? {};
@@ -230,6 +229,13 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     [],
     POST_HANDOFF.hotels_checkout.filter
   );
+  await sleep(300);
+  const hotelsPurchase = await queryHotelPodborJourneyPurchaseCount(
+    COUNTERS.hotels,
+    dateFrom,
+    dateTo,
+    { funnelStart: getFunnelStart() }
+  );
 
   const metrics = {
     banner: entry.banner ?? 0,
@@ -253,7 +259,7 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     tours_booking: tourGoals.tours_booking ?? 0,
     tours_purchase: tourPay.tours_purchase ?? 0,
     hotels_checkout: hotelGoals.hotels_checkout ?? 0,
-    hotels_purchase: hotelGoals.hotels_purchase ?? 0,
+    hotels_purchase: hotelsPurchase,
   };
   metrics.cr_start_handoff = pct(metrics.handoff, metrics.start);
   return metrics;
@@ -335,6 +341,13 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     HOTEL_GOALS,
     POST_HANDOFF.hotels_checkout.filter
   );
+  await sleep(400);
+  const hotelJourneyPurchaseWeeks = await queryWeeklyHotelPodborJourneyPurchases(
+    COUNTERS.hotels,
+    rangeFrom,
+    rangeTo,
+    { funnelStart: getFunnelStart() }
+  );
 
   return {
     entryWeeks,
@@ -349,6 +362,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     hotelsSearchWeeks,
     hotelsPackageWeeks,
     hotelGoalWeeks,
+    hotelJourneyPurchaseWeeks,
   };
 }
 
@@ -380,7 +394,7 @@ function buildWeekRow(week, data, updatedAt) {
     tours_booking: tourGoals.tours_booking ?? 0,
     tours_purchase: pickVisits(data.tourPayWeeks, week.from),
     hotels_checkout: hotelGoals.hotels_checkout ?? 0,
-    hotels_purchase: hotelGoals.hotels_purchase ?? 0,
+    hotels_purchase: pickVisits(data.hotelJourneyPurchaseWeeks, week.from),
   };
   metrics.cr_start_handoff = pct(metrics.handoff, metrics.start);
   return rowToSheetValues(week, metrics, updatedAt);
