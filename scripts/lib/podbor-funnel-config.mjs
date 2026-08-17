@@ -58,6 +58,10 @@ export const COUNTERS = {
 
 export const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
 
+/** Sletat module id from podbor handoff. Hash UTM is invisible to Metrika; this is the historical proxy. */
+export const PODBOR_TOUR_MODULE = '68ea30c6';
+export const TOURS_FROM_PODBOR = `ym:pv:URL=@'${PODBOR_TOUR_MODULE}'`;
+
 /** Entry clicks on online.mosgortur.ru */
 export const ENTRY_GOALS = {
   banner_click: { id: 595574818, name: 'podbor_banner_click', counter: COUNTERS.mgt },
@@ -108,15 +112,15 @@ export const POST_HANDOFF = {
     key: 'tours_search',
     label: 'Туры: выдача module6 search',
     counter: COUNTERS.mgt,
-    type: 'users_visits',
-    filter: `${UTM_PODBOR} AND ym:pv:URL=@'online.mosgortur.ru/tours' AND ym:pv:URL=@'action=search'`,
+    type: 'users',
+    filter: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='`,
   },
   tours_tour_card: {
     key: 'tours_tour_card',
     label: 'Туры: карточка тура',
     counter: COUNTERS.mgt,
-    type: 'users_visits',
-    filter: `${UTM_PODBOR} AND ym:pv:URL=@'online.mosgortur.ru/tours' AND ym:pv:URL=@'action=tourCard'`,
+    type: 'users',
+    filter: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=tourCard'`,
   },
   tours_cart: {
     key: 'tours_cart',
@@ -140,7 +144,7 @@ export const POST_HANDOFF = {
     counter: COUNTERS.mgt,
     type: 'goal',
     goalId: 321612203,
-    filter: UTM_PODBOR,
+    filter: TOURS_FROM_PODBOR,
   },
   hotels_search: {
     key: 'hotels_search',
@@ -221,13 +225,14 @@ export const REFERENCE_ROWS = [
   [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
   [COUNTERS.mgt, '328431134', 'Перешел в корзину (Спец)', 'Туры после handoff + UTM'],
   [COUNTERS.mgt, '328431171', 'Забронировал тур (Спец)', 'Туры после handoff + UTM'],
-  [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры после handoff + UTM'],
+  [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId визарда (допущение)'],
   [COUNTERS.hotels, '—', 'russia.mosgortur.ru/search', 'Отели: выдача + UTM'],
   [COUNTERS.hotels, '546439188', '/packages/ URL', 'Отели: корзина + UTM'],
   [COUNTERS.hotels, '579160037', 'lt_checkout_start', 'Отели: чекаут + UTM'],
   [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели: покупка + UTM'],
   ['', '', '', ''],
   ['Фильтр UTM', UTM_PODBOR, '', 'Нижняя часть воронки — прокси, без join между счётчиками'],
+  ['Туры без UTM', `URL содержит ${PODBOR_TOUR_MODULE} + dateFrom`, 'hash trackHash', 'Выдача/карточка/оплата туров, пока UTM был в hash'],
   ['Handoff UTM', 'utm_source=podbor_wizard', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl'],
   ['Старт учёта', PODBOR_FUNNEL_START_DEFAULT, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
 ];

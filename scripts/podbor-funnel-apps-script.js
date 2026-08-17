@@ -59,6 +59,13 @@ function usersVisits_(counter, d1, d2, filter) {
   return metrikaGet_(path).totals[0] || 0;
 }
 
+function usersCount_(counter, d1, d2, filter) {
+  let path = '/stat/v1/data?id=' + counter + '&date1=' + d1 + '&date2=' + d2 +
+    '&metrics=ym:s:users';
+  if (filter) path += '&filters=' + encodeURIComponent(filter);
+  return metrikaGet_(path).totals[0] || 0;
+}
+
 function weekStartMonday_(dayKey) {
   const d = new Date(dayKey + 'T12:00:00+03:00');
   const dow = d.getUTCDay();
@@ -122,13 +129,13 @@ function fetchWeek_(week) {
   m.handoff_hotels = goalReaches_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
   m.cr = pct_(m.handoff, m.start);
   m.utm = usersVisits_(COUNTERS.mgt, week.from, week.to, UTM_PODBOR);
-  m.t_search = usersVisits_(COUNTERS.mgt, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'online.mosgortur.ru/tours' AND ym:pv:URL=@'action=search'");
-  m.t_card = usersVisits_(COUNTERS.mgt, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'online.mosgortur.ru/tours' AND ym:pv:URL=@'action=tourCard'");
+  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to,
+    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
+  m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
+    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=tourCard'");
   m.t_cart = goalReaches_(COUNTERS.mgt, 328431134, week.from, week.to, UTM_PODBOR);
   m.t_book = goalReaches_(COUNTERS.mgt, 328431171, week.from, week.to, UTM_PODBOR);
-  m.t_pay = goalReaches_(COUNTERS.mgt, 321612203, week.from, week.to, UTM_PODBOR);
+  m.t_pay = goalReaches_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
   m.h_search = usersVisits_(COUNTERS.hotels, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/search'");
   m.h_cart = usersVisits_(COUNTERS.hotels, week.from, week.to,

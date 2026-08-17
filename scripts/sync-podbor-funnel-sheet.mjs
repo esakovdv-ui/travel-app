@@ -120,7 +120,6 @@ const MGT_ENTRY_GOALS = [
 const MGT_TOUR_GOALS = [
   { key: 'tours_cart', id: POST_HANDOFF.tours_cart.goalId },
   { key: 'tours_booking', id: POST_HANDOFF.tours_booking.goalId },
-  { key: 'tours_purchase', id: POST_HANDOFF.tours_purchase.goalId },
 ];
 
 const HOTEL_GOALS = [
@@ -174,7 +173,7 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     dateFrom,
     dateTo,
     [],
-    ['ym:s:visits'],
+    ['ym:s:users'],
     POST_HANDOFF.tours_search.filter
   );
   await sleep(300);
@@ -183,7 +182,7 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     dateFrom,
     dateTo,
     [],
-    ['ym:s:visits'],
+    ['ym:s:users'],
     POST_HANDOFF.tours_tour_card.filter
   );
   await sleep(300);
@@ -194,6 +193,15 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     MGT_TOUR_GOALS,
     [],
     POST_HANDOFF.tours_cart.filter
+  );
+  await sleep(300);
+  const tourPay = await queryBatchGoals(
+    COUNTERS.mgt,
+    dateFrom,
+    dateTo,
+    [{ key: 'tours_purchase', id: POST_HANDOFF.tours_purchase.goalId }],
+    [],
+    POST_HANDOFF.tours_purchase.filter
   );
   await sleep(300);
   const hotelsSearch = await queryBatchGoals(
@@ -237,13 +245,13 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     handoff_tours: handoffTours.handoff_tours ?? 0,
     handoff_hotels: handoffHotels.handoff_hotels ?? 0,
     utm_visits: utm._visits ?? 0,
-    tours_search: toursSearch._visits ?? 0,
-    tours_tour_card: toursCard._visits ?? 0,
+    tours_search: toursSearch._users ?? 0,
+    tours_tour_card: toursCard._users ?? 0,
     hotels_search: hotelsSearch._visits ?? 0,
     hotels_package: hotelsPackage._visits ?? 0,
     tours_cart: tourGoals.tours_cart ?? 0,
     tours_booking: tourGoals.tours_booking ?? 0,
-    tours_purchase: tourGoals.tours_purchase ?? 0,
+    tours_purchase: tourPay.tours_purchase ?? 0,
     hotels_checkout: hotelGoals.hotels_checkout ?? 0,
     hotels_purchase: hotelGoals.hotels_purchase ?? 0,
   };
@@ -274,9 +282,21 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
   await sleep(400);
   const utmWeeks = await queryWeeklyVisits(COUNTERS.mgt, rangeFrom, rangeTo, POST_HANDOFF.utm_visits.filter);
   await sleep(400);
-  const toursSearchWeeks = await queryWeeklyVisits(COUNTERS.mgt, rangeFrom, rangeTo, POST_HANDOFF.tours_search.filter);
+  const toursSearchWeeks = await queryWeeklyVisits(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    POST_HANDOFF.tours_search.filter,
+    'ym:s:users'
+  );
   await sleep(400);
-  const toursCardWeeks = await queryWeeklyVisits(COUNTERS.mgt, rangeFrom, rangeTo, POST_HANDOFF.tours_tour_card.filter);
+  const toursCardWeeks = await queryWeeklyVisits(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    POST_HANDOFF.tours_tour_card.filter,
+    'ym:s:users'
+  );
   await sleep(400);
   const tourGoalWeeks = await queryWeeklyGoals(
     COUNTERS.mgt,
@@ -284,6 +304,14 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     rangeTo,
     MGT_TOUR_GOALS,
     POST_HANDOFF.tours_cart.filter
+  );
+  await sleep(400);
+  const tourPayWeeks = await queryWeeklyGoalReaches(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    POST_HANDOFF.tours_purchase.goalId,
+    POST_HANDOFF.tours_purchase.filter
   );
   await sleep(400);
   const hotelsSearchWeeks = await queryWeeklyVisits(
@@ -317,6 +345,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     toursSearchWeeks,
     toursCardWeeks,
     tourGoalWeeks,
+    tourPayWeeks,
     hotelsSearchWeeks,
     hotelsPackageWeeks,
     hotelGoalWeeks,
@@ -349,7 +378,7 @@ function buildWeekRow(week, data, updatedAt) {
     hotels_package: pickVisits(data.hotelsPackageWeeks, week.from),
     tours_cart: tourGoals.tours_cart ?? 0,
     tours_booking: tourGoals.tours_booking ?? 0,
-    tours_purchase: tourGoals.tours_purchase ?? 0,
+    tours_purchase: pickVisits(data.tourPayWeeks, week.from),
     hotels_checkout: hotelGoals.hotels_checkout ?? 0,
     hotels_purchase: hotelGoals.hotels_purchase ?? 0,
   };

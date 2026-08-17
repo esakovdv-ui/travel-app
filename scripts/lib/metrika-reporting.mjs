@@ -144,6 +144,7 @@ export async function queryBatchGoals(counterId, dateFrom, dateTo, goals, extraM
     offset += 1;
   }
   if (extraMetrics.includes('ym:s:visits')) out._visits = totals[0] ?? 0;
+  if (extraMetrics.includes('ym:s:users')) out._users = totals[0] ?? 0;
   return out;
 }
 
@@ -188,12 +189,12 @@ export async function queryWeeklyGoalReaches(counterId, dateFrom, dateTo, goalId
   return byWeek;
 }
 
-/** Weekly visits with filter. Map weekStart -> visits */
-export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter) {
+/** Weekly visits or users with filter. Map weekStart -> number */
+export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter, metric = 'ym:s:visits') {
   const f = filter ? `&filters=${encFilter(filter)}` : '';
   const data = await metrikaApi(
     `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
-      `&metrics=ym:s:visits&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+      `&metrics=${metric}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
   );
   const byWeek = new Map();
   for (const row of data.data ?? []) {
