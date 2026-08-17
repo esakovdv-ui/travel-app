@@ -127,7 +127,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 - `maxPrice` = бюджет визарда (сумма на поездку), `minPrice` = 70% от max
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - Регион: море → `beachLines` + `resorts=19,63,322,663,1475`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой → `resorts=536,3027,3824,3801,3737,3781,7064,42`; «не знаю» — без `resorts`
-- UTM: `utm_source=podbor_wizard`
+- UTM в query **до** `#`: `/tours/?utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
 
 **Отели** (`buildHotelSearchUrl`):
 
@@ -138,7 +138,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ### Проверено
 
-1. Тур + море → `/tours/#module6?action=search&…&beachLines=1,2,3` + kids ages  
+1. Тур + море → `/tours/?utm_source=podbor_wizard#module6?action=search&…&beachLines=1,2,3` + kids ages  
 2. Тур + другой → тот же модуль с датами/людьми  
 3. Отель + море / МО / СПб → `russia.mosgortur.ru/search/…` с датой и ночами  
 
@@ -184,8 +184,12 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 Handoff ставит `utm_source=podbor_wizard`. Нижняя часть воронки считается **отдельно** (нет join user-level между счётчиками 109401746 и 90662828/97107007).
 
+В таблице **Handoff: туры / Handoff: отели** — цель `podbor_handoff` с фильтром `paramsLevel2==tour|hotel`. Это split по кнопке, не по доходу на выдачу.
+
 | Слой | Счётчик | Метрика |
 |------|---------|---------|
+| Handoff: туры | 109401746 | `podbor_handoff` + `format=tour` |
+| Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` |
 | Туры: выдача | 90662828 | URL `/tours` + `action=search` + UTM |
 | Туры: карточка | 90662828 | URL `action=tourCard` + UTM |
 | Туры: корзина | 90662828 | цель **328431134** «Перешел в корзину (Спец)» + UTM |

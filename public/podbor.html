@@ -1276,8 +1276,11 @@
         isOnlyAccommodation: 'false',
         isRailwaySupported: 'false',
         tourFormRequiredFields: '0',
+      });
+      const utm = new URLSearchParams({
         utm_source: 'podbor_wizard',
         utm_campaign: campaign,
+        utm_medium: 'wizard',
       });
       if (state.kidsAges.length) {
         params.set('kids', state.kidsAges.join(','));
@@ -1288,7 +1291,7 @@
       }
       const resorts = tourResortsParam(state.region);
       if (resorts) params.set('resorts', resorts);
-      return `https://online.mosgortur.ru/tours/#module6?${params.toString()}`;
+      return `https://online.mosgortur.ru/tours/?${utm.toString()}#module6?${params.toString()}`;
     }
 
     function buildHandoffUrl() {

@@ -23,6 +23,7 @@ import { loadEnvLocal } from './lib/load-env-local.mjs';
 import {
   ensureMetrikaToken,
   queryBatchGoals,
+  queryWeeklyGoalReaches,
   queryWeeklyGoals,
   queryWeeklyVisits,
   sleep,
@@ -141,6 +142,24 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
   await sleep(300);
   const wizard = await queryBatchGoals(COUNTERS.wizard, dateFrom, dateTo, WIZARD_GOALS);
   await sleep(300);
+  const handoffTours = await queryBatchGoals(
+    COUNTERS.wizard,
+    dateFrom,
+    dateTo,
+    [{ id: POST_HANDOFF.handoff_tours.goalId, key: POST_HANDOFF.handoff_tours.key }],
+    [],
+    POST_HANDOFF.handoff_tours.filter
+  );
+  await sleep(300);
+  const handoffHotels = await queryBatchGoals(
+    COUNTERS.wizard,
+    dateFrom,
+    dateTo,
+    [{ id: POST_HANDOFF.handoff_hotels.goalId, key: POST_HANDOFF.handoff_hotels.key }],
+    [],
+    POST_HANDOFF.handoff_hotels.filter
+  );
+  await sleep(300);
   const utm = await queryBatchGoals(
     COUNTERS.mgt,
     dateFrom,
@@ -215,6 +234,8 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     dates: wizard.dates ?? 0,
     summary: wizard.summary ?? 0,
     handoff: wizard.handoff ?? 0,
+    handoff_tours: handoffTours.handoff_tours ?? 0,
+    handoff_hotels: handoffHotels.handoff_hotels ?? 0,
     utm_visits: utm._visits ?? 0,
     tours_search: toursSearch._visits ?? 0,
     tours_tour_card: toursCard._visits ?? 0,
@@ -234,6 +255,22 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
   const entryWeeks = await queryWeeklyGoals(COUNTERS.mgt, rangeFrom, rangeTo, MGT_ENTRY_GOALS);
   await sleep(400);
   const wizardWeeks = await queryWeeklyGoals(COUNTERS.wizard, rangeFrom, rangeTo, WIZARD_GOALS);
+  await sleep(400);
+  const handoffToursWeeks = await queryWeeklyGoalReaches(
+    COUNTERS.wizard,
+    rangeFrom,
+    rangeTo,
+    POST_HANDOFF.handoff_tours.goalId,
+    POST_HANDOFF.handoff_tours.filter
+  );
+  await sleep(400);
+  const handoffHotelsWeeks = await queryWeeklyGoalReaches(
+    COUNTERS.wizard,
+    rangeFrom,
+    rangeTo,
+    POST_HANDOFF.handoff_hotels.goalId,
+    POST_HANDOFF.handoff_hotels.filter
+  );
   await sleep(400);
   const utmWeeks = await queryWeeklyVisits(COUNTERS.mgt, rangeFrom, rangeTo, POST_HANDOFF.utm_visits.filter);
   await sleep(400);
@@ -274,6 +311,8 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
   return {
     entryWeeks,
     wizardWeeks,
+    handoffToursWeeks,
+    handoffHotelsWeeks,
     utmWeeks,
     toursSearchWeeks,
     toursCardWeeks,
@@ -301,6 +340,8 @@ function buildWeekRow(week, data, updatedAt) {
     dates: wizard.dates ?? 0,
     summary: wizard.summary ?? 0,
     handoff: wizard.handoff ?? 0,
+    handoff_tours: pickVisits(data.handoffToursWeeks, week.from),
+    handoff_hotels: pickVisits(data.handoffHotelsWeeks, week.from),
     utm_visits: pickVisits(data.utmWeeks, week.from),
     tours_search: pickVisits(data.toursSearchWeeks, week.from),
     tours_tour_card: pickVisits(data.toursCardWeeks, week.from),
@@ -331,6 +372,8 @@ function rowToSheetValues(week, metrics, updatedAt) {
     metrics.dates,
     metrics.summary,
     metrics.handoff,
+    metrics.handoff_tours,
+    metrics.handoff_hotels,
     metrics.cr_start_handoff,
     metrics.utm_visits,
     metrics.tours_search,
@@ -457,7 +500,7 @@ async function main() {
         const metrics = await fetchWeekMetrics(metricsRange.from, metricsRange.to);
         row = rowToSheetValues(week, metrics, updatedAt);
       }
-      console.log(`  ${week.label}: handoff=${row[12]}, utm=${row[14]}`);
+      console.log(`  ${week.label}: handoff=${row[12]} tours=${row[13]} hotels=${row[14]} utm=${row[16]}`);
       dataRows.push(row);
     }
   }

@@ -19,7 +19,7 @@ const PODBOR_FUNNEL_START = '2026-08-13';
 const COLUMNS = [
   'Неделя', 'С', 'По', 'Клик баннер', 'Клик popup', 'Старт визарда',
   'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
-  'Handoff', 'CR старт→handoff', 'UTM визиты', 'Туры: выдача', 'Туры: карточка',
+  'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM визиты', 'Туры: выдача', 'Туры: карточка',
   'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
   'Отели: чекаут', 'Отели: покупка', 'Обновлено',
 ];
@@ -118,6 +118,8 @@ function fetchWeek_(week) {
   WIZARD_GOALS.forEach(function (g) {
     m[g.key] = goalReaches_(COUNTERS.wizard, g.id, week.from, week.to);
   });
+  m.handoff_tours = goalReaches_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
+  m.handoff_hotels = goalReaches_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
   m.cr = pct_(m.handoff, m.start);
   m.utm = usersVisits_(COUNTERS.mgt, week.from, week.to, UTM_PODBOR);
   m.t_search = usersVisits_(COUNTERS.mgt, week.from, week.to,
@@ -148,19 +150,22 @@ function ensureSheets_(ss) {
 function setupReference_(ss) {
   const sh = ss.getSheetByName(SHEET_REF);
   sh.clear();
-  sh.getRange(1, 1, 20, 4).setValues([
+  const rows = [
     ['Счётчик', 'ID', 'reachGoal / метрика', 'Когда'],
     [COUNTERS.mgt, '595574818', 'podbor_banner_click', 'Клик баннер'],
     [COUNTERS.mgt, '595574819', 'podbor_popup_click', 'Клик popup'],
     [COUNTERS.wizard, '595566508', 'podbor_start', 'Старт визарда'],
     [COUNTERS.wizard, '595566515', 'podbor_handoff', 'Handoff'],
+    [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
+    [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
     [COUNTERS.mgt, '328431134', 'Корзина тур', 'UTM podbor_wizard'],
     [COUNTERS.mgt, '321612203', 'Успешная оплата', 'UTM podbor_wizard'],
     [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели + UTM'],
     ['', '', '', ''],
     ['UTM фильтр', UTM_PODBOR, '', 'Прокси-воронка без join счётчиков'],
     ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
-  ]);
+  ];
+  sh.getRange(1, 1, rows.length, 4).setValues(rows);
 }
 
 function setupAndSync() {
@@ -178,7 +183,7 @@ function setupAndSync() {
     const m = fetchWeek_(range);
     rows.push([
       w.label, w.from, w.to, m.banner, m.popup, m.start, m.people, m.budget, m.format,
-      m.region, m.dates, m.summary, m.handoff, m.cr, m.utm, m.t_search, m.t_card,
+      m.region, m.dates, m.summary, m.handoff, m.handoff_tours, m.handoff_hotels, m.cr, m.utm, m.t_search, m.t_card,
       m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_purchase, updated,
     ]);
   });

@@ -174,6 +174,20 @@ export async function queryWeeklyGoals(counterId, dateFrom, dateTo, goals, filte
   return byWeek;
 }
 
+/** Weekly reaches for one goal with arbitrary filter. Map weekStart -> reaches */
+export async function queryWeeklyGoalReaches(counterId, dateFrom, dateTo, goalId, filter = null) {
+  const f = filter ? `&filters=${encFilter(filter)}` : '';
+  const data = await metrikaApi(
+    `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+      `&metrics=ym:s:goal${goalId}reaches&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+  );
+  const byWeek = new Map();
+  for (const row of data.data ?? []) {
+    byWeek.set(row.dimensions[0].name, row.metrics[0] ?? 0);
+  }
+  return byWeek;
+}
+
 /** Weekly visits with filter. Map weekStart -> visits */
 export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter) {
   const f = filter ? `&filters=${encFilter(filter)}` : '';

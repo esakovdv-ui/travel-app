@@ -34,6 +34,8 @@ export function emptyFunnelMetrics() {
     dates: 0,
     summary: 0,
     handoff: 0,
+    handoff_tours: 0,
+    handoff_hotels: 0,
     cr_start_handoff: '',
     utm_visits: 0,
     tours_search: 0,
@@ -79,6 +81,22 @@ export const WIZARD_GOALS = [
  * Tours: Sletat module on 90662828. Hotels: Level Travel on 97107007.
  */
 export const POST_HANDOFF = {
+  handoff_tours: {
+    key: 'handoff_tours',
+    label: 'Handoff в туры',
+    counter: COUNTERS.wizard,
+    type: 'goal',
+    goalId: 595566515,
+    filter: `ym:s:paramsLevel2=='tour'`,
+  },
+  handoff_hotels: {
+    key: 'handoff_hotels',
+    label: 'Handoff в отели',
+    counter: COUNTERS.wizard,
+    type: 'goal',
+    goalId: 595566515,
+    filter: `ym:s:paramsLevel2=='hotel'`,
+  },
   utm_visits: {
     key: 'utm_visits',
     label: 'Визиты utm podbor_wizard',
@@ -171,6 +189,8 @@ export const SHEET_COLUMNS = [
   'Шаг: даты',
   'Шаг: итог',
   'Handoff',
+  'Handoff: туры',
+  'Handoff: отели',
   'CR старт→handoff',
   'UTM визиты',
   'Туры: выдача',
@@ -197,6 +217,8 @@ export const REFERENCE_ROWS = [
   [COUNTERS.wizard, '595566513', 'podbor_step_dates', 'Шаг дат'],
   [COUNTERS.wizard, '595566514', 'podbor_step_summary', 'Итог'],
   [COUNTERS.wizard, '595566515', 'podbor_handoff', '«Показать туры/отели»'],
+  [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
+  [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
   [COUNTERS.mgt, '328431134', 'Перешел в корзину (Спец)', 'Туры после handoff + UTM'],
   [COUNTERS.mgt, '328431171', 'Забронировал тур (Спец)', 'Туры после handoff + UTM'],
   [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры после handoff + UTM'],
