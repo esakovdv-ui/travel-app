@@ -19,7 +19,7 @@ const PODBOR_FUNNEL_START = '2026-08-13';
 const COLUMNS = [
   'Неделя', 'С', 'По', 'Клик баннер', 'Клик popup', 'Старт визарда',
   'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
-  'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM визиты', 'Туры: выдача', 'Туры: карточка',
+  'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM: пользователи', 'Туры: выдача', 'Туры: карточка',
   'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
   'Отели: чекаут', 'Отели: покупка', 'Обновлено',
 ];
@@ -45,9 +45,9 @@ function metrikaGet_(path) {
   return JSON.parse(text);
 }
 
-function goalReaches_(counter, goalId, d1, d2, filter) {
+function goalUsers_(counter, goalId, d1, d2, filter) {
   let path = '/stat/v1/data?id=' + counter + '&date1=' + d1 + '&date2=' + d2 +
-    '&metrics=ym:s:goal' + goalId + 'reaches';
+    '&metrics=ym:s:goal' + goalId + 'users';
   if (filter) path += '&filters=' + encodeURIComponent(filter);
   return metrikaGet_(path).totals[0] || 0;
 }
@@ -149,27 +149,27 @@ function emptyMetrics_() {
 
 function fetchWeek_(week) {
   const m = {};
-  m.banner = goalReaches_(COUNTERS.mgt, 595574818, week.from, week.to);
-  m.popup = goalReaches_(COUNTERS.mgt, 595574819, week.from, week.to);
+  m.banner = goalUsers_(COUNTERS.mgt, 595574818, week.from, week.to);
+  m.popup = goalUsers_(COUNTERS.mgt, 595574819, week.from, week.to);
   WIZARD_GOALS.forEach(function (g) {
-    m[g.key] = goalReaches_(COUNTERS.wizard, g.id, week.from, week.to);
+    m[g.key] = goalUsers_(COUNTERS.wizard, g.id, week.from, week.to);
   });
-  m.handoff_tours = goalReaches_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
-  m.handoff_hotels = goalReaches_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
+  m.handoff_tours = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
+  m.handoff_hotels = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
   m.cr = pct_(m.handoff, m.start);
-  m.utm = usersVisits_(COUNTERS.mgt, week.from, week.to, UTM_PODBOR);
+  m.utm = usersCount_(COUNTERS.mgt, week.from, week.to, UTM_PODBOR);
   m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to,
     "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
   m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
     "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=tourCard'");
-  m.t_cart = goalReaches_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_book = goalReaches_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_pay = goalReaches_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.h_search = usersVisits_(COUNTERS.hotels, week.from, week.to,
+  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+  m.h_search = usersCount_(COUNTERS.hotels, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/search'");
-  m.h_cart = usersVisits_(COUNTERS.hotels, week.from, week.to,
+  m.h_cart = usersCount_(COUNTERS.hotels, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
-  m.h_checkout = goalReaches_(COUNTERS.hotels, 579160037, week.from, week.to,
+  m.h_checkout = goalUsers_(COUNTERS.hotels, 579160037, week.from, week.to,
     UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru'");
   m.h_purchase = hotelJourneyPurchaseCount_(week.from, week.to);
   return m;
@@ -198,7 +198,7 @@ function setupReference_(ss) {
     [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
     [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели: покупка checkout podbor → purchase'],
     ['', '', '', ''],
-    ['UTM фильтр', UTM_PODBOR, '', 'Прокси-воронка без join счётчиков'],
+    ['UTM фильтр', UTM_PODBOR, '', 'Все метрики — уникальные пользователи (users)'],
     ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
   ];
   sh.getRange(1, 1, rows.length, 4).setValues(rows);
