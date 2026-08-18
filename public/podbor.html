@@ -133,6 +133,24 @@
     .screen[data-screen="region"].active .region[data-value="other"] .region-media {
       background-image: url('/podbor-regions/other.jpg');
     }
+    .screen[data-screen="region-other"].active .region[data-value="karelia"] .region-media {
+      background-image: url('/podbor-regions/karelia.jpg');
+    }
+    .screen[data-screen="region-other"].active .region[data-value="kaluga"] .region-media {
+      background-image: url('/podbor-regions/kaluga.jpg');
+    }
+    .screen[data-screen="region-other"].active .region[data-value="altai"] .region-media {
+      background-image: url('/podbor-regions/altai.jpg');
+    }
+    .screen[data-screen="region-other"].active .region[data-value="yaroslavl"] .region-media {
+      background-image: url('/podbor-regions/yaroslavl.jpg');
+    }
+    .screen[data-screen="region-other"].active .region[data-value="nnovgorod"] .region-media {
+      background-image: url('/podbor-regions/nnovgorod.jpg');
+    }
+    .screen[data-screen="region-other"].active .region[data-value="vladimir"] .region-media {
+      background-image: url('/podbor-regions/vladimir.jpg');
+    }
     @media (max-width: 559px) {
       .screen[data-screen="region"].active .region[data-value="sea"] .region-media {
         background-image: url('/podbor-regions/mobile/sea.jpg');
@@ -151,6 +169,24 @@
       }
       .screen[data-screen="region"].active .region[data-value="other"] .region-media {
         background-image: url('/podbor-regions/mobile/other.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="karelia"] .region-media {
+        background-image: url('/podbor-regions/mobile/karelia.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="kaluga"] .region-media {
+        background-image: url('/podbor-regions/mobile/kaluga.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="altai"] .region-media {
+        background-image: url('/podbor-regions/mobile/altai.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="yaroslavl"] .region-media {
+        background-image: url('/podbor-regions/mobile/yaroslavl.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="nnovgorod"] .region-media {
+        background-image: url('/podbor-regions/mobile/nnovgorod.jpg');
+      }
+      .screen[data-screen="region-other"].active .region[data-value="vladimir"] .region-media {
+        background-image: url('/podbor-regions/mobile/vladimir.jpg');
       }
     }
     .region .overlay {
@@ -512,23 +548,29 @@
       <h2>Куда именно?</h2>
       <p class="sub">В поиске отелей можно открыть только один регион.</p>
       <div class="grid regions" role="group" aria-label="Регионы">
-        <button type="button" class="card" data-key="region" data-value="karelia" data-hotel-other="1">
-          <span class="title">Карелия</span>
+        <button type="button" class="card region" data-key="region" data-value="karelia">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Карелия</span></span>
         </button>
-        <button type="button" class="card" data-key="region" data-value="kaluga" data-hotel-other="1">
-          <span class="title">Калуга</span>
+        <button type="button" class="card region" data-key="region" data-value="kaluga">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Калуга</span></span>
         </button>
-        <button type="button" class="card" data-key="region" data-value="altai" data-hotel-other="1">
-          <span class="title">Алтай</span>
+        <button type="button" class="card region" data-key="region" data-value="altai">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Алтай</span></span>
         </button>
-        <button type="button" class="card" data-key="region" data-value="yaroslavl" data-hotel-other="1">
-          <span class="title">Ярославль</span>
+        <button type="button" class="card region" data-key="region" data-value="yaroslavl">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Ярославль</span></span>
         </button>
-        <button type="button" class="card" data-key="region" data-value="nnovgorod" data-hotel-other="1">
-          <span class="title">Нижний Новгород</span>
+        <button type="button" class="card region" data-key="region" data-value="nnovgorod">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Нижний Новгород</span></span>
         </button>
-        <button type="button" class="card" data-key="region" data-value="vladimir" data-hotel-other="1">
-          <span class="title">Владимир</span>
+        <button type="button" class="card region" data-key="region" data-value="vladimir">
+          <span class="region-media" aria-hidden="true"></span>
+          <span class="overlay"><span class="title">Владимир</span></span>
         </button>
       </div>
       <div class="actions">
