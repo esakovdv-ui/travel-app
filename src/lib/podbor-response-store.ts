@@ -18,7 +18,21 @@ export const podborAnswersSchema = z.object({
   budgetCustom: z.boolean().optional(),
   format: z.enum(['tour', 'hotel']).nullable().optional(),
   region: z
-    .enum(['sea', 'podmos', 'spb', 'kaliningrad', 'kazan', 'other', 'any'])
+    .enum([
+      'sea',
+      'podmos',
+      'spb',
+      'kaliningrad',
+      'kazan',
+      'other',
+      'any',
+      'karelia',
+      'kaluga',
+      'altai',
+      'yaroslavl',
+      'nnovgorod',
+      'vladimir',
+    ])
     .nullable()
     .optional(),
   checkIn: z.string().optional(),

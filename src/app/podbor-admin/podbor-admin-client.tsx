@@ -52,6 +52,12 @@ const REGION_LABELS: Record<string, string> = {
   kazan: 'Казань',
   other: 'Другой регион',
   any: 'Пока не знаю',
+  karelia: 'Карелия',
+  kaluga: 'Калуга',
+  altai: 'Алтай',
+  yaroslavl: 'Ярославль',
+  nnovgorod: 'Нижний Новгород',
+  vladimir: 'Владимир',
 };
 
 function formatDate(value: string) {

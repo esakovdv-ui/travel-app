@@ -506,6 +506,36 @@
       </div>
     </section>
 
+    <section class="screen" data-screen="region-other">
+      <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
+      <div class="step-label">Шаг 4 из 5</div>
+      <h2>Куда именно?</h2>
+      <p class="sub">В поиске отелей можно открыть только один регион.</p>
+      <div class="grid regions" role="group" aria-label="Регионы">
+        <button type="button" class="card" data-key="region" data-value="karelia" data-hotel-other="1">
+          <span class="title">Карелия</span>
+        </button>
+        <button type="button" class="card" data-key="region" data-value="kaluga" data-hotel-other="1">
+          <span class="title">Калуга</span>
+        </button>
+        <button type="button" class="card" data-key="region" data-value="altai" data-hotel-other="1">
+          <span class="title">Алтай</span>
+        </button>
+        <button type="button" class="card" data-key="region" data-value="yaroslavl" data-hotel-other="1">
+          <span class="title">Ярославль</span>
+        </button>
+        <button type="button" class="card" data-key="region" data-value="nnovgorod" data-hotel-other="1">
+          <span class="title">Нижний Новгород</span>
+        </button>
+        <button type="button" class="card" data-key="region" data-value="vladimir" data-hotel-other="1">
+          <span class="title">Владимир</span>
+        </button>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="region">Назад</button>
+      </div>
+    </section>
+
     <section class="screen" data-screen="dates">
       <div class="progress" data-step="5"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i></div>
       <div class="step-label">Шаг 5 из 5</div>
@@ -627,6 +657,12 @@
         kazan: 'Казань',
         other: 'Другой регион',
         any: 'Пока не знаю',
+        karelia: 'Карелия',
+        kaluga: 'Калуга',
+        altai: 'Алтай',
+        yaroslavl: 'Ярославль',
+        nnovgorod: 'Нижний Новгород',
+        vladimir: 'Владимир',
       },
     };
 
@@ -639,6 +675,12 @@
       kazan: 6840,        // Татарстан
       other: 5620,        // среднее по России
       any: 5620,
+      karelia: 5620,
+      kaluga: 5620,
+      altai: 5620,
+      yaroslavl: 5620,
+      nnovgorod: 5620,
+      vladimir: 5620,
     };
     const formatMult = { tour: 1, hotel: 0.88 };
 
@@ -993,6 +1035,11 @@
       if (tourOnlyHotel && state.region === 'podmos') {
         state.region = null;
       }
+      if (state.format === 'tour' && isHotelOtherRegion(state.region)) {
+        state.region = 'other';
+        document.querySelectorAll('[data-key="region"]').forEach((n) => n.classList.remove('selected'));
+        document.querySelector('[data-key="region"][data-value="other"]')?.classList.add('selected');
+      }
     }
 
     const trackedSteps = new Set();
@@ -1159,7 +1206,13 @@
           syncRegionOptions();
           show('region');
         }
-        if (el.dataset.key === 'region') show('dates');
+        if (el.dataset.key === 'region') {
+          if (el.dataset.value === 'other' && state.format === 'hotel') {
+            show('region-other');
+            return;
+          }
+          show('dates');
+        }
       });
     });
 
@@ -1189,6 +1242,22 @@
             { duration: 280 }
           );
           return;
+        }
+        if (btn.dataset.go === 'dates' && state.format === 'hotel' && state.region === 'other') {
+          show('region-other');
+          return;
+        }
+        if (btn.dataset.go === 'region' && state.format === 'hotel' && isHotelOtherRegion(state.region)) {
+          const from = document.querySelector('.screen.active')?.dataset.screen;
+          if (from === 'dates') {
+            show('region-other');
+            return;
+          }
+        }
+        if (btn.dataset.go === 'region' && document.querySelector('.screen.active')?.dataset.screen === 'region-other') {
+          state.region = 'other';
+          document.querySelectorAll('[data-key="region"]').forEach((n) => n.classList.remove('selected'));
+          document.querySelector('[data-key="region"][data-value="other"]')?.classList.add('selected');
         }
         show(btn.dataset.go);
       });
@@ -1237,11 +1306,25 @@
       logPodbor('start', { answers: snapshotAnswers() });
     }
 
+    const HOTEL_OTHER_REGIONS = {
+      karelia: 'Karelia',
+      kaluga: 'Kaluga',
+      altai: 'Altai',
+      yaroslavl: 'Yaroslavl',
+      nnovgorod: 'Nizhny_Novgorod',
+      vladimir: 'Vladimir',
+    };
+
+    function isHotelOtherRegion(region) {
+      return Object.prototype.hasOwnProperty.call(HOTEL_OTHER_REGIONS, region);
+    }
+
     function hotelCitySlug(region) {
       if (region === 'podmos') return 'Moscow_Oblast';
       if (region === 'spb') return 'Saint_Petersburg';
       if (region === 'kaliningrad') return 'Kaliningrad';
       if (region === 'kazan') return 'Kazan';
+      if (HOTEL_OTHER_REGIONS[region]) return HOTEL_OTHER_REGIONS[region];
       return 'Sochi';
     }
 
