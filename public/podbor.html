@@ -133,22 +133,22 @@
     .screen[data-screen="region"].active .region[data-value="other"] .region-media {
       background-image: url('/podbor-regions/other.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="karelia"] .region-media {
+    .screen.screen-region-other.active .region[data-value="karelia"] .region-media {
       background-image: url('/podbor-regions/karelia.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="kaluga"] .region-media {
+    .screen.screen-region-other.active .region[data-value="kaluga"] .region-media {
       background-image: url('/podbor-regions/kaluga.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="altai"] .region-media {
+    .screen.screen-region-other.active .region[data-value="altai"] .region-media {
       background-image: url('/podbor-regions/altai.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="yaroslavl"] .region-media {
+    .screen.screen-region-other.active .region[data-value="yaroslavl"] .region-media {
       background-image: url('/podbor-regions/yaroslavl.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="nnovgorod"] .region-media {
+    .screen.screen-region-other.active .region[data-value="nnovgorod"] .region-media {
       background-image: url('/podbor-regions/nnovgorod.jpg');
     }
-    .screen[data-screen="region-other"].active .region[data-value="vladimir"] .region-media {
+    .screen.screen-region-other.active .region[data-value="vladimir"] .region-media {
       background-image: url('/podbor-regions/vladimir.jpg');
     }
     @media (max-width: 559px) {
@@ -170,22 +170,22 @@
       .screen[data-screen="region"].active .region[data-value="other"] .region-media {
         background-image: url('/podbor-regions/mobile/other.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="karelia"] .region-media {
+      .screen.screen-region-other.active .region[data-value="karelia"] .region-media {
         background-image: url('/podbor-regions/mobile/karelia.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="kaluga"] .region-media {
+      .screen.screen-region-other.active .region[data-value="kaluga"] .region-media {
         background-image: url('/podbor-regions/mobile/kaluga.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="altai"] .region-media {
+      .screen.screen-region-other.active .region[data-value="altai"] .region-media {
         background-image: url('/podbor-regions/mobile/altai.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="yaroslavl"] .region-media {
+      .screen.screen-region-other.active .region[data-value="yaroslavl"] .region-media {
         background-image: url('/podbor-regions/mobile/yaroslavl.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="nnovgorod"] .region-media {
+      .screen.screen-region-other.active .region[data-value="nnovgorod"] .region-media {
         background-image: url('/podbor-regions/mobile/nnovgorod.jpg');
       }
-      .screen[data-screen="region-other"].active .region[data-value="vladimir"] .region-media {
+      .screen.screen-region-other.active .region[data-value="vladimir"] .region-media {
         background-image: url('/podbor-regions/mobile/vladimir.jpg');
       }
     }
@@ -542,7 +542,7 @@
       </div>
     </section>
 
-    <section class="screen" data-screen="region-other">
+    <section class="screen screen-region-other" data-screen="region-other">
       <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
       <div class="step-label">Шаг 4 из 5</div>
       <h2>Куда именно?</h2>
@@ -1181,10 +1181,34 @@
       logPodbor('step', { step: name, answers: snapshotAnswers() });
     }
 
+    function regionPhotoBase() {
+      return window.matchMedia('(max-width: 559px)').matches
+        ? '/podbor-regions/mobile/'
+        : '/podbor-regions/';
+    }
+
+    function paintRegionPhotos(screenName) {
+      const screen = document.querySelector(`.screen[data-screen="${screenName}"]`);
+      if (!screen) return;
+      const base = regionPhotoBase();
+      requestAnimationFrame(() => {
+        screen.querySelectorAll('.region[data-value] .region-media').forEach((el) => {
+          const value = el.closest('.region')?.dataset.value;
+          if (!value) return;
+          const url = `${base}${value}.jpg${value === 'kazan' ? '?v=3' : ''}`;
+          if (el.dataset.painted === url) return;
+          el.dataset.painted = url;
+          el.style.backgroundImage = `url("${url}")`;
+          new Image().src = url;
+        });
+      });
+    }
+
     function show(name) {
       screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
       if (name === 'budget') updateBudgetUI();
       if (name === 'region') syncRegionOptions();
+      if (name === 'region' || name === 'region-other') paintRegionPhotos(name);
       if (name === 'dates') {
         calMonth = new Date(state.checkIn.getFullYear(), state.checkIn.getMonth(), 1);
         renderCalendar();
