@@ -13,6 +13,8 @@ const SHEET_REF = 'Справочник';
 
 const COUNTERS = { mgt: '90662828', wizard: '109401746', hotels: '97107007' };
 const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
+const PODBOR_HOTELS_ENTRY = "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
+const HOTEL_LEAD_GOAL = 358300437;
 /** Учёт с этой даты (МСK). Тестовые прохождения до неё — нули. */
 const PODBOR_FUNNEL_START = '2026-08-13';
 
@@ -21,7 +23,7 @@ const COLUMNS = [
   'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
   'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM: пользователи', 'Туры: выдача', 'Туры: карточка',
   'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
-  'Отели: чекаут', 'Отели: покупка', 'Обновлено',
+  'Отели: чекаут', 'Отели: заявка', 'Обновлено',
 ];
 
 const WIZARD_GOALS = [
@@ -52,13 +54,6 @@ function goalUsers_(counter, goalId, d1, d2, filter) {
   return metrikaGet_(path).totals[0] || 0;
 }
 
-function usersVisits_(counter, d1, d2, filter) {
-  let path = '/stat/v1/data?id=' + counter + '&date1=' + d1 + '&date2=' + d2 +
-    '&metrics=ym:s:visits';
-  if (filter) path += '&filters=' + encodeURIComponent(filter);
-  return metrikaGet_(path).totals[0] || 0;
-}
-
 function usersCount_(counter, d1, d2, filter) {
   let path = '/stat/v1/data?id=' + counter + '&date1=' + d1 + '&date2=' + d2 +
     '&metrics=ym:s:users';
@@ -66,33 +61,36 @@ function usersCount_(counter, d1, d2, filter) {
   return metrikaGet_(path).totals[0] || 0;
 }
 
-/** Отели: покупка по пути checkout podbor → lt_purchase (clientID). */
-function hotelJourneyPurchaseCount_(purchaseFrom, purchaseTo) {
-  const checkoutFrom = PODBOR_FUNNEL_START > purchaseFrom ? PODBOR_FUNNEL_START : purchaseFrom;
-  const checkoutFilter = UTM_PODBOR + ' AND ym:s:goal579160037reaches>0';
-  let path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + checkoutFrom + '&date2=' + purchaseTo +
-    '&metrics=ym:s:goal579160037reaches&dimensions=ym:s:clientID&limit=10000' +
-    '&filters=' + encodeURIComponent(checkoutFilter);
-  var checkoutRows = metrikaGet_(path).data || [];
-  var checkoutClients = {};
-  checkoutRows.forEach(function (row) {
-    if (row.dimensions[0] && row.dimensions[0].name) checkoutClients[row.dimensions[0].name] = true;
+function hotelEntryClients_(entryFrom, entryTo) {
+  var path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + entryFrom + '&date2=' + entryTo +
+    '&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000' +
+    '&filters=' + encodeURIComponent(PODBOR_HOTELS_ENTRY);
+  var rows = metrikaGet_(path).data || [];
+  var clients = {};
+  rows.forEach(function (row) {
+    if (row.dimensions[0] && row.dimensions[0].name) clients[row.dimensions[0].name] = true;
   });
-  var ids = Object.keys(checkoutClients);
+  return Object.keys(clients);
+}
+
+/** clientID journey: заход с подбора → действие на отелях в отчётной неделе. */
+function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
+  var entryFrom = PODBOR_FUNNEL_START > reportFrom ? PODBOR_FUNNEL_START : reportFrom;
+  var ids = hotelEntryClients_(entryFrom, reportTo);
   if (!ids.length) return 0;
 
-  var buyers = {};
-  for (var i = 0; i < ids.length; i += 40) {
-    var chunk = ids.slice(i, i + 40);
+  var matched = {};
+  for (var i = 0; i < ids.length; i += 10) {
+    var chunk = ids.slice(i, i + 10);
     var orFilter = chunk.map(function (cid) { return "ym:s:clientID=='" + cid + "'"; }).join(' OR ');
-    path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + purchaseFrom + '&date2=' + purchaseTo +
-      '&metrics=ym:s:goal579160040reaches&dimensions=ym:s:clientID&limit=10000' +
-      '&filters=' + encodeURIComponent('(' + orFilter + ') AND ym:s:goal579160040reaches>0');
+    var path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + reportFrom + '&date2=' + reportTo +
+      '&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000' +
+      '&filters=' + encodeURIComponent('(' + orFilter + ') AND ' + downstreamFilter);
     (metrikaGet_(path).data || []).forEach(function (row) {
-      if (row.dimensions[0] && row.dimensions[0].name) buyers[row.dimensions[0].name] = true;
+      if (row.dimensions[0] && row.dimensions[0].name) matched[row.dimensions[0].name] = true;
     });
   }
-  return Object.keys(buyers).length;
+  return Object.keys(matched).length;
 }
 
 function weekStartMonday_(dayKey) {
@@ -139,14 +137,6 @@ function effectiveMetricsRange_(week) {
   return { from: from, to: week.to };
 }
 
-function emptyMetrics_() {
-  return {
-    banner: 0, popup: 0, start: 0, people: 0, budget: 0, format: 0, region: 0,
-    dates: 0, summary: 0, handoff: 0, cr: '', utm: 0, t_search: 0, t_card: 0,
-    t_cart: 0, t_book: 0, t_pay: 0, h_search: 0, h_cart: 0, h_checkout: 0, h_purchase: 0,
-  };
-}
-
 function fetchWeek_(week) {
   const m = {};
   m.banner = goalUsers_(COUNTERS.mgt, 595574818, week.from, week.to);
@@ -165,13 +155,11 @@ function fetchWeek_(week) {
   m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
   m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
   m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.h_search = usersCount_(COUNTERS.hotels, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/search'");
-  m.h_cart = usersCount_(COUNTERS.hotels, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
-  m.h_checkout = goalUsers_(COUNTERS.hotels, 579160037, week.from, week.to,
-    UTM_PODBOR + " AND ym:pv:URL=@'russia.mosgortur.ru'");
-  m.h_purchase = hotelJourneyPurchaseCount_(week.from, week.to);
+  m.h_search = hotelJourneyCount_(week.from, week.to, "ym:pv:URL=@'russia.mosgortur.ru/search'");
+  m.h_cart = hotelJourneyCount_(week.from, week.to,
+    "ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
+  m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal579160037reaches>0');
+  m.h_lead = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LEAD_GOAL + 'reaches>0');
   return m;
 }
 
@@ -196,9 +184,12 @@ function setupReference_(ss) {
     [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId'],
     [COUNTERS.mgt, '321609998', 'buying_submit', 'Туры: бронь по moduleId'],
     [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
-    [COUNTERS.hotels, '579160040', 'lt_purchase', 'Отели: покупка checkout podbor → purchase'],
+    [COUNTERS.hotels, '579160037', 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
+    [COUNTERS.hotels, String(HOTEL_LEAD_GOAL), 'отправил контактные данные LT', 'Отели: заявка (journey с podbor)'],
+    [COUNTERS.hotels, 'podbor_ref=1', 'URL handoff', 'Маркер подбора в handoff URL'],
     ['', '', '', ''],
-    ['UTM фильтр', UTM_PODBOR, '', 'Все метрики — уникальные пользователи (users)'],
+    ['UTM фильтр', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
+    ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/заявка'],
     ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
   ];
   sh.getRange(1, 1, rows.length, 4).setValues(rows);
@@ -220,7 +211,7 @@ function setupAndSync() {
     rows.push([
       w.label, w.from, w.to, m.banner, m.popup, m.start, m.people, m.budget, m.format,
       m.region, m.dates, m.summary, m.handoff, m.handoff_tours, m.handoff_hotels, m.cr, m.utm, m.t_search, m.t_card,
-      m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_purchase, updated,
+      m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_lead, updated,
     ]);
   });
 

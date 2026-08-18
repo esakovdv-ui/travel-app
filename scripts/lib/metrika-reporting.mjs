@@ -152,6 +152,94 @@ export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Unique clientIDs with any visit matching entryFilter in [entryFrom, entryTo]. */
+export async function queryPodborHotelEntryClients(
+  counterId,
+  entryFrom,
+  entryTo,
+  entryFilter
+) {
+  const data = await metrikaApi(
+    `/stat/v1/data?id=${counterId}&date1=${entryFrom}&date2=${entryTo}` +
+      `&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000` +
+      `&filters=${encFilter(entryFilter)}`
+  );
+  return new Set(
+    (data.data ?? []).map((row) => row.dimensions[0]?.name).filter(Boolean)
+  );
+}
+
+function chunkClientIds(clientIds, size = 10) {
+  const chunks = [];
+  for (let i = 0; i < clientIds.length; i += size) {
+    chunks.push(clientIds.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
+ * clientID journey: entry clients (podbor) → downstream action in report period.
+ * Returns Map weekStart (Monday) -> unique user count.
+ */
+export async function queryWeeklyHotelPodborJourneyUsers(
+  counterId,
+  dateFrom,
+  dateTo,
+  entryClientIds,
+  downstreamFilter
+) {
+  const byWeek = new Map();
+  if (!entryClientIds?.size) return byWeek;
+
+  for (const chunk of chunkClientIds([...entryClientIds])) {
+    const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=ym:s:visits&dimensions=ym:s:startOfWeek,ym:s:clientID&group=week&limit=10000` +
+        `&filters=${encFilter(`(${orFilter}) AND ${downstreamFilter}`)}`
+    );
+    for (const row of data.data ?? []) {
+      const weekStart = row.dimensions[0]?.name;
+      const clientId = row.dimensions[1]?.name;
+      if (!weekStart || !clientId) continue;
+      if (!byWeek.has(weekStart)) byWeek.set(weekStart, new Set());
+      byWeek.get(weekStart).add(clientId);
+    }
+    await sleep(200);
+  }
+
+  const counts = new Map();
+  for (const [weekStart, clients] of byWeek) {
+    counts.set(weekStart, clients.size);
+  }
+  return counts;
+}
+
+/** Single date range count for podbor hotel journey. */
+export async function queryHotelPodborJourneyUserCount(
+  counterId,
+  dateFrom,
+  dateTo,
+  entryClientIds,
+  downstreamFilter
+) {
+  if (!entryClientIds?.size) return 0;
+  const matched = new Set();
+  for (const chunk of chunkClientIds([...entryClientIds])) {
+    const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000` +
+        `&filters=${encFilter(`(${orFilter}) AND ${downstreamFilter}`)}`
+    );
+    for (const row of data.data ?? []) {
+      if (row.dimensions[0]?.name) matched.add(row.dimensions[0].name);
+    }
+    await sleep(200);
+  }
+  return matched.size;
+}
+
 /**
  * Weekly unique users for goals over a date range.
  * Returns Map weekStart (YYYY-MM-DD Monday) -> { goalKey: users }.

@@ -197,10 +197,12 @@ Handoff ставит `utm_source=podbor_wizard`. Нижняя часть вор�
 | Туры: корзина | 90662828 | цель **326738951** `click-buyonline` в сессии с moduleId визарда |
 | Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
 | Туры: оплата | 90662828 | цель **321612203** в сессии с moduleId визарда (допущение: это подбор) |
-| Отели: выдача | 97107007 | URL `russia.mosgortur.ru/search` + UTM |
-| Отели: корзина | 97107007 | URL `/packages/` (без `/success`) + UTM |
-| Отели: чекаут | 97107007 | цель **579160037** `lt_checkout_start` + UTM |
-| Отели: покупка | 97107007 | **579160040** `lt_purchase` по пути: чекаут с `podbor_wizard` → покупка (clientID; UTM на оплате часто пропадает) |
+| Отели: выдача | 97107007 | clientID journey: заход с `podbor_ref=1` / UTM → URL `/search` |
+| Отели: корзина | 97107007 | clientID journey → URL `/packages/` |
+| Отели: чекаут | 97107007 | clientID journey → **579160037** `lt_checkout_start` |
+| Отели: заявка | 97107007 | clientID journey → **358300437** «отправил контактные данные LT» |
+
+Handoff URL для отелей: `podbor_ref=1` + `utm_source=podbor_wizard` (UTM может пропасть на внутренних переходах — journey по clientID на счётчике 97107007).
 
 ### Журнал ответов визарда (сервер)
 
