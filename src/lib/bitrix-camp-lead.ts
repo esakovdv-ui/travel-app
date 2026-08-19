@@ -51,8 +51,8 @@ export type CampLeadQualification = {
   preferredContactTime?: PreferredContactTime;
 };
 
-const DEAL_CATEGORY_ID = 22;
-const DEAL_STAGE_ID = 'C22:NEW';
+const DEAL_CATEGORY_ID = 12;
+const DEAL_STAGE_ID = 'C12:NEW';
 const ASSIGNED_BY_ID = 1;
 export const CAMP_LEAD_DUPLICATE_WINDOW_MS = 48 * 60 * 60 * 1000;
 
