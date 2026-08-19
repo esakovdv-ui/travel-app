@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import styles from './FiltersPanel.module.css'
+import { hotelsLabel } from '@/lib/plural'
 import type { HotelSearchResult } from '@/lib/tourvisor/types'
 
 // ─── Типы фильтров ────────────────────────────────────────────────────────────
@@ -30,6 +31,18 @@ export const DEFAULT_FILTERS: FilterState = {
   placements: [],
   roomTypes: [],
   priceMax: 0,
+}
+
+/** Коды питания Tourvisor человеческим языком. */
+const MEAL_LABELS: Record<string, string> = {
+  RO: 'RO — без питания',
+  BB: 'BB — завтрак',
+  HB: 'HB — завтрак и ужин',
+  FB: 'FB — трёхразовое',
+  AI: 'AI — всё включено',
+  UAI: 'UAI — ультра всё включено',
+  HBP: 'HB+ — завтрак, ужин и напитки',
+  FBP: 'FB+ — трёхразовое и напитки',
 }
 
 // ─── Применение фильтров ──────────────────────────────────────────────────────
@@ -132,7 +145,8 @@ export function computeFilterOptions(hotels: HotelSearchResult[]): FilterOptions
 // ─── Внутренние под-компоненты ────────────────────────────────────────────────
 
 interface CheckListProps {
-  items: { name: string; count: number }[]
+  /** name — значение фильтра, label — что видит человек (если отличается). */
+  items: { name: string; count: number; label?: string }[]
   selected: string[]
   onChange: (v: string[]) => void
   showLimit?: number
@@ -157,7 +171,7 @@ function CheckList({ items, selected, onChange, showLimit = 6 }: CheckListProps)
               checked={selected.includes(item.name)}
               onChange={() => toggle(item.name)}
             />
-            <span className={styles.checkLabel}>{item.name}</span>
+            <span className={styles.checkLabel}>{item.label ?? item.name}</span>
             <span className={styles.checkCount}>{item.count}</span>
           </label>
         ))}
@@ -191,6 +205,10 @@ interface FiltersPanelProps {
   // mobile bottom sheet
   sheetOpen?: boolean
   onSheetClose?: () => void
+  /** Сортировка живёт здесь только на мобиле: в подхедере она занимала
+      половину строки, а меняют её редко. На десктопе остаётся в подхедере. */
+  sortKey?: string
+  onSortChange?: (v: string) => void
 }
 
 function FilterContent({
@@ -315,8 +333,10 @@ function FilterContent({
             <span className={styles.groupTitle}>Питание</span>
             <GroupBadge count={filters.meals.length} />
           </div>
+          {/* В карточках питание подписано словами, а в фильтре стояли голые
+              коды RO/BB/HB/AI — сотруднику они ничего не говорят. */}
           <CheckList
-            items={options.meals}
+            items={options.meals.map(m => ({ ...m, label: MEAL_LABELS[m.name] ?? m.name }))}
             selected={filters.meals}
             onChange={v => set('meals', v)}
           />
@@ -429,6 +449,8 @@ export function FiltersBottomSheet({
   filteredCount,
   sheetOpen,
   onSheetClose,
+  sortKey,
+  onSortChange,
 }: FiltersPanelProps) {
   if (!sheetOpen) return null
 
@@ -442,11 +464,29 @@ export function FiltersBottomSheet({
           <button className={styles.sheetCloseBtn} onClick={onSheetClose}>✕</button>
         </div>
         <div className={styles.sheetBody}>
+          {onSortChange && (
+            <div className={styles.group}>
+              <div className={styles.groupHeader}>
+                <span className={styles.groupTitle}>Сортировка</span>
+              </div>
+              <select
+                className={styles.sheetSortSelect}
+                value={sortKey}
+                onChange={e => onSortChange(e.target.value)}
+                aria-label="Сортировка результатов"
+              >
+                <option value="popular">Сначала популярные</option>
+                <option value="price_asc">Сначала дешевле</option>
+                <option value="price_desc">Сначала дороже</option>
+                <option value="category_desc">По звёздам</option>
+              </select>
+            </div>
+          )}
           <FilterContent filters={filters} onChange={onChange} options={options} />
         </div>
         <div className={styles.sheetFooter}>
           <button className={styles.sheetApplyBtn} onClick={onSheetClose}>
-            Показать {filteredCount} {filteredCount === 1 ? 'отель' : filteredCount < 5 ? 'отеля' : 'отелей'}
+            {filteredCount === 0 ? 'Ничего не подходит' : `Показать ${hotelsLabel(filteredCount)}`}
           </button>
         </div>
       </div>

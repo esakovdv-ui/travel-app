@@ -1,37 +1,50 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { appendAccessLog, normalizeCredential } from '@/lib/access-log'
 import { rejectDelay, verifyStaffCredential } from '@/lib/staff-access'
-import { attachStaffSessionCookie, isStaffSessionValid, STAFF_SESSION_COOKIE } from '@/lib/staff-session'
+import { appendAccessLog, normalizeCredential } from '@/lib/access-log'
+import { clientIp, clearFailures, isLimited, registerFailure } from '@/lib/rate-limit'
+import {
+  attachStaffSessionCookie,
+  clearStaffSessionCookie,
+  extractSessionTokenFromRequest,
+  isStaffSessionValid,
+  issueStaffSessionToken,
+  STAFF_SESSION_COOKIE,
+} from '@/lib/staff-session'
 
 function misconfigured() {
   return NextResponse.json({ ok: false }, { status: 503 })
 }
 
-function clientIp(req: Request): string | null {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0]?.trim() || null
-  return req.headers.get('x-real-ip')
-}
-
-function clientUserAgent(req: Request): string | null {
-  return req.headers.get('user-agent')
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   if (!process.env.STAFF_SESSION_SECRET?.trim()) {
     return misconfigured()
   }
-  const token = (await cookies()).get(STAFF_SESSION_COOKIE)?.value
+  const cookieToken = (await cookies()).get(STAFF_SESSION_COOKIE)?.value
+  const token = extractSessionTokenFromRequest(request, cookieToken)
   if (!(await isStaffSessionValid(token))) {
     return NextResponse.json({ ok: false }, { status: 401 })
   }
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, token })
+}
+
+/** Выход: гасим куку. Токен из sessionStorage чистит клиент. */
+export async function DELETE() {
+  return clearStaffSessionCookie(NextResponse.json({ ok: true }))
 }
 
 export async function POST(req: Request) {
   if (!process.env.STAFF_SESSION_SECRET?.trim()) {
     return misconfigured()
+  }
+
+  const ip = clientIp(req)
+  const pre = isLimited(ip)
+  if (pre.limited) {
+    return NextResponse.json(
+      { ok: false, error: 'rate_limited' },
+      { status: 429, headers: { 'Retry-After': String(pre.retryAfterSec) } },
+    )
   }
 
   let body: Record<string, unknown>
@@ -42,24 +55,35 @@ export async function POST(req: Request) {
   }
 
   const credential = typeof body.password === 'string' ? body.password : ''
-  const email = normalizeCredential(credential)
-  const success = verifyStaffCredential(credential)
 
+  // Журнал попыток входа — его показывает админка /admin.
   try {
     await appendAccessLog({
-      email,
-      success,
-      ip: clientIp(req),
-      userAgent: clientUserAgent(req),
+      email: normalizeCredential(credential),
+      success: verifyStaffCredential(credential),
+      ip: ip === 'unknown' ? null : ip,
+      userAgent: req.headers.get('user-agent'),
     })
   } catch {
     // Не блокируем вход, если лог не записался.
   }
 
-  if (!success) {
+  if (!verifyStaffCredential(credential)) {
+    const { limited, retryAfterSec } = registerFailure(ip)
     await rejectDelay()
+    if (limited) {
+      return NextResponse.json(
+        { ok: false, error: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSec) } },
+      )
+    }
     return NextResponse.json({ ok: false }, { status: 401 })
   }
 
-  return await attachStaffSessionCookie(NextResponse.json({ ok: true }))
+  const token = await issueStaffSessionToken()
+  if (!token) return misconfigured()
+
+  clearFailures(ip)
+  const res = NextResponse.json({ ok: true, token })
+  return attachStaffSessionCookie(res, token)
 }

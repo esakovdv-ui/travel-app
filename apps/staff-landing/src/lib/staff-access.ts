@@ -1,13 +1,17 @@
-import { timingSafeEqual } from 'crypto'
-
-const DEFAULT_DOMAIN = 'culture.mos.ru'
 const LOCAL_PART_RE = /^[a-z0-9._%+-]+$/
 
-function domainsMatch(actual: string, expected: string): boolean {
-  const a = Buffer.from(actual)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+/**
+ * Базовый домен рабочей почты. Пускаем сам домен и любой его поддомен:
+ * mos.ru, culture.mos.ru, dept.mos.ru — да; notmos.ru, mos.ru.evil.com — нет.
+ *
+ * Раньше здесь было жёсткое равенство с culture.mos.ru, из-за чего
+ * сотрудники с других адресов на mos.ru войти не могли.
+ */
+const DEFAULT_DOMAIN = 'mos.ru'
+
+function isAllowedDomain(domain: string, base: string): boolean {
+  if (domain === base) return true
+  return domain.endsWith('.' + base)
 }
 
 /** Проверка корпоративного доступа — только на сервере. */
@@ -20,10 +24,15 @@ export function verifyStaffCredential(credential: string): boolean {
   const domain = value.slice(at + 1)
   if (!local || local.length > 64 || !LOCAL_PART_RE.test(local)) return false
 
-  const allowed = (process.env.STAFF_EMAIL_DOMAIN ?? DEFAULT_DOMAIN).trim().toLowerCase()
-  if (!allowed) return false
+  // Домен не должен содержать пробелов и лишних точек по краям.
+  if (!/^[a-z0-9.-]+$/.test(domain) || domain.startsWith('.') || domain.endsWith('.')) {
+    return false
+  }
 
-  return domainsMatch(domain, allowed)
+  const base = (process.env.STAFF_EMAIL_DOMAIN ?? DEFAULT_DOMAIN).trim().toLowerCase()
+  if (!base) return false
+
+  return isAllowedDomain(domain, base)
 }
 
 export async function rejectDelay(): Promise<void> {

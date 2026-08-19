@@ -22,6 +22,10 @@ export function tourvisorErrorResponse(e: unknown, context: string): NextRespons
     if (e.status === 404) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 })
     }
+    if (e.status === 504) {
+      // Все попытки упёрлись в таймаут — фронту это стоит показать иначе, чем 502.
+      return NextResponse.json({ error: 'timeout' }, { status: 504 })
+    }
     return NextResponse.json({ error: 'tv_error' }, { status: 502 })
   }
 

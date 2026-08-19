@@ -25,8 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ru">
       <body className={`${manrope.variable} ${unbounded.variable}`}>
-        <YandexMetrika />
         {children}
+        <YandexMetrika />
       </body>
     </html>
   )

@@ -54,8 +54,10 @@ export function getSearchResults(searchId: string, limit = 25) {
   })
 }
 
-// Продолжение поиска — расширяет выборку ~+50% (142 → 218 отелей на типовом запросе).
-// Вызывать один раз после первого progress=100, затем снова поллить до progress=100.
+// Продолжение поиска — дозагружает следующую порцию выдачи. Вызывается циклом:
+// один continue даёт лишь часть отелей и не все курорты (замер по Турции:
+// старт 15 → +1 continue 37 → +5 105 → +14 189 отелей, регионов 5 → 10).
+// После каждого вызова снова поллить статус до progress=100.
 export function continueSearch(searchId: string) {
   return tvFetch<{ requestCount: number }>(`/tours/search/${searchId}/continue`)
 }

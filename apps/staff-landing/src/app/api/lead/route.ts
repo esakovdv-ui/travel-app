@@ -15,26 +15,47 @@ function normalizePhone(input: string): string | null {
   return null
 }
 
+const BITRIX_TIMEOUT_MS = 10_000
+const BITRIX_RETRIES = 2
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 async function bitrixCall<T = unknown>(method: string, payload: Record<string, unknown>): Promise<T> {
   const domain = process.env.BITRIX_DOMAIN
   const token = process.env.WEBHOOK_TOKEN
   if (!domain || !token) throw new Error('misconfigured')
 
-  const base = process.env.BITRIX_REST_BASE_URL?.trim().replace(/\/+$/, '')
-  const url = base
-    ? `${base}/${token}/${method}.json`
-    : `https://${domain}/rest/${token}/${method}.json`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok || data?.error) {
-    console.error(`staff-lead: ${method} failed`, data)
-    throw new Error('bitrix_error')
+  const url = `https://${domain}/rest/${token}/${method}.json`
+  let lastReason = 'unknown'
+
+  for (let attempt = 0; attempt <= BITRIX_RETRIES; attempt++) {
+    if (attempt > 0) await sleep(400 * attempt) // 400 мс, затем 800 мс
+
+    let res: Response
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        // Без таймаута зависший Битрикс держал бы запрос сотрудника до победного.
+        signal: AbortSignal.timeout(BITRIX_TIMEOUT_MS),
+      })
+    } catch (e) {
+      lastReason = e instanceof Error ? `${e.name}: ${e.message}` : 'network_error'
+      continue
+    }
+
+    const data = await res.json().catch(() => ({} as Record<string, unknown>))
+
+    if (res.ok && !data?.error) return data.result as T
+
+    lastReason = JSON.stringify(data).slice(0, 300)
+    // 4xx от Битрикса (кривые поля, протухший вебхук) повтором не лечатся.
+    if (res.status < 500 && res.status !== 429) break
   }
-  return data.result as T
+
+  console.error(`staff-lead: ${method} failed after ${BITRIX_RETRIES + 1} attempts — ${lastReason}`)
+  throw new Error('bitrix_error')
 }
 
 async function findContactByPhone(phone: string): Promise<number | null> {
@@ -123,6 +144,11 @@ export async function POST(req: Request) {
     ? `C${categoryId}:${rawStageId}`
     : rawStageId
 
+  // Ответственный менеджер. Раньше был зашит «1» — при смене ответственного
+  // приходилось править код и пересобирать.
+  const parsedAssignee = parseInt(process.env.STAFF_DEAL_ASSIGNED_BY_ID ?? '', 10)
+  const assignedById = Number.isInteger(parsedAssignee) && parsedAssignee > 0 ? parsedAssignee : 1
+
   try {
     let contactId = await findContactByPhone(phone)
     if (!contactId) {
@@ -132,7 +158,7 @@ export async function POST(req: Request) {
           PHONE: [{ VALUE: phone, VALUE_TYPE: 'WORK' }],
           ...(email ? { EMAIL: [{ VALUE: email, VALUE_TYPE: 'WORK' }] } : {}),
           SOURCE_ID: 'UC_58Z62L',
-          ASSIGNED_BY_ID: 1,
+          ASSIGNED_BY_ID: assignedById,
           OPENED: 'Y',
         },
       })
@@ -160,6 +186,18 @@ export async function POST(req: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : 'unknown'
     const status = message === 'misconfigured' ? 500 : 502
+
+    // Заявка не должна пропадать, если CRM недоступна: пишем её целиком одной
+    // строкой в stderr. Оттуда её можно достать из логов pm2 и завести руками.
+    console.error('staff-lead: LOST_LEAD ' + JSON.stringify({
+      at: new Date().toISOString(),
+      reason: message,
+      name,
+      phone,
+      email: email || undefined,
+      comments,
+    }))
+
     return NextResponse.json({ ok: false, error: message }, { status })
   }
 }
