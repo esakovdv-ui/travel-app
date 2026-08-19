@@ -1,6 +1,7 @@
 /**
- * Подключается на странице-родителе (online.mosgortur.ru), где лендинг в iframe motrip.ru/raduga.
- * Прокидывает ?shift= и UTM в src iframe и отвечает на postMessage из raduga.html.
+ * Подключается на странице-родителе (online.mosgortur.ru).
+ * 1. Прокидывает ?shift= и UTM в src iframe motrip.ru/raduga.
+ * 2. Слушает staff-resize от staff.motrip.ru и растягивает iframe портала сотрудников.
  *
  * <script src="https://motrip.ru/raduga-parent-bridge.js" defer></script>
  */
@@ -50,15 +51,27 @@
     return true;
   }
 
+  var STAFF_ORIGIN = 'https://staff.motrip.ru';
+  var STAFF_IFRAME_SELECTOR = 'iframe.for-staff-page__frame, iframe[src*="staff.motrip.ru"]';
+
   function onMessage(event) {
-    if (!event.data || event.data.type !== 'raduga-request-shift') return;
-    if (event.origin !== MOTRIP_ORIGIN) return;
+    // Raduga: shift handshake
+    if (event.data && event.data.type === 'raduga-request-shift' && event.origin === MOTRIP_ORIGIN) {
+      patchIframe();
+      var shift = getShiftId();
+      if (shift && event.source) {
+        event.source.postMessage({ type: 'raduga-set-shift', shift: shift }, event.origin);
+      }
+      return;
+    }
 
-    patchIframe();
-
-    var shift = getShiftId();
-    if (shift && event.source) {
-      event.source.postMessage({ type: 'raduga-set-shift', shift: shift }, event.origin);
+    // Staff portal: resize iframe to fit content height
+    if (event.data && event.data.type === 'staff-resize' && event.origin === STAFF_ORIGIN) {
+      var staffFrame = document.querySelector(STAFF_IFRAME_SELECTOR);
+      if (staffFrame && event.data.height > 0) {
+        staffFrame.style.height = event.data.height + 'px';
+        staffFrame.style.minHeight = event.data.height + 'px';
+      }
     }
   }
 

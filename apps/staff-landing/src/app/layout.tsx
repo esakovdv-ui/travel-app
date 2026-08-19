@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Manrope, Unbounded } from 'next/font/google'
 import { YandexMetrika } from '@/components/YandexMetrika'
+import { FrameResizer } from '@/components/FrameResizer'
 import './globals.css'
 
 const manrope = Manrope({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${manrope.variable} ${unbounded.variable}`}>
         {children}
         <YandexMetrika />
+        <FrameResizer />
       </body>
     </html>
   )
