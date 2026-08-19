@@ -1045,6 +1045,9 @@
       if (!targetShift) { shiftGrid.innerHTML = ''; return; }
       shiftGrid.innerHTML = `
         <article class="card">
+          <div class="card-img">
+            <img src="${targetShift.image}" alt="${targetShift.title}" loading="lazy">
+          </div>
           <div class="card-body">
             <h3>${targetShift.title}</h3>
             <div class="card-meta">
