@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Manrope, Unbounded } from 'next/font/google'
 import { YandexMetrika } from '@/components/YandexMetrika'
 import './globals.css'
@@ -14,6 +14,12 @@ const unbounded = Unbounded({
   variable: '--font-unbounded',
   display: 'swap',
 })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 export const metadata: Metadata = {
   title: 'Туры для сотрудников | МОИ ПУТЕШЕСТВИЯ',

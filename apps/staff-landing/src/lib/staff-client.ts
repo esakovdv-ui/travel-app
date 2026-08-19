@@ -1,21 +1,26 @@
 const STORAGE_KEY = 'staff_session_token'
 
+// Safari blocks sessionStorage in cross-origin iframes (ITP). Keep the token
+// in memory so the Bearer header survives within a single page session.
+let memoryToken: string | null = null
+
 export function getStaffSessionToken(): string | null {
   if (typeof window === 'undefined') return null
   try {
-    return sessionStorage.getItem(STORAGE_KEY)
+    return sessionStorage.getItem(STORAGE_KEY) ?? memoryToken
   } catch {
-    return null
+    return memoryToken
   }
 }
 
 export function setStaffSessionToken(token: string | null) {
+  memoryToken = token
   if (typeof window === 'undefined') return
   try {
     if (token) sessionStorage.setItem(STORAGE_KEY, token)
     else sessionStorage.removeItem(STORAGE_KEY)
   } catch {
-    // sessionStorage may be unavailable in some embedded contexts
+    // sessionStorage unavailable — memoryToken is already set above
   }
 }
 
