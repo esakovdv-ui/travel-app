@@ -50,7 +50,7 @@
 
   <script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js" async defer></script>
   <title>Поиск туров</title>
-  <meta name="description" content="Летние смены в детский лагерь «Радуга» в Одинцовском районе. Специальные условия на отдельные смены до 1 июня 2026.">
+  <meta name="description" content="Последняя летняя смена в детском лагере «Радуга» — 29 августа — 5 сентября. 7 дней отдыха перед новым учебным годом. Трансфер включён.">
   <link rel="stylesheet" crossorigin href="https://online.mosgortur.ru/new/assets/index-CRg1FWTQ.css">
   <style>
     @font-face {
@@ -102,9 +102,6 @@
       color: var(--text);
       font-size: 16px;
       line-height: 1.45;
-    }
-    body.is-campaign-expired {
-      overflow: hidden !important;
     }
     a { color: inherit; text-decoration: none; }
     button, input, select { font: inherit; }
@@ -224,6 +221,25 @@
       color: #334155;
       font-size: clamp(18px, 2.2vw, 22px);
       line-height: 1.55;
+      font-weight: 700;
+    }
+    .hero-dates {
+      margin: 14px 0 0;
+      font-size: clamp(20px, 2.4vw, 28px);
+      font-weight: 900;
+      color: var(--orange-dark);
+      letter-spacing: -.02em;
+    }
+    .hero-price-row {
+      margin-top: 18px;
+    }
+    .hero-price-row .price {
+      font-size: clamp(36px, 4.2vw, 52px);
+    }
+    .hero-price-note {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
       font-weight: 700;
     }
     .hero-actions {
@@ -766,54 +782,6 @@
       display: none;
     }
 
-    .campaign-expired-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(0, 0, 0, .62);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity .2s ease, visibility .2s ease;
-    }
-    .campaign-expired-overlay.is-open {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-    .campaign-expired-modal {
-      width: min(100%, 640px);
-      border-radius: 24px;
-      background: #fff;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, .22);
-      padding: clamp(22px, 4vw, 34px);
-      text-align: center;
-    }
-    .campaign-expired-modal h2 {
-      margin: 0 0 14px;
-      font-size: clamp(28px, 4.3vw, 42px);
-      line-height: 1.08;
-      letter-spacing: -.03em;
-      font-weight: 900;
-    }
-    .campaign-expired-modal p {
-      margin: 0 auto 22px;
-      max-width: 560px;
-      color: #475569;
-      font-size: clamp(15px, 2.2vw, 19px);
-      line-height: 1.5;
-      font-weight: 700;
-    }
-    .campaign-expired-modal .btn {
-      min-height: 48px;
-      width: min(100%, 320px);
-      font-size: 16px;
-      margin: 0 auto;
-    }
 
     @media (max-width: 980px) {
       .hero-grid,
@@ -844,6 +812,8 @@
       .hero-main { min-height: 0; padding: 22px; }
       .hero-aside { min-height: 280px; }
       h1 { font-size: 34px; }
+      .hero-dates { font-size: 18px; }
+      .hero-price-row .price { font-size: 34px; }
       .hero-actions .btn { width: 100%; }
       .grid,
       .info-grid {
@@ -876,10 +846,6 @@
       .card h3 { font-size: 20px; }
       .price { font-size: 26px; }
       .card .btn.reserve-btn { min-height: 48px; }
-      .campaign-expired-overlay { padding: 16px; }
-      .campaign-expired-modal { border-radius: 20px; }
-      .campaign-expired-modal p { margin-bottom: 18px; }
-      .campaign-expired-modal .btn { width: 100%; }
     }
   </style>
 </head>
@@ -891,16 +857,18 @@
           <div class="hero-main">
             <div>
               <div class="chips">
-                <span class="chip orange">Специальные условия до 1 июня</span>
-                <span class="chip green">Места ограничены</span>
-                <span class="chip">7–17 лет</span>
+                <span class="chip orange">Специальная цена на последнюю смену сезона</span>
               </div>
-              <h1>Успейте забронировать<br>смену в “Радуге”</h1>
-              <p class="lead">До 1 июня доступны специальные условия на летние смены. С 1 июня предложение станет доступно всем клиентам.</p>
+              <h1>Последняя летняя смена в «Радуге»</h1>
+              <p class="hero-dates">29 августа — 5 сентября</p>
+              <p class="lead">7 дней отдыха перед новым учебным годом</p>
+              <div class="hero-price-row">
+                <span class="price">40 050 ₽</span>
+              </div>
+              <p class="hero-price-note">В стоимость уже входит трансфер туда и обратно.</p>
             </div>
             <div class="hero-actions">
-              <a class="btn" href="#shifts">Смотреть смены</a>
-              <a class="btn btn-secondary" href="#lead-form">Помочь с выбором</a>
+              <button type="button" class="btn reserve-btn" data-shift-id="balance-29-05">Забронировать</button>
             </div>
           </div>
 
@@ -912,7 +880,7 @@
         </div>
 
         <div class="timer-panel">
-          <h2>Специальные условия действуют еще</h2>
+          <h2>Специальная цена действует ещё</h2>
           <div class="timer" aria-live="polite">
             <div class="time-box"><span class="time-num" id="days">00</span><span class="time-label">дней</span></div>
             <div class="time-box"><span class="time-num" id="hours">00</span><span class="time-label">часов</span></div>
@@ -925,9 +893,6 @@
 
     <section id="shifts">
       <div class="container">
-        <div class="section-head">
-          <h2 class="section-title">Доступные смены</h2>
-        </div>
         <div class="grid" id="shift-grid"></div>
       </div>
     </section>
@@ -983,55 +948,6 @@
       </div>
     </section>
 
-    <section>
-      <div class="container">
-        <div class="urgency">
-          <div>
-            <h2>До 1 июня действуют специальные условия на отдельные смены</h2>
-            <p>С 1 июня предложение станет доступно всем клиентам, а количество свободных мест на популярных сменах может сократиться.</p>
-          </div>
-          <a class="btn" href="#lead-form">Оставить заявку</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="lead-form">
-      <div class="container lead-block">
-        <div class="hero-main">
-          <div>
-            <div class="chips">
-              <span class="chip orange">Финальный шаг</span>
-              <span class="chip">Без оплаты на сайте</span>
-            </div>
-            <h2 class="section-title">Успейте выбрать подходящую смену до 1 июня</h2>
-            <p class="lead">Оставьте заявку — менеджер поможет подобрать подходящую смену и ответит на вопросы по датам, документам и размещению.</p>
-          </div>
-        </div>
-        <form class="form-card" id="form">
-          <div class="field">
-            <label for="name">Имя</label>
-            <input id="name" name="name" type="text" placeholder="Как к вам обращаться" required>
-          </div>
-          <div class="field">
-            <label for="phone">Телефон</label>
-            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (___) ___-__-__" aria-describedby="phone-error">
-            <p class="field-error" id="phone-error" aria-live="polite"></p>
-          </div>
-          <div class="field">
-            <label for="shift">Выбранная смена</label>
-            <select id="shift" name="shift" required>
-              <option value="">Выберите смену</option>
-            </select>
-          </div>
-          <div class="field" hidden aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
-            <label for="website">Сайт</label>
-            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
-          </div>
-          <button class="btn" type="submit">Отправить заявку</button>
-          <p class="form-note" id="form-note" aria-live="polite"></p>
-        </form>
-      </div>
-    </section>
   </main>
 
   <div class="modal-overlay" id="reserve-modal" aria-hidden="true">
@@ -1066,102 +982,21 @@
     </div>
   </div>
 
-  <div class="campaign-expired-overlay" id="campaign-expired-overlay" aria-hidden="true">
-    <div class="campaign-expired-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-expired-title">
-      <h2 id="campaign-expired-title">Акция в лагере «Радуга» завершилась</h2>
-      <p>Но ко Дню защиты детей действует новая акция на летние смены в детском оздоровительном лагере «Власьево». Вы можете выбрать программу и забронировать отдых ребенка по специальной цене.</p>
-      <a class="btn" href="https://online.mosgortur.ru/new/vlasevo">Перейти к акции</a>
-    </div>
-  </div>
 
   <script>
     let shifts = [
       {
-        id: 'dream-30-07',
-        title: 'Время мечтать',
-        dates: '30 июня – 7 июля',
-        oldPrice: 45000,
-        price: 41400,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602229/602229.png?id=1778679934',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002706&date=30.06.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
-      },
-      {
-        id: 'records-09-16',
-        title: 'Время рекордов',
-        dates: '9–16 июля',
-        oldPrice: 45000,
-        price: 41400,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602895/602895.png?id=1778744107',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
-      },
-      {
-        id: 'records-09-26',
-        title: 'Время рекордов',
-        dates: '9–26 июля',
-        oldPrice: 86000,
-        price: 79120,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604673/604673.png?id=1779257970',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002707&date=09.07.26&duration=18&hotelScheme=1_17_3339_830_1_0_18&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_17&currency=RUB'
-      },
-      {
-        id: 'trend-17-06',
-        title: 'Время быть в тренде',
-        dates: '17 июля – 6 августа',
-        oldPrice: 99000,
-        price: 91080,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=17.07.26&duration=21&hotelScheme=1_20_3339_830_1_0_21&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_20&currency=RUB'
-      },
-      {
-        id: 'trend-18-26',
-        title: 'Время быть в тренде',
-        dates: '18–26 июля',
-        oldPrice: 50000,
-        price: 46000,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602965/602965.png?id=1778744170',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB'
-      },
-      {
-        id: 'trend-18-05',
-        title: 'Время быть в тренде',
-        dates: '18 июля – 5 августа',
-        oldPrice: 90000,
-        price: 82800,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/604699/604699.png?id=1779257977',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002708&date=18.07.26&duration=19&hotelScheme=1_18_3339_830_1_0_19&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_18&currency=RUB'
-      },
-      {
-        id: 'talents-28-05',
-        title: 'Время талантов',
-        dates: '28 июля – 5 августа',
-        oldPrice: 50000,
-        price: 46000,
-        image: 'https://static.mosgortur.ru/images/constructor/blockTemplateData/602424/602424.png?id=1778680027',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002705&date=28.07.26&duration=9&hotelScheme=1_8_3339_830_1_0_9&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_8&currency=RUB'
-      },
-      {
         id: 'balance-29-05',
         title: 'Время баланса',
-        dates: '29 августа – 5 сентября',
-        oldPrice: 40000,
-        price: 36800,
+        dates: '29 августа — 5 сентября',
+        price: 40050,
         image: '/raduga-hero.png',
         url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002709&date=29.08.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
-      },
-      {
-        id: 'together-24-31',
-        title: 'Время быть вместе',
-        dates: '24–31 октября',
-        oldPrice: 40500,
-        price: 37260,
-        image: '/raduga-hero.png',
-        url: 'https://online.mosgortur.ru/new/kids/basket?departureCities=-1&destination=1_460&tour=100002710&date=24.10.26&duration=8&hotelScheme=1_7_3339_830_1_0_8&adultCount=1&&hotelQuota=5&aviaQuota=5&busTransferQuota=5&trainTransferQuota=5&serviceDescriptions=1_0_0_3_3339_130308_41_460_667_830_1_1_7&currency=RUB'
       }
     ];
 
     const money = new Intl.NumberFormat('ru-RU');
     const shiftGrid = document.getElementById('shift-grid');
-    const shiftSelect = document.getElementById('shift');
 
     const iconCalendar = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z"/></svg>';
     const iconAge = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-6 1.79-6 4v2h12v-2c0-2.21-2.69-4-6-4Z"/></svg>';
@@ -1193,7 +1028,6 @@
     }
 
     function renderShifts() {
-      shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
       shiftGrid.innerHTML = shifts.map((shift, index) => {
         const cardBadge = cardBadgeHtml(index);
         return `
@@ -1208,10 +1042,8 @@
                 <span class="card-meta-item">${iconCalendar}${shift.dates}</span>
                 <span class="card-meta-item">${iconAge}7–17 лет</span>
               </div>
-              <p class="card-promo">Специальные условия до 1 июня</p>
               <div class="price-row">
                 <span class="price">${money.format(shift.price)} ₽</span>
-                <span class="old-price">${money.format(shift.oldPrice)} ₽</span>
               </div>
               <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>
             </div>
@@ -1253,11 +1085,6 @@
     const modalFormNote = document.getElementById('modal-form-note');
     const modalSubmit = document.getElementById('modal-submit');
     const modalClose = document.getElementById('modal-close');
-    const campaignExpiredOverlay = document.getElementById('campaign-expired-overlay');
-    const landingForm = document.getElementById('form');
-    const landingFormNote = document.getElementById('form-note');
-    const landingPhone = document.getElementById('phone');
-    const landingPhoneError = document.getElementById('phone-error');
     const modalPhoneError = document.getElementById('modal-phone-error');
 
     const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
@@ -1493,9 +1320,7 @@
       };
     }
 
-    const landingPhoneCtrl = createPhoneMaskController(landingPhone, landingPhoneError);
     const modalPhoneCtrl = createPhoneMaskController(modalPhone, modalPhoneError);
-    let isCampaignExpired = false;
 
     function formatShiftLabel(shift) {
       return `${shift.title} — ${shift.dates}`;
@@ -1718,7 +1543,6 @@
     }
 
     function openReserveModal(shift) {
-      if (isCampaignExpired) return;
       activeModalShift = shift;
       modalSuccess.classList.remove('is-visible');
       modalFormBody.classList.remove('is-hidden');
@@ -1737,7 +1561,7 @@
       const wasOpen = reserveModal.classList.contains('is-open');
       reserveModal.classList.remove('is-open');
       reserveModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = isCampaignExpired ? 'hidden' : '';
+      document.body.style.overflow = '';
       if (wasOpen) suppressShiftDeepLinkAutoOpen();
       clearShiftFromUrl();
       modalSuccess.classList.remove('is-visible');
@@ -1753,7 +1577,6 @@
     document.addEventListener('click', (event) => {
       const button = event.target.closest('.reserve-btn');
       if (!button) return;
-      if (isCampaignExpired) return;
       event.preventDefault();
       trackRadugaBookingClick();
       const picked = findShiftById(button.dataset.shiftId);
@@ -1800,7 +1623,7 @@
       }
     });
 
-    const target = new Date('2026-05-31T23:59:00+03:00').getTime();
+    const target = new Date('2026-08-26T23:59:59+03:00').getTime();
     const daysEl = document.getElementById('days');
     const hoursEl = document.getElementById('hours');
     const minutesEl = document.getElementById('minutes');
@@ -1817,7 +1640,6 @@
         hoursEl.textContent = '00';
         minutesEl.textContent = '00';
         secondsEl.textContent = '00';
-        activateCampaignExpiredState();
         return false;
       }
       daysEl.textContent = pad(Math.floor(diff / 86400000));
@@ -1827,55 +1649,11 @@
       return true;
     }
 
-    function activateCampaignExpiredState() {
-      if (isCampaignExpired) return;
-      isCampaignExpired = true;
-      if (reserveModal.classList.contains('is-open')) {
-        closeReserveModal(true);
-      }
-      campaignExpiredOverlay.classList.add('is-open');
-      campaignExpiredOverlay.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('is-campaign-expired');
-      document.body.style.overflow = 'hidden';
-    }
 
-    if (!tick()) {
-      activateCampaignExpiredState();
-    }
     const countdownTimer = setInterval(() => {
       if (!tick()) clearInterval(countdownTimer);
     }, 1000);
-
-    landingForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const submitButton = landingForm.querySelector('button[type="submit"]');
-      setFormNote(landingFormNote, '', false);
-      if (!landingPhoneCtrl.validate()) {
-        landingPhone.focus();
-        landingPhoneCtrl.showMask();
-        return;
-      }
-      submitButton.disabled = true;
-      try {
-        await submitRadugaLead({
-          name: landingForm.name.value.trim(),
-          phone: landingPhoneCtrl.getValue(),
-          shift: shiftSelect.value.trim(),
-          bookingPrice: getBookingPrice(findShiftByBookingLabel(shiftSelect.value)),
-          source: 'landing',
-          website: document.getElementById('website').value,
-        });
-        trackRadugaBookingSubmit();
-        setFormNote(landingFormNote, 'Спасибо! Мы получили заявку и скоро свяжемся с вами.', false);
-        landingForm.name.value = '';
-        landingPhoneCtrl.reset();
-        shiftSelect.value = '';
-      } catch (error) {
-        setFormNote(landingFormNote, error.message, true);
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
+);
 
     window.addEventListener('load', () => tryOpenShiftFromUrl());
   </script>
