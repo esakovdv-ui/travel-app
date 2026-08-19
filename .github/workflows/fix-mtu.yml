@@ -1,0 +1,97 @@
+name: Fix MTU blackhole (dispatch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mss:
+        description: 'Максимальный размер TCP-сегмента (0 — снять ограничение)'
+        required: false
+        default: '1300'
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply MSS clamp and MTU probing
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          MSS: ${{ inputs.mss || '1300' }}
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: MSS
+          script: |
+            MSS="${MSS:-1300}"
+            echo "=== ДО ==="
+            echo "tcp_mtu_probing = $(sysctl -n net.ipv4.tcp_mtu_probing)"
+            iptables -t mangle -S | grep -i tcpmss || echo "MSS clamp отсутствует"
+
+            echo ""
+            echo "=== Снимаю прежние правила MSS (если были) ==="
+            while iptables -t mangle -S PREROUTING | grep -q -i tcpmss; do
+              rule=$(iptables -t mangle -S PREROUTING | grep -i tcpmss | head -1 | sed 's/^-A /-D /')
+              # shellcheck disable=SC2086
+              iptables -t mangle $rule && echo "удалено: $rule"
+            done
+
+            if [ "$MSS" = "0" ]; then
+              echo "Ограничение снято по запросу, автоподбор оставляю включённым."
+            else
+              echo ""
+              echo "=== Ставлю ограничение MSS=$MSS на входящие SYN ==="
+              # Правило переписывает размер сегмента, который клиент разрешает серверу,
+              # поэтому сервер перестаёт отправлять пакеты, не пролезающие в канал оператора.
+              iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss "$MSS"
+              echo "готово"
+            fi
+
+            echo ""
+            echo "=== Включаю автоподбор размера пакетов ==="
+            sysctl -w net.ipv4.tcp_mtu_probing=1
+            sysctl -w net.ipv4.tcp_base_mss=1024
+            cat > /etc/sysctl.d/99-mtu-probing.conf <<'EOF'
+            # Мобильные операторы срезают крупные пакеты и глушат ICMP, из-за чего
+            # TLS-рукопожатие зависает. Автоподбор даёт ядру уменьшить сегмент само.
+            net.ipv4.tcp_mtu_probing = 1
+            net.ipv4.tcp_base_mss = 1024
+            EOF
+
+            echo ""
+            echo "=== Делаю правило постоянным ==="
+            mkdir -p /etc/iptables
+            iptables-save > /etc/iptables/rules.v4
+            if systemctl list-unit-files 2>/dev/null | grep -q netfilter-persistent; then
+              echo "netfilter-persistent есть, правила сохранены в /etc/iptables/rules.v4"
+            else
+              cat > /etc/systemd/system/mss-clamp.service <<EOF
+            [Unit]
+            Description=Ограничение размера TCP-сегмента для мобильных сетей
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            Type=oneshot
+            RemainAfterExit=yes
+            ExecStart=/sbin/iptables -t mangle -A PREROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss $MSS
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+              systemctl daemon-reload
+              systemctl enable mss-clamp.service >/dev/null 2>&1 && echo "systemd-юнит mss-clamp включён"
+            fi
+
+            echo ""
+            echo "=== ПОСЛЕ ==="
+            echo "tcp_mtu_probing = $(sysctl -n net.ipv4.tcp_mtu_probing)"
+            echo "tcp_base_mss = $(sysctl -n net.ipv4.tcp_base_mss)"
+            iptables -t mangle -S PREROUTING | grep -i tcpmss || echo "ВНИМАНИЕ: правило не применилось"
+
+            echo ""
+            echo "=== Проверка, что сайты живы ==="
+            for u in https://motrip.ru/ https://staff.motrip.ru/; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$u")
+              echo "$u -> $code"
+            done
+            pm2 list | head -12
