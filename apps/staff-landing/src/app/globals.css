@@ -14,16 +14,26 @@
   --c-blue-subtle: rgba(12, 36, 97, 0.07);
   --c-blue-mid: rgba(12, 36, 97, 0.14);
 
-  --c-red: #e8272a;
-  --c-red-hover: #c41f22;
-  --c-red-subtle: rgba(232, 39, 42, 0.08);
+  /* Был #e8272a. Белый текст на нём даёт 4.42:1, и он же на белом — столько же:
+     ниже нормы WCAG AA (4.5:1) для 14px. А это цвет главной кнопки «Отправить
+     заявку» и сообщений об ошибках. Затемнили до 5.36:1 в обе стороны — разница
+     на глаз почти незаметна. Если это расходится с брендбуком, вернуть можно
+     одной строкой, но тогда кнопки перестанут проходить AA. */
+  --c-red: #d21b1e;
+  --c-red-hover: #b81719;
+  --c-red-subtle: rgba(210, 27, 30, 0.08);
+  /* Исходный фирменный тон — только для декора, где контраст не нужен. */
+  --c-red-brand: #e8272a;
 
   --c-yellow: #f4a102;
   --c-yellow-subtle: rgba(244, 161, 2, 0.12);
 
   --c-text: #14142b;
   --c-text-muted: #5c5c7a;
-  --c-text-light: #9090b0;
+  /* Было #9090b0 — 3.09:1 на белом, ниже нормы WCAG AA (4.5:1) для обычного
+     текста, а этим цветом набраны плейсхолдеры и счётчики в фильтрах (11px).
+     #6a6a8c проходит на всех трёх фонах: белый 5.18, бежевый 4.60, alt 4.85. */
+  --c-text-light: #6a6a8c;
 
   --c-border: rgba(12, 36, 97, 0.12);
   --c-border-strong: rgba(12, 36, 97, 0.24);
@@ -87,6 +97,29 @@ img, video {
 
 button {
   font: inherit;
+}
+
+/* === FOCUS ===
+   Единое кольцо фокуса для всего портала. Раньше в проекте не было ни одного
+   правила :focus-visible, зато outline:none встречался восемь раз — с клавиатуры
+   было не видно, где ты находишься, а половину сценария вообще нельзя пройти. */
+:focus-visible {
+  outline: 2px solid var(--c-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* На красном фоне синее кольцо не читается — берём белое. */
+.btn-red:focus-visible,
+[data-focus-ring='light']:focus-visible {
+  outline-color: #fff;
+  outline-offset: -4px;
+}
+
+/* Мышью кольцо не показываем — :focus-visible этим и занимается,
+   но добиваем для Safari, который вешает outline на :focus у кнопок. */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* === LAYOUT UTILITIES === */
@@ -304,6 +337,24 @@ button {
 .accent-bar-blue { background: var(--c-blue); }
 .accent-bar-red { background: var(--c-red); }
 .accent-bar-yellow { background: var(--c-yellow); }
+
+/* === TOUCH / MOBILE ===
+   Safari на iPhone увеличивает страницу при фокусе на любом поле мельче 16px,
+   и вернуть масштаб потом можно только вручную. Полям в проекте было 14–14.7px. */
+@media (max-width: 900px), (pointer: coarse) {
+  .input,
+  .textarea,
+  .select,
+  input[type='text'],
+  input[type='tel'],
+  input[type='email'],
+  input[type='date'],
+  input[type='number'],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
 
 /* === RESPONSIVE === */
 @media (max-width: 900px) {

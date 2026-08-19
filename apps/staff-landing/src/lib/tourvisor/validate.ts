@@ -51,6 +51,16 @@ export function validateSearchParams(raw: RawSearchParams): SearchValidationResu
   if (!raw.dateTo || !(dateToObj = parseDate(raw.dateTo))) {
     errors.push({ field: 'dateTo', message: 'dateTo обязателен, формат YYYY-MM-DD' })
   }
+  // Tourvisor отвечает 400 «invalid dateFrom parameter» на любую дату раньше
+  // сегодняшней. Ловим здесь, чтобы не тратить запрос и вернуть внятную
+  // причину вместо невнятного 502 из tourvisorErrorResponse.
+  if (dateFromObj) {
+    const today = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`)
+    if (dateFromObj < today) {
+      errors.push({ field: 'dateFrom', message: 'dateFrom не может быть в прошлом' })
+    }
+  }
+
   if (dateFromObj && dateToObj) {
     if (dateToObj < dateFromObj) {
       errors.push({ field: 'dateTo', message: 'dateTo не может быть раньше dateFrom' })

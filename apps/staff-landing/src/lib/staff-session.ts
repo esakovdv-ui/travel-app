@@ -86,6 +86,28 @@ export function extractSessionTokenFromRequest(
   return cookieToken ?? undefined
 }
 
+/**
+ * Атрибуты куки сессии. Держим в одном месте: браузер считает куки с разным
+ * набором атрибутов разными, поэтому гасить нужно ровно тем же набором,
+ * которым ставили. Один раз уже наступили: выход ставил Max-Age=0 без
+ * Partitioned и не удалял куку, поставленную с Partitioned.
+ */
+function sessionCookieOptions() {
+  const secure = process.env.COOKIE_SECURE === 'true'
+  return {
+    httpOnly: true,
+    secure,
+    // В iframe на стороннем домене cookie с sameSite=lax не отправляется.
+    sameSite: (secure ? 'none' : 'lax') as 'none' | 'lax',
+    // CHIPS: кука кладётся в раздел, привязанный к сайту-родителю. Без этого
+    // Chrome с отключёнными сторонними куками её не сохранит вовсе.
+    // Safari и Firefox могут порезать её всё равно — там сессию держит
+    // Bearer-токен из sessionStorage (см. staff-client / useStaffGuard).
+    ...(secure ? { partitioned: true } : {}),
+    path: '/',
+  }
+}
+
 export async function attachStaffSessionCookie(
   res: NextResponse,
   token?: string,
@@ -93,14 +115,18 @@ export async function attachStaffSessionCookie(
   const sessionToken = token ?? await issueStaffSessionToken()
   if (!sessionToken) return res
 
-  const secure = process.env.COOKIE_SECURE === 'true'
   res.cookies.set(STAFF_SESSION_COOKIE, sessionToken, {
-    httpOnly: true,
-    secure,
-    // В iframe на стороннем домене cookie с sameSite=lax не отправляется.
-    sameSite: secure ? 'none' : 'lax',
-    path: '/',
+    ...sessionCookieOptions(),
     maxAge: SESSION_TTL_SEC,
+  })
+  return res
+}
+
+/** Выход: гасим куку тем же набором атрибутов, каким ставили. */
+export function clearStaffSessionCookie(res: NextResponse): NextResponse {
+  res.cookies.set(STAFF_SESSION_COOKIE, '', {
+    ...sessionCookieOptions(),
+    maxAge: 0,
   })
   return res
 }

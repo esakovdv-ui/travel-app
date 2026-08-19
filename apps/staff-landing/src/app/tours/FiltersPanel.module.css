@@ -2,21 +2,16 @@
 
 /* ─── Общие переменные ───────────────────────────────────────────────────── */
 .resetBtn {
-  display: flex;
-  align-items: center;
+  composes: text from '../shared/buttons.module.css';
   gap: 6px;
   width: 100%;
   padding: 7px 0;
-  background: none;
-  border: none;
-  color: var(--c-text-muted);
   font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
+  justify-content: flex-start;
   text-align: left;
   border-bottom: 1px solid var(--c-border);
+  border-radius: 0;
   margin-bottom: 8px;
-  transition: color var(--transition);
 }
 .resetBtn:hover { color: var(--c-red); }
 
@@ -64,16 +59,10 @@
 }
 
 .chip {
+  composes: outline from '../shared/buttons.module.css';
   padding: 4px 11px;
-  border-radius: var(--radius-pill);
-  border: 1.5px solid var(--c-border);
-  background: transparent;
   color: var(--c-text-muted);
   font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-  white-space: nowrap;
 }
 .chip:hover { border-color: var(--c-blue); color: var(--c-blue); background: var(--c-blue-subtle); }
 .chipActive {
@@ -150,16 +139,11 @@
 }
 
 .showMoreBtn {
-  display: flex;
-  align-items: center;
+  composes: text from '../shared/buttons.module.css';
   gap: 4px;
   margin-top: 5px;
-  background: none;
-  border: none;
   color: var(--c-blue);
   font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
   padding: 0;
 }
 .showMoreBtn:hover { text-decoration: underline; }
@@ -194,7 +178,7 @@
 
 /* ─── Mobile bottom sheet ────────────────────────────────────────────────── */
 .sheetBackdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(10, 15, 40, 0.5);
   z-index: 100;
@@ -202,14 +186,16 @@
 }
 
 .sheet {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 101;
   background: var(--c-surface);
   border-radius: 20px 20px 0 0;
-  max-height: 88vh;
+  /* vh внутри iframe считается от высоты фрейма (2400px), а не от экрана —
+     шторка вырастала до 2100px и уезжала за верх. Считаем от оболочки. */
+  max-height: calc(var(--app-height, 100dvh) * 0.88);
   display: flex;
   flex-direction: column;
   box-shadow: 0 -8px 40px rgba(10, 15, 40, 0.18);
@@ -240,17 +226,12 @@
 }
 
 .sheetCloseBtn {
+  composes: icon from '../shared/buttons.module.css';
   width: 30px;
   height: 30px;
-  border-radius: 50%;
   background: rgba(20, 20, 43, 0.07);
-  border: none;
   font-size: 12px;
   color: var(--c-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .sheetCloseBtn:hover { background: rgba(20, 20, 43, 0.13); }
 
@@ -267,15 +248,50 @@
 }
 
 .sheetApplyBtn {
+  composes: base from '../shared/buttons.module.css';
   width: 100%;
   padding: 13px;
-  border-radius: var(--radius-pill);
   background: var(--c-blue);
   color: #fff;
-  border: none;
   font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background var(--transition);
 }
 .sheetApplyBtn:hover { background: var(--c-blue-hover); }
+
+/* ─── Цели нажатия на сенсорных экранах (норма 44×44) ──────────────────────
+   Чипы фильтров были ≈26px по высоте (padding 4px + шрифт 12px). */
+@media (max-width: 900px), (pointer: coarse) {
+  .chip {
+    min-height: 44px;
+    padding: 4px 16px;
+  }
+
+  .sheetCloseBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .showMoreBtn,
+  .resetBtn {
+    min-height: 44px;
+  }
+}
+
+/* Сортировка в шторке фильтров (мобайл). Во всю ширину — попасть пальцем
+   проще, чем в узкий селект, каким она была в подхедере. */
+.sheetSortSelect {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 34px 8px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235c5c7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+}
+.sheetSortSelect:focus { border-color: var(--c-blue); }

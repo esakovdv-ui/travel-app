@@ -44,14 +44,15 @@ function loadYmaps(apiKey: string): Promise<any> {
   })
 }
 
-function createPinEl(
-  price: number,
-  selected: boolean,
-  onClick: () => void,
-): HTMLElement {
+function applyPinState(el: HTMLElement, selected: boolean): void {
+  el.style.background = selected ? '#e8272a' : '#0c2461'
+  el.style.transform  = selected ? 'scale(1.18)' : 'scale(1)'
+  el.style.zIndex     = selected ? '2' : '1'
+}
+
+function createPinEl(price: number, onClick: () => void): HTMLElement {
   const el = document.createElement('div')
   el.style.cssText = [
-    `background:${selected ? '#e8272a' : '#0c2461'}`,
     'color:#fff',
     'padding:4px 10px',
     'border-radius:999px',
@@ -62,13 +63,13 @@ function createPinEl(
     'border:2px solid #fff',
     'cursor:pointer',
     'user-select:none',
-    `transform:${selected ? 'scale(1.18)' : 'scale(1)'}`,
     'transition:transform .15s,background .15s',
     'font-family:-apple-system,sans-serif',
     'line-height:1.2',
   ].join(';')
   el.textContent = formatPriceShort(price)
   el.addEventListener('click', onClick)
+  applyPinState(el, false)
   return el
 }
 
@@ -76,7 +77,13 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<any>(null)
   const markersRef   = useRef<Map<number, any>>(new Map())
+  const pinElsRef    = useRef<Map<number, HTMLElement>>(new Map())
   const [ymaps3, setYmaps3] = useState<any>(null)
+
+  // Родитель передаёт новую стрелку на каждый рендер — держим её в ref,
+  // иначе маркеры пересоздавались бы при любом обновлении страницы.
+  const onSelectRef = useRef(onSelect)
+  useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
 
   const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ?? ''
 
@@ -106,7 +113,7 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
     }
   }, [apiKey])
 
-  // ── Маркеры: обновляем при изменении отелей / выбранного ─────────────────
+  // ── Маркеры: пересобираем только при смене набора отелей ─────────────────
   useEffect(() => {
     if (!ymaps3 || !mapRef.current) return
     const { YMapMarker } = ymaps3
@@ -116,33 +123,60 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
       h => h.latitude && h.longitude && !(h.latitude === 0 && h.longitude === 0),
     )
 
-    // Удаляем все текущие маркеры
     markersRef.current.forEach(m => { try { map.removeChild(m) } catch {} })
     markersRef.current.clear()
+    pinElsRef.current.clear()
 
-    // Добавляем новые
     for (const hotel of valid) {
-      const el     = createPinEl(hotel.price, hotel.id === selectedId, () => onSelect(hotel))
+      const el     = createPinEl(hotel.price, () => onSelectRef.current(hotel))
       const marker = new YMapMarker({ coordinates: [hotel.longitude, hotel.latitude] }, el)
       map.addChild(marker)
       markersRef.current.set(hotel.id, marker)
+      pinElsRef.current.set(hotel.id, el)
     }
+  }, [ymaps3, hotels])
 
-    // fitBounds
-    if (valid.length > 0) {
-      const lons = valid.map(h => h.longitude)
-      const lats = valid.map(h => h.latitude)
-      map.update({
-        location: {
-          bounds: [
-            [Math.min(...lons), Math.min(...lats)],
-            [Math.max(...lons), Math.max(...lats)],
-          ],
-          duration: 400,
-        },
-      })
-    }
-  }, [ymaps3, hotels, selectedId, onSelect])
+  // ── Подсветка выбранного пина — без пересоздания DOM ─────────────────────
+  useEffect(() => {
+    pinElsRef.current.forEach((el, id) => applyPinState(el, id === selectedId))
+  }, [selectedId, hotels])
+
+  // ── fitBounds: только когда меняется сам набор отелей ────────────────────
+  // Раньше это жило в эффекте маркеров и переигрывалось на каждый ререндер
+  // (selectedId, новая ссылка onSelect) — карта дёргалась к границам.
+  const boundsKey = hotels
+    .filter(h => h.latitude && h.longitude && !(h.latitude === 0 && h.longitude === 0))
+    .map(h => h.id)
+    .join(',')
+
+  useEffect(() => {
+    if (!ymaps3 || !mapRef.current || !boundsKey) return
+    const valid = hotels.filter(
+      h => h.latitude && h.longitude && !(h.latitude === 0 && h.longitude === 0),
+    )
+    if (valid.length === 0) return
+
+    const lons = valid.map(h => h.longitude)
+    const lats = valid.map(h => h.latitude)
+    // Небольшой отступ, чтобы пины не липли к краям и не уезжали под панели.
+    const padLon = Math.max((Math.max(...lons) - Math.min(...lons)) * 0.12, 0.15)
+    const padLat = Math.max((Math.max(...lats) - Math.min(...lats)) * 0.12, 0.15)
+
+    // ВАЖНО: duration должен лежать в animation, а не рядом с bounds внутри location.
+    // При {location:{bounds, duration}} Яндекс v3 молча игнорирует всё обновление —
+    // из-за этого карта оставалась на стартовых [37,35] zoom 4 (пол-Ближнего Востока
+    // в кадре) вместо того, чтобы подстроиться под найденные отели.
+    mapRef.current.update({
+      location: {
+        bounds: [
+          [Math.min(...lons) - padLon, Math.min(...lats) - padLat],
+          [Math.max(...lons) + padLon, Math.max(...lats) + padLat],
+        ],
+      },
+      animation: { duration: 400 },
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ymaps3, boundsKey])
 
   return <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 }

@@ -1,0 +1,62 @@
+/* ─── Общая основа кнопок ───────────────────────────────────────────────────
+   До этого в проекте было 26 самописных классов-кнопок, и каждый заново
+   объявлял одни и те же border:0 / font / cursor / радиус / transition,
+   местами с расхождениями: три размера «красной пилюли» дублировали по
+   восемь одинаковых свойств, а крестик модалки использовал четвёртый
+   оттенок красного (#E8382E), которого нет среди токенов.
+
+   Локальные классы теперь подключают основу через composes и оставляют себе
+   только то, что действительно отличается: размер, отступы, позиционирование. */
+
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.base:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Главное действие: «Смотреть», «Выбрать», «Оставить заявку», «Поиск». */
+.action {
+  composes: base;
+  background: var(--c-red);
+  color: #fff;
+}
+.action:hover:not(:disabled) { background: var(--c-red-hover); }
+
+/* Второстепенное действие с обводкой. */
+.outline {
+  composes: base;
+  background: transparent;
+  border: 1.5px solid var(--c-border);
+  color: var(--c-text);
+  font-weight: 600;
+}
+.outline:hover:not(:disabled) { border-color: var(--c-blue); color: var(--c-blue); }
+
+/* Текстовая кнопка — «Показать ещё», «Сбросить», «Назад к турам». */
+.text {
+  composes: base;
+  background: transparent;
+  color: var(--c-text-muted);
+  font-weight: 600;
+  padding: 4px 8px;
+}
+.text:hover:not(:disabled) { color: var(--c-blue); }
+
+/* Круглая иконка — крестики, стрелки галереи, счётчики. */
+.icon {
+  composes: base;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

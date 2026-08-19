@@ -13,8 +13,12 @@
   flex-shrink: 0;
 }
 
+/* Текст «Мои путешествия» убран: во фрейме на mosgortur.ru прямо над нами
+   стоит шапка родителя со своим брендом, и второе название подряд читалось
+   как случайность. Иконки достаточно, а освободившееся место забирает
+   строка поиска. */
 .brandText {
-  display: flex;
+  display: none;
   flex-direction: column;
   font-family: var(--font-unbounded), sans-serif;
   font-size: 0.68rem;
@@ -33,6 +37,7 @@
 
 .authPage {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,40 +89,18 @@
   gap: 14px;
 }
 
-.passwordField {
-  position: relative;
+.authField {
+  display: grid;
+  gap: 6px;
+  text-align: left;
 }
 
-.passwordInput {
-  padding-right: 48px;
-}
-
-.passwordToggle {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
+.authLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--c-text-muted);
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-}
-
-.passwordToggle:hover {
-  background: rgba(20, 20, 43, 0.06);
-  color: var(--c-text);
-}
-
-.passwordToggle:focus-visible {
-  outline: 2px solid var(--c-blue);
-  outline-offset: 2px;
 }
 
 .authError {
@@ -144,7 +127,7 @@
 }
 
 .dotBlue  { background: var(--c-blue); }
-.dotRed   { background: var(--c-red); }
+.dotRed   { background: var(--c-red-brand); }
 .dotYellow{ background: var(--c-yellow); }
 
 /* ─── Site Header ─────────────────────────────────────────────────────────── */
@@ -166,7 +149,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  min-height: 72px;
+  min-height: 60px;
 }
 
 .staffTab {
@@ -330,9 +313,18 @@
   padding: 0;
 }
 
+/* Обёртка вокруг общего HeaderSearchBar на лендинге: не участвует в раскладке,
+   видимостью по-прежнему управляет сам .searchBarPill в медиазапросах. */
+.searchBarDesktop {
+  display: contents;
+}
+
 .searchBarPill {
   display: flex;
   align-items: center;
+  /* Без min-width: 0 пилюля упиралась в min-content своих сегментов и её
+     содержимое вылезало за скруглённую рамку на узком десктопе. */
+  min-width: 0;
   padding: 5px;
   border: 1px solid rgba(20, 20, 43, 0.08);
   border-radius: 999px;
@@ -340,35 +332,47 @@
   box-shadow: 0 6px 20px rgba(20, 20, 43, 0.07);
 }
 
+/* Сегмент — контейнер и точка привязки поповера. Сам он больше не кликается:
+   раскрытием занимается вложенная кнопка .searchSegTrigger, иначе панель
+   с кнопками оказывалась бы вложенной в кликабельный элемент и была
+   недоступна с клавиатуры. */
 .searchSeg {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
   min-width: 0;
-  padding: 10px 16px;
   flex: 1;
-  cursor: pointer;
   border-radius: 999px;
   transition: background var(--transition);
 }
 .searchSeg:hover { background: rgba(20, 20, 43, 0.04); }
 
-/* Last segment: row layout to fit button inline */
-.searchSegLast {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding-right: 5px;
-}
-
-/* Content wrapper inside last segment */
-.searchSegText {
+.searchSegTrigger {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  min-width: 0;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+/* Last segment: row layout to fit button inline */
+.searchSegLast {
+  gap: 10px;
+  padding-right: 5px;
+  /* Кнопка «Поиск» живёт внутри этого сегмента, а не рядом с ним. Без нижней
+     границы сегмент ужимался до 149px, кнопка (110px) в него не влезала и
+     наезжала на подпись «Кто едет» — ровно между 940px (там кнопка становится
+     круглой) и полной шириной. Сжимаются пусть «Куда» и «Когда»: у них
+     многоточие, а у кнопки — фиксированная ширина. */
+  min-width: 212px;
 }
 
 /* Icon + label in one row */
@@ -416,23 +420,15 @@
 }
 
 .searchSubmit {
-  min-width: 48px;
+  composes: action from './shared/buttons.module.css';
+  /* Ширины хватает и на «Поиск», и на «Ищем…» — иначе смена подписи
+     раздвигала кнопку и пилюля дёргалась при каждом поиске. */
+  min-width: 110px;
   min-height: 48px;
   padding: 0 20px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--c-red);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 7px;
-  cursor: pointer;
-  transition: background var(--transition), transform var(--transition), opacity var(--transition);
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-weight: 700;
   font-size: 0.84rem;
+  flex-shrink: 0;
 }
 
 .searchSubmit:hover:not(:disabled) {
@@ -535,6 +531,144 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* ─── Сегмент «Когда»: даты + гибкость + ночи в одном поповере ───────────── */
+
+/* Подпись длиннее прочих сегментов («26 авг – 2 сен · 7 ночей · ±2 дня»). */
+.searchSegWhen { flex: 1.6; }
+
+.searchPopoverWide {
+  min-width: 620px;
+  max-width: min(680px, calc(100vw - 32px));
+  gap: 14px;
+}
+
+/* Чипы «Заезд → Выезд» */
+.dateChips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dateChip {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: var(--c-text-light);
+  background: var(--c-surface-alt);
+  text-align: center;
+}
+
+.dateChipFilled {
+  color: var(--c-text);
+  font-weight: 700;
+  border-color: var(--c-blue);
+  background: var(--c-blue-subtle);
+}
+
+.dateChipArrow {
+  color: var(--c-text-light);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.dateChipsReset {
+  composes: text from './shared/buttons.module.css';
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dateChipsReset:hover { color: var(--c-blue); }
+
+.nightsHint {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  margin-top: -4px;
+}
+
+/* Календарь: два месяца рядом */
+.calMonths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.calMonth { min-width: 0; }
+
+.calMonthName {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--c-text);
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.calWd {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+
+.calDay {
+  aspect-ratio: 1;
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--c-text);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.calDay:hover:not(:disabled) { background: var(--c-blue-subtle); }
+
+.calDayPast {
+  color: var(--c-text-light);
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.calDayRange { background: var(--c-blue-subtle); border-radius: 0; }
+
+.calDayStart,
+.calDayEnd {
+  background: var(--c-blue);
+  color: #fff;
+  font-weight: 700;
+}
+.calDayStart { border-radius: 8px 0 0 8px; }
+.calDayEnd   { border-radius: 0 8px 8px 0; }
+.calDayStart.calDayEnd { border-radius: 8px; }
+
+.calMoreBtn {
+  composes: text from './shared/buttons.module.css';
+  align-self: center;
+  color: var(--c-blue);
+  font-size: 0.82rem;
+}
+.calMoreBtn:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+  .searchPopoverWide { min-width: 0; }
+  .calMonths { grid-template-columns: minmax(0, 1fr); }
 }
 
 .popoverSectionLabel {
@@ -647,16 +781,12 @@
 }
 
 .flexBtn {
+  composes: outline from './shared/buttons.module.css';
   flex: 1;
   padding: 8px 0;
-  border: 1px solid var(--c-border);
   border-radius: 10px;
-  background: transparent;
-  font: inherit;
-  font-size: 0.82rem;
-  cursor: pointer;
   color: var(--c-text-muted);
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  font-size: 0.82rem;
 }
 .flexBtn:hover { border-color: var(--c-blue); color: var(--c-blue); }
 .flexBtnActive {
@@ -856,7 +986,7 @@
   display: flex;
   gap: 16px;
   overflow-x: auto;
-  align-items: start;
+  align-items: flex-start;
   padding-bottom: 6px;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
@@ -1202,6 +1332,21 @@
   .thematicRowHeader { flex-direction: column; align-items: flex-start; }
 }
 
+/* Узкий десктоп (769–940px): шапка с логотипом, пилюлей, «Выйти» и бейджем
+   не помещается в строку — подпись у кнопки поиска уступает место первой.
+   Ниже 768px действует свой блок, он идёт следом и перебивает эти правила. */
+@media (max-width: 940px) {
+  .searchSubmit {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .searchSubmit span { display: none; }
+  /* Кнопка стала круглой 44px — сегменту столько уже не нужно. */
+  .searchSegLast { min-width: 146px; }
+}
+
 @media (max-width: 768px) {
   .stepsGrid {
     grid-template-columns: 1fr;
@@ -1218,15 +1363,19 @@
   .modal { padding: 28px 20px; }
 
   /* Collapsed summary pill — opens MobileSearchSheet on tap */
+  /* Теперь это <button> — сбрасываем оформление кнопки. */
   .searchCollapsed {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
     padding: 10px 10px 10px 16px;
     background: #fff;
     border-radius: 999px;
     border: 1px solid rgba(20, 20, 43, 0.08);
     box-shadow: 0 4px 14px rgba(20, 20, 43, 0.07);
+    font: inherit;
+    text-align: left;
     cursor: pointer;
     transition: box-shadow var(--transition);
   }
@@ -1266,10 +1415,6 @@
   .authCard { padding: 32px 24px; border-radius: 20px; }
 }
 
-@media (max-width: 480px) {
-  .brandText { display: none; }
-}
-
 /* ─── MGT Badge ───────────────────────────────────────────────────────────── */
 
 .mgtBadgeLogo {
@@ -1278,4 +1423,13 @@
   display: block;
   flex-shrink: 0;
   object-fit: contain;
+}
+
+/* Выход из портала — незаметная, но доступная кнопка в шапке. */
+
+@media (max-width: 900px) {
+  }
+
+@media (pointer: coarse) {
+    .searchSegTrigger { min-height: 44px; }
 }

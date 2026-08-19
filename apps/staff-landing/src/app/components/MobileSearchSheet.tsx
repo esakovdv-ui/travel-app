@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react'
 import styles from './MobileSearchSheet.module.css'
+import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
+import {
+  flexLabel,
+  isoDate,
+  nightsBetween,
+  offsetDate,
+  shortDate,
+} from '@/lib/date-utils'
+import { yearsLabel } from '@/lib/plural'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -28,39 +37,18 @@ interface Props {
   submitting?: boolean
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const RU_MONTHS_FULL = [
-  'Январь','Февраль','Март','Апрель','Май','Июнь',
-  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь',
-]
-const RU_MONTHS_SHORT = [
-  'янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек',
-]
-const RU_WD = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс']
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function isoDate(d: Date): string { return d.toISOString().split('T')[0] }
-
-function offsetDate(dateStr: string, days: number): string {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + days)
-  return isoDate(d)
+// Даты, календарь и подписи — из общих модулей (см. lib/date-utils, MonthGrid).
+const CAL_CLASSES = {
+  calMonth: styles.calMonth,
+  calMonthName: styles.calMonthName,
+  calGrid: styles.calGrid,
+  calWd: styles.calWd,
+  calDay: styles.calDay,
+  calDayPast: styles.calDayPast,
+  calDayStart: styles.calDayStart,
+  calDayEnd: styles.calDayEnd,
+  calDayRange: styles.calDayRange,
 }
-
-function chipDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]}`
-}
-
-function nightsBetween(from: string, to: string): number {
-  return Math.max(1, Math.round(
-    (new Date(to).getTime() - new Date(from).getTime()) / 86400000,
-  ))
-}
-
-function todayStr(): string { return isoDate(new Date()) }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -92,56 +80,6 @@ function CheckIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
       <path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z" />
     </svg>
-  )
-}
-
-function MonthGrid({ year, month, calFrom, calTo, onDay }: {
-  year: number; month: number
-  calFrom: string | null; calTo: string | null
-  onDay: (d: string) => void
-}) {
-  const today = todayStr()
-  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7 // Mon = 0
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const cells: (number | null)[] = []
-  for (let i = 0; i < firstDow; i++) cells.push(null)
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
-
-  function dayStr(d: number): string {
-    return `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-  }
-
-  return (
-    <div className={styles.calMonth}>
-      <div className={styles.calMonthName}>{RU_MONTHS_FULL[month]} {year}</div>
-      <div className={styles.calGrid}>
-        {RU_WD.map(w => <div key={w} className={styles.calWd}>{w}</div>)}
-        {cells.map((day, i) => {
-          if (!day) return <div key={`e${i}`} />
-          const ds = dayStr(day)
-          const past = ds < today
-          const isStart = calFrom === ds
-          const isEnd = calTo === ds
-          const inRange = !!(calFrom && calTo && ds > calFrom && ds < calTo)
-          return (
-            <button
-              key={day} type="button" disabled={past}
-              onClick={() => !past && onDay(ds)}
-              className={[
-                styles.calDay,
-                past ? styles.calDayPast : '',
-                isStart ? styles.calDayStart : '',
-                isEnd ? styles.calDayEnd : '',
-                inRange ? styles.calDayRange : '',
-              ].filter(Boolean).join(' ')}
-            >
-              {day}
-            </button>
-          )
-        })}
-      </div>
-    </div>
   )
 }
 
@@ -196,9 +134,9 @@ export function MobileSearchSheet({
   const destinationSummary = selectedCountry?.name ?? 'Выберите страну'
 
   const datesSummary = calFrom && calTo
-    ? `${chipDate(calFrom)} – ${chipDate(calTo)}, ${nightsBetween(calFrom, calTo)} ночей`
+    ? `${shortDate(calFrom)} – ${shortDate(calTo)}, ${nightsBetween(calFrom, calTo)} ночей`
     : calFrom
-    ? `${chipDate(calFrom)} – выберите выезд`
+    ? `${shortDate(calFrom)} – выберите выезд`
     : 'Выберите даты'
 
   const travelersSummary = [
@@ -220,27 +158,20 @@ export function MobileSearchSheet({
   }
 
   // Список месяцев для отображения: начиная с текущего, monthsShown штук
-  const calMonths = Array.from({ length: monthsShown }, (_, i) => {
-    const d = new Date(new Date().getFullYear(), new Date().getMonth() + i, 1)
-    return { year: d.getFullYear(), month: d.getMonth() }
-  })
+  const calMonths = monthsFromNow(monthsShown)
 
   function handleDay(ds: string) {
-    if (!calFrom || calTo) {
-      // Start new selection
-      setCalFrom(ds)
-      setCalTo(null)
-      onUpdate({ targetDate: ds })
-    } else {
-      // Complete range
-      const [from, to] = ds < calFrom ? [ds, calFrom] : [calFrom, ds]
-      setCalFrom(from)
-      setCalTo(to)
-      const nights = nightsBetween(from, to)
-      onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights })
-      // Auto-advance to travelers after short delay
-      setTimeout(() => setStep('travelers'), 350)
+    const { from, to } = nextRange(ds, calFrom, calTo)
+    setCalFrom(from)
+    setCalTo(to)
+    if (!to) {
+      onUpdate({ targetDate: from })
+      return
     }
+    const nights = nightsBetween(from, to)
+    onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights })
+    // Диапазон собран — уводим к следующему шагу
+    setTimeout(() => setStep('travelers'), 350)
   }
 
   function handleClear() {
@@ -314,7 +245,7 @@ export function MobileSearchSheet({
               {/* Date chips */}
               <div className={styles.dateChips}>
                 <div className={`${styles.dateChip} ${calFrom ? styles.dateChipFilled : ''}`}>
-                  <span>{calFrom ? chipDate(calFrom) : 'Заезд'}</span>
+                  <span>{calFrom ? shortDate(calFrom) : 'Заезд'}</span>
                   {calFrom && (
                     <button className={styles.dateChipReset}
                       onClick={() => { setCalFrom(null); setCalTo(null) }} aria-label="Сбросить дату заезда">×</button>
@@ -324,7 +255,7 @@ export function MobileSearchSheet({
                   <path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z" />
                 </svg>
                 <div className={`${styles.dateChip} ${calTo ? styles.dateChipFilled : ''}`}>
-                  <span>{calTo ? chipDate(calTo) : 'Выезд'}</span>
+                  <span>{calTo ? shortDate(calTo) : 'Выезд'}</span>
                   {calTo && (
                     <button className={styles.dateChipReset}
                       onClick={() => setCalTo(null)} aria-label="Сбросить дату выезда">×</button>
@@ -342,7 +273,7 @@ export function MobileSearchSheet({
                       className={`${styles.flexBtn} ${form.dateFlex === f ? styles.flexBtnActive : ''}`}
                       onClick={() => onUpdate({ dateFlex: f })}
                     >
-                      {f === 0 ? 'Точно' : `±${f} ${f === 1 ? 'день' : 'дня'}`}
+                      {flexLabel(f)}
                     </button>
                   ))}
                 </div>
@@ -351,7 +282,7 @@ export function MobileSearchSheet({
               {/* Месяцы: начиная с текущего, по 4 за раз */}
               <div ref={calRef}>
                 {calMonths.map(({ year, month }) => (
-                  <MonthGrid key={`${year}-${month}`} year={year} month={month} calFrom={calFrom} calTo={calTo} onDay={handleDay} />
+                  <MonthGrid key={`${year}-${month}`} year={year} month={month} calFrom={calFrom} calTo={calTo} onDay={handleDay} classes={CAL_CLASSES} />
                 ))}
               </div>
               <button className={styles.loadMoreBtn} onClick={() => setMonthsShown(n => n + 4)}>
@@ -394,7 +325,7 @@ export function MobileSearchSheet({
                       }}
                     >
                       {Array.from({ length: 18 }, (_, n) => n).map(n => (
-                        <option key={n} value={n}>{n} лет</option>
+                        <option key={n} value={n}>{yearsLabel(n)}</option>
                       ))}
                     </select>
                     <button

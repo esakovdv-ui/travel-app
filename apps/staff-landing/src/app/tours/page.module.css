@@ -1,12 +1,28 @@
 /* ─── /tours — fullscreen результаты с боковыми фильтрами ───────────────── */
 
-/* Общий контейнер страницы — flex-колонка от 0 до 100vh */
+/* Общий контейнер страницы — flex-колонка на высоту вьюпорта.
+   dvh вместо vh: в Safari на iPhone 100vh включает область под адресной
+   строкой, из-за чего нижняя панель с «Оставить заявку» уезжала под тулбар.
+   vh оставлен запасным значением для старых браузеров. */
 .toursPage {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
+  /* --app-height и --app-offset выставляет useAppHeight, когда мы во фрейме:
+     высота равна видимой части фрейма, сдвиг — прокрутке родителя. Вне фрейма
+     обе переменные не заданы и работает 100dvh. */
+  height: var(--app-height, 100dvh);
+  transform: translateY(var(--app-offset, 0px));
   overflow: hidden;
   background: var(--c-bg);
+  /* Точка отсчёта для плавающих элементов. Внутри iframe вьюпорт равен высоте
+     фрейма, а родитель растягивает его под контент (замерено: 2400px против
+     812px экрана). Всё, что было position: fixed, цеплялось к этим 2400px и
+     уезжало на два экрана вниз — кнопки «Фильтры/Карта», модалка отеля,
+     лайтбокс и шторка фильтров становились недоступны. Теперь они позиционируются
+     от оболочки, а её высоту ужимает useAppHeight. */
+  position: relative;
 }
 
 /* ─── Мобильная строка поиска (только ≤768px) ───────────────────────────── */
@@ -15,30 +31,19 @@
   display: none;
 }
 
-.mobileHeaderTitle {
-  display: none;
-}
-
 @media (max-width: 768px) {
-  .mobileHeaderTitle {
-    display: block;
-    text-align: left;
-    font-family: var(--font-unbounded), sans-serif;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--c-text);
-    margin: 0;
-  }
-
+  /* Теперь это <button> — сбрасываем оформление кнопки. */
   .mobileSearchBar {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
     padding: 8px 12px;
     background: #fff;
+    border: 0;
     border-bottom: 1px solid rgba(20, 20, 43, 0.07);
+    font: inherit;
+    text-align: left;
     cursor: pointer;
     flex-shrink: 0;
   }
@@ -73,47 +78,80 @@
 /* ─── CTA «Оставить заявку» — скролл к турам (только mobile) ───────────── */
 
 .ctaScrollBtn {
+  composes: action from '../shared/buttons.module.css';
   display: none;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  align-self: flex-start;
 }
 
 @media (max-width: 768px) {
-  .ctaScrollBtn {
-    display: inline-flex;
-    align-items: center;
-    padding: 10px 22px;
-    border-radius: var(--radius-pill);
-    background: var(--c-red);
-    color: #fff;
-    border: 0;
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background var(--transition);
-    align-self: flex-start;
-  }
-  .ctaScrollBtn:hover { background: var(--c-red-hover); }
+  .ctaScrollBtn { display: inline-flex; }
 }
 
-/* ─── Прогресс-бар поиска (под хедером) ─────────────────────────────────── */
+/* ─── Полоса загрузки под хедером ───────────────────────────────────────────
+   Раньше это была ниточка в 3px, а что именно грузится и сколько ждать —
+   текстом в двух других местах. Теперь полоса сама и есть сообщение:
+   заливка идёт подложкой под текстом, поэтому прогресс читается заодно
+   со счётчиком отелей и оценкой времени. */
 
 .searchProgressBar {
-  flex-shrink: 0;
-  height: 3px;
-  background: rgba(12, 36, 97, 0.08);
   position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
   overflow: hidden;
+  z-index: 31;
 }
 
 .searchProgressFill {
   position: absolute;
   left: 0;
   top: 0;
-  height: 100%;
-  background: linear-gradient(90deg, var(--c-blue) 0%, #4a90d9 100%);
-  border-radius: 0 999px 999px 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(12, 36, 97, 0.10) 0%, rgba(74, 144, 217, 0.20) 100%);
+  border-right: 2px solid var(--c-blue);
   transition: width 0.5s ease;
-  min-width: 4px;
+  min-width: 2px;
+}
+
+.searchProgressText {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.searchProgressText strong { font-weight: 700; }
+
+.searchProgressEta {
+  position: relative;
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  color: var(--c-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progressWide   { display: inline; }
+.progressNarrow { display: none; }
+
+@media (max-width: 600px) {
+  .searchProgressBar { gap: 8px; padding: 0 12px; }
+  .searchProgressText { font-size: 0.78rem; }
+  .searchProgressEta  { font-size: 0.72rem; }
+  .progressWide   { display: none; }
+  .progressNarrow { display: inline; }
 }
 
 /* ─── Подхедер: счётчик + сортировка + mobile-кнопка фильтров ───────────── */
@@ -157,36 +195,72 @@
 .sortSelect:focus { border-color: var(--c-blue); }
 
 /* Mobile: кнопка «Фильтры» с бейджем */
-.mobileFilterBtn {
-  display: none;  /* видна только на мобайле — переопределяется ниже */
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  border: 1.5px solid var(--c-border);
-  background: var(--c-surface);
-  color: var(--c-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color var(--transition);
-}
-.mobileFilterBtn:hover { border-color: var(--c-blue); }
+/* ─── Плавающие действия на мобайле (низ экрана) ─────────────────────────────
+   «Фильтры» переехали из подхедера сюда: до низа экрана легче дотянуться
+   большим пальцем, и кнопка не уезжает вместе со списком. Показ включается
+   в медиазапросе внизу файла — рядом с раскладкой списка и карты. */
 
-.mobileFilterBadge {
+.mobileActions {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 50;
+  align-items: center;
+  gap: 10px;
+}
+
+.filtersFab {
+  composes: base from '../shared/buttons.module.css';
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 20px;
+  background: var(--c-blue);
+  color: #fff;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 24px rgba(20, 20, 43, 0.28);
+  white-space: nowrap;
+}
+.filtersFab:active { transform: scale(0.96); }
+
+.filtersFabBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--c-blue);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--c-red);
   color: #fff;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
+
+/* Ручка шторки списка нужна только в режиме карты на мобайле. Раскладку ей
+   задаёт медиазапрос в конце файла, а это правило объявлено выше него
+   намеренно: при равной специфичности побеждает последнее, и обратный
+   порядок навсегда скрыл бы ручку (ровно так до этого пряталась
+   кнопка «Карта/Список»). */
+.listSheetHandle { display: none; }
+
+/* «Карта/Список» — второстепенная кнопка ряда: светлая, чтобы основным
+   действием читались «Фильтры», а не обе сразу. Своего display: none ей
+   не нужно — видимостью управляет контейнер .mobileActions. */
+.mapToggleBtn {
+  composes: base from '../shared/buttons.module.css';
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: 1.5px solid var(--c-border);
+  font-size: 0.85rem;
+  box-shadow: 0 6px 24px rgba(20, 20, 43, 0.18);
+  white-space: nowrap;
+}
+.mapToggleBtn:active { transform: scale(0.96); }
 
 /* ─── Основное тело: сайдбар + список + карта ───────────────────────────── */
 
@@ -354,12 +428,14 @@
   margin-top: auto;
   padding-top: 2px;
   gap: 8px;
+  min-width: 0;
 }
 
 .hotelCardPriceBlock {
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0;
 }
 
 .hotelCardPriceFrom {
@@ -373,6 +449,8 @@
   font-weight: 800;
   color: var(--c-text);
   line-height: 1.2;
+  /* Иначе «₽» отрывается от суммы и уезжает на вторую строку на узких экранах. */
+  white-space: nowrap;
 }
 
 .hotelCardNights {
@@ -382,19 +460,24 @@
 }
 
 .hotelCardBookBtn {
+  composes: action from '../shared/buttons.module.css';
   padding: 9px 18px;
-  border-radius: var(--radius-pill);
-  background: var(--c-red);
-  color: #fff;
-  border: 0;
   font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition);
   flex-shrink: 0;
 }
-.hotelCardBookBtn:hover { background: var(--c-red-hover); }
+
+/* На узком экране тело карточки сжато картинкой слева: цена (nowrap) плюс
+   кнопка (flex-shrink: 0) не влезали в строку и кнопка вылезала за рамку.
+   Складываем футер в столбик — заодно кнопка становится крупнее для пальца
+   и все карточки в списке выглядят одинаково, а не через одну. */
+@media (max-width: 480px) {
+  .hotelCardFooter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .hotelCardBookBtn { width: 100%; }
+}
 
 /* ─── Прогресс поиска ───────────────────────────────────────────────────── */
 
@@ -447,16 +530,6 @@
   color: var(--c-text-muted);
 }
 
-.inlineProgress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0 2px;
-}
-.inlineProgressLabel {
-  font-size: 0.76rem;
-  color: var(--c-text-muted);
-}
 
 /* ─── Пустые / ошибочные состояния ─────────────────────────────────────── */
 
@@ -471,23 +544,40 @@
 }
 
 .emptyStateText {
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+.emptyStateHint {
+  font-size: 0.85rem;
   color: var(--c-text-muted);
   line-height: 1.6;
+  max-width: 34ch;
+  margin-top: -4px;
+}
+
+.emptyStateActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.emptyStateSecondaryBtn {
+  composes: text from '../shared/buttons.module.css';
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .resetFiltersBtn {
+  composes: outline from '../shared/buttons.module.css';
   padding: 8px 18px;
-  border-radius: var(--radius-pill);
-  border: 1.5px solid var(--c-border);
-  background: transparent;
-  color: var(--c-text);
   font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color var(--transition);
 }
-.resetFiltersBtn:hover { border-color: var(--c-blue); color: var(--c-blue); }
 
 /* ─── Карта ─────────────────────────────────────────────────────────────── */
 
@@ -495,6 +585,11 @@
   flex: 1;
   position: relative;
   min-width: 0;
+  /* Яндекс-контролы («Открыть Яндекс Карты», копирайт) имеют собственные высокие
+     z-index. Без своего контекста наложения они пробивали модалку отеля
+     и оверлей формы заявки. isolation запирает их внутри карты. */
+  z-index: 0;
+  isolation: isolate;
 }
 
 .mapPlaceholder {
@@ -510,7 +605,7 @@
 /* ─── Модальное окно отеля ──────────────────────────────────────────────── */
 
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(10, 15, 40, 0.55);
   z-index: 200;
@@ -526,7 +621,11 @@
   width: 100%;
   max-width: 100%;
   height: 100vh;
+  height: 100dvh;
+  height: var(--app-height, 100dvh);
   max-height: 100vh;
+  max-height: 100dvh;
+  max-height: var(--app-height, 100dvh);
   overflow: hidden;
   position: relative;
   display: flex;
@@ -534,25 +633,18 @@
 }
 
 .modalClose {
+  composes: icon from '../shared/buttons.module.css';
   position: absolute;
   top: 12px;
   right: 12px;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: #E8382E;
+  /* Здесь был четвёртый оттенок красного (#E8382E) мимо токенов. */
+  background: var(--c-red);
   color: #fff;
   font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 0;
   z-index: 10;
-  transition: background var(--transition);
 }
-.modalClose:hover { background: #c62e25; }
 
 .modalHeroImage {
   width: 100%;
@@ -865,9 +957,13 @@
   position: relative;
 }
 
+/* Была жёсткая height: 360px. На ноутбуке 1512×860 галерея занимала 420px —
+   49% экрана, а на описание, номера, цены и кнопки «Выбрать» оставалось окно
+   440px при 1174px содержимого. На 1280×720 — вовсе 57% против 300px.
+   Решение принимают по нижней части, поэтому фото ужимаем. */
 .modalHeroWrap {
   position: relative;
-  height: 360px;
+  height: clamp(180px, calc(var(--app-height, 100dvh) * 0.3), 320px);
   background: var(--c-blue-subtle);
 }
 
@@ -1104,18 +1200,10 @@
 }
 
 .tourSelectBtn {
+  composes: action from '../shared/buttons.module.css';
   padding: 5px 14px;
-  border-radius: var(--radius-pill);
-  background: var(--c-red);
-  color: #fff;
-  border: 0;
   font-size: 0.74rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition);
 }
-.tourSelectBtn:hover { background: var(--c-red-hover); }
 .tourSelectBtnActive { background: var(--c-blue); }
 .tourSelectBtnActive:hover { background: var(--c-blue-hover); }
 
@@ -1126,28 +1214,21 @@
 }
 
 .showMoreToursBtn {
-  display: block;
+  composes: outline from '../shared/buttons.module.css';
+  display: flex;
   width: 100%;
   margin-top: 8px;
   padding: 9px;
-  background: none;
-  border: 1.5px solid var(--c-border);
   border-radius: var(--radius-md);
   font-size: 0.8rem;
+  font-weight: 600;
   color: var(--c-text-muted);
-  cursor: pointer;
-  text-align: center;
-  transition: border-color var(--transition), color var(--transition);
-}
-.showMoreToursBtn:hover {
-  border-color: var(--c-blue);
-  color: var(--c-blue);
 }
 
 /* ─── Лайтбокс (полноэкранный просмотр фото) ────────────────────────────── */
 
 .lightboxOverlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.93);
   z-index: 400;
@@ -1397,6 +1478,7 @@
 .roomTourRowSelected { background: var(--c-blue-subtle) !important; }
 .roomTourRowExpanded { background: rgba(20, 20, 43, 0.03); }
 
+/* Теперь это <button> (раскрывает детали рейса) — сбрасываем вид кнопки. */
 .roomTourLeft {
   flex: 1;
   min-width: 0;
@@ -1404,6 +1486,13 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 4px 0;
+  cursor: pointer;
 }
 
 .roomTourRight {
@@ -1468,6 +1557,14 @@
   white-space: nowrap;
   min-width: 56px;
   padding-top: 1px;
+}
+
+.airlineLogo {
+  height: 16px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .flightRowBody {
@@ -1599,19 +1696,10 @@
 }
 
 .stickyFooterBtn {
+  composes: action from '../shared/buttons.module.css';
   padding: 10px 22px;
-  border-radius: var(--radius-pill);
-  background: var(--c-red);
-  color: #fff;
-  border: 0;
-  font: inherit;
   font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition);
 }
-.stickyFooterBtn:hover { background: var(--c-red-hover); }
 
 /* ─── Оверлей формы заявки (поверх контента модалки) ────────────────────── */
 
@@ -1683,11 +1771,21 @@
 
 /* ─── Мини-карта в модалке ───────────────────────────────────────────────── */
 
+.bookingForm {
+  display: grid;
+  gap: 12px;
+}
+
 .miniMapWrap {
   height: 220px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: #e8e0d0;
+  /* Тот же приём, что и для .mapPane: не даём контролам Яндекса
+     пробиться поверх оверлея формы заявки. */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
 }
 
 /* ─── Mobile ────────────────────────────────────────────────────────────── */
@@ -1696,37 +1794,97 @@
   /* Сайдбар скрыт — фильтры через bottom sheet */
   .body > aside { display: none !important; }
 
-  .mobileFilterBtn { display: flex; }
+  .mobileActions { display: flex; }
+
+  /* Сортировка переехала в шторку фильтров: в подхедере она забирала половину
+     строки, а меняют её редко. */
+  .sortSelect { display: none; }
+
+  /* Пока идёт поиск, счётчик уже показывает полоса загрузки — подхедер
+     повторял его слово в слово и съедал ещё 48px. */
+  .subheaderSearching { display: none; }
 
   .listPane { width: 100%; border-right: none; }
 
   .mapPane { display: none; }
-  .mapPaneVisible { display: block !important; height: 55vh; }
+  .mapPaneVisible { display: block !important; height: calc(var(--app-height, 100dvh) * 0.55); }
 
-  /* Кнопка «Карта/Список» на мобайле */
-  .mapToggleBtn {
+  /* ── Режим карты: карта на всю область, список — шторка поверх неё ──────
+     Раньше панель карты вставала в поток под списком, и по нажатию «Карта»
+     до неё надо было доскроллить — переключатель фактически не работал. */
+
+  .bodyMapMode { position: relative; }
+
+  .bodyMapMode .mapPaneVisible {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+
+  /* Шторка всегда высотой во всю область, а её положение задаёт transform:
+     сдвиг композитится на GPU, поэтому раскрытие идёт плавно и не дёргает
+     раскладку прокручиваемого внутри списка (анимация height дёргала). */
+  .listSheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 100%;
+    z-index: 40;
+    /* Нижний отступ — под плавающие кнопки, иначе последняя карточка
+       навсегда пряталась бы за «Фильтрами». */
+    padding: 0 12px calc(78px + env(safe-area-inset-bottom));
+    background: var(--c-surface);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -8px 28px rgba(20, 20, 43, 0.18);
+    transform: translateY(66%);
+    transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+                border-radius 0.34s ease;
+    will-change: transform;
+    /* Пока идёт догрузка, список переупорядочивается, и scroll anchoring
+       сам сдвигает scrollTop — шторка раскрывалась без участия человека.
+       Раскрытие должно быть только по его прокрутке. */
+    overflow-anchor: none;
+  }
+
+  /* Раскрыта до конца: полоска карты сверху уходит совсем, остаётся список. */
+  .listSheetExpanded {
+    transform: translateY(0);
+    border-radius: 0;
+  }
+
+  .listSheetHandle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     display: flex;
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 50;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: var(--radius-pill);
-    background: var(--c-blue);
-    color: #fff;
+    gap: 5px;
+    /* Гасим горизонтальный padding списка, чтобы фон ручки перекрывал
+       карточки по всей ширине при скролле. */
+    margin: 0 -12px;
+    padding: 9px 0 7px;
     border: 0;
-    font-size: 0.85rem;
-    font-weight: 700;
-    box-shadow: var(--shadow-md);
+    background: var(--c-surface);
+    border-radius: 18px 18px 0 0;
+    font: inherit;
     cursor: pointer;
-    white-space: nowrap;
+  }
+
+  .listSheetGrabber {
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: rgba(20, 20, 43, 0.22);
+  }
+
+  .listSheetHandleLabel {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--c-text);
   }
 }
-
-.mapToggleBtn { display: none; }
 
 @media (max-width: 768px) {
   .modalScroll { padding: 14px 16px 24px; }
@@ -1754,4 +1912,74 @@
 
 @media (max-width: 600px) {
   .modalHeroWrap { height: 200px; }
+}
+
+/* ─── Цели нажатия на сенсорных экранах (норма 44×44) ──────────────────────
+   Замеры до правки: «Выбрать» ≈28px — ключевая кнопка выбора тура,
+   крестик модалки 36px. Ориентируемся на pointer:coarse, а не на ширину:
+   планшет в 1024px — тоже палец. */
+@media (max-width: 900px), (pointer: coarse) {
+  .tourSelectBtn {
+    min-height: 44px;
+    padding: 5px 18px;
+  }
+
+  .modalClose {
+    width: 44px;
+    height: 44px;
+  }
+
+  .showMoreToursBtn,
+  .ctaScrollBtn,
+  .resetFiltersBtn,
+  .emptyStateSecondaryBtn,
+  .hotelCardBookBtn,
+  .stickyFooterBtn,
+  .bookingBackBtn {
+    min-height: 44px;
+  }
+
+  .sortSelect {
+    min-height: 44px;
+    padding: 5px 30px 5px 12px;
+  }
+}
+
+/* Контакты отеля — адрес, телефон, сайт. Раньше API их отдавал, а модалка нет. */
+.contactList {
+  display: grid;
+  gap: 8px;
+}
+
+.contactRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.contactLabel {
+  flex-shrink: 0;
+  min-width: 74px;
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+}
+
+.contactValue {
+  color: var(--c-text);
+  word-break: break-word;
+}
+
+a.contactValue {
+  color: var(--c-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Тихая догрузка: полоса уже ушла, а список ещё растёт. Приглушённо, чтобы
+   не спорить со счётчиком, но и не оставлять рост без объяснения. */
+.subheaderQuiet {
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
 }

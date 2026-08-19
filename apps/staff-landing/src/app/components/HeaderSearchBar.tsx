@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
+import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
+import { dateRangeToTarget, flexLabel, nightsBetween, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
+import { nightsLabel, yearsLabel } from '@/lib/plural'
 import { reachGoal, StaffGoals } from '@/lib/metrika'
 import styles from '../page.module.css'
 
 interface Country { id: number; name: string }
 
 const POPULAR_COUNTRY_IDS = [4, 1, 2, 16, 9, 47, 13, 46, 8, 12]
-const RU_MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек']
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -33,14 +35,6 @@ function CalendarIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
       <path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z" />
-    </svg>
-  )
-}
-
-function MoonIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
-      <path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56a104.11,104.11,0,0,0,104,104,106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z" />
     </svg>
   )
 }
@@ -71,18 +65,25 @@ function Counter({ value, onChange, min = 0, max = 10 }: {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatDateLabel(dateStr: string, flex: number): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const base = `${d.getDate()} ${RU_MONTHS[d.getMonth()]}`
-  if (flex === 0) return base
-  return `${base} ±${flex} ${flex === 1 ? 'день' : 'дня'}`
+const CAL_CLASSES = {
+  calMonth: styles.calMonth,
+  calMonthName: styles.calMonthName,
+  calGrid: styles.calGrid,
+  calWd: styles.calWd,
+  calDay: styles.calDay,
+  calDayPast: styles.calDayPast,
+  calDayStart: styles.calDayStart,
+  calDayEnd: styles.calDayEnd,
+  calDayRange: styles.calDayRange,
 }
 
-function offsetDate(dateStr: string, days: number): string {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
+/** Подпись сегмента «Когда»: «26 авг – 2 сен · 7 ночей · ±2 дня». */
+function whenLabel(from: string, to: string | null, flex: number): string {
+  if (!from) return 'Выберите даты'
+  if (!to) return `${shortDate(from)} – выберите выезд`
+  const parts = [`${shortDate(from)} – ${shortDate(to)}`, nightsLabel(nightsBetween(from, to))]
+  if (flex > 0) parts.push(flexLabel(flex))
+  return parts.join(' · ')
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -110,23 +111,22 @@ export function HeaderSearchBar({
 }: Props) {
   const router = useRouter()
   const searchRef = useRef<HTMLDivElement>(null)
-  const [openPanel, setOpenPanel] = useState<'destination'|'dates'|'nights'|'travelers'|null>(null)
+  // «Ночей» больше нет отдельной панелью — количество ночей задаётся
+  // выбором диапазона в календаре, как в мобильной шторке.
+  const [openPanel, setOpenPanel] = useState<'destination'|'dates'|'travelers'|null>(null)
   const [countryQuery, setCountryQuery] = useState('')
   const [countries, setCountries] = useState<Country[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [monthsShown, setMonthsShown] = useState(2)
 
-  // Compute targetDate/dateFlex from the dateFrom–dateTo range
-  function initDateState(): { targetDate: string; dateFlex: 0|1|2 } {
-    if (!initialDateFrom) return { targetDate: '', dateFlex: 2 }
-    if (!initialDateTo || initialDateFrom === initialDateTo) return { targetDate: initialDateFrom, dateFlex: 0 }
-    const diffDays = Math.round(
-      (new Date(initialDateTo).getTime() - new Date(initialDateFrom).getTime()) / 86400000,
-    )
-    const flex = Math.min(2, Math.max(0, Math.round(diffDays / 2))) as 0|1|2
-    return { targetDate: offsetDate(initialDateFrom, flex), dateFlex: flex }
-  }
+  // Поиск с самой /tours ведёт на тот же маршрут: компонент не размонтируется,
+  // и без этого сброса кнопка навсегда залипала в «Ищем…».
+  const pathname = usePathname()
+  const urlQuery = useSearchParams()
+  useEffect(() => { setSubmitting(false) }, [pathname, urlQuery])
 
-  const { targetDate: initTarget, dateFlex: initFlex } = initDateState()
+  const { targetDate: initTarget, dateFlex: initFlex } =
+    dateRangeToTarget(initialDateFrom, initialDateTo)
 
   const [form, setForm] = useState({
     countryId: initialCountryId,
@@ -137,6 +137,30 @@ export function HeaderSearchBar({
     adults: initialAdults,
     childAges: initialChildAges,
   })
+
+  // Диапазон в календаре: заезд — из targetDate, выезд — плюс текущие ночи.
+  const [calFrom, setCalFrom] = useState<string | null>(initTarget || null)
+  const [calTo, setCalTo] = useState<string | null>(
+    initTarget ? offsetDate(initTarget, initialNightsTo) : null,
+  )
+
+  function handleDay(iso: string) {
+    const { from, to } = nextRange(iso, calFrom, calTo)
+    setCalFrom(from)
+    setCalTo(to)
+    if (!to) {
+      setForm(p => ({ ...p, targetDate: from }))
+      return
+    }
+    const nights = nightsBetween(from, to)
+    setForm(p => ({ ...p, targetDate: from, nightsFrom: nights, nightsTo: nights }))
+  }
+
+  function resetRange() {
+    setCalFrom(null)
+    setCalTo(null)
+    setForm(p => ({ ...p, targetDate: '' }))
+  }
 
   useEffect(() => {
     staffFetch('/api/tourvisor/countries')
@@ -195,7 +219,7 @@ export function HeaderSearchBar({
     const qs = new URLSearchParams({
       countryId: String(form.countryId),
       countryName: selectedCountry?.name || '',
-      dateFrom: offsetDate(form.targetDate, -form.dateFlex),
+      dateFrom: searchDateFrom(form.targetDate, form.dateFlex),
       dateTo: offsetDate(form.targetDate, form.dateFlex),
       nightsFrom: String(form.nightsFrom),
       nightsTo: String(form.nightsTo),
@@ -205,25 +229,30 @@ export function HeaderSearchBar({
     router.push(`/tours?${qs.toString()}`)
   }, [router, form, selectedCountry])
 
-  const canSearch = form.countryId > 0 && form.targetDate !== ''
+  const canSearch = form.countryId > 0 && !!calFrom && !!calTo
 
   return (
     <div className={styles.searchBarPill} role="search" ref={searchRef}>
 
       {/* ── Куда ── */}
-      <div
-        className={`${styles.searchSeg} ${openPanel === 'destination' ? styles.searchSegActive : ''}`}
-        onClick={() => togglePanel('destination')}
-      >
-        <span className={styles.searchSegRow}>
-          <PinIcon />
-          <span className={styles.searchSegLabel}>Куда</span>
-        </span>
-        <span className={styles.searchSegValue}>
-          {selectedCountry?.name ?? 'Выберите страну'}
-        </span>
+      <div className={`${styles.searchSeg} ${openPanel === 'destination' ? styles.searchSegActive : ''}`}>
+        <button
+          type="button"
+          className={styles.searchSegTrigger}
+          onClick={() => togglePanel('destination')}
+          aria-expanded={openPanel === 'destination'}
+          aria-haspopup="dialog"
+        >
+          <span className={styles.searchSegRow}>
+            <PinIcon />
+            <span className={styles.searchSegLabel}>Куда</span>
+          </span>
+          <span className={styles.searchSegValue}>
+            {selectedCountry?.name ?? 'Выберите страну'}
+          </span>
+        </button>
         {openPanel === 'destination' && (
-          <div className={styles.searchPopover} onClick={e => e.stopPropagation()}>
+          <div className={styles.searchPopover}>
             {!countryQuery && (() => {
               const popular = POPULAR_COUNTRY_IDS
                 .map(id => countries.find(c => c.id === id))
@@ -275,98 +304,118 @@ export function HeaderSearchBar({
       </div>
       <div className={styles.searchDivider} aria-hidden="true" />
 
-      {/* ── Когда ── */}
-      <div
-        className={`${styles.searchSeg} ${openPanel === 'dates' ? styles.searchSegActive : ''}`}
-        onClick={() => togglePanel('dates')}
-      >
-        <span className={styles.searchSegRow}>
-          <CalendarIcon />
-          <span className={styles.searchSegLabel}>Когда</span>
-        </span>
-        <span className={styles.searchSegValue}>
-          {formatDateLabel(form.targetDate, form.dateFlex) || 'Выберите дату'}
-        </span>
+      {/* ── Когда: даты, гибкость и ночи одним сегментом ── */}
+      <div className={`${styles.searchSeg} ${styles.searchSegWhen} ${openPanel === 'dates' ? styles.searchSegActive : ''}`}>
+        <button
+          type="button"
+          className={styles.searchSegTrigger}
+          onClick={() => togglePanel('dates')}
+          aria-expanded={openPanel === 'dates'}
+          aria-haspopup="dialog"
+        >
+          <span className={styles.searchSegRow}>
+            <CalendarIcon />
+            <span className={styles.searchSegLabel}>Когда</span>
+          </span>
+          <span className={styles.searchSegValue}>
+            {whenLabel(calFrom ?? '', calTo, form.dateFlex)}
+          </span>
+        </button>
         {openPanel === 'dates' && (
-          <div className={styles.searchPopover} onClick={e => e.stopPropagation()}>
-            <label className={styles.popoverLabel}>Дата вылета</label>
-            <input
-              type="date"
-              className={styles.popoverDateInput}
-              value={form.targetDate}
-              onChange={e => setForm(p => ({ ...p, targetDate: e.target.value }))}
-            />
-            <label className={styles.popoverLabel} style={{ marginTop: 14 }}>Гибкость дат</label>
+          <div className={`${styles.searchPopover} ${styles.searchPopoverWide}`}>
+
+            {/* Заезд → выезд */}
+            <div className={styles.dateChips}>
+              <div className={`${styles.dateChip} ${calFrom ? styles.dateChipFilled : ''}`}>
+                <span>{calFrom ? shortDate(calFrom) : 'Заезд'}</span>
+              </div>
+              <span className={styles.dateChipArrow} aria-hidden="true">→</span>
+              <div className={`${styles.dateChip} ${calTo ? styles.dateChipFilled : ''}`}>
+                <span>{calTo ? shortDate(calTo) : 'Выезд'}</span>
+              </div>
+              {(calFrom || calTo) && (
+                <button type="button" className={styles.dateChipsReset} onClick={resetRange}>
+                  Сбросить
+                </button>
+              )}
+            </div>
+
+            {calFrom && calTo && (
+              <div className={styles.nightsHint}>
+                {nightsLabel(nightsBetween(calFrom, calTo))} в отеле
+              </div>
+            )}
+
+            {/* Гибкость вылета */}
+            <label className={styles.popoverLabel}>Гибкость дат вылета</label>
             <div className={styles.flexBtns}>
               {([0, 1, 2] as const).map(f => (
                 <button
                   key={f}
+                  type="button"
                   className={`${styles.flexBtn} ${form.dateFlex === f ? styles.flexBtnActive : ''}`}
                   onClick={() => setForm(p => ({ ...p, dateFlex: f }))}
                 >
-                  {f === 0 ? 'Точно' : `±${f} ${f === 1 ? 'день' : 'дня'}`}
+                  {flexLabel(f)}
                 </button>
               ))}
             </div>
-          </div>
-        )}
-      </div>
-      <div className={styles.searchDivider} aria-hidden="true" />
 
-      {/* ── Ночей ── */}
-      <div
-        className={`${styles.searchSeg} ${openPanel === 'nights' ? styles.searchSegActive : ''}`}
-        onClick={() => togglePanel('nights')}
-      >
-        <span className={styles.searchSegRow}>
-          <MoonIcon />
-          <span className={styles.searchSegLabel}>Ночей</span>
-        </span>
-        <span className={styles.searchSegValue}>{form.nightsFrom}–{form.nightsTo}</span>
-        {openPanel === 'nights' && (
-          <div className={styles.searchPopover} onClick={e => e.stopPropagation()}>
-            <label className={styles.popoverLabel}>От</label>
-            <select className={styles.popoverSelect} value={form.nightsFrom}
-              onChange={e => setForm(p => ({ ...p, nightsFrom: Number(e.target.value) }))}>
-              {[5,6,7,8,9,10,11,12,14].map(n => <option key={n} value={n}>{n} ночей</option>)}
-            </select>
-            <label className={styles.popoverLabel} style={{ marginTop: 10 }}>До</label>
-            <select className={styles.popoverSelect} value={form.nightsTo}
-              onChange={e => setForm(p => ({ ...p, nightsTo: Number(e.target.value) }))}>
-              {[7,8,9,10,11,12,14,16,21].map(n => <option key={n} value={n}>{n} ночей</option>)}
-            </select>
+            {/* Календарь */}
+            <div className={styles.calMonths}>
+              {monthsFromNow(monthsShown).map(({ year, month }) => (
+                <MonthGrid
+                  key={`${year}-${month}`}
+                  year={year}
+                  month={month}
+                  calFrom={calFrom}
+                  calTo={calTo}
+                  onDay={handleDay}
+                  classes={CAL_CLASSES}
+                />
+              ))}
+            </div>
+            <button type="button" className={styles.calMoreBtn} onClick={() => setMonthsShown(n => n + 2)}>
+              Показать ещё месяцы
+            </button>
           </div>
         )}
       </div>
       <div className={styles.searchDivider} aria-hidden="true" />
 
       {/* ── Кто едет + Поиск ── */}
-      <div
-        className={`${styles.searchSeg} ${styles.searchSegLast} ${openPanel === 'travelers' ? styles.searchSegActive : ''}`}
-        onClick={() => togglePanel('travelers')}
-      >
-        <div className={styles.searchSegText}>
+      <div className={`${styles.searchSeg} ${styles.searchSegLast} ${openPanel === 'travelers' ? styles.searchSegActive : ''}`}>
+        <button
+          type="button"
+          className={styles.searchSegTrigger}
+          onClick={() => togglePanel('travelers')}
+          aria-expanded={openPanel === 'travelers'}
+          aria-haspopup="dialog"
+        >
           <span className={styles.searchSegRow}>
             <PeopleIcon />
             <span className={styles.searchSegLabel}>Кто едет</span>
           </span>
           <span className={styles.searchSegValue}>{travelersLabel}</span>
-        </div>
+        </button>
         <button
+          type="button"
           className={styles.searchSubmit}
-          onClick={e => { e.stopPropagation(); handleSearch() }}
+          onClick={handleSearch}
           disabled={submitting || !canSearch}
           aria-label="Найти туры"
         >
           <SearchIcon />
-          <span>{submitting ? 'Переходим…' : 'Поиск'}</span>
+          {/* Короткая надпись: «Переходим…» была заметно шире «Поиска»
+              и распирала пилюлю на узком десктопе. */}
+          <span>{submitting ? 'Ищем…' : 'Поиск'}</span>
         </button>
         {openPanel === 'travelers' && (
-          <div className={styles.searchPopover} onClick={e => e.stopPropagation()}>
+          <div className={styles.searchPopover}>
             <div className={styles.travelerRow}>
               <div>
                 <div className={styles.travelerLabel}>Взрослые</div>
-                <div className={styles.travelerSub}>От 13 лет</div>
+                <div className={styles.travelerSub}>От 18 лет</div>
               </div>
               <Counter value={form.adults} min={1} max={6}
                 onChange={v => setForm(p => ({ ...p, adults: v }))} />
@@ -375,7 +424,7 @@ export function HeaderSearchBar({
             <div className={styles.travelerRow}>
               <div>
                 <div className={styles.travelerLabel}>Дети</div>
-                <div className={styles.travelerSub}>До 12 лет</div>
+                <div className={styles.travelerSub}>До 17 лет</div>
               </div>
               <Counter value={form.childAges.length} min={0} max={3}
                 onChange={v => v > form.childAges.length ? addChild() : removeChild(form.childAges.length - 1)} />
@@ -386,7 +435,7 @@ export function HeaderSearchBar({
                 <select className={styles.popoverSelect} style={{ width: 'auto' }}
                   value={age} onChange={e => setChildAge(i, Number(e.target.value))}>
                   {Array.from({ length: 18 }, (_, n) => n).map(n => (
-                    <option key={n} value={n}>{n} лет</option>
+                    <option key={n} value={n}>{yearsLabel(n)}</option>
                   ))}
                 </select>
               </div>
