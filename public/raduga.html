@@ -340,17 +340,7 @@
     .grid--single {
       grid-template-columns: 1fr;
     }
-    .grid--single .card {
-      flex-direction: row;
-      height: auto;
-    }
-    .grid--single .card-img {
-      width: 420px;
-      height: auto;
-      flex-shrink: 0;
-    }
     .grid--single .card-body {
-      flex: 1;
       padding: 32px;
       gap: 16px;
     }
@@ -359,15 +349,6 @@
     }
     .grid--single .card .btn.reserve-btn {
       max-width: 320px;
-    }
-    @media (max-width: 700px) {
-      .grid--single .card {
-        flex-direction: column;
-      }
-      .grid--single .card-img {
-        width: 100%;
-        height: 240px;
-      }
     }
     .card {
       display: flex;
@@ -1060,35 +1041,24 @@
     }
 
     function renderShifts() {
-      shiftGrid.innerHTML = shifts.map((shift, index) => {
-        const cardBadge = cardBadgeHtml(index);
-        return `
-          <article class="card">
-            <button type="button" class="card-img reserve-btn" data-shift-id="${shift.id}" aria-label="Забронировать смену «${shift.title}»">
-              <img src="${shift.image}" alt="" loading="lazy">
-              ${cardBadge}
-            </button>
-            <div class="card-body">
-              <h3>${shift.title}</h3>
-              <div class="card-meta">
-                <span class="card-meta-item">${iconCalendar}${shift.dates}</span>
-                <span class="card-meta-item">${iconAge}7–17 лет</span>
-              </div>
-              <div class="price-row">
-                <span class="price">${money.format(shift.price)} ₽</span>
-              </div>
-              <button type="button" class="btn reserve-btn" data-shift-id="${shift.id}">Забронировать</button>
+      const targetShift = shifts.find((s) => s.id === 'balance-29-05');
+      if (!targetShift) { shiftGrid.innerHTML = ''; return; }
+      shiftGrid.innerHTML = `
+        <article class="card">
+          <div class="card-body">
+            <h3>${targetShift.title}</h3>
+            <div class="card-meta">
+              <span class="card-meta-item">${iconCalendar}${targetShift.dates}</span>
+              <span class="card-meta-item">${iconAge}7–17 лет</span>
             </div>
-          </article>
-        `;
-      }).join('');
-
-      shifts.forEach((shift) => {
-        const option = document.createElement('option');
-        option.value = `${shift.title} · ${shift.dates}`;
-        option.textContent = `${shift.title} · ${shift.dates} · ${money.format(shift.price)} ₽ со скидкой`;
-        shiftSelect.appendChild(option);
-      });
+            <div class="price-row">
+              <span class="price">${money.format(targetShift.price)} ₽</span>
+            </div>
+            <p class="hero-price-note">В стоимость уже входит трансфер туда и обратно.</p>
+            <button type="button" class="btn reserve-btn" data-shift-id="${targetShift.id}">Забронировать</button>
+          </div>
+        </article>
+      `;
     }
 
     async function loadShifts() {
