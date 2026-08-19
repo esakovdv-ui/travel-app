@@ -1,0 +1,25 @@
+name: SSH run (dispatch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      cmd:
+        description: 'Команда для выполнения на сервере'
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run command on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          CMD: ${{ inputs.cmd }}
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: CMD
+          command_timeout: 10m
+          script: |
+            bash -lc "$CMD"
