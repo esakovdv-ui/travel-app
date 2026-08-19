@@ -1650,10 +1650,10 @@
     }
 
 
+    tick();
     const countdownTimer = setInterval(() => {
       if (!tick()) clearInterval(countdownTimer);
     }, 1000);
-);
 
     window.addEventListener('load', () => tryOpenShiftFromUrl());
   </script>
