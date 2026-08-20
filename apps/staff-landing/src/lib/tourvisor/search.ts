@@ -7,6 +7,8 @@ import type { StartSearchResponse, SearchStatus, HotelSearchResult, TourDetail }
 
 export interface StartSearchParams {
   countryId: number
+  /** Курорты внутри страны. Пусто — искать по всей стране. */
+  regionIds?: number[]
   dateFrom: string
   dateTo: string
   nightsFrom: number
@@ -27,6 +29,7 @@ export function startSearch(params: StartSearchParams) {
       currency: 'RUB',
       onlyCharter: false,
       countryId: params.countryId,
+      regionIds: params.regionIds?.length ? params.regionIds : undefined,
       dateFrom: params.dateFrom,
       dateTo: params.dateTo,
       nightsFrom: params.nightsFrom,

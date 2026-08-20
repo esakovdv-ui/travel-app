@@ -1282,6 +1282,9 @@ function ToursContent() {
   const nightsTo    = Number(searchParams.get('nightsTo') ?? 14)
   const adults      = Number(searchParams.get('adults') ?? 2)
   const childsStr   = searchParams.get('childs') ?? ''
+  const regionIds   = searchParams.getAll('regionIds')
+  // Строкой — чтобы эффект поиска перезапускался при смене набора курортов.
+  const regionKey   = regionIds.join(',')
   const countryName = searchParams.get('countryName') ?? ''
 
   // ── Поиск ──────────────────────────────────────────────────────────────────
@@ -1331,8 +1334,9 @@ function ToursContent() {
       nightsTo,
       adults,
       childAges: childsStr ? childsStr.split(',').map(Number) : [],
+      regionIds: regionIds.map(Number),
     }
-  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   const [mobileForm, setMobileForm] = useState<SearchForm>(initMobileForm)
 
@@ -1378,6 +1382,7 @@ function ToursContent() {
       adults: String(mobileForm.adults),
     })
     if (mobileForm.childAges.length > 0) qs.set('childs', mobileForm.childAges.join(','))
+    for (const id of mobileForm.regionIds) qs.append('regionIds', String(id))
     router.push(`/tours?${qs.toString()}`)
   }
 
@@ -1633,6 +1638,8 @@ function ToursContent() {
       adults: String(adults),
     })
     if (childsStr) params.set('childs', childsStr)
+    // Курорты приходят повторяющимися параметрами и такими же уходят дальше.
+    for (const id of regionIds) params.append('regionIds', id)
 
     staffFetch(`/api/tourvisor/search?${params}`)
       .then(r => r.ok ? r.json() : r.json().then((e: unknown) => Promise.reject(e)))
@@ -1650,7 +1657,7 @@ function ToursContent() {
 
     return () => { runIdRef.current++; stopPoll() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   // ── Обратный отсчёт в полосе загрузки ──────────────────────────────────────
 

@@ -13,6 +13,7 @@ export type SearchValidationResult =
 
 interface RawSearchParams {
   countryId?: string | null
+  regionIds?: string[] | null
   dateFrom?: string | null
   dateTo?: string | null
   nightsFrom?: string | null
@@ -93,6 +94,18 @@ export function validateSearchParams(raw: RawSearchParams): SearchValidationResu
     errors.push({ field: 'adults', message: 'adults обязателен, диапазон 1..6' })
   }
 
+  // Курорты: несколько идентификаторов, каждый положительное целое.
+  // Ограничение сверху — чтобы адресная строка не разрасталась без меры.
+  let regionIds: number[] | undefined
+  if (raw.regionIds?.length) {
+    const ids = raw.regionIds.map(v => Number(v))
+    if (ids.length > 20 || ids.some(v => !Number.isInteger(v) || v <= 0)) {
+      errors.push({ field: 'regionIds', message: 'regionIds — до 20 положительных чисел' })
+    } else {
+      regionIds = ids
+    }
+  }
+
   let childs: number[] | undefined
   if (raw.childs) {
     const ages = raw.childs.split(',').map(s => Number(s.trim()))
@@ -152,6 +165,7 @@ export function validateSearchParams(raw: RawSearchParams): SearchValidationResu
     ok: true,
     value: {
       countryId,
+      regionIds,
       dateFrom: raw.dateFrom as string,
       dateTo: raw.dateTo as string,
       nightsFrom,

@@ -1,7 +1,7 @@
 // Справочники (раздел 3 ТЗ). Лимит 120 запросов/мин, в суточную поисковую квоту не входят.
 
 import { tvFetch } from './client'
-import type { DepartureCity, Country, MealType } from './types'
+import type { DepartureCity, Country, MealType, Region } from './types'
 
 // Зафиксировано на Day 1: id Москвы в /departures?departureCountryId=1.
 // Город вылета скрыт из формы — все сотрудники летят из Москвы.
@@ -24,5 +24,13 @@ export function getCountries(departureId: number = DEFAULT_DEPARTURE_ID) {
 export function getMeals() {
   return tvFetch<MealType[]>('/meals', {
     revalidate: 60 * 60 * 24,
+  })
+}
+
+/** Курорты страны: Аланья, Анталья, Кемер… Нужны для поиска по regionIds. */
+export function getRegions(countryId: number) {
+  return tvFetch<Region[]>('/regions', {
+    params: { countryId },
+    revalidate: 60 * 60 * 24, // сутки — список курортов не меняется
   })
 }

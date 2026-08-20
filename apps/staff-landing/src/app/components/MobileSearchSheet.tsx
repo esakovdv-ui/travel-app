@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { staffFetch } from '@/lib/staff-client'
 import styles from './MobileSearchSheet.module.css'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import {
@@ -16,6 +17,7 @@ import { yearsLabel } from '@/lib/plural'
 
 export interface SearchForm {
   countryId: number
+  regionIds: number[]
   targetDate: string
   dateFlex: 0 | 1 | 2
   nightsFrom: number
@@ -89,6 +91,7 @@ type Step = 'destination' | 'dates' | 'travelers' | null
 
 const DEFAULT_FORM: SearchForm = {
   countryId: 4,
+  regionIds: [],
   targetDate: (() => { const d = new Date(); d.setDate(d.getDate() + 21); return isoDate(d) })(),
   dateFlex: 0,
   nightsFrom: 7,
@@ -122,6 +125,18 @@ export function MobileSearchSheet({
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  // Курорты выбранной страны. Не отмечено ничего — ищем по всей стране.
+  const [regions, setRegions] = useState<{ id: number; name: string }[]>([])
+  useEffect(() => {
+    if (!isOpen || !form.countryId) return
+    let cancelled = false
+    staffFetch(`/api/tourvisor/regions?countryId=${form.countryId}`)
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(j => { if (!cancelled) setRegions(Array.isArray(j.data) ? j.data : []) })
+      .catch(() => { if (!cancelled) setRegions([]) })
+    return () => { cancelled = true }
+  }, [isOpen, form.countryId])
+
   if (!isOpen) return null
 
   const popular = popularIds
@@ -129,6 +144,7 @@ export function MobileSearchSheet({
     .filter(Boolean) as Country[]
 
   const selectedCountry = countries.find(c => c.id === form.countryId)
+
 
   // Section summary texts
   const destinationSummary = selectedCountry?.name ?? 'Выберите страну'
@@ -217,13 +233,52 @@ export function MobileSearchSheet({
                   <button
                     key={c.id}
                     className={`${styles.countryRow} ${c.id === form.countryId ? styles.countryRowActive : ''}`}
-                    onClick={() => { onUpdate({ countryId: c.id }); setStep('dates') }}
+                    onClick={() => onUpdate({ countryId: c.id, regionIds: [] })}
                   >
                     <span>{c.name}</span>
                     {c.id === form.countryId && <CheckIcon />}
                   </button>
                 ))}
               </div>
+
+              {/* Курорты — необязательное сужение. Помогает не ждать полную
+                  выдачу по стране: она набирается три с половиной минуты. */}
+              {regions.length > 0 && (
+                <>
+                  <div className={styles.regionsLabel}>
+                    Курорты
+                    {form.regionIds.length > 0 && (
+                      <button
+                        type="button"
+                        className={styles.regionsReset}
+                        onClick={() => onUpdate({ regionIds: [] })}
+                      >
+                        вся страна
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.regionsGrid}>
+                    {regions.map(rg => {
+                      const on = form.regionIds.includes(rg.id)
+                      return (
+                        <button
+                          key={rg.id}
+                          type="button"
+                          className={`${styles.regionsChip} ${on ? styles.regionsChipOn : ''}`}
+                          aria-pressed={on}
+                          onClick={() => onUpdate({
+                            regionIds: on
+                              ? form.regionIds.filter(x => x !== rg.id)
+                              : [...form.regionIds, rg.id],
+                          })}
+                        >
+                          {rg.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
