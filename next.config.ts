@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
         source: '/vlasevo',
         destination: '/vlasevo.html',
       },
+      {
+        source: '/vlasevo-promo',
+        destination: '/vlasevo-promo.html',
+      },
+      {
+        source: '/rebooking',
+        destination: '/rebooking.html',
+      },
+      {
+        source: '/podbor',
+        destination: '/podbor.html',
+      },
+      {
+        source: '/podbor-prototype',
+        destination: '/podbor-prototype.html',
+      },
     ];
   },
   typescript: {

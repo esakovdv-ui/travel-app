@@ -1,0 +1,102 @@
+name: Net diag (dispatch)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/net-diag.yml'
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect connection filtering
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "=== TIME ==="
+            date -u '+%Y-%m-%d %H:%M:%S UTC'; date '+%Y-%m-%d %H:%M:%S %Z'
+
+            echo ""
+            echo "=== FAIL2BAN ==="
+            if command -v fail2ban-client >/dev/null 2>&1; then
+              fail2ban-client status 2>/dev/null || echo "fail2ban not running"
+              for j in $(fail2ban-client status 2>/dev/null | sed -n 's/.*Jail list:[[:space:]]*//p' | tr ',' ' '); do
+                echo "--- jail $j ---"
+                fail2ban-client status "$j" 2>/dev/null || true
+              done
+            else
+              echo "fail2ban NOT INSTALLED"
+            fi
+
+            echo ""
+            echo "=== UFW ==="
+            ufw status verbose 2>/dev/null || echo "ufw absent"
+
+            echo ""
+            echo "=== IPTABLES INPUT (счётчики) ==="
+            iptables -L INPUT -n -v 2>/dev/null | head -40 || true
+            echo "--- все DROP/REJECT правила ---"
+            iptables -S 2>/dev/null | grep -iE 'DROP|REJECT|recent|limit|hashlimit' | head -40 || true
+
+            echo ""
+            echo "=== IPSET ==="
+            if command -v ipset >/dev/null 2>&1; then
+              for s in $(ipset list -n 2>/dev/null); do
+                echo "--- $s: $(ipset list "$s" 2>/dev/null | grep -c '^[0-9]') записей ---"
+              done
+            else
+              echo "ipset NOT INSTALLED"
+            fi
+
+            echo ""
+            echo "=== NGINX limit_req / limit_conn ==="
+            grep -RnE 'limit_req|limit_conn|deny |return 444|geo ' /etc/nginx/ 2>/dev/null | grep -v '^Binary' | head -30 || echo "лимитов нет"
+
+            echo ""
+            echo "=== NGINX MTU / MSS ==="
+            ip link show 2>/dev/null | grep -E '^[0-9]+:|mtu' | head -10
+            echo "ip_no_pmtu_disc = $(sysctl -n net.ipv4.ip_no_pmtu_disc 2>/dev/null)"
+            echo "tcp_mtu_probing = $(sysctl -n net.ipv4.tcp_mtu_probing 2>/dev/null)"
+            echo "--- MSS clamp правила ---"
+            iptables -t mangle -S 2>/dev/null | grep -i tcpmss || echo "MSS clamp НЕ настроен"
+
+            echo ""
+            echo "=== ЗАПРОСЫ С IPHONE ЗА ПОСЛЕДНИЕ 3 ЧАСА ==="
+            for log in /var/log/nginx/*access*.log; do
+              [ -f "$log" ] || continue
+              n=$(grep -c 'iPhone' "$log" 2>/dev/null || echo 0)
+              echo "--- $log: строк с iPhone = $n ---"
+              grep 'iPhone' "$log" 2>/dev/null | tail -40 | awk '{print $1, $4, $6, $7, $9}' || true
+            done
+
+            echo ""
+            echo "=== КОДЫ ОТВЕТА ПО ВСЕМ ЛОГАМ (последние 2000 строк) ==="
+            for log in /var/log/nginx/*access*.log; do
+              [ -f "$log" ] || continue
+              echo "--- $log ---"
+              tail -2000 "$log" | awk '{print $9}' | sort | uniq -c | sort -rn | head -10
+            done
+
+            echo ""
+            echo "=== ТОП IP ЗА ПОСЛЕДНИЕ 2000 ЗАПРОСОВ ==="
+            for log in /var/log/nginx/*access*.log; do
+              [ -f "$log" ] || continue
+              echo "--- $log ---"
+              tail -2000 "$log" | awk '{print $1}' | sort | uniq -c | sort -rn | head -10
+            done
+
+            echo ""
+            echo "=== ОШИБКИ NGINX (последние 40) ==="
+            tail -40 /var/log/nginx/error.log 2>/dev/null || true
+
+            echo ""
+            echo "=== СЕТЕВЫЕ СЧЁТЧИКИ ЯДРА ==="
+            netstat -s 2>/dev/null | grep -iE 'segments retransmit|failed connection|listen queue|overflow|pruned|reset' | head -12 || true
+            echo "somaxconn = $(sysctl -n net.core.somaxconn 2>/dev/null), tcp_max_syn_backlog = $(sysctl -n net.ipv4.tcp_max_syn_backlog 2>/dev/null)"
+            echo "syncookies = $(sysctl -n net.ipv4.tcp_syncookies 2>/dev/null)"

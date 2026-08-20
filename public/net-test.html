@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тест загрузки staff.motrip.ru</title>
+<style>
+  body {
+    margin: 0;
+    padding: 16px 14px 40px;
+    background: #111;
+    color: #eee;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  p.sub { margin: 0 0 18px; color: #9aa; font-size: 13px; }
+  .group { margin-bottom: 20px; }
+  .group h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #7f8c9b; margin: 0 0 8px; font-weight: 600; }
+  .row {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 7px 0; border-bottom: 1px solid #262626;
+  }
+  .name { flex: 1; min-width: 0; word-break: break-all; font-size: 13px; }
+  .res { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .wait { color: #888; }
+  .ok   { color: #4ade80; }
+  .slow { color: #fbbf24; }
+  .bad  { color: #f87171; }
+  #verdict {
+    margin-top: 22px; padding: 14px; border-radius: 10px;
+    background: #1d2a3a; color: #cfe3ff; font-size: 14px; white-space: pre-wrap;
+  }
+  button {
+    margin-top: 16px; width: 100%; padding: 13px;
+    border: 0; border-radius: 10px; background: #2563eb; color: #fff;
+    font-size: 15px; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<h1>Тест загрузки портала</h1>
+<p class="sub">Страница открыта на motrip.ru и по секундомеру грузит файлы с двух адресов. Дождись, пока все строки перестанут показывать «идёт», и пришли скриншот.</p>
+
+<div class="group">
+  <h2>motrip.ru — этот адрес у тебя работает</h2>
+  <div id="base"></div>
+</div>
+
+<div class="group">
+  <h2>staff.motrip.ru — проверяемый адрес</h2>
+  <div id="staff"></div>
+</div>
+
+<div class="group">
+  <h2>6 файлов staff одновременно — так грузит браузер</h2>
+  <div id="burst"></div>
+</div>
+
+<div id="verdict">Идут замеры…</div>
+<button id="copy">Скопировать результат текстом</button>
+
+<script>
+(function () {
+  var TIMEOUT = 20000;
+  var STAFF = 'https://staff.motrip.ru';
+  var BASE = 'https://motrip.ru';
+
+  var results = [];
+
+  function addRow(container, label) {
+    var row = document.createElement('div');
+    row.className = 'row';
+    var name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = label;
+    var res = document.createElement('div');
+    res.className = 'res wait';
+    res.textContent = 'идёт…';
+    row.appendChild(name);
+    row.appendChild(res);
+    document.getElementById(container).appendChild(row);
+    return res;
+  }
+
+  function finish(cell, label, status, ms) {
+    var text;
+    if (status === 'timeout') {
+      text = 'не дошёл за ' + Math.round(TIMEOUT / 1000) + ' с';
+      cell.className = 'res bad';
+    } else if (status === 'error') {
+      text = 'ошибка, ' + ms + ' мс';
+      cell.className = 'res bad';
+    } else {
+      text = ms + ' мс';
+      cell.className = 'res ' + (ms > 4000 ? 'bad' : ms > 1500 ? 'slow' : 'ok');
+    }
+    cell.textContent = text;
+    results.push(label + ' — ' + text);
+  }
+
+  // Тег грузит файл целиком, поэтому замер честный: cors тут не нужен.
+  function loadByTag(url, kind) {
+    return new Promise(function (resolve) {
+      var started = performance.now();
+      var done = false;
+      var el;
+
+      function settle(status) {
+        if (done) return;
+        done = true;
+        var ms = Math.round(performance.now() - started);
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+        resolve({ status: status, ms: ms });
+      }
+
+      var bust = url + (url.indexOf('?') < 0 ? '?' : '&') + 'nt=' + Date.now() + Math.random();
+
+      if (kind === 'css') {
+        el = document.createElement('link');
+        el.rel = 'stylesheet';
+        el.href = bust;
+      } else if (kind === 'img') {
+        el = document.createElement('img');
+        el.src = bust;
+        el.style.cssText = 'position:absolute;left:-9999px;width:1px';
+      } else {
+        el = document.createElement('script');
+        el.src = bust;
+      }
+
+      el.onload = function () { settle('ok'); };
+      el.onerror = function () { settle('error'); };
+      setTimeout(function () { settle('timeout'); }, TIMEOUT);
+      (document.head || document.documentElement).appendChild(el);
+    });
+  }
+
+  function run(container, label, url, kind) {
+    var cell = addRow(container, label);
+    return loadByTag(url, kind).then(function (r) {
+      finish(cell, label, r.status, r.ms);
+      return r;
+    });
+  }
+
+  var staffOutcomes = [];
+  var baseOutcomes = [];
+
+  function sequence() {
+    return run('base', 'картинка 90 КБ', BASE + '/podbor-regions/spb.jpg', 'img')
+      .then(function (r) { baseOutcomes.push(r); })
+      .then(function () { return run('base', 'скрипт 2 КБ', BASE + '/raduga-parent-bridge.js', 'js'); })
+      .then(function (r) { baseOutcomes.push(r); })
+
+      .then(function () { return run('staff', 'стили 7 КБ', STAFF + '/_next/static/css/5e6ee28208be2bb2.css', 'css'); })
+      .then(function (r) { staffOutcomes.push(r); })
+      .then(function () { return run('staff', 'стили 32 КБ', STAFF + '/_next/static/css/2f2ef7984c483380.css', 'css'); })
+      .then(function (r) { staffOutcomes.push(r); })
+      .then(function () { return run('staff', 'скрипт 3 КБ', STAFF + '/_next/static/chunks/webpack-ffa389802e3410de.js', 'js'); })
+      .then(function (r) { staffOutcomes.push(r); })
+      .then(function () { return run('staff', 'скрипт 173 КБ', STAFF + '/_next/static/chunks/4bd1b696-c023c6e3521b1417.js', 'js'); })
+      .then(function (r) { staffOutcomes.push(r); })
+
+      .then(burst)
+      .then(verdict);
+  }
+
+  function burst() {
+    var files = [
+      ['стили 7 КБ', '/_next/static/css/5e6ee28208be2bb2.css', 'css'],
+      ['стили 32 КБ', '/_next/static/css/2f2ef7984c483380.css', 'css'],
+      ['скрипт 173 КБ', '/_next/static/chunks/255-4f84124391a7dac4.js', 'js'],
+      ['скрипт 173 КБ (2)', '/_next/static/chunks/4bd1b696-c023c6e3521b1417.js', 'js'],
+      ['скрипт 113 КБ', '/_next/static/chunks/polyfills-42372ed130431b0a.js', 'js'],
+      ['шрифт 50 КБ', '/_next/static/media/29b98dbfba401fa9-s.p.woff2', 'img']
+    ];
+    return Promise.all(files.map(function (f) {
+      var label = 'параллельно: ' + f[0];
+      var cell = addRow('burst', label);
+      return loadByTag(STAFF + f[1], f[2]).then(function (r) {
+        finish(cell, label, r.status, r.ms);
+        return r;
+      });
+    })).then(function (rs) {
+      staffOutcomes = staffOutcomes.concat(rs);
+    });
+  }
+
+  function worst(list) {
+    return list.reduce(function (acc, r) {
+      if (r.status === 'timeout') return Math.max(acc, TIMEOUT);
+      return Math.max(acc, r.ms);
+    }, 0);
+  }
+
+  function verdict() {
+    var staffFails = staffOutcomes.filter(function (r) { return r.status !== 'ok'; }).length;
+    var baseFails = baseOutcomes.filter(function (r) { return r.status !== 'ok'; }).length;
+    var lines = [];
+
+    lines.push('Соединение: ' + (navigator.connection && navigator.connection.effectiveType || 'неизвестно'));
+    lines.push('motrip.ru: сбоев ' + baseFails + ' из ' + baseOutcomes.length + ', худшее время ' + worst(baseOutcomes) + ' мс');
+    lines.push('staff.motrip.ru: сбоев ' + staffFails + ' из ' + staffOutcomes.length + ', худшее время ' + worst(staffOutcomes) + ' мс');
+    lines.push('');
+
+    if (baseFails === 0 && staffFails > 0) {
+      lines.push('Файлы с motrip.ru доходят, а с staff.motrip.ru нет. Сервер один и тот же, отличается только имя адреса — значит его режет сеть по пути к телефону.');
+    } else if (baseFails === 0 && worst(staffOutcomes) > worst(baseOutcomes) * 4) {
+      lines.push('staff.motrip.ru отвечает в разы медленнее motrip.ru при одинаковом сервере. Похоже на ограничение скорости по имени адреса.');
+    } else if (baseFails > 0) {
+      lines.push('Оба адреса грузятся с трудом — проблема в самом соединении телефона, а не в портале.');
+    } else {
+      lines.push('Оба адреса доходят нормально. Значит дело не в сети, а в чём-то на стороне страницы портала.');
+    }
+
+    document.getElementById('verdict').textContent = lines.join('\n');
+    results = lines.concat(['', '--- замеры ---']).concat(results);
+  }
+
+  document.getElementById('copy').addEventListener('click', function () {
+    var text = results.join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(text);
+    else window.prompt('Скопируй текст', text);
+  });
+
+  sequence();
+})();
+</script>
+</body>
+</html>

@@ -33,12 +33,67 @@ pm2 restart all
 - `LEVEL_TRAVEL_API_KEY` — ключ для Level Travel API (серверный, не публичный)
 - `NEXT_PUBLIC_WL_BASE_URL=https://russia.mosgortur.ru` — базовый URL White Label
 - `FONT_DIR=./scripts/fonts` — путь к шрифтам для PDF-генератора
-- `BITRIX_DOMAIN` — домен портала Bitrix24 (например `company.bitrix24.ru`)
-- `WEBHOOK_TOKEN` — токен входящего webhook (часть URL `/rest/1/xxxxx/`)
+- `BITRIX_DOMAIN` — домен портала Bitrix24 (например `crm.mosgortur.ru`)
+- `WEBHOOK_TOKEN` — часть URL вебхука после `/rest/` (например `1981/xxxxxxxx`)
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
+- `REBOOKING_BITRIX_DOMAIN` — домен Б24 для `/rebooking` (по умолчанию как `BITRIX_DOMAIN`)
+- `REBOOKING_WEBHOOK_TOKEN` — вебхук для лидов перебронирования (`crm.lead.add`), например `1981/j9pvdbhovvem7j6c`
+- Заявки с `/rebooking` → popup ТурВизора → webhook `GET /api/tourvisor-order-webhook` или `POST /api/rebooking-lead/sync` → лид в Битрикс24
+- `TOURVISOR_AUTHKEY` — ключ export API ТурВизора (запросить у поддержки TV); регистрация webhook: `node scripts/register-tourvisor-webhook.js`
+- При загрузке `/rebooking` клиент регистрирует контекст: `POST /api/rebooking-context` (order/cert/name, TTL 30 мин)
+- Направления без Крыма: [`public/rebooking-destinations.json`](public/rebooking-destinations.json)
 - `RADUGA_ADMIN_PASSWORD` — пароль админки смен (опционально)
 
-### Радуга на online.mosgortur.ru (iframe)
+### Лендинг перебронирования (`/rebooking`)
+
+**URL:** `https://motrip.ru/rebooking?order=…&cert=…&name=…&people=…&kids=…&kid1=…&price=…&nights=…&date=…`
+
+**Файлы:**
+- [`public/rebooking.html`](../public/rebooking.html) — статическая страница (rewrite в `next.config.ts`)
+- [`public/rebooking-destinations.json`](../public/rebooking-destinations.json) — направления с кодами `tv-country` (Крым не включён)
+- [`src/app/api/rebooking-lead/route.ts`](../src/app/api/rebooking-lead/route.ts) — лид после заявки на тур
+- [`src/app/api/tourvisor-order-webhook/route.ts`](../src/app/api/tourvisor-order-webhook/route.ts) — запасной мост от ТурВизора
+
+**UX-поток:**
+1. Карточка параметров поездки (дата, ночи, туристы, бюджет) + заявка/сертификат мелко внизу
+2. Пользователь выбирает направление в селекторе
+3. Модуль ТурВизора (`tv-moduleid-9978253`) инициализируется с предзаполненными атрибутами
+4. После заявки на конкретный тур — лид в Битрикс (`crm.lead.add`) с `order`, `cert`, `name` + данные тура
+
+**Маппинг URL → атрибуты ТурВизора** (на `div.tv-search-form` до `init.js`):
+
+| Параметр | Атрибут | Формат |
+|----------|---------|--------|
+| `date` | `tv-flydates` | `14.07.2026,14.07.2026` |
+| `nights` | `tv-nights` | `10,10` |
+| adults | `tv-adults` | `2` |
+| `kids` | `tv-kids` | `1` |
+| `kid1..3` | `tv-kid1..3` | возраст |
+| `price` | `tv-pricefrom` / `tv-priceto` | `0` / `185000` |
+| направление | `tv-country` | код из JSON |
+
+`tv-runsearch` не ставится — пользователь сам нажимает «Найти».
+
+**Мосты в Битрикс:**
+- Основной: webhook ТурВизора `GET /api/tourvisor-order-webhook?id=&type=` → `orders.php` / `ordersonline.php` → `crm.lead.add`
+- Запасной: `postMessage` (`ORDERTOUR`, `NOTOUR`, …) → `POST /api/rebooking-lead/sync` → подтягивание свежей заявки TV
+
+Регистрация TV webhook: `https://motrip.ru/api/tourvisor-order-webhook` (нужен `TOURVISOR_AUTHKEY` в `.env.local`).
+
+**Тестовая ссылка:**
+```
+/rebooking?order=МГТ-2025-04821&cert=СЕРТ-77412&name=Иванов%20Иван%20Иванович&people=3&kids=1&kid1=7&price=185000&nights=10&date=2026-07-14
+```
+
+**Матрица визуальной приёмки (375px, motrip.ru после деплоя):**
+- [ ] Карточка: 14 июля 2026, 10 ночей, 3 туриста (2+1, 7 лет), 185 000 ₽; заявка/сертификат внизу
+- [ ] Те же значения в фильтрах ТурВизора после выбора направления
+- [ ] Крыма нет в селекторе
+- [ ] Нижней формы заявки нет
+- [ ] Лид в Битрикс только после заявки на тур
+
+Коды стран в `rebooking-destinations.json` сверить с ЛК ТурВизора («Ссылки для рекламы»).
+
 
 Страница `https://online.mosgortur.ru/new/raduga` встраивает `https://motrip.ru/raduga` в iframe **без query** и с `referrerpolicy="strict-origin-when-cross-origin"`, поэтому `?shift=` из адреса mosgortur не попадает в лендинг.
 
@@ -54,6 +109,9 @@ pm2 restart all
 
 | Коммит | Описание |
 |--------|----------|
+| — | Feat: `/rebooking` UX — карточка параметров, селектор направлений, предзаполнение ТурВизора |
+| — | Feat: `/rebooking` — лиды в Битрикс после заявки на тур (postMessage + TV webhook) |
+| — | Feat: `/rebooking` — лендинг перебронирования, ТурВизор, лиды в Битрикс24 |
 | `061aca1` | Fix: thematic rows — переход на shared leveltravel.ts клиент |
 | `5f2b4c5` | Fix: sequential LT API fetches + retry на 403 rate limit |
 | `8c0a748` | Fix: client-side fallback для thematic rows при медленном SSR |
@@ -67,6 +125,28 @@ pm2 restart all
 | `abe044e` | Подключена реальная БД PostgreSQL, авторизация и личный кабинет |
 | `5be1eb3` | GitHub Actions для автодеплоя |
 | `7ce932c` | Initial commit |
+
+## Сеть, TLS и CDN
+
+DNS: `motrip.ru`, `www`, `staff` → A `72.56.32.183` (reg.ru, NS `ns1.reg.ru` / `ns2.reg.ru`).
+
+На сервере (август 2026):
+- **HTTP/2** — `listen 443 ssl http2` в nginx
+- **ECDSA-сертификаты** Let's Encrypt (меньше TLS-рукопожатие, чем RSA)
+- **MSS clamp 1300** + `tcp_mtu_probing=1` — workflow `Fix MTU blackhole`
+- **Cloudflare real IP** — `/etc/nginx/conf.d/cloudflare-real-ip.conf` (готово до включения CDN)
+
+### CDN (Cloudflare)
+
+Без CDN трафик идёт напрямую на IP Timeweb; на части мобильных сетей это даёт обрывы TLS.
+
+1. Добавить `motrip.ru` в [Cloudflare](https://dash.cloudflare.com) (Free).
+2. В reg.ru сменить NS домена на nameservers Cloudflare.
+3. В GitHub Secrets: `CF_API_TOKEN` (Zone:Edit, DNS:Edit), `CF_ACCOUNT_ID`.
+4. Запустить workflow **Setup Cloudflare CDN** — включит proxy (оранжевое облако) для `motrip.ru`, `www`, `staff`.
+5. В Cloudflare: SSL/TLS → **Full (strict)**.
+
+Скрипты: `scripts/setup-network-tls-cdn.sh`, `scripts/setup-cloudflare-cdn.sh`.
 
 ## Мониторинг
 

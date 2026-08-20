@@ -1,54 +1,110 @@
 import { NextResponse } from 'next/server';
+import {
+  clamp,
+  mapCampLeadError,
+  normalizeLeadPhone,
+  parseBookingPrice,
+  parseLeadUtm,
+  syncCampLead,
+  updateCampLead,
+  type CampLeadQualification,
+  type CampLanding,
+} from '@/lib/bitrix-camp-lead';
+import {
+  findRecentDuplicateVlasevoLead,
+  getVlasevoLeadById,
+  saveVlasevoLead,
+  updateVlasevoLeadBitrix,
+  updateVlasevoLeadQualification,
+  updateVlasevoLeadTopLevel,
+  type VlasevoLead,
+} from '@/lib/vlasevo-lead-store';
 
 export const dynamic = 'force-dynamic';
 
-type UtmFields = Partial<Record<'utm_source' | 'utm_medium' | 'utm_campaign' | 'utm_content' | 'utm_term', string>>;
+const RESPONSE_BUDGET_MS = 5000;
+const phoneSubmitLocks = new Map<string, Promise<void>>();
 
-const DEAL_CATEGORY_ID = 12;
-const DEAL_STAGE_ID = 'C12:NEW';
-const ASSIGNED_BY_ID = 1;
-
-function clamp(value: unknown, max: number): string {
-  return typeof value === 'string' ? value.trim().slice(0, max) : '';
-}
-
-function normalizePhone(input: string): string | null {
-  const digits = input.replace(/\D/g, '');
-  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
-    return `+7${digits.slice(1)}`;
-  }
-  if (digits.length === 10) {
-    return `+7${digits}`;
-  }
-  return null;
-}
-
-async function bitrixCall<T = unknown>(method: string, payload: Record<string, unknown>) {
-  const domain = process.env.BITRIX_DOMAIN;
-  const token = process.env.WEBHOOK_TOKEN;
-  if (!domain || !token) throw new Error('misconfigured');
-  const url = `https://${domain}/rest/${token}${method}.json`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+async function withPhoneSubmitLock<T>(phone: string, fn: () => Promise<T>): Promise<T> {
+  const previous = phoneSubmitLocks.get(phone) ?? Promise.resolve();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
   });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data?.error) {
-    console.error(`vlasevo-lead: ${method} failed`, data);
-    throw new Error('bitrix_error');
+  phoneSubmitLocks.set(phone, previous.then(() => gate));
+  await previous;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (phoneSubmitLocks.get(phone) === gate) {
+      phoneSubmitLocks.delete(phone);
+    }
   }
-  return data.result as T;
 }
 
-async function findContactByPhone(phone: string): Promise<number | null> {
-  const result = await bitrixCall<{ CONTACT?: number[] }>('crm.duplicate.findbycomm', {
-    type: 'PHONE',
-    values: [phone],
-    entity_type: 'CONTACT',
+function resolveLanding(body: Record<string, unknown>): CampLanding {
+  const landing = clamp(body.landing, 30);
+  if (landing === 'vlasevo-promo') return 'vlasevo-promo';
+  return 'vlasevo';
+}
+
+function buildLeadQualificationPatch(
+  existing: CampLeadQualification | undefined,
+  lead: Pick<VlasevoLead, 'name' | 'phone'>
+) {
+  const patch: CampLeadQualification = {};
+  if (!existing?.applicantFullName) patch.applicantFullName = lead.name;
+  if (!existing?.contactPhone) patch.contactPhone = lead.phone;
+  return patch;
+}
+
+async function syncExistingLeadToBitrix(lead: VlasevoLead) {
+  const qualificationPatch = buildLeadQualificationPatch(lead.qualification, lead);
+  const leadWithPatchedQualification =
+    Object.keys(qualificationPatch).length > 0
+      ? await updateVlasevoLeadQualification(lead.id, { qualification: qualificationPatch })
+      : lead;
+  const currentLead = leadWithPatchedQualification ?? lead;
+
+  if (currentLead.bitrixDealId) {
+    const result = await syncCampLead({
+      logPrefix: 'vlasevo-lead-dedupe',
+      dealId: currentLead.bitrixDealId,
+      landing: currentLead.landing,
+      name: currentLead.name,
+      phone: currentLead.phone,
+      shift: currentLead.shift,
+      bookingPrice: currentLead.bookingPrice,
+      source: currentLead.source,
+      utm: currentLead.utm,
+      qualification: currentLead.qualification,
+    });
+    const nextLead = await updateVlasevoLeadBitrix(currentLead.id, {
+      bitrixStatus: 'sent',
+      bitrixDealId: result.dealId,
+      bitrixContactId: result.contactId ?? currentLead.bitrixContactId,
+    });
+    return { lead: nextLead ?? currentLead, bitrixResult: result, bitrixPending: false };
+  }
+
+  const result = await syncCampLead({
+    logPrefix: 'vlasevo-lead-dedupe',
+    landing: currentLead.landing,
+    name: currentLead.name,
+    phone: currentLead.phone,
+    shift: currentLead.shift,
+    bookingPrice: currentLead.bookingPrice,
+    source: currentLead.source,
+    utm: currentLead.utm,
+    qualification: currentLead.qualification,
   });
-  const id = result?.CONTACT?.[0];
-  return typeof id === 'number' ? id : null;
+  const nextLead = await updateVlasevoLeadBitrix(currentLead.id, {
+    bitrixStatus: 'sent',
+    bitrixDealId: result.dealId,
+    bitrixContactId: result.contactId ?? undefined,
+  });
+  return { lead: nextLead ?? currentLead, bitrixResult: result, bitrixPending: false };
 }
 
 export async function POST(request: Request) {
@@ -71,69 +127,177 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
-  const phone = normalizePhone(rawPhone);
+  const phone = normalizeLeadPhone(rawPhone);
   if (!phone) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 });
   }
 
-  const utm: UtmFields = {};
-  if (body.utm && typeof body.utm === 'object') {
-    const raw = body.utm as Record<string, unknown>;
-    (['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const).forEach((key) => {
-      const value = clamp(raw[key], 250);
-      if (value) utm[key] = value;
+  return withPhoneSubmitLock(phone, async () => {
+  const landing = resolveLanding(body);
+  const bookingPrice = parseBookingPrice(body.bookingPrice);
+  const source = typeof body.source === 'string' ? body.source : undefined;
+  const utm = parseLeadUtm(body.utm);
+
+  const duplicateLead = await findRecentDuplicateVlasevoLead({ phone, shift });
+  if (duplicateLead) {
+    const mergedLead = await updateVlasevoLeadTopLevel(duplicateLead.id, {
+      name,
+      shift,
+      landing: landing === 'vlasevo-promo' ? 'vlasevo-promo' : 'vlasevo',
+      bookingPrice,
+      source,
+      utm,
+    });
+    const reusedLead = mergedLead ?? duplicateLead;
+
+    const syncMode = process.env.BITRIX_SYNC_MODE?.trim().toLowerCase();
+    if (syncMode === 'relay') {
+      return NextResponse.json({
+        ok: true,
+        saved: true,
+        deduplicated: true,
+        leadId: reusedLead.id,
+        bitrixPending: reusedLead.bitrixStatus !== 'sent',
+        bitrixSyncMode: 'relay',
+      });
+    }
+
+    try {
+      const outcome = await syncExistingLeadToBitrix(reusedLead);
+      return NextResponse.json({
+        ok: true,
+        saved: true,
+        deduplicated: true,
+        leadId: outcome.lead.id,
+        ...outcome.bitrixResult,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown';
+      const bitrixError = mapCampLeadError(message);
+      await updateVlasevoLeadBitrix(reusedLead.id, {
+        bitrixStatus: reusedLead.bitrixDealId ? 'sent' : 'failed',
+        bitrixDealId: reusedLead.bitrixDealId,
+        bitrixContactId: reusedLead.bitrixContactId,
+        bitrixError,
+      }).catch((updateError) => {
+        console.error('vlasevo-lead: failed to mark duplicate lead sync failed', updateError);
+      });
+      return NextResponse.json({
+        ok: true,
+        saved: true,
+        deduplicated: true,
+        leadId: reusedLead.id,
+        bitrixPending: true,
+      });
+    }
+  }
+
+  let savedLead;
+  try {
+    savedLead = await saveVlasevoLead({
+      name,
+      phone,
+      shift,
+      landing,
+      bookingPrice,
+      source,
+      utm,
+    });
+  } catch (error) {
+    console.error('vlasevo-lead: local save failed', error);
+    return NextResponse.json({ ok: false, error: 'save_failed' }, { status: 500 });
+  }
+
+  const syncMode = process.env.BITRIX_SYNC_MODE?.trim().toLowerCase();
+  if (syncMode === 'relay') {
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      leadId: savedLead.id,
+      bitrixPending: true,
+      bitrixSyncMode: 'relay',
     });
   }
 
-  const commentLines = [`Смена: ${shift}`];
-  if (typeof body.source === 'string' && body.source.trim()) {
-    commentLines.push(`Источник формы: ${body.source.trim()}`);
-  }
-  const utmLines = Object.entries(utm).map(([k, v]) => `${k}: ${v}`);
-  if (utmLines.length) {
-    commentLines.push('', 'UTM:', ...utmLines);
-  }
-  const comments = commentLines.join('\n');
-
-  try {
-    let contactId = await findContactByPhone(phone);
-    let contactCreated = false;
-    if (!contactId) {
-      contactId = await bitrixCall<number>('crm.contact.add', {
-        fields: {
-          NAME: name,
-          PHONE: [{ VALUE: phone, VALUE_TYPE: 'WORK' }],
-          SOURCE_ID: 'WEBFORM',
-          ASSIGNED_BY_ID,
-          OPENED: 'Y',
-        },
+  // The lead is already stored locally and visible in the admin panel, so we
+  // never need to make the user wait on Bitrix. Attempt the Bitrix submission,
+  // but only hold the HTTP response for up to RESPONSE_BUDGET_MS. If Bitrix is
+  // slow/unreachable, we answer "success" immediately and let the submission
+  // finish in the background, updating the lead status when it resolves.
+  const submission = syncCampLead({
+    logPrefix: 'vlasevo-lead',
+    landing,
+    name,
+    phone,
+    shift,
+    bookingPrice,
+    source,
+    utm,
+  })
+    .then(async (result) => {
+      await updateVlasevoLeadBitrix(savedLead.id, {
+        bitrixStatus: 'sent',
+        bitrixDealId: result.dealId,
+        bitrixContactId: result.contactId ?? undefined,
+      }).catch((updateError) => {
+        console.error('vlasevo-lead: failed to mark lead sent', updateError);
       });
-      contactCreated = true;
-    }
+      const latestLead = await getVlasevoLeadById(savedLead.id).catch(() => null);
+      if (latestLead?.qualification) {
+        await updateCampLead({
+          logPrefix: 'vlasevo-lead',
+          dealId: result.dealId,
+          landing,
+          name: latestLead.name,
+          phone: latestLead.phone,
+          shift: latestLead.shift,
+          bookingPrice: latestLead.bookingPrice,
+          source: latestLead.source,
+          utm: latestLead.utm,
+          qualification: latestLead.qualification,
+        }).catch((updateError) => {
+          console.error('vlasevo-lead: failed to sync qualification after deal creation', updateError);
+        });
+      }
+      return { status: 'sent' as const, result };
+    })
+    .catch(async (e) => {
+      const message = e instanceof Error ? e.message : 'unknown';
+      const error = mapCampLeadError(message);
+      await updateVlasevoLeadBitrix(savedLead.id, {
+        bitrixStatus: 'failed',
+        bitrixError: error,
+      }).catch((updateError) => {
+        console.error('vlasevo-lead: failed to mark lead failed', updateError);
+      });
+      console.error('vlasevo-lead: Bitrix failed, lead saved locally', savedLead.id, message);
+      return { status: 'failed' as const };
+    });
 
-    const dealFields: Record<string, unknown> = {
-      TITLE: `Заявка с лендинга «Власьево» — ${name}`,
-      CATEGORY_ID: DEAL_CATEGORY_ID,
-      STAGE_ID: DEAL_STAGE_ID,
-      TYPE_ID: '1',
-      CONTACT_ID: contactId,
-      SOURCE_ID: 'WEBFORM',
-      ASSIGNED_BY_ID,
-      OPENED: 'Y',
-      COMMENTS: comments,
-    };
-    if (utm.utm_source) dealFields.UTM_SOURCE = utm.utm_source;
-    if (utm.utm_medium) dealFields.UTM_MEDIUM = utm.utm_medium;
-    if (utm.utm_campaign) dealFields.UTM_CAMPAIGN = utm.utm_campaign;
-    if (utm.utm_content) dealFields.UTM_CONTENT = utm.utm_content;
-    if (utm.utm_term) dealFields.UTM_TERM = utm.utm_term;
+  const timeoutMarker = Symbol('bitrix-timeout');
+  const outcome = await Promise.race([
+    submission,
+    new Promise<typeof timeoutMarker>((resolve) => {
+      setTimeout(() => resolve(timeoutMarker), RESPONSE_BUDGET_MS);
+    }),
+  ]);
 
-    const dealId = await bitrixCall<number>('crm.deal.add', { fields: dealFields });
-
-    return NextResponse.json({ ok: true, dealId, contactId, contactCreated });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'unknown';
-    const status = message === 'misconfigured' ? 500 : 502;
-    return NextResponse.json({ ok: false, error: message }, { status });
+  if (outcome !== timeoutMarker && outcome.status === 'sent') {
+    return NextResponse.json({
+      ok: true,
+      saved: true,
+      leadId: savedLead.id,
+      ...outcome.result,
+    });
   }
+
+  // Timed out (submission keeps running in the background) or failed quickly.
+  // Either way the lead is safely stored, so we report success to the user.
+  return NextResponse.json({
+    ok: true,
+    saved: true,
+    leadId: savedLead.id,
+    bitrixPending: true,
+  });
+  });
 }

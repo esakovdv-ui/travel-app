@@ -1,0 +1,35 @@
+name: Set Tourvisor env on server
+
+on:
+  workflow_dispatch:
+    inputs:
+      tourvisor_authkey:
+        description: TOURVISOR_AUTHKEY value
+        required: true
+        type: string
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set TOURVISOR_AUTHKEY on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TOURVISOR_AUTHKEY: ${{ github.event.inputs.tourvisor_authkey }}
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: TOURVISOR_AUTHKEY
+          script: |
+            set -e
+            ENV_FILE=/home/travel-app/.env.local
+            touch "$ENV_FILE"
+            if grep -q "^TOURVISOR_AUTHKEY=" "$ENV_FILE"; then
+              sed -i.bak "s|^TOURVISOR_AUTHKEY=.*|TOURVISOR_AUTHKEY=${TOURVISOR_AUTHKEY}|" "$ENV_FILE"
+            else
+              printf '%s=%s\n' TOURVISOR_AUTHKEY "$TOURVISOR_AUTHKEY" >> "$ENV_FILE"
+            fi
+            pm2 restart travel-app
+            node /home/travel-app/scripts/register-tourvisor-webhook.js || true
+            echo "TOURVISOR_AUTHKEY configured"

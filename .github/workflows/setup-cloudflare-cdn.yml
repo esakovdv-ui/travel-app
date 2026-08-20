@@ -1,0 +1,24 @@
+name: Setup Cloudflare CDN
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cdn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Cloudflare proxy for motrip.ru
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: CF_API_TOKEN,CF_ACCOUNT_ID
+          command_timeout: 10m
+          script: |
+            bash /home/travel-app/scripts/setup-cloudflare-cdn.sh

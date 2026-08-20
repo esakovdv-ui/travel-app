@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Подбор отдыха — прототип</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-2: #141414;
+      --yellow: #ffcc00;
+      --orange: #ff6a00;
+      --orange-hover: #ff8124;
+      --white: #ffffff;
+      --muted: #a3a3a3;
+      --line: #2a2a2a;
+      --card: #ffffff;
+      --ink: #0d0d0d;
+      --ok: #1a7f37;
+      --warn: #b45309;
+      --bad: #9f1239;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Manrope, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      line-height: 1.35;
+    }
+    .proto-bar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      padding: 10px 16px; background: #1c1c1c; border-bottom: 1px solid var(--line);
+      font-size: 13px; color: var(--muted);
+    }
+    .proto-bar strong { color: var(--yellow); font-weight: 700; }
+    .proto-bar button {
+      border: 0; background: transparent; color: var(--orange);
+      font: inherit; font-weight: 700; cursor: pointer; padding: 0;
+    }
+    .shell { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 20px 0 8px; }
+    .brand-mark {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, #e11, #c00);
+      display: grid; place-items: center; font-size: 11px; font-weight: 800;
+    }
+    .brand span { font-size: 13px; color: var(--muted); }
+    .hero {
+      background: var(--yellow); color: var(--ink);
+      border-radius: 0 0 28px 28px; margin: 0 -16px 28px; padding: 28px 16px 32px;
+    }
+    @media (min-width: 752px) {
+      .hero { margin-left: 0; margin-right: 0; border-radius: 24px; padding: 36px 32px; }
+    }
+    .hero h1 {
+      margin: 0 0 10px; font-size: clamp(28px, 6vw, 40px);
+      font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+    }
+    .hero p { margin: 0 0 22px; font-size: 17px; max-width: 28em; }
+    .progress { display: flex; gap: 6px; margin-bottom: 18px; }
+    .progress i { flex: 1; height: 4px; border-radius: 99px; background: #333; }
+    .progress i.on { background: var(--orange); }
+    .progress i.done { background: #555; }
+    .step-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    h2 {
+      margin: 0 0 8px; font-size: clamp(22px, 4vw, 28px);
+      font-weight: 800; letter-spacing: -0.02em;
+    }
+    .sub { margin: 0 0 20px; color: var(--muted); font-size: 15px; }
+    .hint {
+      margin: -8px 0 16px; padding: 12px 14px; border-radius: 12px;
+      background: #1a120c; border: 1px solid #3a2a1a; color: #f3d5b5; font-size: 13px;
+    }
+    .grid { display: grid; gap: 12px; }
+    @media (min-width: 560px) {
+      .grid.two { grid-template-columns: 1fr 1fr; }
+      .grid.regions { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      appearance: none; width: 100%; text-align: left;
+      border: 2px solid transparent; border-radius: 18px;
+      background: var(--card); color: var(--ink);
+      padding: 18px; cursor: pointer; font: inherit;
+      transition: border-color .15s, transform .15s, opacity .15s;
+    }
+    .card:hover:not(:disabled) { transform: translateY(-1px); }
+    .card.selected { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
+    .card:disabled { opacity: .45; cursor: not-allowed; }
+    .card .title { display: block; font-weight: 800; font-size: 18px; margin-bottom: 4px; }
+    .card .desc { display: block; font-size: 14px; color: #555; }
+    .card .fit {
+      display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 700;
+      padding: 4px 8px; border-radius: 99px;
+    }
+    .fit-ok { background: #e8f7ee; color: var(--ok); }
+    .fit-stretch { background: #fff3e6; color: var(--warn); }
+    .fit-over { background: #fce7ef; color: var(--bad); }
+    .card.rec { position: relative; padding-top: 34px; }
+    .card.rec::after {
+      content: "Под ваш бюджет";
+      position: absolute; top: 12px; right: 12px;
+      font-size: 11px; font-weight: 700;
+      background: #fff3e6; color: #b34a00;
+      padding: 4px 8px; border-radius: 99px;
+    }
+    .region { position: relative; overflow: hidden; min-height: 120px; padding: 0; background: #222; }
+    .region img { width: 100%; height: 120px; object-fit: cover; display: block; filter: brightness(0.72); }
+    .region .overlay {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      justify-content: flex-end; padding: 14px; color: #fff;
+    }
+    .region .title { color: #fff; margin: 0; }
+    .region .desc { color: rgba(255,255,255,.85); }
+    .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chip {
+      border: 2px solid var(--line); background: var(--bg-2); color: var(--white);
+      border-radius: 16px; padding: 16px 14px; font: inherit; font-weight: 700;
+      font-size: 16px; cursor: pointer; text-align: left;
+    }
+    .chip small { display: block; margin-top: 4px; font-weight: 500; font-size: 12px; color: var(--muted); }
+    .chip .fit { margin-top: 8px; }
+    .chip.selected { border-color: var(--orange); background: #1a120c; }
+    .chip:disabled { opacity: .4; cursor: not-allowed; }
+    .counters { display: grid; gap: 14px; }
+    .counter {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
+    }
+    .counter .label { font-weight: 700; }
+    .counter .label small { display: block; font-weight: 500; color: var(--muted); margin-top: 2px; }
+    .counter .ctrl { display: flex; align-items: center; gap: 12px; }
+    .counter button {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+      background: #222; color: #fff; font-size: 20px; line-height: 1; cursor: pointer;
+    }
+    .counter button:disabled { opacity: .35; cursor: not-allowed; }
+    .counter .val { min-width: 1.5em; text-align: center; font-weight: 800; font-size: 18px; }
+    .kids-ages {
+      display: none; margin-top: 4px; padding: 16px;
+      background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px;
+    }
+    .kids-ages.visible { display: grid; gap: 12px; }
+    .kids-ages .ages-title {
+      font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 2px;
+    }
+    .kid-age-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .kid-age-row span { font-weight: 700; font-size: 15px; }
+    .kid-age-row select {
+      flex: 1; max-width: 180px; min-width: 0;
+      appearance: none; -webkit-appearance: none;
+      background: #222 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a3a3a3' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+      border: 1px solid var(--line); border-radius: 12px;
+      color: var(--white); font: inherit; font-weight: 700; font-size: 15px;
+      padding: 12px 36px 12px 14px; outline: none; cursor: pointer;
+    }
+    .kid-age-row select:focus { border-color: var(--orange); }
+    .summary {
+      background: var(--bg-2); border: 1px solid var(--line);
+      border-radius: 18px; padding: 18px; margin-bottom: 16px;
+    }
+    .summary dl { margin: 0; display: grid; gap: 10px; }
+    .summary div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+    .summary dt { color: var(--muted); }
+    .summary dd { margin: 0; font-weight: 700; text-align: right; }
+    .note { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+    .note a { color: var(--orange); }
+    .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+    .btn {
+      appearance: none; border: 0; border-radius: 999px;
+      padding: 14px 22px; font: inherit; font-weight: 800; font-size: 16px; cursor: pointer;
+    }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: var(--orange-hover); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .screen { display: none; animation: in .25s ease; }
+    .screen.active { display: block; }
+    @keyframes in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .mock-result {
+      margin-top: 18px; padding: 16px; border-radius: 16px;
+      background: #102416; border: 1px solid #234d30; color: #c6f0d0; font-size: 14px;
+    }
+    .mock-result code {
+      display: block; margin-top: 8px; word-break: break-all; color: #9ad0a8; font-size: 12px;
+    }
+    .footer-cert {
+      margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);
+      font-size: 13px; color: var(--muted);
+    }
+    .budget-panel {
+      background: var(--bg-2); border: 1px solid var(--line);
+      border-radius: 20px; padding: 22px 18px 18px;
+    }
+    .budget-value {
+      font-size: clamp(32px, 8vw, 44px); font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1; margin: 0 0 6px;
+    }
+    .budget-value span { color: var(--orange); }
+    .budget-note { margin: 0 0 22px; font-size: 14px; color: var(--muted); }
+    .budget-note strong { color: var(--yellow); font-weight: 700; }
+    .slider-wrap { position: relative; padding: 8px 0 36px; }
+    .budget-range {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 6px; border-radius: 99px;
+      background: linear-gradient(to right, var(--orange) 0%, var(--orange) var(--pct, 0%), #333 var(--pct, 0%), #333 100%);
+      outline: none; cursor: pointer;
+    }
+    .budget-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%;
+      background: var(--yellow); border: 3px solid var(--ink);
+      box-shadow: 0 2px 8px rgba(0,0,0,.35); cursor: grab;
+    }
+    .budget-range::-moz-range-thumb {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--yellow); border: 3px solid var(--ink);
+      box-shadow: 0 2px 8px rgba(0,0,0,.35); cursor: grab;
+    }
+    .budget-ticks {
+      display: flex; justify-content: space-between;
+      margin-top: 10px; padding: 0 2px;
+    }
+    .budget-tick {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+      color: var(--muted); min-width: 0;
+    }
+    .budget-tick::before {
+      content: ""; width: 2px; height: 8px; border-radius: 99px; background: #444;
+    }
+    .budget-tick.active::before { background: var(--orange); height: 10px; }
+    .budget-tick.active { color: var(--yellow); }
+    .budget-tick span { font-size: 10px; font-weight: 700; white-space: nowrap; }
+    @media (min-width: 560px) { .budget-tick span { font-size: 11px; } }
+    .budget-custom {
+      margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line);
+    }
+    .budget-custom label {
+      display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px;
+    }
+    .budget-custom-row { display: flex; gap: 8px; align-items: center; }
+    .budget-custom input {
+      flex: 1; min-width: 0;
+      background: #222; border: 1px solid var(--line); border-radius: 12px;
+      color: var(--white); font: inherit; font-weight: 700; font-size: 16px;
+      padding: 12px 14px; outline: none;
+    }
+    .budget-custom input:focus { border-color: var(--orange); }
+    .budget-custom input::placeholder { color: #666; font-weight: 500; }
+    .budget-custom .suffix { font-size: 14px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="proto-bar">
+    <div><strong>Прототип</strong> · люди → бюджет → подбор · не прод</div>
+    <button type="button" id="resetBtn">Сначала</button>
+  </div>
+
+  <div class="shell">
+    <div class="brand">
+      <div class="brand-mark">МГТ</div>
+      <span>МОСГОРТУР · подбор отдыха</span>
+    </div>
+
+    <section class="screen active" data-screen="entry">
+      <div class="hero">
+        <h1>Подберите отдых за минуту</h1>
+        <p>Скажите, сколько вас и какой бюджет. Потом покажем подходящие туры или отели.</p>
+        <button type="button" class="btn btn-primary" data-go="people">Подобрать отдых</button>
+      </div>
+      <p class="footer-cert">Есть сертификат МОСГОРТУР? Им можно оплатить часть стоимости — до 40&nbsp;000&nbsp;₽ на человека. <a href="https://online.mosgortur.ru/for-tourists/how-get-certificate/" target="_blank" rel="noopener">Как это работает</a></p>
+    </section>
+
+    <section class="screen" data-screen="people">
+      <div class="progress" data-step="1"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 1 из 6</div>
+      <h2>Сколько человек едет?</h2>
+      <p class="sub">От этого зависят цены и свободные номера.</p>
+      <div class="counters">
+        <div class="counter">
+          <div class="label">Взрослые<small>От 18 лет</small></div>
+          <div class="ctrl">
+            <button type="button" data-counter="adults" data-delta="-1" aria-label="Меньше взрослых">−</button>
+            <span class="val" id="adultsVal">2</span>
+            <button type="button" data-counter="adults" data-delta="1" aria-label="Больше взрослых">+</button>
+          </div>
+        </div>
+        <div class="counter">
+          <div class="label">Дети<small>До 17 лет</small></div>
+          <div class="ctrl">
+            <button type="button" data-counter="kids" data-delta="-1" aria-label="Меньше детей">−</button>
+            <span class="val" id="kidsVal">0</span>
+            <button type="button" data-counter="kids" data-delta="1" aria-label="Больше детей">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="kids-ages" id="kidsAges" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="entry">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="budget">Указать бюджет</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="budget">
+      <div class="progress" data-step="2"><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 2 из 6</div>
+      <h2>Какой бюджет на поездку?</h2>
+      <p class="sub">На всех, кто едет. Двигайте шкалу или укажите свою сумму.</p>
+      <div class="budget-panel" id="budgetPanel">
+        <p class="budget-value" id="budgetDisplay"><span>80 000</span> ₽</p>
+        <p class="budget-note" id="budgetNote"></p>
+        <div class="slider-wrap">
+          <input type="range" class="budget-range" id="budgetRange"
+            min="40000" max="360000" step="40000" value="80000"
+            aria-label="Бюджет на поездку" aria-valuemin="40000" aria-valuemax="360000" />
+          <div class="budget-ticks" id="budgetTicks" role="group" aria-label="Быстрый выбор суммы"></div>
+        </div>
+        <div class="budget-custom">
+          <label for="budgetCustom">Своя сумма</label>
+          <div class="budget-custom-row">
+            <input type="number" id="budgetCustom" min="40000" step="1000" inputmode="numeric"
+              placeholder="Например, 450 000" aria-label="Своя сумма бюджета" />
+            <span class="suffix">₽</span>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="people">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="format" data-need="budget">Выбрать формат</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="format">
+      <div class="progress" data-step="3"><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 3 из 6</div>
+      <h2>Что ищете?</h2>
+      <p class="sub">От этого зависит, куда мы вас направим.</p>
+      <div class="grid two" role="group">
+        <button type="button" class="card" data-key="format" data-value="tour">
+          <span class="title">Тур</span>
+          <span class="desc">Проживание и то, что входит в пакет</span>
+        </button>
+        <button type="button" class="card" data-key="format" data-value="hotel">
+          <span class="title">Отель</span>
+          <span class="desc">Только проживание</span>
+        </button>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="budget">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="region" data-need="format">Выбрать направление</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="region">
+      <div class="progress" data-step="4"><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i><i></i></div>
+      <div class="step-label">Шаг 4 из 6</div>
+      <h2>Куда хотите поехать?</h2>
+      <p class="sub">Можно выбрать позже — тогда покажем больше направлений.</p>
+      <div class="grid regions" role="group">
+        <button type="button" class="card region" data-key="region" data-value="podmos">
+          <img src="https://images.unsplash.com/photo-1513326738677-b964603b136d?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Подмосковье</span><span class="desc">Близко, на выходные или неделю</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="sea">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">У моря</span><span class="desc">Юг России</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="other">
+          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Другой регион</span><span class="desc">Алтай, Карелия и другие</span></span>
+        </button>
+        <button type="button" class="card region" data-key="region" data-value="any">
+          <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=640&q=80" alt="" />
+          <span class="overlay"><span class="title">Пока не знаю</span><span class="desc">Покажем разные варианты</span></span>
+        </button>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="format">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="nights" data-need="region">Выбрать длительность</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="nights">
+      <div class="progress" data-step="5"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i><i></i></div>
+      <div class="step-label">Шаг 5 из 6</div>
+      <h2>На сколько ночей?</h2>
+      <p class="sub">Подписи показывают, что обычно влезает в ваш бюджет.</p>
+      <div class="hint" id="nightsHint" hidden></div>
+      <div class="chips" role="group" id="nightsGroup"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="region">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="level" data-need="nights">Выбрать размещение</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="level">
+      <div class="progress" data-step="6"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i><i></i></div>
+      <div class="step-label">Шаг 6 из 6</div>
+      <h2>Какое размещение нужно?</h2>
+      <p class="sub">Сначала то, что обычно по карману. Дороже — можно выбрать, если готовы доплатить.</p>
+      <div class="hint" id="levelHint" hidden></div>
+      <div class="grid" role="group" id="levelGroup"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="nights">Назад</button>
+        <button type="button" class="btn btn-primary" data-go="summary" data-need="level">Посмотреть запрос</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="summary">
+      <div class="progress" data-step="7"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="on"></i></div>
+      <h2>Ваш запрос</h2>
+      <p class="sub">Проверьте и откройте подборку.</p>
+      <div class="summary">
+        <dl>
+          <div><dt>Кто едет</dt><dd id="out-people">—</dd></div>
+          <div><dt>Бюджет</dt><dd id="out-budget">—</dd></div>
+          <div><dt>Формат</dt><dd id="out-format">—</dd></div>
+          <div><dt>Куда</dt><dd id="out-region">—</dd></div>
+          <div><dt>Ночей</dt><dd id="out-nights">—</dd></div>
+          <div><dt>Размещение</dt><dd id="out-level">—</dd></div>
+        </dl>
+      </div>
+      <p class="hint" id="summaryFit" hidden></p>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-go="level">Назад</button>
+        <button type="button" class="btn btn-primary" id="goResults">Показать варианты</button>
+      </div>
+      <p class="note">В прототипе после нажатия — пример ссылки. В проде откроется раздел туров или отелей.</p>
+      <div class="mock-result" id="mockResult" hidden>
+        В проде здесь откроется подборка.<code id="mockUrl"></code>
+      </div>
+      <p class="footer-cert">Сертификатом можно оплатить часть суммы — до 40&nbsp;000&nbsp;₽ на человека.</p>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      adults: 2,
+      kids: 0,
+      kidsAges: [],
+      budget: 80000,
+      budgetCustom: false,
+      format: null,
+      region: null,
+      nights: null,
+      level: null,
+    };
+
+    const BUDGET_MIN = 40000;
+    const BUDGET_MAX = 360000;
+    const BUDGET_STEP = 40000;
+    const BUDGET_SNAPS = [];
+    for (let v = BUDGET_MIN; v <= BUDGET_MAX; v += BUDGET_STEP) BUDGET_SNAPS.push(v);
+
+    const labels = {
+      format: { tour: 'Тур', hotel: 'Отель' },
+      region: {
+        podmos: 'Подмосковье',
+        sea: 'У моря',
+        other: 'Другой регион',
+        any: 'Пока не знаю',
+      },
+      nights: {
+        '2-3': '2–3',
+        '5-7': '5–7',
+        '8-10': '8–10',
+        '11+': '11+',
+      },
+      level: {
+        simple: 'Проще',
+        usual: 'Как обычно',
+        higher: 'Выше классом',
+      },
+    };
+
+    const nightsMeta = [
+      { id: '2-3', mid: 2.5, why: 'Короткий выезд' },
+      { id: '5-7', mid: 6, why: 'Обычный отпуск' },
+      { id: '8-10', mid: 9, why: 'Успеете осмотреться' },
+      { id: '11+', mid: 12, why: 'Длинный отдых' },
+    ];
+    const levelMeta = [
+      { id: 'simple', mult: 1, desc: 'Базовый номер, без лишнего' },
+      { id: 'usual', mult: 1.35, desc: 'Нормальный номер и питание' },
+      { id: 'higher', mult: 1.85, desc: 'Лучше номер или место' },
+    ];
+    const regionMult = { podmos: 0.75, sea: 1.25, other: 1, any: 1.05 };
+    const formatMult = { tour: 1, hotel: 0.88 };
+
+    function peopleCount() {
+      const kidsWeight = state.kidsAges.reduce((sum, age) => {
+        if (age < 2) return sum + 0.3;
+        if (age < 12) return sum + 0.7;
+        return sum + 0.9;
+      }, 0);
+      // Fallback if ages not yet filled
+      const kids = state.kidsAges.length ? kidsWeight : state.kids * 0.85;
+      return Math.max(1, state.adults + kids);
+    }
+
+    function ageLabel(age) {
+      if (age === 0) return 'до 1 года';
+      if (age === 1) return '1 год';
+      if (age >= 2 && age <= 4) return `${age} года`;
+      return `${age} лет`;
+    }
+
+    function syncKidsAges() {
+      while (state.kidsAges.length < state.kids) state.kidsAges.push(2);
+      while (state.kidsAges.length > state.kids) state.kidsAges.pop();
+    }
+
+    function renderKidsAges() {
+      const box = document.getElementById('kidsAges');
+      syncKidsAges();
+      if (!state.kids) {
+        box.classList.remove('visible');
+        box.innerHTML = '';
+        return;
+      }
+      box.classList.add('visible');
+      box.innerHTML = `<p class="ages-title">Возраст детей</p>` + state.kidsAges.map((age, i) => {
+        const opts = Array.from({ length: 18 }, (_, a) =>
+          `<option value="${a}"${a === age ? ' selected' : ''}>${ageLabel(a)}</option>`
+        ).join('');
+        return `<div class="kid-age-row">
+          <span>Ребёнок ${i + 1}</span>
+          <select data-kid-age="${i}" aria-label="Возраст ребёнка ${i + 1}">${opts}</select>
+        </div>`;
+      }).join('');
+
+      box.querySelectorAll('[data-kid-age]').forEach((sel) => {
+        sel.addEventListener('change', () => {
+          const idx = Number(sel.dataset.kidAge);
+          state.kidsAges[idx] = Number(sel.value);
+          state.nights = null;
+          state.level = null;
+          updateBudgetUI();
+        });
+      });
+    }
+
+    /** Rough trip cost estimate for prototype guidance only */
+    function estimateCost(nightsId, levelId) {
+      const n = nightsMeta.find((x) => x.id === nightsId)?.mid || 6;
+      const l = levelMeta.find((x) => x.id === levelId)?.mult || 1.35;
+      const basePerPersonNight = 4500;
+      return basePerPersonNight
+        * n
+        * l
+        * peopleCount()
+        * (regionMult[state.region] || 1)
+        * (formatMult[state.format] || 1);
+    }
+
+    function formatRub(n) {
+      return new Intl.NumberFormat('ru-RU').format(Math.round(n));
+    }
+
+    function budgetLabel() {
+      return `${formatRub(state.budget)} ₽`;
+    }
+
+    function budgetNote() {
+      const perPerson = Math.round(state.budget / peopleCount());
+      return `Примерно <strong>${formatRub(perPerson)} ₽</strong> на человека.`;
+    }
+
+    function setBudget(value, fromCustom = false) {
+      const num = Math.max(BUDGET_MIN, Math.round(Number(value) || BUDGET_MIN));
+      state.budget = num;
+      state.budgetCustom = fromCustom || num > BUDGET_MAX;
+      state.nights = null;
+      state.level = null;
+      updateBudgetUI();
+    }
+
+    function updateBudgetUI() {
+      const range = document.getElementById('budgetRange');
+      const display = document.getElementById('budgetDisplay');
+      const note = document.getElementById('budgetNote');
+      const custom = document.getElementById('budgetCustom');
+
+      const sliderVal = state.budgetCustom && state.budget > BUDGET_MAX
+        ? BUDGET_MAX
+        : Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, Math.round(state.budget / BUDGET_STEP) * BUDGET_STEP));
+
+      range.value = sliderVal;
+      const pct = ((sliderVal - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100;
+      range.style.setProperty('--pct', `${pct}%`);
+      range.setAttribute('aria-valuenow', String(state.budget));
+
+      display.innerHTML = `<span>${formatRub(state.budget)}</span> ₽`;
+      note.innerHTML = budgetNote();
+
+      document.querySelectorAll('.budget-tick').forEach((btn) => {
+        const val = Number(btn.dataset.value);
+        btn.classList.toggle('active', !state.budgetCustom && val === sliderVal);
+      });
+
+      if (state.budgetCustom && state.budget > BUDGET_MAX) {
+        custom.value = state.budget;
+      } else if (document.activeElement !== custom) {
+        custom.value = '';
+      }
+    }
+
+    function initBudgetSlider() {
+      const ticks = document.getElementById('budgetTicks');
+      const range = document.getElementById('budgetRange');
+      const custom = document.getElementById('budgetCustom');
+
+      BUDGET_SNAPS.forEach((val) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'budget-tick';
+        btn.dataset.value = val;
+        btn.innerHTML = `<span>${val / 1000}</span>`;
+        btn.title = `${formatRub(val)} ₽`;
+        btn.addEventListener('click', () => setBudget(val, false));
+        ticks.appendChild(btn);
+      });
+
+      range.addEventListener('input', () => {
+        setBudget(Number(range.value), false);
+      });
+
+      custom.addEventListener('input', () => {
+        const raw = custom.value.replace(/\s/g, '');
+        if (!raw) {
+          state.budgetCustom = false;
+          updateBudgetUI();
+          return;
+        }
+        const num = Number(raw);
+        if (num >= BUDGET_MIN) setBudget(num, true);
+      });
+
+      custom.addEventListener('blur', () => {
+        if (!custom.value) {
+          state.budgetCustom = false;
+          updateBudgetUI();
+        }
+      });
+
+      updateBudgetUI();
+    }
+
+    function fitOf(nightsId, levelId) {
+      const budget = state.budget || BUDGET_MIN;
+      const cost = estimateCost(nightsId, levelId);
+      const ratio = cost / budget;
+      if (ratio <= 1.05) return 'ok';
+      if (ratio <= 1.35) return 'stretch';
+      return 'over';
+    }
+
+    function fitLabel(fit) {
+      if (fit === 'ok') return { text: 'Обычно в бюджете', cls: 'fit-ok' };
+      if (fit === 'stretch') return { text: 'Может понадобиться доплата', cls: 'fit-stretch' };
+      return { text: 'Скорее выше бюджета', cls: 'fit-over' };
+    }
+
+    function bestDefaultNights() {
+      let best = nightsMeta[0].id;
+      for (const n of nightsMeta) {
+        const fit = fitOf(n.id, 'usual');
+        if (fit === 'ok') best = n.id;
+        else if (fit === 'stretch' && best === nightsMeta[0].id) best = n.id;
+      }
+      return best;
+    }
+
+    function bestDefaultLevel(nightsId) {
+      let best = 'simple';
+      for (const l of levelMeta) {
+        if (fitOf(nightsId, l.id) === 'ok') best = l.id;
+      }
+      return best;
+    }
+
+    function renderNights() {
+      const group = document.getElementById('nightsGroup');
+      const hint = document.getElementById('nightsHint');
+      group.innerHTML = '';
+      if (!state.nights) state.nights = bestDefaultNights();
+
+      nightsMeta.forEach((n) => {
+        const fit = fitOf(n.id, state.level || 'usual');
+        const fl = fitLabel(fit);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip' + (state.nights === n.id ? ' selected' : '');
+        btn.dataset.key = 'nights';
+        btn.dataset.value = n.id;
+        btn.innerHTML = `${labels.nights[n.id]} ночей<small>${n.why}</small><span class="fit ${fl.cls}">${fl.text}</span>`;
+        btn.addEventListener('click', () => {
+          state.nights = n.id;
+          // If current level becomes "over", drop to best that fits
+          if (fitOf(n.id, state.level) === 'over') {
+            state.level = bestDefaultLevel(n.id);
+          }
+          renderNights();
+        });
+        group.appendChild(btn);
+      });
+
+      const longFit = fitOf('11+', 'usual');
+      if (longFit === 'over') {
+        hint.hidden = false;
+        hint.textContent = 'При вашем бюджете длинные поездки часто выходят дороже. Можно выбрать короче — или смотреть варианты с доплатой.';
+      } else {
+        hint.hidden = true;
+      }
+    }
+
+    function renderLevel() {
+      const group = document.getElementById('levelGroup');
+      const hint = document.getElementById('levelHint');
+      group.innerHTML = '';
+      if (!state.nights) state.nights = bestDefaultNights();
+      if (!state.level) state.level = bestDefaultLevel(state.nights);
+
+      const recommended = bestDefaultLevel(state.nights);
+
+      levelMeta.forEach((l) => {
+        const fit = fitOf(state.nights, l.id);
+        const fl = fitLabel(fit);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'card' + (state.level === l.id ? ' selected' : '') + (l.id === recommended ? ' rec' : '');
+        btn.dataset.key = 'level';
+        btn.dataset.value = l.id;
+        // Keep selectable even if over — honest upsell path
+        btn.innerHTML = `<span class="title">${labels.level[l.id]}</span><span class="desc">${l.desc}</span><span class="fit ${fl.cls}">${fl.text}</span>`;
+        btn.addEventListener('click', () => {
+          state.level = l.id;
+          renderLevel();
+        });
+        group.appendChild(btn);
+      });
+
+      const selFit = fitOf(state.nights, state.level);
+      if (selFit === 'stretch' || selFit === 'over') {
+        hint.hidden = false;
+        hint.textContent = selFit === 'stretch'
+          ? 'Этот вариант может быть чуть дороже вашего бюджета. В подборке увидите точные цены.'
+          : 'По ориентиру это выше бюджета. Всё равно можно смотреть — вдруг найдётся акция или вы готовы доплатить.';
+      } else {
+        hint.hidden = true;
+      }
+    }
+
+    const screens = [...document.querySelectorAll('.screen')];
+
+    function show(name) {
+      screens.forEach((s) => s.classList.toggle('active', s.dataset.screen === name));
+      if (name === 'budget') updateBudgetUI();
+      if (name === 'nights') renderNights();
+      if (name === 'level') renderLevel();
+      if (name === 'summary') renderSummary();
+      syncCounters();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function peopleText() {
+      const a = state.adults;
+      const k = state.kids;
+      const ap = a === 1 ? '1 взрослый' : `${a} взрослых`;
+      if (!k) return ap;
+      const ages = state.kidsAges.map(ageLabel).join(', ');
+      const kp = k === 1 ? '1 ребёнок' : (k < 5 ? `${k} ребёнка` : `${k} детей`);
+      return `${ap}, ${kp} (${ages})`;
+    }
+
+    function renderSummary() {
+      document.getElementById('out-people').textContent = peopleText();
+      document.getElementById('out-budget').textContent = budgetLabel();
+      document.getElementById('out-format').textContent = labels.format[state.format] || '—';
+      document.getElementById('out-region').textContent = labels.region[state.region] || '—';
+      document.getElementById('out-nights').textContent = labels.nights[state.nights] || '—';
+      document.getElementById('out-level').textContent = labels.level[state.level] || '—';
+
+      const fit = fitOf(state.nights, state.level);
+      const box = document.getElementById('summaryFit');
+      if (fit === 'ok') {
+        box.hidden = false;
+        box.textContent = 'По ориентиру это близко к вашему бюджету.';
+      } else if (fit === 'stretch') {
+        box.hidden = false;
+        box.textContent = 'По ориентиру может понадобиться небольшая доплата. Точные цены — в подборке.';
+      } else {
+        box.hidden = false;
+        box.textContent = 'По ориентиру это выше бюджета. Можно вернуться и выбрать короче или проще — или смотреть варианты с доплатой.';
+      }
+
+      const btn = document.getElementById('goResults');
+      btn.textContent = state.format === 'hotel' ? 'Показать отели' : 'Показать туры';
+    }
+
+    function select(key, value, el) {
+      state[key] = value;
+      document.querySelectorAll(`[data-key="${key}"]`).forEach((n) => n.classList.remove('selected'));
+      el.classList.add('selected');
+      if (key === 'format' || key === 'region') {
+        state.nights = null;
+        state.level = null;
+      }
+    }
+
+    document.querySelectorAll('[data-key]').forEach((el) => {
+      el.addEventListener('click', () => {
+        select(el.dataset.key, el.dataset.value, el);
+        if (el.dataset.key === 'format') show('region');
+      });
+    });
+
+    document.querySelectorAll('[data-go]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const need = btn.dataset.need;
+        if (need === 'budget') {
+          if (!state.budget || state.budget < BUDGET_MIN) {
+            document.getElementById('budgetPanel')?.animate(
+              [{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }],
+              { duration: 280 }
+            );
+            return;
+          }
+        } else if (need && !state[need]) {
+          const group = document.querySelector(`[data-key="${need}"]`);
+          group?.closest('.grid, .chips')?.animate(
+            [{ transform: 'translateX(0)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(0)' }],
+            { duration: 280 }
+          );
+          return;
+        }
+        show(btn.dataset.go);
+      });
+    });
+
+    function syncCounters() {
+      document.getElementById('adultsVal').textContent = state.adults;
+      document.getElementById('kidsVal').textContent = state.kids;
+      document.querySelectorAll('[data-counter="adults"]').forEach((b) => {
+        if (b.dataset.delta === '-1') b.disabled = state.adults <= 1;
+        if (b.dataset.delta === '1') b.disabled = state.adults >= 6;
+      });
+      document.querySelectorAll('[data-counter="kids"]').forEach((b) => {
+        if (b.dataset.delta === '-1') b.disabled = state.kids <= 0;
+        if (b.dataset.delta === '1') b.disabled = state.kids >= 4;
+      });
+      renderKidsAges();
+    }
+
+    document.querySelectorAll('[data-counter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.counter;
+        const delta = Number(btn.dataset.delta);
+        if (key === 'adults') state.adults = Math.min(6, Math.max(1, state.adults + delta));
+        if (key === 'kids') {
+          state.kids = Math.min(4, Math.max(0, state.kids + delta));
+          syncKidsAges();
+        }
+        state.nights = null;
+        state.level = null;
+        updateBudgetUI();
+        syncCounters();
+      });
+    });
+
+    document.getElementById('goResults').addEventListener('click', () => {
+      const isHotel = state.format === 'hotel' || state.region === 'podmos';
+      let url;
+      const nights = state.nights || '5-7';
+      const [minN, maxN] = nights === '2-3' ? [2, 3]
+        : nights === '5-7' ? [5, 7]
+        : nights === '8-10' ? [8, 10]
+        : [11, 14];
+      const adults = state.adults;
+      const budgetTo = state.budget || 80000;
+
+      if (isHotel && state.region === 'podmos') {
+        url = `https://online.mosgortur.ru/hotels#module6?action=search&moduleId=18ff2377-4055-4f60-b31c-baa9d92230e9&resorts=3799&adults=${adults}&minNights=${minN}&maxNights=${maxN}&maxPrice=${budgetTo}&utm_source=podbor_wizard`;
+      } else if (state.format === 'tour' && state.region === 'sea') {
+        url = `https://online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-f7a0-4a8c-9775-ccd5a3063a02&beachLines=1,2,3&ticketsIncluded=true&adults=${adults}&minNights=${minN}&maxNights=${maxN}&maxPrice=${budgetTo}&utm_source=podbor_wizard`;
+      } else if (state.format === 'hotel') {
+        url = `https://online.mosgortur.ru/new/russia-hotels?utm_source=podbor_wizard`;
+      } else {
+        url = `https://online.mosgortur.ru/tours?utm_source=podbor_wizard`;
+      }
+      document.getElementById('mockResult').hidden = false;
+      document.getElementById('mockUrl').textContent = url;
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state.adults = 2;
+      state.kids = 0;
+      state.kidsAges = [];
+      state.budget = 80000;
+      state.budgetCustom = false;
+      state.format = null;
+      state.region = null;
+      state.nights = null;
+      state.level = null;
+      document.querySelectorAll('.selected').forEach((n) => n.classList.remove('selected'));
+      document.getElementById('mockResult').hidden = true;
+      updateBudgetUI();
+      syncCounters();
+      show('entry');
+    });
+
+    syncCounters();
+    initBudgetSlider();
+  </script>
+</body>
+</html>

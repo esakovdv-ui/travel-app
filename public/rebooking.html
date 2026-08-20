@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Перебронирование тура — Мои путешествия</title>
+  <meta name="description" content="Подберите новый тур вместо отменённой поездки. Параметры бронирования уже учтены.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png">
+  <style>
+    :root {
+      --text: #101828;
+      --muted: #667085;
+      --line: #eaecf0;
+      --cream: #faf8f5;
+      --white: #fff;
+      --accent: #ff8500;
+      --radius: 20px;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+      --max: 1040px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Mulish, Arial, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    .hero { padding: 28px 0 8px; }
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 4.2vw, 38px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .trip-card {
+      margin-top: 22px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px 22px 18px;
+    }
+    .trip-card h2 {
+      margin: 0 0 18px;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+    .trip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 20px;
+    }
+    .trip-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+    .trip-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #f2f4f7;
+      color: #475467;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .trip-icon svg { width: 18px; height: 18px; }
+    .trip-value {
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .trip-caption {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .trip-meta {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: #98a2b3;
+      line-height: 1.45;
+    }
+    .section { padding: 22px 0; }
+    .choice-section { padding: 8px 0 4px; }
+    .choice-section h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .choice-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      width: 100%;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .choice-card:hover:not(:disabled) {
+      border-color: #d0d5dd;
+      box-shadow: 0 10px 28px rgba(16, 24, 40, 0.08);
+    }
+    .choice-card:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .choice-card strong {
+      font-size: 17px;
+      line-height: 1.25;
+    }
+    .choice-card span {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .choice-card--accent strong { color: var(--accent); }
+    .choice-card--danger strong { color: #b42318; }
+    .annul-done {
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: #ecfdf3;
+      border: 1px solid #abefc6;
+      color: #027a48;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(16, 24, 40, 0.45);
+    }
+    .modal-card {
+      width: min(480px, 100%);
+      padding: 24px 22px 20px;
+      border-radius: 18px;
+      background: var(--white);
+      box-shadow: 0 24px 48px rgba(16, 24, 40, 0.18);
+    }
+    .modal-card h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+    .modal-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: #b42318; color: #fff; }
+    .btn-secondary { background: #f2f4f7; color: var(--text); }
+    .tourvisor-wrap {
+      min-height: 120px;
+    }
+    /* Гарантия мест в отеле: включена по умолчанию, чекбокс скрыт от пользователя */
+    .tourvisor-wrap .TVInstantConfirmationFilter,
+    .tourvisor-wrap .TVInstantConfirmationControl {
+      display: none !important;
+    }
+    .error-page {
+      padding: 56px 0;
+      text-align: center;
+    }
+    .error-page h1 { margin: 0 0 10px; font-size: 24px; }
+    .error-page p { margin: 0; color: var(--muted); }
+    .hidden { display: none !important; }
+    .lead-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      max-width: min(420px, calc(100% - 32px));
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.4;
+      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .lead-toast.visible { opacity: 1; }
+    .lead-toast.success { background: #ecfdf3; color: #027a48; border: 1px solid #abefc6; }
+    .lead-toast.error { background: #fef3f2; color: #b42318; border: 1px solid #fecdca; }
+    @media (max-width: 640px) {
+      .trip-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+      .trip-value { font-size: 15px; }
+      .trip-item { gap: 10px; }
+      .trip-icon { width: 32px; height: 32px; border-radius: 8px; }
+      .choice-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 400px) {
+      .trip-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="invalid-link" class="container error-page hidden">
+    <h1>Ссылка некорректна</h1>
+    <p>Откройте страницу из письма, которое мы отправили вам на электронную почту.</p>
+  </div>
+
+  <main id="main-content" class="hidden">
+    <section class="hero">
+      <div class="container">
+        <h1>Дальнейшие действия по вашей заявке</h1>
+
+        <div class="trip-card">
+          <h2>Параметры вашей поездки</h2>
+          <div class="trip-grid" id="trip-grid"></div>
+          <div class="trip-meta" id="trip-meta"></div>
+        </div>
+
+        <div class="choice-section">
+          <h2>Что вы хотите сделать?</h2>
+          <div class="choice-grid">
+            <button type="button" class="choice-card choice-card--accent" id="btn-rebook">
+              <strong>Подобрать новый тур</strong>
+              <span>Поиск с учётом дат, состава и бюджета вашей поездки</span>
+            </button>
+            <button type="button" class="choice-card choice-card--danger" id="btn-annul">
+              <strong>Аннулировать заявку</strong>
+              <span>Запросить аннуляцию без подбора нового тура</span>
+            </button>
+          </div>
+          <div id="annul-done" class="annul-done hidden" role="status">
+            Запрос на аннуляцию принят. Менеджер свяжется с вами и подтвердит аннуляцию.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="rebook-section">
+      <div class="container">
+        <h2 style="margin:0 0 14px;font-size:18px;font-weight:800;">Подбор нового тура</h2>
+        <div class="tourvisor-wrap" id="tourvisor-mount"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="annul-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="annul-modal-title">
+    <div class="modal-card">
+      <h3 id="annul-modal-title">Подтвердить аннуляцию?</h3>
+      <p id="annul-modal-text">Мы зафиксируем ваш запрос на аннуляцию заявки. Менеджер свяжется с вами для подтверждения.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="annul-confirm">Да, аннулировать</button>
+        <button type="button" class="btn btn-secondary" id="annul-cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+  <div id="lead-toast" class="lead-toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      var money = new Intl.NumberFormat('ru-RU');
+      var leadSubmitted = false;
+      var annulSubmitted = false;
+      var leadToastTimer;
+
+      function showLeadToast(message, isError) {
+        var el = document.getElementById('lead-toast');
+        if (!el) return;
+        el.textContent = message;
+        el.className = 'lead-toast visible ' + (isError ? 'error' : 'success');
+        if (leadToastTimer) clearTimeout(leadToastTimer);
+        leadToastTimer = setTimeout(function () {
+          el.classList.remove('visible');
+        }, isError ? 12000 : 8000);
+      }
+
+      function parseIntParam(raw) {
+        if (raw == null || !String(raw).trim()) return undefined;
+        var n = Number(String(raw).trim());
+        return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+      }
+
+      function normalizeDate(raw) {
+        if (!raw) return { iso: '', displayRu: '', tv: '' };
+        var s = String(raw).trim();
+        var isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+        if (isoMatch) {
+          return {
+            iso: s,
+            displayRu: formatRuDate(isoMatch[3], isoMatch[2], isoMatch[1]),
+            tv: isoMatch[3] + '.' + isoMatch[2] + '.' + isoMatch[1],
+          };
+        }
+        var ruMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+        if (ruMatch) {
+          return {
+            iso: ruMatch[3] + '-' + ruMatch[2] + '-' + ruMatch[1],
+            displayRu: formatRuDate(ruMatch[1], ruMatch[2], ruMatch[3]),
+            tv: ruMatch[1] + '.' + ruMatch[2] + '.' + ruMatch[3],
+          };
+        }
+        return { iso: s, displayRu: s, tv: s };
+      }
+
+      function formatRuDate(day, month, year) {
+        return Number(day) + ' ' + MONTHS[Number(month) - 1] + ' ' + year;
+      }
+
+      function plural(n, one, few, many) {
+        var mod10 = n % 10;
+        var mod100 = n % 100;
+        if (mod10 === 1 && mod100 !== 11) return one;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+        return many;
+      }
+
+      function normalizePhoneFromUrl(raw) {
+        if (!raw) return '';
+        var digits = String(raw).replace(/\D/g, '');
+        if (digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
+          return '+7' + digits.slice(1);
+        }
+        if (digits.length === 10) return '+7' + digits;
+        return String(raw).trim();
+      }
+
+      function parseRebookingParams(search) {
+        var params = new URLSearchParams(search || window.location.search);
+        var explicitKids = parseIntParam(params.get('kids'));
+        var kidAgeSlots = [];
+        for (var i = 1; i <= 3; i += 1) {
+          var age = parseIntParam(params.get('kid' + i));
+          if (age != null && age >= 0 && age <= 15) kidAgeSlots.push(age);
+          else {
+            kidAgeSlots.push(undefined);
+            if (params.has('kid' + i) && explicitKids > 0) console.warn('rebooking: missing or invalid kid' + i);
+          }
+        }
+        var inferredKids = kidAgeSlots.filter(function (age) { return age != null; }).length;
+        var kids = explicitKids != null ? explicitKids : inferredKids;
+        var date = normalizeDate(params.get('date'));
+        return {
+          order: (params.get('order') || '').trim(),
+          cert: (params.get('cert') || '').trim(),
+          name: (params.get('name') || '').trim(),
+          phone: normalizePhoneFromUrl(params.get('phone')),
+          dealId: (params.get('dealId') || params.get('deal_id') || params.get('deal') || '').trim(),
+          people: parseIntParam(params.get('people')),
+          adults: parseIntParam(params.get('adults')),
+          kids: kids,
+          kid1: kidAgeSlots[0],
+          kid2: kidAgeSlots[1],
+          kid3: kidAgeSlots[2],
+          kidAges: kidAgeSlots.filter(function (age) { return age != null; }),
+          price: parseIntParam(params.get('price')),
+          nights: parseIntParam(params.get('nights')),
+          date: date,
+        };
+      }
+
+      function validateRebookingParams(data) {
+        if (!data.order) return { ok: false };
+        if (data.kids == null || data.kids < 0) data.kids = 0;
+        if (data.kids > 3) {
+          console.warn('rebooking: kids count capped at 3');
+          data.kids = 3;
+        }
+        if (data.people != null && data.kids > data.people) {
+          console.warn('rebooking: kids count exceeds people count');
+          data.kids = data.people;
+        }
+        if (data.adults != null && data.adults < 0) data.adults = 0;
+        if (data.adults == null && data.people != null && data.kids != null) {
+          data.adults = Math.max(data.people - data.kids, 0);
+        }
+        if (data.people == null && data.adults != null && data.kids != null) {
+          data.people = data.adults + data.kids;
+        }
+        if (data.adults != null && data.adults > 6) {
+          console.warn('rebooking: adults count capped at 6 for Tourvisor');
+          data.adults = 6;
+        }
+        data.kidAges = [data.kid1, data.kid2, data.kid3]
+          .slice(0, data.kids)
+          .filter(function (age) { return age != null; });
+        return { ok: true, data: data };
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function iconCalendar() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>';
+      }
+      function iconMoon() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z"></path></svg>';
+      }
+      function iconPeople() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M14.5 19c.3-2.2 2-3.5 4.5-3.5"></path></svg>';
+      }
+      function iconRub() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h5.2a3.8 3.8 0 1 1 0 7.6H8V6z"></path><path d="M8 13.6h6.2M8 17h8"></path></svg>';
+      }
+
+      function renderTripCard(data) {
+        var items = [];
+        if (data.date.displayRu) {
+          items.push({
+            icon: iconCalendar(),
+            value: data.date.displayRu,
+            caption: 'дата начала отдыха',
+          });
+        }
+        if (data.nights != null && data.nights > 0) {
+          items.push({
+            icon: iconMoon(),
+            value: data.nights + ' ' + plural(data.nights, 'ночь', 'ночи', 'ночей'),
+            caption: 'продолжительность',
+          });
+        }
+        if (data.people != null && data.people > 0) {
+          items.push({
+            icon: iconPeople(),
+            value: data.people + ' ' + plural(data.people, 'турист', 'туриста', 'туристов'),
+            caption: '',
+          });
+        }
+
+        document.getElementById('trip-grid').innerHTML = items.map(function (item) {
+          var captionHtml = item.caption
+            ? '<div class="trip-caption">' + escapeHtml(item.caption) + '</div>'
+            : '';
+          return '<div class="trip-item">' +
+            '<span class="trip-icon">' + item.icon + '</span>' +
+            '<div><div class="trip-value">' + escapeHtml(item.value) + '</div>' +
+            captionHtml + '</div></div>';
+        }).join('');
+
+        var meta = [];
+        if (data.order) meta.push('Заявка № ' + data.order);
+        if (data.cert) meta.push('Сертификат № ' + data.cert);
+        document.getElementById('trip-meta').textContent = meta.join(' · ');
+      }
+
+      var TV_INSTANT_CONFIRMATION_SERVICE_ID = '46';
+
+      function syncTourvisorSearchParamsToUrl(data) {
+        // Tourvisor v6 reads tourists from URL query (s_adults, child_age_N), not tv-kid* on the div.
+        // ts_dosearch=0 is required so createModule merges URL params without auto-running search.
+        var url = new URL(window.location.href);
+        url.searchParams.set('ts_dosearch', '0');
+        url.searchParams.set('s_hotel_services', TV_INSTANT_CONFIRMATION_SERVICE_ID);
+        if (data.adults != null && data.adults >= 1) url.searchParams.set('s_adults', String(data.adults));
+        if (data.kids >= 1 && data.kids <= 3) {
+          url.searchParams.set('s_child', String(data.kids));
+          [data.kid1, data.kid2, data.kid3].slice(0, data.kids).forEach(function (age, index) {
+            if (age != null) url.searchParams.set('child_age_' + (index + 1), String(age));
+          });
+        }
+        if (data.date && data.date.tv) {
+          url.searchParams.set('s_j_date_from', data.date.tv);
+          url.searchParams.set('s_j_date_to', data.date.tv);
+        }
+        if (data.nights != null && data.nights > 0) {
+          url.searchParams.set('s_nights_from', String(data.nights));
+          url.searchParams.set('s_nights_to', String(data.nights));
+        }
+        history.replaceState(null, document.title, url.pathname + url.search + url.hash);
+      }
+
+      function buildTourvisorAttrs(data) {
+        var attrs = {
+          class: 'tv-search-form tv-moduleid-9978253',
+          id: 'tourvisor-search',
+          'tv-formmode': '1',
+          'tv-formmodes': '1',
+          'tv-hotelservices': TV_INSTANT_CONFIRMATION_SERVICE_ID,
+        };
+        if (data.date.tv) attrs['tv-flydates'] = data.date.tv + ',' + data.date.tv;
+        if (data.nights != null && data.nights > 0) attrs['tv-nights'] = String(data.nights) + ',' + String(data.nights);
+        return attrs;
+      }
+
+      function applyAttrs(el, attrs) {
+        Object.keys(attrs).forEach(function (key) {
+          el.setAttribute(key, attrs[key]);
+        });
+      }
+
+      function lockTourvisorInstantConfirmation() {
+        var mount = document.getElementById('tourvisor-mount');
+        if (!mount || mount._tvInstantLockObserver) return;
+
+        function enforce() {
+          mount.querySelectorAll('.TVInstantConfirmationFilter input[type="checkbox"]').forEach(function (input) {
+            if (!input.checked) input.checked = true;
+            input.disabled = true;
+            input.setAttribute('aria-hidden', 'true');
+            var row = input.closest('.TVInstantConfirmationFilter');
+            if (row) row.style.display = 'none';
+          });
+        }
+
+        enforce();
+        var observer = new MutationObserver(enforce);
+        observer.observe(mount, { childList: true, subtree: true, attributes: true, attributeFilter: ['checked'] });
+        mount._tvInstantLockObserver = observer;
+      }
+
+      function initTourvisorModule(data) {
+        syncTourvisorSearchParamsToUrl(data);
+        var mount = document.getElementById('tourvisor-mount');
+        mount.innerHTML = '';
+        var el = document.createElement('div');
+        applyAttrs(el, buildTourvisorAttrs(data));
+        mount.appendChild(el);
+        lockTourvisorInstantConfirmation();
+
+        var oldScript = document.getElementById('tourvisor-init-script');
+        if (oldScript) oldScript.parentNode.removeChild(oldScript);
+
+        var script = document.createElement('script');
+        script.id = 'tourvisor-init-script';
+        script.src = '//tourvisor.ru/module/init.js?' + Date.now();
+        script.async = true;
+        document.body.appendChild(script);
+      }
+
+      function collectUtm() {
+        var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+        var utm = {};
+        var params = new URLSearchParams(window.location.search);
+        keys.forEach(function (key) {
+          var value = params.get(key);
+          if (value) utm[key] = value;
+        });
+        return utm;
+      }
+
+      function extractTourFromMessage(data) {
+        if (!data || typeof data !== 'object') return {};
+        var source = data.tour && typeof data.tour === 'object' ? data.tour : data;
+        return {
+          hotel: source.hotel || source.hotelname || source.hotelName || '',
+          country: source.country || source.countryname || '',
+          region: source.region || source.resort || '',
+          dateFrom: source.flydate || source.dateFrom || source.date || '',
+          nights: source.nights || source.night || undefined,
+          price: source.price || source.tourprice || source.cost || undefined,
+          placement: source.placement || '',
+          meal: source.meal || '',
+          operator: source.operator || source.operatorname || '',
+          operatorLink: source.operatorLink || source.operatorlink || source.operlink || source.tourlink || '',
+          tourId: source.tourId || source.tour_id || source.tourid || source.offer_id || source.offerid || '',
+          tourvisorOrderId: source.orderId || source.id || '',
+          raw: source,
+        };
+      }
+
+      var TV_LEAD_EVENTS = ['ORDERTOUR', 'HELPTOUR', 'NOTOUR', 'HELPCART', 'TOURSELECTION', 'BOOKTOUR'];
+
+      function getTourvisorEventType(data) {
+        if (!data) return '';
+        if (typeof data === 'string') return data;
+        if (typeof data === 'object') {
+          var action = data.action || data.event || data.goal || data.type || data.name;
+          if (typeof action === 'string') return action;
+        }
+        return '';
+      }
+
+      function isTourvisorLeadEvent(data) {
+        var eventType = getTourvisorEventType(data);
+        if (eventType && TV_LEAD_EVENTS.indexOf(eventType) !== -1) return true;
+        if (typeof data === 'object' && data) {
+          if (data.category === 'tourvisor' && /ORDERTOUR|HELPTOUR|NOTOUR/i.test(String(data.action || ''))) return true;
+          if (data.phone || data.hotel || data.hotelname) return true;
+        }
+        return false;
+      }
+
+      function extractPhoneFromMessage(data) {
+        if (!data || typeof data !== 'object') return '';
+        return String(data.phone || data.touristphone || data.clientphone || data.mobile || '').trim();
+      }
+
+      function buildContextPayload(bookingData) {
+        var payload = {
+          order: bookingData.order,
+          cert: bookingData.cert,
+          name: bookingData.name,
+          phone: bookingData.phone || undefined,
+          dealId: bookingData.dealId || undefined,
+          people: bookingData.people,
+          kids: bookingData.kids,
+          kid1: bookingData.kidAges[0],
+          kid2: bookingData.kidAges[1],
+          kid3: bookingData.kidAges[2],
+          price: bookingData.price,
+          nights: bookingData.nights,
+          date: bookingData.date.iso || bookingData.date.tv,
+        };
+        var utm = collectUtm();
+        Object.keys(utm).forEach(function (key) {
+          payload[key] = utm[key];
+        });
+        return payload;
+      }
+
+      function buildLeadPhonePayload(bookingData, tourvisorPhone) {
+        var sourcePhone = bookingData.phone || undefined;
+        return {
+          sourcePhone: sourcePhone,
+          phone: tourvisorPhone || sourcePhone,
+        };
+      }
+
+      var visitId = '';
+      var lastTourvisorOrderId = '';
+
+      function trackRebookingEvent(bookingData, eventType, tourPayload, extra) {
+        if (!bookingData || !bookingData.order) return Promise.resolve();
+        var body = Object.assign({}, buildContextPayload(bookingData), {
+          visitId: visitId || undefined,
+          order: bookingData.order,
+          eventType: eventType || undefined,
+        });
+        if (tourPayload) {
+          body.tour = {
+            hotel: tourPayload.hotel || undefined,
+            country: tourPayload.country || undefined,
+            region: tourPayload.region || undefined,
+            operator: tourPayload.operator || undefined,
+            operatorLink: tourPayload.operatorLink || undefined,
+            tourId: tourPayload.tourId || undefined,
+            tourvisorOrderId: tourPayload.tourvisorOrderId || undefined,
+          };
+          if (tourPayload.tourvisorOrderId) lastTourvisorOrderId = String(tourPayload.tourvisorOrderId);
+        }
+        if (extra && typeof extra === 'object') {
+          Object.keys(extra).forEach(function (key) {
+            body[key] = extra[key];
+          });
+        }
+        return fetch('/api/rebooking-track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }).catch(function (error) {
+          console.warn('rebooking: track failed', error);
+        });
+      }
+
+      function registerRebookingContext(bookingData) {
+        return fetch('/api/rebooking-context', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildContextPayload(bookingData)),
+        })
+          .then(function (response) { return response.json().catch(function () { return {}; }); })
+          .then(function (result) {
+            if (result && result.visitId) visitId = result.visitId;
+          })
+          .catch(function (error) {
+            console.warn('rebooking: context register failed', error);
+          });
+      }
+
+      async function syncTourvisorLead(bookingData, eventType) {
+        if (leadSubmitted) return;
+        var delays = [2000, 4000, 8000, 15000, 30000, 45000, 60000];
+        for (var i = 0; i < delays.length; i += 1) {
+          await new Promise(function (resolve) { setTimeout(resolve, delays[i]); });
+          var response = await fetch('/api/rebooking-lead/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData), {
+              eventType: eventType || undefined,
+              visitId: visitId || undefined,
+              tourvisorOrderId: lastTourvisorOrderId || undefined,
+            })),
+          });
+          var result = await response.json().catch(function () { return {}; });
+          if (response.ok && result.ok && (result.queued || !result.skipped)) {
+            leadSubmitted = true;
+            showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
+            return;
+          }
+          if (response.status === 202 || result.error === 'order_not_ready') continue;
+          if (result.error) throw new Error(result.error || 'sync_failed');
+        }
+        showLeadToast(
+          'Не удалось автоматически отправить заявку. Позвоните в «Мои путешествия» или попробуйте отправить форму ещё раз.',
+          true
+        );
+      }
+
+      async function submitTourLeadDirect(bookingData, tourPayload, phone, eventType) {
+        if (leadSubmitted) return;
+        var response = await fetch('/api/rebooking-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData, phone), {
+            tour: tourPayload,
+            utm: collectUtm(),
+            website: '',
+            visitId: visitId || undefined,
+            eventType: eventType || undefined,
+            email: tourPayload.email || undefined,
+          })),
+        });
+        var result = await response.json().catch(function () { return {}; });
+        if (!response.ok || !result.ok) throw new Error(result.error || 'submit_failed');
+        leadSubmitted = true;
+        showLeadToast('Заявка принята! Менеджер свяжется с вами в ближайшее время.', false);
+      }
+
+      function setupChoiceActions(bookingData) {
+        var btnRebook = document.getElementById('btn-rebook');
+        var btnAnnul = document.getElementById('btn-annul');
+        var rebookSection = document.getElementById('rebook-section');
+        var annulModal = document.getElementById('annul-modal');
+        var annulConfirm = document.getElementById('annul-confirm');
+        var annulCancel = document.getElementById('annul-cancel');
+        var annulDone = document.getElementById('annul-done');
+        var annulModalText = document.getElementById('annul-modal-text');
+
+        if (annulModalText && bookingData.order) {
+          var parts = ['Заявка № ' + bookingData.order];
+          if (bookingData.cert) parts.push('сертификат № ' + bookingData.cert);
+          annulModalText.textContent =
+            'Мы зафиксируем запрос на аннуляцию (' + parts.join(', ') + '). Менеджер свяжется с вами для подтверждения.';
+        }
+
+        function openAnnulModal() {
+          if (annulSubmitted) return;
+          annulModal.classList.remove('hidden');
+        }
+
+        function closeAnnulModal() {
+          annulModal.classList.add('hidden');
+        }
+
+        async function submitAnnulRequest() {
+          if (annulSubmitted) return;
+          annulConfirm.disabled = true;
+          try {
+            var response = await fetch('/api/rebooking-annul', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(Object.assign({}, buildContextPayload(bookingData), buildLeadPhonePayload(bookingData), {
+                visitId: visitId || undefined,
+                website: '',
+              })),
+            });
+            var result = await response.json().catch(function () { return {}; });
+            if (!response.ok || !result.ok) throw new Error(result.error || 'annul_failed');
+
+            annulSubmitted = true;
+            closeAnnulModal();
+            annulDone.classList.remove('hidden');
+            btnAnnul.disabled = true;
+            trackRebookingEvent(bookingData, 'ANNUL_REQUEST').catch(function () {});
+
+            showLeadToast('Запрос на аннуляцию принят. Менеджер свяжется с вами.', false);
+          } catch (error) {
+            console.error('rebooking: annul failed', error);
+            showLeadToast('Не удалось отправить запрос. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
+          } finally {
+            annulConfirm.disabled = annulSubmitted;
+          }
+        }
+
+        if (btnRebook && rebookSection) {
+          btnRebook.addEventListener('click', function () {
+            rebookSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+
+        if (btnAnnul) btnAnnul.addEventListener('click', openAnnulModal);
+        if (annulCancel) annulCancel.addEventListener('click', closeAnnulModal);
+        if (annulConfirm) annulConfirm.addEventListener('click', submitAnnulRequest);
+        if (annulModal) {
+          annulModal.addEventListener('click', function (event) {
+            if (event.target === annulModal) closeAnnulModal();
+          });
+        }
+      }
+
+      function setupTourvisorBridge(bookingData) {
+        var focusSyncStarted = false;
+
+        function scheduleSync(eventType) {
+          if (leadSubmitted) return;
+          syncTourvisorLead(bookingData, eventType).catch(function (error) {
+            console.error('rebooking: failed to sync lead', error);
+            showLeadToast('Ошибка отправки заявки. Попробуйте ещё раз или позвоните в «Мои путешествия».', true);
+          });
+        }
+
+        window.addEventListener('focus', function () {
+          if (leadSubmitted || focusSyncStarted) return;
+          focusSyncStarted = true;
+          setTimeout(function () { scheduleSync('focus_sync'); }, 4000);
+        });
+
+        window.addEventListener('message', function (event) {
+          if (!event.origin || event.origin.indexOf('tourvisor.ru') === -1) return;
+
+          var eventType = getTourvisorEventType(event.data);
+          var tour = extractTourFromMessage(event.data);
+          var phone = extractPhoneFromMessage(event.data);
+
+          if (eventType || tour.hotel || tour.country) {
+            trackRebookingEvent(bookingData, eventType || 'tourvisor_message', tour, {
+              phone: phone || undefined,
+              email: event.data && event.data.email ? String(event.data.email) : undefined,
+            });
+          }
+
+          var looksLikeSubmit =
+            isTourvisorLeadEvent(event.data) ||
+            Boolean(phone) ||
+            /order|submit|success|sent/i.test(eventType || '');
+
+          if (!looksLikeSubmit) return;
+
+          if (phone) {
+            if (!tour.hotel && !tour.country) {
+              tour.hotel = eventType === 'NOTOUR' ? 'Подбор тура (нет результатов)' : 'Заявка через Tourvisor';
+            }
+            submitTourLeadDirect(bookingData, tour, phone, eventType).catch(function () {
+              scheduleSync(eventType || 'postmessage_sync');
+            });
+            return;
+          }
+
+          scheduleSync(eventType || 'postmessage_sync');
+        });
+      }
+
+      var validation = validateRebookingParams(parseRebookingParams());
+      if (!validation.ok) {
+        document.getElementById('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      var bookingData = validation.data;
+      document.getElementById('main-content').classList.remove('hidden');
+
+      renderTripCard(bookingData);
+      registerRebookingContext(bookingData);
+      setupChoiceActions(bookingData);
+      setupTourvisorBridge(bookingData);
+      initTourvisorModule(bookingData);
+    })();
+  </script>
+</body>
+</html>

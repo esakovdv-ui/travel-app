@@ -1,0 +1,30 @@
+name: Sync rebooking leads to Bitrix
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-rebooking-leads
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger rebooking Bitrix sync on production
+        env:
+          REBOOKING_SYNC_SECRET: ${{ secrets.REBOOKING_BITRIX_SYNC_SECRET }}
+          REBOOKING_ADMIN_PASSWORD: ${{ secrets.REBOOKING_ADMIN_PASSWORD }}
+        run: |
+          SECRET="${REBOOKING_SYNC_SECRET:-${REBOOKING_ADMIN_PASSWORD:-rebooking2026}}"
+          curl -fsS -X POST \
+            "https://motrip.ru/api/rebooking-sync-bitrix?secret=${SECRET}&limit=30" \
+            -o /tmp/rebooking-sync.json
+          cat /tmp/rebooking-sync.json
+          node -e "
+            const r = require('/tmp/rebooking-sync.json');
+            if (!r.ok) { console.error('sync failed', r); process.exit(1); }
+            console.log('processed:', r.processed, 'sent:', r.sent, 'failed:', r.failed);
+          "

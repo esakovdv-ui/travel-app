@@ -4,6 +4,12 @@ dist
 .env
 .env.local
 
+storage/podbor-bootstrap-once.gs
+storage/cdp-*.txt
+storage/cdp-*.json
+storage/.podbor-metrika-token.tmp
+storage/podbor-responses.json
+
 # Метаданные Finder и кэш сборки TypeScript — в репозитории не нужны
 .DS_Store
 tsconfig.tsbuildinfo

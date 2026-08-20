@@ -1,0 +1,70 @@
+name: Sync staff-landing from server
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/dima
+    paths:
+      - '.github/workflows/sync-staff-from-server.yml'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Archive staff-landing on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 72.56.32.183
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /var/www/staff-landing
+            echo "=== staff-landing git ==="
+            if [ -d .git ]; then git status -sb; git remote -v; git log -1 --oneline; fi
+            tar czf /root/staff-landing-src.tgz \
+              --exclude=node_modules \
+              --exclude=.next \
+              --exclude=.git \
+              .
+            ls -lh /root/staff-landing-src.tgz
+
+      - name: Download staff-landing archive
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 72.56.32.183 >> ~/.ssh/known_hosts
+          scp -o StrictHostKeyChecking=yes root@72.56.32.183:/root/staff-landing-src.tgz .
+          ls -lh staff-landing-src.tgz
+
+      - name: Unpack into apps/staff-landing
+        run: |
+          rm -rf apps/staff-landing
+          mkdir -p apps/staff-landing
+          tar xzf staff-landing-src.tgz -C apps/staff-landing
+          ls -la apps/staff-landing | head -30
+
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/staff-landing-sync
+          git add apps/staff-landing
+          if git diff --staged --quiet; then
+            echo "No changes in staff-landing snapshot"
+            exit 0
+          fi
+          git commit -m "chore: sync staff-landing from VPS snapshot."
+          git push -f origin chore/staff-landing-sync

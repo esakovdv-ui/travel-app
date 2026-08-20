@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+
+# Секреты: Tourvisor JWT, вебхук Битрикса, ключ Яндекс Карт
+.env.local
+.env*.local
+
+*.log
+
+# Журнал входов пишется приложением в рантайме (см. lib/access-log.ts)
+data/
+.DS_Store
+.claude/

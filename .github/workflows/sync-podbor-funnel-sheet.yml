@@ -1,0 +1,23 @@
+name: Sync podbor funnel sheet
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # понедельник 09:00 МСK
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Sync Metrika → Google Sheet
+        env:
+          YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          PODBOR_SHEET_ID: 1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ
+        run: node scripts/sync-podbor-funnel-sheet.mjs --weeks=8
