@@ -1499,3 +1499,6 @@ html[data-framed='1'] .authPage {
   color: var(--c-text-muted);
   padding: 6px 0 8px;
 }
+
+/* Окно вылета при включённой гибкости — приглушённо, рядом с числом ночей. */
+.nightsHintFlex { color: var(--c-text-muted); }

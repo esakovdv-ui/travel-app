@@ -185,7 +185,11 @@ export function MobileSearchSheet({
       return
     }
     const nights = nightsBetween(from, to)
-    onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights })
+    // Выбранный вручную диапазон — это точный ответ на вопрос «когда».
+    // Гибкость по умолчанию ±2 дня превращала его в окно вылета 3–7 октября
+    // при выбранном 5-м, и человек не понимал, почему выдача не совпадает
+    // с тем, что он ткнул. Сбрасываем в ноль; расширить можно осознанно.
+    onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights, dateFlex: 0 })
     // Диапазон собран — уводим к следующему шагу
     setTimeout(() => setStep('travelers'), 350)
   }

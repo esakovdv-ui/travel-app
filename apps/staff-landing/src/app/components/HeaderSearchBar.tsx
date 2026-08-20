@@ -184,7 +184,11 @@ export function HeaderSearchBar({
       return
     }
     const nights = nightsBetween(from, to)
-    setForm(p => ({ ...p, targetDate: from, nightsFrom: nights, nightsTo: nights }))
+    // Выбранный вручную диапазон — это точный ответ на вопрос «когда».
+    // Гибкость по умолчанию ±2 дня превращала его в окно вылета 3–7 октября
+    // при выбранном 5-м, и человек не понимал, почему выдача не совпадает
+    // с тем, что он ткнул. Сбрасываем в ноль; расширить можно осознанно.
+    setForm(p => ({ ...p, targetDate: from, nightsFrom: nights, nightsTo: nights, dateFlex: 0 }))
   }
 
   function resetRange() {
@@ -422,6 +426,16 @@ export function HeaderSearchBar({
             {calFrom && calTo && (
               <div className={styles.nightsHint}>
                 {nightsLabel(nightsBetween(calFrom, calTo))} в отеле
+                {form.dateFlex > 0 && (
+                  /* Гибкость молча расширяла окно вылета, и выдача переставала
+                     совпадать с выбранными датами. Теперь окно названо вслух. */
+                  <span className={styles.nightsHintFlex}>
+                    {' · вылет '}
+                    {shortDate(searchDateFrom(calFrom, form.dateFlex))}
+                    {' – '}
+                    {shortDate(offsetDate(calFrom, form.dateFlex))}
+                  </span>
+                )}
               </div>
             )}
 
