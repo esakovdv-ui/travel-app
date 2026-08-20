@@ -10,6 +10,15 @@ const FRAME_ANCESTORS = [
   ...(process.env.STAFF_EXTRA_FRAME_ANCESTORS ?? '').split(/\s+/).filter(Boolean),
 ].join(' ')
 
+const NO_STORE_HEADERS = [
+  // На iPhone после сетевого сбоя Safari может удержать битую HTML-оболочку
+  // и не перепроверять её вовремя. Для входа и рабочих экранов staff-портала
+  // это слишком рискованно, поэтому сами документы всегда запрашиваем заново.
+  { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+  { key: 'Pragma', value: 'no-cache' },
+  { key: 'Expires', value: '0' },
+]
+
 const config: NextConfig = {
   async headers() {
     return [
@@ -30,6 +39,18 @@ const config: NextConfig = {
             value: 'camera=(), microphone=(), geolocation=(self), payment=()',
           },
         ],
+      },
+      {
+        source: '/',
+        headers: NO_STORE_HEADERS,
+      },
+      {
+        source: '/tours',
+        headers: NO_STORE_HEADERS,
+      },
+      {
+        source: '/admin',
+        headers: NO_STORE_HEADERS,
       },
     ]
   },

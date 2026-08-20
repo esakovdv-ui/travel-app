@@ -42,7 +42,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
-  background: var(--c-bg);
+  background-color: var(--c-bg);
 }
 
 /* Во фрейме центрировать по вертикали нельзя: Safari на iOS растягивает iframe

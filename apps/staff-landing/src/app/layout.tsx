@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Manrope, Unbounded } from 'next/font/google'
 import { YandexMetrika } from '@/components/YandexMetrika'
-import { SELF_DIAGNOSTIC } from '@/lib/self-diagnostic'
 import './globals.css'
 
 /**
@@ -45,7 +44,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru">
       <body className={`${manrope.variable} ${unbounded.variable}`}>
         <script dangerouslySetInnerHTML={{ __html: MARK_FRAMED }} />
-        <script dangerouslySetInnerHTML={{ __html: SELF_DIAGNOSTIC }} />
         {children}
         <YandexMetrika />
       </body>
