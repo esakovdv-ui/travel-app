@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { HotelCard, HotelData } from '@/components/tours/hotel-card';
 import { FiltersPanel, FiltersData, ActiveFilters, EMPTY_FILTERS } from '@/components/tours/filters-panel';
 import { Preloader } from '@/components/ui/preloader';
+import { toUserSearchError } from '@/lib/search-errors';
+import { toursLabel } from '@/lib/utils';
 import styles from './tours.module.css';
 
 const HotelMap = dynamic(
@@ -77,7 +79,7 @@ function ToursPageInner() {
         setHotels(data.hotels ?? []);
         setFilters(data.filters ?? {});
       })
-      .catch(err => setError(err instanceof Error ? err.message : 'Неизвестная ошибка'))
+      .catch(err => setError(toUserSearchError(err)))
       .finally(() => setLoading(false));
   }, [searchParams]);
 
@@ -88,7 +90,7 @@ function ToursPageInner() {
     <div className={styles.page}>
       <Preloader show={loading} />
 
-      {error && <div className={styles.error}>Ошибка: {error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
       {!loading && hotels.length > 0 && (
         <div className={styles.layout}>
@@ -105,9 +107,10 @@ function ToursPageInner() {
           <div className={styles.results}>
             <div className={styles.resultsHeader}>
               <p className={styles.resultsCount}>
+                {/* после «из» — всегда родительный множественного: «30 из 64 туров» */}
                 {filtered.length !== hotels.length
                   ? `${filtered.length} из ${hotels.length} туров`
-                  : `${hotels.length} туров`}
+                  : toursLabel(hotels.length)}
               </p>
             </div>
 

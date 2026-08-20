@@ -148,10 +148,13 @@ export function HotelCard({
         </div>
 
         {/* Локация */}
+        {/* Собираем через фильтр: у части отелей region_name пустой,
+            и склейка напрямую давала висячий разделитель «📍 · Анталья». */}
         <p className={styles.location}>
           <span className={styles.locationIcon}>📍</span>
-          {h.hotel.region_name}
-          {h.hotel.city !== h.hotel.region_name && ` · ${h.hotel.city}`}
+          {[h.hotel.region_name, h.hotel.city]
+            .filter((v, i, arr) => v && arr.indexOf(v) === i)
+            .join(' · ')}
         </p>
 
         {/* Характеристики */}
@@ -182,12 +185,16 @@ export function HotelCard({
             </div>
             <div className={styles.nights}>{h.min_price_nights} {nights(h.min_price_nights)}</div>
           </div>
-          <button
+          {/* Именно ссылка, а не window.open: попапы режут встроенные браузеры
+              Telegram и Instagram, и кнопка молча переставала работать. */}
+          <a
             className={styles.bookBtn}
-            onClick={() => window.open(`${wlBaseUrl}${h.hotel.link}`, '_blank')}
+            href={`${wlBaseUrl}${h.hotel.link}`}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Смотреть
-          </button>
+          </a>
         </div>
       </div>
     </div>

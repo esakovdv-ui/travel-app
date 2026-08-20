@@ -2,15 +2,19 @@ import Link from 'next/link';
 import { buildMetadata } from '@/lib/seo';
 import { loginAction } from '@/app/actions';
 import { BrandLogo } from '@/components/layout/brand-logo';
-import styles from '../auth.module.css';
+import styles from '../login.module.css';
 
 export const metadata = buildMetadata({
   title: 'Войти',
   description: 'Войдите в аккаунт для управления бронированиями и сохранёнными турами.'
 });
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function LoginPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string; next?: string }>;
+}) {
+  const { error, next } = await searchParams;
 
   return (
     <div className={styles.page}>
@@ -26,6 +30,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {error && <p className={styles.formError}>{error}</p>}
 
         <form action={loginAction} className={styles.form}>
+          {next && <input type="hidden" name="next" value={next} />}
           <div className="field">
             <label className="field-label" htmlFor="login-email">Email</label>
             <input id="login-email" className="input" name="email" placeholder="ivan@example.com" required type="email" autoComplete="email" />
@@ -40,7 +45,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </form>
 
         <p className={styles.switchLink}>
-          Нет аккаунта? <Link href="/auth/register">Создать аккаунт</Link>
+          Нет аккаунта? <Link href="/register">Создать аккаунт</Link>
         </p>
       </div>
     </div>

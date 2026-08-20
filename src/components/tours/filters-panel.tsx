@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toursLabel } from '@/lib/utils';
 import styles from './filters-panel.module.css';
 
 // ── Типы ─────────────────────────────────────────────────────────────────
@@ -119,6 +120,19 @@ interface Props {
 export function FiltersPanel({ data, active, onChange, totalCount, filteredCount }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const cnt = activeCount(active);
+
+  // Пока шторка открыта — страница под ней не скроллится, Esc закрывает
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [mobileOpen]);
 
   function toggle<T>(arr: T[], val: T): T[] {
     return arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
@@ -302,31 +316,42 @@ export function FiltersPanel({ data, active, onChange, totalCount, filteredCount
 
   return (
     <>
-      {/* Мобильная кнопка */}
-      <div className={styles.mobileBar}>
-        <button className={styles.mobileBtn} onClick={() => setMobileOpen(true)}>
-          Фильтры {cnt > 0 && <span className={styles.mobileBadge}>{cnt}</span>}
-        </button>
-        <span className={styles.mobileCount}>
-          {filteredCount !== totalCount
-            ? `${filteredCount} из ${totalCount}`
-            : `${totalCount} туров`}
-        </span>
-      </div>
+      {/* Плавающая кнопка вызова фильтров — прижата к низу, под большой палец */}
+      <button
+        className={styles.fab}
+        onClick={() => setMobileOpen(true)}
+        aria-label="Открыть фильтры"
+      >
+        <SlidersIcon />
+        Фильтры
+        {cnt > 0 && <span className={styles.fabBadge}>{cnt}</span>}
+      </button>
 
-      {/* Мобильный оверлей */}
+      {/* Нижняя шторка (мобайл) */}
       {mobileOpen && (
         <>
-          <div className={styles.overlay} onClick={() => setMobileOpen(false)} />
-          <div className={styles.drawer}>
-            <div className={styles.drawerHeader}>
-              <span className={styles.panelTitle}>Фильтры</span>
-              <button className={styles.drawerClose} onClick={() => setMobileOpen(false)}>✕</button>
+          <div className={styles.sheetBackdrop} onClick={() => setMobileOpen(false)} />
+          <div
+            className={styles.sheet}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Фильтры"
+          >
+            <div className={styles.sheetHandle} aria-hidden="true" />
+            <div className={styles.sheetHeader}>
+              <span className={styles.sheetTitle}>Фильтры</span>
+              <button
+                className={styles.sheetClose}
+                onClick={() => setMobileOpen(false)}
+                aria-label="Закрыть фильтры"
+              >
+                ✕
+              </button>
             </div>
-            {panel}
-            <div className={styles.drawerFooter}>
+            <div className={styles.sheetBody}>{panel}</div>
+            <div className={styles.sheetFooter}>
               <button className={styles.applyBtn} onClick={() => setMobileOpen(false)}>
-                Показать {filteredCount} {filteredCount === 1 ? 'тур' : filteredCount < 5 ? 'тура' : 'туров'}
+                {filteredCount === 0 ? 'Ничего не подходит' : `Показать ${toursLabel(filteredCount)}`}
               </button>
             </div>
           </div>
@@ -336,5 +361,13 @@ export function FiltersPanel({ data, active, onChange, totalCount, filteredCount
       {/* Десктопная панель */}
       <div className={styles.desktopPanel}>{panel}</div>
     </>
+  );
+}
+
+function SlidersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+      <path d="M40 88h34.1a32 32 0 0 0 61.8 0H216a8 8 0 0 0 0-16h-80.1a32 32 0 0 0-61.8 0H40a8 8 0 0 0 0 16Zm65-24a16 16 0 1 1-16 16 16 16 0 0 1 16-16Zm111 104h-34.1a32 32 0 0 0-61.8 0H40a8 8 0 0 0 0 16h80.1a32 32 0 0 0 61.8 0H216a8 8 0 0 0 0-16Zm-65 24a16 16 0 1 1 16-16 16 16 0 0 1-16 16Z" />
+    </svg>
   );
 }

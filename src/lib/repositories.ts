@@ -332,11 +332,14 @@ interface StoryRow {
   rejected_at: Date | null;
   rejection_reason: string | null;
   raw_author_name: string;
+  raw_phone: string | null;
   raw_object: string;
   raw_period: string | null;
   raw_manager: string | null;
   raw_text: string;
   photos: string[];
+  consent_personal_at: Date | null;
+  consent_mailing_at: Date | null;
   pub_title: string | null;
   pub_quote: string | null;
   pub_tag_id: string | null;
@@ -353,11 +356,18 @@ function rowToStory(row: StoryRow): Story {
     rejectedAt: row.rejected_at ? row.rejected_at.toISOString() : null,
     rejectionReason: row.rejection_reason,
     rawAuthorName: row.raw_author_name,
+    rawPhone: row.raw_phone ?? '',
     rawObject: row.raw_object,
     rawPeriod: row.raw_period ?? '',
     rawManager: row.raw_manager ?? '',
     rawText: row.raw_text,
     photos: row.photos ?? [],
+    consentPersonalAt: row.consent_personal_at
+      ? row.consent_personal_at.toISOString()
+      : null,
+    consentMailingAt: row.consent_mailing_at
+      ? row.consent_mailing_at.toISOString()
+      : null,
     pubTitle: row.pub_title,
     pubQuote: row.pub_quote,
     pubTagId: row.pub_tag_id,
@@ -415,16 +425,20 @@ export async function getStoryById(id: string): Promise<Story | null> {
 export async function createStory(story: Story): Promise<Story> {
   await query(
     `INSERT INTO stories
-       (id, status, raw_author_name, raw_object, raw_period, raw_manager, raw_text, photos)
-     VALUES ($1, 'new', $2, $3, $4, $5, $6, $7)`,
+       (id, status, raw_author_name, raw_phone, raw_object, raw_period, raw_manager,
+        raw_text, photos, consent_personal_at, consent_mailing_at)
+     VALUES ($1, 'new', $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [
       story.id,
       story.rawAuthorName,
+      story.rawPhone || null,
       story.rawObject,
       story.rawPeriod || null,
       story.rawManager || null,
       story.rawText,
       story.photos,
+      story.consentPersonalAt,
+      story.consentMailingAt,
     ]
   );
   logEvent('info', 'story.submitted', { storyId: story.id, object: story.rawObject });

@@ -2,7 +2,36 @@
 
 import { useActionState, useRef, useState } from 'react';
 import { submitStoryAction, type StoryFormState } from '@/app/actions';
+import { LEGAL_DOCS } from '@/lib/constants';
 import styles from './story-form.module.css';
+
+const MONTHS = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+];
+
+// Поездку описывают недавнюю: текущий год и два предыдущих
+const CURRENT_YEAR = new Date().getFullYear();
+const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
+
+/** Приводит ввод к виду +7 (999) 123-45-67, оставляя только цифры */
+function formatPhone(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+  if (!digits.startsWith('7')) digits = '7' + digits;
+  digits = digits.slice(0, 11);
+
+  const [, a = '', b = '', c = '', d = ''] =
+    /^7(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})$/.exec(digits) ?? [];
+
+  let out = '+7';
+  if (a) out += ` (${a}`;
+  if (a.length === 3) out += ')';
+  if (b) out += ` ${b}`;
+  if (c) out += `-${c}`;
+  if (d) out += `-${d}`;
+  return out;
+}
 
 export function StoryForm() {
   const [state, formAction, isPending] = useActionState<StoryFormState, FormData>(
@@ -11,6 +40,7 @@ export function StoryForm() {
   );
   const [previews, setPreviews] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [phone, setPhone] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFiles(files: FileList | null) {
@@ -77,6 +107,25 @@ export function StoryForm() {
             </div>
 
             <div className="field">
+              <label className={styles.label} htmlFor="phone">
+                Телефон <span className={styles.req}>*</span>
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className={`input ${styles.input}`}
+                placeholder="+7 (999) 123-45-67"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                required
+              />
+              <span className={styles.hint}>Позвоним подтвердить публикацию</span>
+            </div>
+
+            <div className="field">
               <label className={styles.label} htmlFor="object">
                 Объект или тур <span className={styles.req}>*</span>
               </label>
@@ -117,17 +166,28 @@ export function StoryForm() {
               />
             </div>
 
+            {/* Раньше было свободное поле — в карточках получалась каша
+                из «Июль 2025 · 12 дней», «июль 2026» и «07.2026».
+                Селекты дают единый формат «Июль 2025». */}
             <div className="field">
-              <label className={styles.label} htmlFor="period">
+              <label className={styles.label} htmlFor="periodMonth">
                 Период поездки
                 <span className={styles.optional}> — необязательно</span>
               </label>
-              <input
-                id="period"
-                name="period"
-                className={`input ${styles.input}`}
-                placeholder="Например: Июль 2025 · 12 дней"
-              />
+              <div className={styles.periodRow}>
+                <select id="periodMonth" name="periodMonth" className={`input ${styles.input}`} defaultValue="">
+                  <option value="">Месяц</option>
+                  {MONTHS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <select id="periodYear" name="periodYear" className={`input ${styles.input}`} defaultValue="">
+                  <option value="">Год</option>
+                  {YEARS.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Upload */}
@@ -179,6 +239,42 @@ export function StoryForm() {
           </div>
 
           <div className={styles.formFooter}>
+            {/* Согласия — явными чекбоксами, а не строкой «нажимая кнопку».
+                Обработку ПД требуем, рассылка остаётся на выбор. */}
+            <label className={styles.consentRow}>
+              <input
+                type="checkbox"
+                name="consentPersonal"
+                className={styles.consentCheckbox}
+                required
+              />
+              <span className={styles.consentText}>
+                Даю{' '}
+                <a href={LEGAL_DOCS.personalData.url} target="_blank" rel="noopener noreferrer" className={styles.consentLink}>
+                  согласие на обработку персональных данных
+                </a>{' '}
+                и принимаю{' '}
+                <a href={LEGAL_DOCS.privacy.url} target="_blank" rel="noopener noreferrer" className={styles.consentLink}>
+                  политику конфиденциальности
+                </a>
+                <span className={styles.req}> *</span>
+              </span>
+            </label>
+
+            <label className={styles.consentRow}>
+              <input
+                type="checkbox"
+                name="consentMailing"
+                className={styles.consentCheckbox}
+              />
+              <span className={styles.consentText}>
+                Хочу получать новости и спецпредложения —{' '}
+                <a href={LEGAL_DOCS.mailing.url} target="_blank" rel="noopener noreferrer" className={styles.consentLink}>
+                  согласие на рассылку
+                </a>
+              </span>
+            </label>
+
             <button
               type="submit"
               disabled={isPending}
@@ -186,17 +282,6 @@ export function StoryForm() {
             >
               {isPending ? 'Отправляем…' : 'Рассказать свою историю →'}
             </button>
-            <p className={styles.consent}>
-              Нажимая кнопку, вы соглашаетесь с{' '}
-              <a
-                href="https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_обработку_персональных_данных_в_сети_Интернет.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.consentLink}
-              >
-                условиями публикации
-              </a>
-            </p>
           </div>
         </form>
       </div>

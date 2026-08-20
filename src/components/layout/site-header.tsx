@@ -12,11 +12,13 @@ import { SearchBar, SearchBarValues, SearchBarSnapshot, SearchTab } from '@/comp
 import { UserMenu, UserMenuUser } from './user-menu';
 import styles from './site-header.module.css';
 
+// Было четыре пункта, три из которых вели на один и тот же /tours.
+// Оставили по одному пункту на раздел.
 const NAV_LINKS = [
-  { href: '/tours',  label: 'Направления' },
-  { href: '/tours',  label: 'Путешествия' },
-  { href: '/tours',  label: 'Активный отдых' },
-  { href: '/about',                  label: 'О сервисе' },
+  { href: '/tours',   label: 'Туры' },
+  { href: '/hotels',  label: 'Отели' },
+  { href: '/stories', label: 'Истории' },
+  { href: '/about',   label: 'О сервисе' },
 ];
 
 const SEARCH_PILLS = ['Популярно: Япония', 'На майские', 'С детьми', 'До 7 дней'];
@@ -153,9 +155,70 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
   }
 
   const showFullSearch  = (isHome && (!scrolled || searchOpen)) || isSearchPage;
-  const showCompactPill = isHome && scrolled && !searchOpen;
   const showTabsInRow   = showFullSearch;
   const showNav         = !isHome && !isSearchPage;
+  /** на главной шапка свёрнута: строка поиска схлопнута, в центре — пилл */
+  const collapsed       = isHome && scrolled && !searchOpen;
+
+  function renderTabs() {
+    return (
+      <div className={styles.headerTabs} role="tablist">
+        {HEADER_TABS.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.id}
+            tabIndex={collapsed ? -1 : 0}
+            className={`${styles.headerTab} ${activeTab === t.id ? styles.headerTabActive : ''}`}
+            onClick={() => setActiveTab(t.id)}
+          >
+            <span className={styles.headerTabIcon}>{t.icon}</span>
+            <span className={styles.headerTabText}>
+              <span className={styles.headerTabLabel}>{t.label}</span>
+              <span className={styles.headerTabHint}>{t.hint}</span>
+            </span>
+          </button>
+        ))}
+        <Link
+          href="/stories"
+          tabIndex={collapsed ? -1 : 0}
+          className={`${styles.headerTab} ${styles.headerTabStories}`}
+        >
+          <span className={styles.headerTabIcon}><BookOpenIcon weight="light" size={16} /></span>
+          <span className={styles.headerTabText}>
+            <span className={styles.headerTabLabel}>Истории</span>
+            <span className={styles.headerTabHint}>Опыт путешественников</span>
+          </span>
+        </Link>
+      </div>
+    );
+  }
+
+  function renderPill() {
+    return (
+      <button
+        className={styles.compactPill}
+        type="button"
+        tabIndex={collapsed ? 0 : -1}
+        onClick={() => setSearchOpen(true)}
+        aria-label="Открыть поиск"
+      >
+        <span className={styles.compactPillSeg}>{pillSnap.destinationLabel || 'Куда'}</span>
+        <span className={`${styles.compactPillDiv} ${styles.compactPillHideOnMobile}`} aria-hidden="true" />
+        <span className={`${styles.compactPillSeg} ${styles.compactPillHideOnMobile}`}>
+          {pillSnap.whenLabel || 'Любые даты'}
+        </span>
+        <span className={`${styles.compactPillDiv} ${styles.compactPillHideOnMobile}`} aria-hidden="true" />
+        <span className={`${styles.compactPillSeg} ${styles.compactPillMuted} ${styles.compactPillHideOnMobile}`}>
+          {pillSnap.guestsLabel || 'Гости'}
+        </span>
+        <span className={styles.compactPillBtn} aria-hidden="true">
+          <MagnifyingGlassIcon weight="bold" size={13} />
+        </span>
+      </button>
+    );
+  }
 
   return (
     <>
@@ -167,8 +230,22 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
             <BrandLogo className={styles.logo} />
           </Link>
 
+          {/* Центр шапки. На главной табы и компактный пилл лежат друг на друге
+              в одном слоте и меняются кросс-фейдом — раньше один размонтировался,
+              а второй появлялся своей анимацией, и переход читался как рывок. */}
+          {isHome && (
+            <div className={styles.centerSlot}>
+              <div className={`${styles.centerLayer} ${scrolled && !searchOpen ? styles.centerLayerHidden : ''}`}>
+                {renderTabs()}
+              </div>
+              <div className={`${styles.centerLayer} ${scrolled && !searchOpen ? '' : styles.centerLayerHidden}`}>
+                {renderPill()}
+              </div>
+            </div>
+          )}
+
           {/* Tabs (Отели / Туры) — visible when search is expanded */}
-          {showTabsInRow && (
+          {showTabsInRow && !isHome && (
             <div className={styles.headerTabs} role="tablist">
               {HEADER_TABS.map(t => (
                 <button
@@ -207,27 +284,6 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
             </nav>
           )}
 
-          {/* Compact pill — главная, проскроллено */}
-          {showCompactPill && (
-            <button className={styles.compactPill} type="button"
-              onClick={() => setSearchOpen(true)} aria-label="Открыть поиск">
-              <span className={styles.compactPillSeg}>
-                {pillSnap.destinationLabel || 'Куда'}
-              </span>
-              <span className={`${styles.compactPillDiv} ${styles.compactPillHideOnMobile}`} aria-hidden="true" />
-              <span className={`${styles.compactPillSeg} ${styles.compactPillHideOnMobile}`}>
-                {pillSnap.whenLabel || 'Любые даты'}
-              </span>
-              <span className={`${styles.compactPillDiv} ${styles.compactPillHideOnMobile}`} aria-hidden="true" />
-              <span className={`${styles.compactPillSeg} ${styles.compactPillMuted} ${styles.compactPillHideOnMobile}`}>
-                {pillSnap.guestsLabel || 'Гости'}
-              </span>
-              <span className={styles.compactPillBtn} aria-hidden="true">
-                <MagnifyingGlassIcon weight="bold" size={13} />
-              </span>
-            </button>
-          )}
-
           <div className={styles.actions}>
             {showNav && (
               <Link className={styles.searchAction} href="/tours" aria-label="Поиск">
@@ -245,9 +301,11 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
           </button>
         </div>
 
-        {/* Full search */}
-        {(showFullSearch || isSearchPage) && (
-          <div className={`shell ${styles.searchRow} ${!showFullSearch ? styles.searchRowHidden : ''}`} ref={isHome ? searchRef : null}>
+        {/* Полный поиск. На главной не размонтируем, а схлопываем по высоте —
+            так шапка «съезжает» плавно вместе с компактным пиллом. */}
+        {(isHome || isSearchPage) && (
+          <div className={`${styles.searchWrap} ${collapsed ? styles.searchWrapCollapsed : ''}`} aria-hidden={collapsed}>
+          <div className={`shell ${styles.searchRow}`} ref={isHome ? searchRef : null}>
             {isSearchPage ? (
               <Suspense fallback={
                 <SearchBar
@@ -279,6 +337,7 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
                 )}
               </>
             )}
+          </div>
           </div>
         )}
 

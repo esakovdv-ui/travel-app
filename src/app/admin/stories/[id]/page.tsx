@@ -71,6 +71,14 @@ export default async function AdminStoryDetailPage({
                 <dd>{story.rawAuthorName}</dd>
               </div>
               <div className={detailStyles.dlRow}>
+                <dt>Телефон</dt>
+                <dd>
+                  {story.rawPhone
+                    ? <a href={`tel:${story.rawPhone.replace(/\D/g, '')}`}>{story.rawPhone}</a>
+                    : '—'}
+                </dd>
+              </div>
+              <div className={detailStyles.dlRow}>
                 <dt>Объект</dt>
                 <dd>{story.rawObject}</dd>
               </div>
@@ -85,6 +93,20 @@ export default async function AdminStoryDetailPage({
               <div className={detailStyles.dlRow}>
                 <dt>Дата подачи</dt>
                 <dd>{new Date(story.submittedAt).toLocaleString('ru-RU')}</dd>
+              </div>
+              {/* Модератору нужно видеть, что согласия действительно даны:
+                  без обработки ПД публиковать историю нельзя. */}
+              <div className={detailStyles.dlRow}>
+                <dt>Согласия</dt>
+                <dd>
+                  {story.consentPersonalAt
+                    ? `✓ обработка ПД — ${new Date(story.consentPersonalAt).toLocaleDateString('ru-RU')}`
+                    : '✕ обработка ПД не подтверждена'}
+                  <br />
+                  {story.consentMailingAt
+                    ? `✓ рассылка — ${new Date(story.consentMailingAt).toLocaleDateString('ru-RU')}`
+                    : '— рассылка не подтверждена'}
+                </dd>
               </div>
               {isPublished && story.publishedAt && (
                 <div className={detailStyles.dlRow}>

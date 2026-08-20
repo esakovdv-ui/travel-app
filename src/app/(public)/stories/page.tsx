@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { buildMetadata } from '@/lib/seo';
 import { listStoriesPaginated, listTags, getGalleryPhotos, getPublishedManagers } from '@/lib/repositories';
-import { STORIES_RAFFLE_ENABLED, STORIES_RAFFLE_CONFIG } from '@/lib/constants';
+import { STORIES_RAFFLE_ENABLED, STORIES_RAFFLE_CONFIG, nextRaffleDrawDate } from '@/lib/constants';
 import { StoriesSection } from '@/components/stories/stories-section';
 import { StoryForm } from '@/components/stories/story-form';
 import styles from './stories.module.css';
@@ -156,7 +156,7 @@ export default async function StoriesPage() {
               <div className={styles.trustPrize}>
                 <span className={styles.trustPrizeEmoji}>{STORIES_RAFFLE_CONFIG.emoji}</span>
                 <strong className={styles.trustPrizeName}>{STORIES_RAFFLE_CONFIG.prizeName}</strong>
-                <span className={styles.trustPrizeDate}>Розыгрыш {STORIES_RAFFLE_CONFIG.drawDate}</span>
+                <span className={styles.trustPrizeDate}>Розыгрыш {nextRaffleDrawDate()}</span>
               </div>
             </div>
           </div>

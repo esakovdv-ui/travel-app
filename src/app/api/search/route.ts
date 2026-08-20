@@ -56,9 +56,12 @@ export async function GET(request: Request) {
     });
 
   } catch (err) {
+    // Полный ответ поставщика остаётся только в серверных логах: он содержит
+    // его домен и внутренние коды, наружу такое отдавать нельзя.
     console.error('Search error:', err);
+    const raw = err instanceof Error ? err.message : '';
     return Response.json(
-      { error: err instanceof Error ? err.message : 'Ошибка поиска' },
+      { error: /invalid date|parameters invalid/i.test(raw) ? 'invalid date' : 'search failed' },
       { status: 500 }
     );
   }

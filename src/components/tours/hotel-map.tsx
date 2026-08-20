@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,8 +9,35 @@ import styles from './hotel-map.module.css';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
+/** Маленькая точка вместо плашки — для маркеров, которым не хватило места */
+function makeDotIcon(active: boolean) {
+  const size = active ? 14 : 10;
+  const html = `<div style="
+    width:${size}px;height:${size}px;border-radius:50%;
+    background:${active ? '#1B4FBF' : '#fff'};
+    border:2px solid ${active ? '#fff' : '#1B4FBF'};
+    box-shadow:0 1px 4px rgba(0,0,0,0.3);cursor:pointer;
+  "></div>`;
+  return L.divIcon({
+    className: '',
+    html,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+/** Сокращаем до тысяч: «116 782 ₽» → «117 т₽» — плашка вдвое уже */
+function priceLabel(price: number | null | undefined): string {
+  return price ? `${Math.round(price / 1000).toLocaleString('ru-RU')} т₽` : '—';
+}
+
+/** Ширина плашки. Используется и при отрисовке, и при раскладке без наложений. */
+function priceIconWidth(price: number | null | undefined): number {
+  return Math.max(80, priceLabel(price).length * 8 + 22);
+}
+
 function makePriceIcon(price: number | null | undefined, active: boolean) {
-  const label = price ? `${price.toLocaleString('ru-RU')} ₽` : '—';
+  const label = priceLabel(price);
   const bg = active ? '#1B4FBF' : '#fff';
   const color = active ? '#fff' : '#1a1a1a';
   const shadow = active
@@ -27,7 +54,7 @@ function makePriceIcon(price: number | null | undefined, active: boolean) {
     white-space:nowrap;box-shadow:${shadow};cursor:pointer;
   ">${label}</div>`;
 
-  const width = Math.max(80, label.length * 8 + 22);
+  const width = priceIconWidth(price);
 
   return L.divIcon({
     className: '',
@@ -39,21 +66,27 @@ function makePriceIcon(price: number | null | undefined, active: boolean) {
 
 function FitBounds({ hotels }: { hotels: HotelData[] }) {
   const map = useMap();
-  const fitted = useRef(false);
+  const lastKey = useRef('');
+
+  // Ключ по координатам: пересобираем вид, когда действительно изменился набор
+  // точек. Раньше здесь стоял флаг «подогнали один раз» — после смены фильтров
+  // карта оставалась на прежнем участке и показывала пустое место вместо отелей.
+  const key = hotels
+    .filter(h => h.hotel.lat && h.hotel.long)
+    .map(h => `${h.hotel.lat},${h.hotel.long}`)
+    .join('|');
 
   useEffect(() => {
-    if (fitted.current || hotels.length === 0) return;
-    const points = hotels
-      .filter(h => h.hotel.lat && h.hotel.long)
-      .map(h => [h.hotel.lat!, h.hotel.long!] as [number, number]);
-    if (points.length === 0) return;
+    if (!key || key === lastKey.current) return;
+    lastKey.current = key;
+
+    const points = key.split('|').map(p => p.split(',').map(Number) as [number, number]);
     if (points.length === 1) {
       map.setView(points[0], 13);
     } else {
       map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 14 });
     }
-    fitted.current = true;
-  }, [hotels, map]);
+  }, [key, map]);
 
   return null;
 }
@@ -110,6 +143,72 @@ interface HotelMapProps {
   wlBaseUrl?: string;
 }
 
+/**
+ * Раскладывает маркеры на текущем зуме: жадно расставляет ценовые плашки так,
+ * чтобы они не перекрывались, остальным отдаёт точки. Без этого 60+ отелей
+ * в одном курорте превращались в нечитаемую кучу наложенных друг на друга цен.
+ */
+function useLabelLayout(hotels: HotelData[]) {
+  const map = useMap();
+  const [withLabel, setWithLabel] = useState<Set<string>>(new Set());
+
+  const recompute = useCallback(() => {
+    const placed: Array<{ x1: number; x2: number; y1: number; y2: number }> = [];
+    const next = new Set<string>();
+
+    // Дешёвые сначала — на карте важнее показать цены подешевле
+    const sorted = [...hotels].sort((a, b) => (a.min_price ?? 0) - (b.min_price ?? 0));
+
+    for (const h of sorted) {
+      const p = map.latLngToContainerPoint([h.hotel.lat!, h.hotel.long!]);
+      // ширину берём по той же формуле, что и сама плашка, плюс воздух между ними
+      const w = priceIconWidth(h.min_price) + 8;
+      const hh = 38;
+      const box = { x1: p.x - w / 2, x2: p.x + w / 2, y1: p.y - hh / 2, y2: p.y + hh / 2 };
+      const clash = placed.some(b => !(box.x2 < b.x1 || box.x1 > b.x2 || box.y2 < b.y1 || box.y1 > b.y2));
+      if (!clash) {
+        placed.push(box);
+        next.add(h.tour_id);
+      }
+    }
+    setWithLabel(next);
+  }, [hotels, map]);
+
+  useEffect(() => {
+    recompute();
+    map.on('zoomend moveend', recompute);
+    return () => { map.off('zoomend moveend', recompute); };
+  }, [map, recompute]);
+
+  return withLabel;
+}
+
+function Markers({ hotels, hoveredId, wlBaseUrl }: { hotels: HotelData[]; hoveredId?: string | null; wlBaseUrl: string }) {
+  const withLabel = useLabelLayout(hotels);
+
+  return (
+    <>
+      {hotels.map(h => {
+        const active = hoveredId === h.tour_id;
+        // Наведённый отель показываем плашкой всегда, чтобы его было видно в списке
+        const showLabel = active || withLabel.has(h.tour_id);
+        return (
+          <Marker
+            key={h.tour_id}
+            position={[h.hotel.lat!, h.hotel.long!]}
+            icon={showLabel ? makePriceIcon(h.min_price, active) : makeDotIcon(active)}
+            zIndexOffset={active ? 1000 : showLabel ? 100 : 0}
+          >
+            <Popup closeButton={false} className={styles.popup} offset={[0, -4]}>
+              <HotelPopupContent h={h} wlBaseUrl={wlBaseUrl} />
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
+}
+
 export function HotelMap({ hotels, hoveredId, wlBaseUrl = '' }: HotelMapProps) {
   const withCoords = hotels.filter(h => h.hotel.lat && h.hotel.long);
 
@@ -131,22 +230,7 @@ export function HotelMap({ hotels, hoveredId, wlBaseUrl = '' }: HotelMapProps) {
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         <FitBounds hotels={withCoords} />
-        {withCoords.map(h => (
-          <Marker
-            key={h.tour_id}
-            position={[h.hotel.lat!, h.hotel.long!]}
-            icon={makePriceIcon(h.min_price, hoveredId === h.tour_id)}
-            zIndexOffset={hoveredId === h.tour_id ? 1000 : 0}
-          >
-            <Popup
-              closeButton={false}
-              className={styles.popup}
-              offset={[0, -4]}
-            >
-              <HotelPopupContent h={h} wlBaseUrl={wlBaseUrl} />
-            </Popup>
-          </Marker>
-        ))}
+        <Markers hotels={withCoords} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} />
       </MapContainer>
     </div>
   );

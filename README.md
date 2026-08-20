@@ -98,8 +98,8 @@ Next.js 15 + React 19 + TypeScript приложение для продажи т
 | `/packages/[slug]` | `(public)/packages/[slug]/page.tsx` | Детальная страница пакета |
 | `/checkout` | `(public)/checkout/page.tsx` | Чекаут (не подключён к платёжке) |
 | `/account` | `(public)/account/page.tsx` | Личный кабинет |
-| `/auth/login` | `(public)/auth/login/page.tsx` | Вход (Airbnb-стиль) |
-| `/auth/register` | `(public)/auth/register/page.tsx` | Регистрация (Airbnb-стиль) |
+| `/login` | `(public)/login/page.tsx` | Вход (Airbnb-стиль) |
+| `/register` | `(public)/register/page.tsx` | Регистрация (Airbnb-стиль) |
 | `/admin` | `admin/page.tsx` | Админка (пакеты, отзывы) |
 
 ---

@@ -1,9 +1,19 @@
 import Link from 'next/link';
 import { BrandLogo } from './brand-logo';
-import { TelegramLogoIcon, InstagramLogoIcon, PhoneIcon, EnvelopeIcon } from '@/components/icons';
+import { readSearchTags } from '@/lib/search-tags';
+import { LEGAL_DOCS } from '@/lib/constants';
 import styles from './site-footer.module.css';
 
 export function SiteFooter() {
+  // Направления берём из админки (/admin/search-tags) — там у каждого тега
+  // лежит рабочий href вида /tours?toCountry=TR. Раньше в футере были
+  // захардкоженные /tours?category=warm, которые приложение не читает,
+  // и все три ссылки вели на пустой экран поиска.
+  const destinations = readSearchTags()
+    .filter((t) => t.enabled)
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 5);
+
   return (
     <footer className={styles.footer}>
       <div className="shell">
@@ -17,32 +27,41 @@ export function SiteFooter() {
 
           <div className={styles.column}>
             <h4>Навигация</h4>
-            <nav className={styles.columnLinks} aria-label="Направления">
-              <Link href="/tours">Направления</Link>
-              <Link href="/tours">Путешествия</Link>
-              <Link href="/tours?category=active">Активный отдых</Link>
+            <nav className={styles.columnLinks} aria-label="Основные разделы">
+              <Link href="/tours">Подобрать тур</Link>
+              <Link href="/hotels">Отели без перелёта</Link>
+              <Link href="/stories">Истории путешествий</Link>
               <Link href="/about">О сервисе</Link>
             </nav>
           </div>
 
           <div className={styles.column}>
-            <h4>Сервис</h4>
-            <nav className={styles.columnLinks} aria-label="Аккаунт">
-              <Link href="/tours?category=warm">Жаркие страны</Link>
-              <Link href="/tours?category=cold">Холодные страны</Link>
-              <Link href="/account">Личный кабинет</Link>
+            <h4>Направления</h4>
+            <nav className={styles.columnLinks} aria-label="Популярные направления">
+              {destinations.map((tag) => (
+                <Link key={tag.id} href={tag.href}>{tag.label}</Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className={styles.column}>
+            <h4>Документы</h4>
+            <nav className={styles.columnLinks} aria-label="Правовые документы">
+              <a href={LEGAL_DOCS.privacy.url} target="_blank" rel="noopener noreferrer">
+                {LEGAL_DOCS.privacy.label}
+              </a>
+              <a href={LEGAL_DOCS.personalData.url} target="_blank" rel="noopener noreferrer">
+                {LEGAL_DOCS.personalData.label}
+              </a>
+              <a href={LEGAL_DOCS.mailing.url} target="_blank" rel="noopener noreferrer">
+                {LEGAL_DOCS.mailing.label}
+              </a>
             </nav>
           </div>
         </div>
 
         <div className={styles.bottom}>
-          <p className={styles.copyright}>Мои путешествия © 2026</p>
-          <div className={styles.socials}>
-            <Link href="https://t.me/" className={styles.socialLink} aria-label="Telegram"><TelegramLogoIcon weight="regular" size={20} /></Link>
-            <Link href="https://instagram.com/" className={styles.socialLink} aria-label="Instagram"><InstagramLogoIcon weight="regular" size={20} /></Link>
-            <Link href="tel:+7" className={styles.socialLink} aria-label="Телефон"><PhoneIcon weight="regular" size={20} /></Link>
-            <Link href="mailto:info@mytravel.ru" className={styles.socialLink} aria-label="Email"><EnvelopeIcon weight="regular" size={20} /></Link>
-          </div>
+          <p className={styles.copyright}>Мои путешествия © {new Date().getFullYear()}</p>
           <div className={styles.accentLine} aria-hidden="true">
             <span className={`${styles.dot} ${styles.dotBlue}`} />
             <span className={`${styles.dot} ${styles.dotRed}`} />

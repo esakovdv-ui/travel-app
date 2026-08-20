@@ -12,6 +12,29 @@ export function formatCurrency(value: number, locale = 'ru-RU') {
   }).format(value);
 }
 
+/**
+ * Русское склонение по числу: plural(53, 'тур', 'тура', 'туров') → 'тура'.
+ * Учитывает исключение 11–14 («11 туров», а не «11 тур»).
+ */
+export function plural(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n) % 100;
+  if (abs >= 11 && abs <= 14) return many;
+  const last = abs % 10;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}
+
+/** «53 тура», «11 туров», «1 тур» */
+export function toursLabel(n: number): string {
+  return `${n} ${plural(n, 'тур', 'тура', 'туров')}`;
+}
+
+/** «53 отеля», «11 отелей», «1 отель» */
+export function hotelsLabel(n: number): string {
+  return `${n} ${plural(n, 'отель', 'отеля', 'отелей')}`;
+}
+
 export function formatTravelDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',

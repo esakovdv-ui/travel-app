@@ -3,3 +3,13 @@ node_modules
 dist
 .env
 .env.local
+
+# Метаданные Finder и кэш сборки TypeScript — в репозитории не нужны
+.DS_Store
+tsconfig.tsbuildinfo
+
+# Фотографии историй, загруженные через форму (см. actions.ts)
+public/uploads/
+
+# Локальные настройки редактора и путей запуска
+.claude/

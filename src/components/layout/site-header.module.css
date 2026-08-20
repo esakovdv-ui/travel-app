@@ -147,18 +147,24 @@
 .compactPill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 6px 6px 16px;
+  /* Слева отступ гасится padding'ом первого сегмента, справа — margin'ом кнопки,
+     поэтому здесь только внешняя рамка вокруг круглой кнопки. */
+  padding: 6px;
   background: #fff;
   border: 1px solid rgba(20, 20, 43, 0.1);
   border-radius: 999px;
   box-shadow: 0 2px 14px rgba(20, 20, 43, 0.1);
   cursor: pointer;
-  flex: 1;
+  /* Плашка обжимает содержимое. С `flex: 1` она растягивалась до max-width,
+     а сегменты прижимались влево — после красной кнопки оставалось до 130px
+     пустого фона. `margin: 0 auto` продолжает центрировать её в шапке. */
+  flex: 0 1 auto;
+  width: fit-content;
   min-width: 0;
   max-width: 380px;
   margin: 0 auto;
   overflow: hidden;
-  animation: pillIn 0.2s ease;
+  /* Появление пилла ведёт .centerLayer — своя mount-анимация тут только мешала */
   transition: box-shadow var(--transition);
   font: inherit;
 }
@@ -178,6 +184,11 @@
   color: var(--c-text);
   padding: 0 10px;
   white-space: nowrap;
+}
+
+/* Первый сегмент задаёт отступ от левого края пилла */
+.compactPillSeg:first-child {
+  padding-left: 14px;
 }
 
 .compactPillMuted {
@@ -201,7 +212,7 @@
   border-radius: 50%;
   background: var(--c-red);
   color: #fff;
-  margin-left: 8px;
+  margin-left: 0;
   flex-shrink: 0;
 }
 
@@ -240,15 +251,72 @@
 }
 
 /* Search row (full) */
+/* Обёртка-грид: 1fr → 0fr анимирует ФАКТИЧЕСКУЮ высоту содержимого.
+   С max-height приходилось задавать запас «на глаз», и часть кривой уходила
+   вхолостую — сворачивание дёргалось в начале. */
+.searchWrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.26s ease 0.04s;
+}
+
+.searchWrap > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.searchWrapCollapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 0.18s ease;
+}
+
 .searchRow {
   padding: 0 0 16px;
   position: relative;
-  animation: slideDown 0.22s ease;
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Центр шапки: табы и компактный пилл в одном слоте ── */
+.centerSlot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+}
+
+.centerLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.24s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.centerLayerHidden {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+
+/* Уважает системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  .searchWrap,
+  .searchWrapCollapsed,
+  .centerLayer {
+    transition-duration: 0.01ms;
+  }
 }
 
 .searchForm {
@@ -697,6 +765,7 @@
   .searchBtn { width: 48px; padding: 0; }
   .compactPill { max-width: 280px; }
   .compactPillSeg { padding: 0 6px; font-size: 0.78rem; }
+  .compactPillSeg:first-child { padding-left: 10px; }
 }
 
 @media (max-width: 720px) {
