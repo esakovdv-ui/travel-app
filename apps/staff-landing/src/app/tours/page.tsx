@@ -297,12 +297,17 @@ function HotelCard({
         ) : (
           <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
         )}
-        {hotel.category > 0 && (
-          <div className={styles.hotelStarsOverlay}>{stars(hotel.category)}</div>
-        )}
       </div>
 
       <div className={styles.hotelCardBody}>
+        {/* Звёзды были наложены на фотографию: 0.75rem оранжевым поверх
+            снимка, и на светлых кадрах их не было видно. А звёздность
+            читают первой, до цены — место ей в тексте. */}
+        {hotel.category > 0 && (
+          <div className={styles.hotelCardStars} aria-label={`${hotel.category} звёзд`}>
+            {stars(hotel.category)}
+          </div>
+        )}
         <div className={styles.hotelCardTitleRow}>
           <div className={styles.hotelCardName}>{hotel.name}</div>
           {hotel.rating > 0 && (
@@ -1024,6 +1029,36 @@ function HotelModal({
               </div>
             )}
 
+            {/* Номера идут перед описанием отеля.
+                Карточку открывают, чтобы выбрать номер и забронировать, а не
+                читать про инфраструктуру. Замер до перестановки: блок номеров
+                начинался на 1686px при высоте модалки 2381px — 71% прокрутки,
+                под десятью секциями описания. Сотрудники до него не долистывали. */}
+            {/* ── Номера и туры — сгруппировано ── */}
+            <div className={styles.modalSection} ref={roomsSectionRef}>
+              {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
+                  подпись читалась как «четыре номера». */}
+              <div className={styles.modalSectionTitle}>
+                Номера и даты — {toursLabel(hotel.tours.length)}
+              </div>
+              {roomsLoading ? (
+                <BlockSkeleton lines={4} />
+              ) : (
+                <div className={styles.roomGroups}>
+                  {roomGroups.map(group => (
+                    <RoomTourGroup
+                      key={group.roomId}
+                      group={group}
+                      bookTourId={bookTourId}
+                      onSelectTour={setBookTourId}
+                      onOpenLightbox={openLightbox}
+                      searchId={searchId}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Описание отеля.
                 Раньше здесь вручную повторялись пять почти одинаковых блоков,
                 и половина того, что отдаёт Tourvisor, просто не выводилась:
@@ -1057,31 +1092,6 @@ function HotelModal({
                 </div>
               </div>
             )}
-
-            {/* ── Номера и туры — сгруппировано ── */}
-            <div className={styles.modalSection} ref={roomsSectionRef}>
-              {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
-                  подпись читалась как «четыре номера». */}
-              <div className={styles.modalSectionTitle}>
-                Номера и даты — {toursLabel(hotel.tours.length)}
-              </div>
-              {roomsLoading ? (
-                <BlockSkeleton lines={4} />
-              ) : (
-                <div className={styles.roomGroups}>
-                  {roomGroups.map(group => (
-                    <RoomTourGroup
-                      key={group.roomId}
-                      group={group}
-                      bookTourId={bookTourId}
-                      onSelectTour={setBookTourId}
-                      onOpenLightbox={openLightbox}
-                      searchId={searchId}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* ── Мини-карта ── */}
             {hasCoords && (
