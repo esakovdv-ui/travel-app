@@ -126,6 +126,28 @@ pm2 restart all
 | `5be1eb3` | GitHub Actions для автодеплоя |
 | `7ce932c` | Initial commit |
 
+## Сеть, TLS и CDN
+
+DNS: `motrip.ru`, `www`, `staff` → A `72.56.32.183` (reg.ru, NS `ns1.reg.ru` / `ns2.reg.ru`).
+
+На сервере (август 2026):
+- **HTTP/2** — `listen 443 ssl http2` в nginx
+- **ECDSA-сертификаты** Let's Encrypt (меньше TLS-рукопожатие, чем RSA)
+- **MSS clamp 1300** + `tcp_mtu_probing=1` — workflow `Fix MTU blackhole`
+- **Cloudflare real IP** — `/etc/nginx/conf.d/cloudflare-real-ip.conf` (готово до включения CDN)
+
+### CDN (Cloudflare)
+
+Без CDN трафик идёт напрямую на IP Timeweb; на части мобильных сетей это даёт обрывы TLS.
+
+1. Добавить `motrip.ru` в [Cloudflare](https://dash.cloudflare.com) (Free).
+2. В reg.ru сменить NS домена на nameservers Cloudflare.
+3. В GitHub Secrets: `CF_API_TOKEN` (Zone:Edit, DNS:Edit), `CF_ACCOUNT_ID`.
+4. Запустить workflow **Setup Cloudflare CDN** — включит proxy (оранжевое облако) для `motrip.ru`, `www`, `staff`.
+5. В Cloudflare: SSL/TLS → **Full (strict)**.
+
+Скрипты: `scripts/setup-network-tls-cdn.sh`, `scripts/setup-cloudflare-cdn.sh`.
+
 ## Мониторинг
 
 ```bash
