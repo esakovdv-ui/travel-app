@@ -267,11 +267,15 @@ function SlidersGlyph() {
 function HotelCard({
   hotel,
   selected,
-  onClick,
+  onSelect,
+  onOpen,
 }: {
   hotel: HotelSearchResult
   selected: boolean
-  onClick: () => void
+  /** Тап по карточке — выделить и показать отель на карте. */
+  onSelect: () => void
+  /** «Смотреть» — открыть карточку отеля с номерами и бронированием. */
+  onOpen: () => void
 }) {
   const bestTour = hotel.tours[0]
 
@@ -288,8 +292,9 @@ function HotelCard({
   return (
     // Карточка была <div onClick> — с клавиатуры отель нельзя было открыть вовсе.
     <article
+      data-hotel-id={hotel.id}
       className={`${styles.hotelCard} ${selected ? styles.hotelCardSelected : ''}`}
-      onClick={onClick}
+      onClick={onSelect}
     >
       <div className={styles.hotelThumbWrap}>
         {hotel.picturelink ? (
@@ -355,7 +360,7 @@ function HotelCard({
           <button
             type="button"
             className={styles.hotelCardBookBtn}
-            onClick={e => { e.stopPropagation(); onClick() }}
+            onClick={e => { e.stopPropagation(); onOpen() }}
             aria-label={`Смотреть туры: ${hotel.name}`}
           >
             Смотреть
@@ -1450,6 +1455,26 @@ function ToursContent() {
 
   useEffect(() => clearCollapseTimer, [])
 
+  /**
+   * Выделить отель, не открывая карточку.
+   *
+   * Связь карты и списка работает в обе стороны: тап по пину подсвечивает
+   * карточку и подкручивает к ней список, тап по карточке подводит карту к
+   * пину (см. эффект по selectedId в MapView). Открывает отель только
+   * «Смотреть» — и повторный тап по уже выбранному пину.
+   */
+  const selectHotel = useCallback((id: number, opts?: { scrollList?: boolean }) => {
+    setSelectedId(id)
+    if (!opts?.scrollList) return
+    // Список — свой контейнер прокрутки, поэтому block: 'nearest':
+    // 'center' дёргал бы всю страницу.
+    requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelector(`[data-hotel-id="${id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }, [])
+
   const openHotel = useCallback((hotel: HotelSearchResult, source?: 'map') => {
     reachGoal(StaffGoals.hotelOpen, {
       hotel: hotel.name,
@@ -1922,7 +1947,8 @@ function ToursContent() {
                   key={hotel.id}
                   hotel={hotel}
                   selected={selectedId === hotel.id}
-                  onClick={() => openHotel(hotel)}
+                  onSelect={() => selectHotel(hotel.id)}
+                  onOpen={() => openHotel(hotel)}
                 />
               ))}
             </>
@@ -1934,7 +1960,13 @@ function ToursContent() {
             <MapView
               hotels={filtered}
               selectedId={selectedId}
-              onSelect={hotel => openHotel(hotel, 'map')}
+              // Первый тап по пину выбирает карточку, повторный по тому же —
+              // открывает отель. Так у человека есть шаг осмотра перед
+              // погружением, а прежний сценарий никуда не делся.
+              onSelect={hotel => {
+                if (selectedId === hotel.id) openHotel(hotel, 'map')
+                else selectHotel(hotel.id, { scrollList: true })
+              }}
             />
           ) : (
             <div className={styles.mapPlaceholder}>
