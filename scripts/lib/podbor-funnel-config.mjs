@@ -142,12 +142,13 @@ export const POST_HANDOFF = {
   },
   tours_search: {
     key: 'tours_search',
-    label: 'Туры: выдача module6 search',
+    label: 'Туры: выдача (вход с podbor_ref/UTM)',
     counter: COUNTERS.mgt,
     type: 'users',
     journeyEntry: PODBOR_TOURS_ENTRY,
-    filter: `${PODBOR_TOURS_ENTRY} AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='`,
-    journeyNote: 'когорта podbor_ref/UTM + выдача',
+    // Handoff сразу открывает search — заход с маркером и есть выдача.
+    filter: PODBOR_TOURS_ENTRY,
+    journeyNote: 'landing с podbor_ref/UTM (= выдача, URL уже action=search)',
   },
   tours_tour_card: {
     key: 'tours_tour_card',
@@ -283,9 +284,9 @@ export const WIZARD_SHEET_COLUMNS = [
  * value(m) — число или CR-строка для одной недели.
  */
 export const TOURS_METRIC_ROWS = [
-  { label: 'Вход с подбора', value: (m) => m.tours_entry },
+  { label: 'Handoff: туры', value: (m) => m.handoff_tours },
   { label: 'Выдача', value: (m) => m.tours_search },
-  { label: 'CR вход→выдача', value: (m) => crBetween(m.tours_search, m.tours_entry) },
+  { label: 'CR handoff→выдача', value: (m) => crBetween(m.tours_search, m.handoff_tours) },
   { label: 'Карточка', value: (m) => m.tours_tour_card },
   { label: 'CR выдача→карточка', value: (m) => crBetween(m.tours_tour_card, m.tours_search) },
   { label: 'Корзина', value: (m) => m.tours_cart },
