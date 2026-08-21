@@ -219,37 +219,89 @@ export const POST_HANDOFF = {
   },
 };
 
-/** Sheet column headers (Russian labels). */
-export const SHEET_COLUMNS = [
+/** Конверсия curr / prev → «72,8%». Пусто, если нет базы или нулевого числителя. */
+export function crBetween(curr, prev) {
+  if (!prev || !curr) return '';
+  return `${((curr / prev) * 100).toFixed(1).replace('.', ',')}%`;
+}
+
+export const SHEET_TAB_WIZARD = 'Визард';
+export const SHEET_TAB_TOURS = 'Туры';
+export const SHEET_TAB_HOTELS = 'Отели';
+export const SHEET_TAB_REF = 'Справочник';
+/** Старый единый лист — очищаем при sync, больше не пишем. */
+export const SHEET_TAB_LEGACY = 'Воронка';
+
+/** Лист «Визард»: опрос + вход. */
+export const WIZARD_SHEET_COLUMNS = [
   'Неделя',
   'С',
   'По',
   'Клик баннер',
   'Клик popup',
   'Старт визарда',
+  'CR → кто едет',
   'Шаг: кто едет',
+  'CR → бюджет',
   'Шаг: бюджет',
+  'CR → формат',
   'Шаг: формат',
+  'CR → регион',
   'Шаг: регион',
+  'CR → даты',
   'Шаг: даты',
+  'CR → итог',
   'Шаг: итог',
+  'CR → handoff',
   'Handoff',
-  'Handoff: туры',
-  'Handoff: отели',
   'CR старт→handoff',
-  'UTM: пользователи',
-  'Туры: выдача',
-  'Туры: карточка',
-  'Туры: корзина',
-  'Туры: бронь',
-  'Туры: заявка',
-  'Отели: выдача',
-  'Отели: корзина',
-  'Отели: чекаут',
-  'Отели: блок оплаты',
-  'Отели: оплата',
+  'Handoff: туры',
+  'CR туры от handoff',
+  'Handoff: отели',
+  'CR отели от handoff',
   'Обновлено',
 ];
+
+/** Лист «Туры»: post-handoff + CR шаг→шаг. */
+export const TOURS_SHEET_COLUMNS = [
+  'Неделя',
+  'С',
+  'По',
+  'Handoff: туры',
+  'Выдача',
+  'CR handoff→выдача',
+  'Карточка',
+  'CR выдача→карточка',
+  'Корзина',
+  'CR карточка→корзина',
+  'Бронь',
+  'CR корзина→бронь',
+  'Заявка',
+  'CR бронь→заявка',
+  'Обновлено',
+];
+
+/** Лист «Отели»: post-handoff journey + CR шаг→шаг. */
+export const HOTELS_SHEET_COLUMNS = [
+  'Неделя',
+  'С',
+  'По',
+  'Handoff: отели',
+  'Выдача',
+  'CR handoff→выдача',
+  'Корзина',
+  'CR выдача→корзина',
+  'Чекаут',
+  'CR корзина→чекаут',
+  'Блок оплаты',
+  'CR чекаут→блок оплаты',
+  'Оплата',
+  'CR блок оплаты→оплата',
+  'Обновлено',
+];
+
+/** @deprecated единый лист заменён на Визард / Туры / Отели */
+export const SHEET_COLUMNS = WIZARD_SHEET_COLUMNS;
 
 export const REFERENCE_ROWS = [
   ['Счётчик', 'ID', 'reachGoal / метрика', 'Когда'],
@@ -282,4 +334,5 @@ export const REFERENCE_ROWS = [
   ['Туры без UTM', `URL содержит ${PODBOR_TOUR_MODULE}`, 'hash trackHash', 'Выдача/карточка/корзина/бронь/оплата туров, пока UTM был в hash'],
   ['Handoff UTM', 'utm_source=podbor_wizard', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl'],
   ['Старт учёта', PODBOR_FUNNEL_START_DEFAULT, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
+  ['Листы', 'Визард / Туры / Отели', 'недельные строки', 'CR = конверсия от предыдущего шага'],
 ];
