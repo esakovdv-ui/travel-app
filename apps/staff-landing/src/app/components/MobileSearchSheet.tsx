@@ -13,6 +13,15 @@ import {
 } from '@/lib/date-utils'
 import { yearsLabel } from '@/lib/plural'
 
+// Отпуск планируют за год вперёд, а календарь открывался на два месяца и
+// добавлял по два за нажатие — до следующего лета пять кликов. Tourvisor
+// принимает даты минимум на 15 месяцев вперёд (проверено на боевом), так что
+// ограничение было только наше. Порог в 18 месяцев — чтобы не плодить
+// бесконечную ленту сеток.
+const CAL_MONTHS_START = 6
+const CAL_MONTHS_STEP = 6
+const CAL_MONTHS_MAX = 18
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SearchForm {
@@ -106,7 +115,7 @@ export function MobileSearchSheet({
   const [step, setStep] = useState<Step>('destination')
   const [calFrom, setCalFrom] = useState<string | null>(null)
   const [calTo, setCalTo] = useState<string | null>(null)
-  const [monthsShown, setMonthsShown] = useState(4)
+  const [monthsShown, setMonthsShown] = useState(CAL_MONTHS_START)
   const calRef = useRef<HTMLDivElement>(null)
 
   // Sync calendar state when sheet opens
@@ -115,7 +124,7 @@ export function MobileSearchSheet({
     setStep('destination')
     setCalFrom(form.targetDate || null)
     setCalTo(form.targetDate ? offsetDate(form.targetDate, form.nightsTo) : null)
-    setMonthsShown(4)
+    setMonthsShown(CAL_MONTHS_START)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
@@ -344,9 +353,14 @@ export function MobileSearchSheet({
                   <MonthGrid key={`${year}-${month}`} year={year} month={month} calFrom={calFrom} calTo={calTo} onDay={handleDay} classes={CAL_CLASSES} />
                 ))}
               </div>
-              <button className={styles.loadMoreBtn} onClick={() => setMonthsShown(n => n + 4)}>
-                Загрузить другие даты
-              </button>
+              {monthsShown < CAL_MONTHS_MAX && (
+                <button
+                  className={styles.loadMoreBtn}
+                  onClick={() => setMonthsShown(n => Math.min(n + CAL_MONTHS_STEP, CAL_MONTHS_MAX))}
+                >
+                  Загрузить другие даты
+                </button>
+              )}
             </div>
           )}
         </div>

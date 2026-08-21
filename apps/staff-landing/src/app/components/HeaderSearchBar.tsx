@@ -9,6 +9,15 @@ import { nightsLabel, plural, yearsLabel } from '@/lib/plural'
 import { reachGoal, StaffGoals } from '@/lib/metrika'
 import styles from '../page.module.css'
 
+// Отпуск планируют за год вперёд, а календарь открывался на два месяца и
+// добавлял по два за нажатие — до следующего лета пять кликов. Tourvisor
+// принимает даты минимум на 15 месяцев вперёд (проверено на боевом), так что
+// ограничение было только наше. Порог в 18 месяцев — чтобы не плодить
+// бесконечную ленту сеток.
+const CAL_MONTHS_START = 6
+const CAL_MONTHS_STEP = 6
+const CAL_MONTHS_MAX = 18
+
 interface Country { id: number; name: string }
 interface Region { id: number; name: string; countryId: number }
 
@@ -122,7 +131,7 @@ export function HeaderSearchBar({
   const [regions, setRegions] = useState<Region[]>([])
   const [regionsLoading, setRegionsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [monthsShown, setMonthsShown] = useState(2)
+  const [monthsShown, setMonthsShown] = useState(CAL_MONTHS_START)
 
   // Поиск с самой /tours ведёт на тот же маршрут: компонент не размонтируется,
   // и без этого сброса кнопка навсегда залипала в «Ищем…».
@@ -318,32 +327,9 @@ export function HeaderSearchBar({
                       </button>
                     ))}
                   </div>
-                  <div className={styles.popoverDivider} />
-                  <div className={styles.popoverSectionLabel}>Все страны</div>
                 </>
               )
             })()}
-            <input
-              autoFocus
-              className={styles.popoverSearch}
-              placeholder="Поиск страны..."
-              value={countryQuery}
-              onChange={e => setCountryQuery(e.target.value)}
-            />
-            <div className={styles.popoverList}>
-              {filteredCountries.map(c => (
-                <button
-                  key={c.id}
-                  className={`${styles.popoverItem} ${c.id === form.countryId ? styles.popoverItemActive : ''}`}
-                  onClick={() => {
-                    setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))
-                    setCountryQuery('')
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
 
             {/* Курорты. Ничего не отмечено — ищем по всей стране, так что
                 выбор необязателен. Зато сужение здесь экономит время: полная
@@ -382,6 +368,31 @@ export function HeaderSearchBar({
                 )}
               </>
             )}
+
+            <div className={styles.popoverDivider} />
+            <div className={styles.popoverSectionLabel}>Все страны</div>
+            <input
+              autoFocus
+              className={styles.popoverSearch}
+              placeholder="Поиск страны..."
+              value={countryQuery}
+              onChange={e => setCountryQuery(e.target.value)}
+            />
+            <div className={styles.popoverList}>
+              {filteredCountries.map(c => (
+                <button
+                  key={c.id}
+                  className={`${styles.popoverItem} ${c.id === form.countryId ? styles.popoverItemActive : ''}`}
+                  onClick={() => {
+                    setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))
+                    setCountryQuery('')
+                  }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+
           </div>
         )}
       </div>
@@ -468,9 +479,15 @@ export function HeaderSearchBar({
                 />
               ))}
             </div>
-            <button type="button" className={styles.calMoreBtn} onClick={() => setMonthsShown(n => n + 2)}>
-              Показать ещё месяцы
-            </button>
+            {monthsShown < CAL_MONTHS_MAX && (
+              <button
+                type="button"
+                className={styles.calMoreBtn}
+                onClick={() => setMonthsShown(n => Math.min(n + CAL_MONTHS_STEP, CAL_MONTHS_MAX))}
+              >
+                Показать ещё месяцы
+              </button>
+            )}
           </div>
         )}
       </div>
