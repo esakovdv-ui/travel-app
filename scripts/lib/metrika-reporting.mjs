@@ -41,7 +41,9 @@ export async function metrikaApi(path, token = ensureMetrikaToken(), attempt = 0
   });
   const text = await response.text();
   if (response.status === 429 && attempt < 5) {
-    const waitMs = 15000 * (attempt + 1);
+    const waitMs = text.includes('quota_requests')
+      ? 60000 * (attempt + 1)
+      : 15000 * (attempt + 1);
     await sleep(waitMs);
     return metrikaApi(path, token, attempt + 1);
   }
@@ -169,6 +171,9 @@ export async function queryPodborHotelEntryClients(
   );
 }
 
+/** Alias: тот же API для туров / отелей. */
+export const queryPodborEntryClients = queryPodborHotelEntryClients;
+
 function chunkClientIds(clientIds, size = 10) {
   const chunks = [];
   for (let i = 0; i < clientIds.length; i += size) {
@@ -178,10 +183,9 @@ function chunkClientIds(clientIds, size = 10) {
 }
 
 /**
- * clientID journey: entry clients (podbor) → downstream action in report period.
- * Returns Map weekStart (Monday) -> unique user count.
+ * Map weekStart → Set(clientID) for entry clients who hit downstreamFilter.
  */
-export async function queryWeeklyHotelPodborJourneyUsers(
+export async function queryWeeklyPodborJourneyClientSets(
   counterId,
   dateFrom,
   dateTo,
@@ -205,9 +209,29 @@ export async function queryWeeklyHotelPodborJourneyUsers(
       if (!byWeek.has(weekStart)) byWeek.set(weekStart, new Set());
       byWeek.get(weekStart).add(clientId);
     }
-    await sleep(200);
+    await sleep(100);
   }
+  return byWeek;
+}
 
+/**
+ * clientID journey: entry clients (podbor) → downstream action in report period.
+ * Returns Map weekStart (Monday) -> unique user count.
+ */
+export async function queryWeeklyHotelPodborJourneyUsers(
+  counterId,
+  dateFrom,
+  dateTo,
+  entryClientIds,
+  downstreamFilter
+) {
+  const byWeek = await queryWeeklyPodborJourneyClientSets(
+    counterId,
+    dateFrom,
+    dateTo,
+    entryClientIds,
+    downstreamFilter
+  );
   const counts = new Map();
   for (const [weekStart, clients] of byWeek) {
     counts.set(weekStart, clients.size);
@@ -235,7 +259,7 @@ export async function queryHotelPodborJourneyUserCount(
     for (const row of data.data ?? []) {
       if (row.dimensions[0]?.name) matched.add(row.dimensions[0].name);
     }
-    await sleep(200);
+    await sleep(100);
   }
   return matched.size;
 }

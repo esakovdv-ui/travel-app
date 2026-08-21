@@ -11,6 +11,7 @@ const OBSOLETE = ['Визард', 'Туры', 'Отели', 'Лист1'];
 
 const COUNTERS = { mgt: '90662828', wizard: '109401746', hotels: '97107007' };
 const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
+const PODBOR_TOURS_ENTRY = '(' + UTM_PODBOR + " OR ym:pv:URL=@'podbor_ref=1')";
 const PODBOR_HOTELS_ENTRY = "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
 const HOTEL_LT_GOALS = {
   checkout: 579160037,
@@ -29,7 +30,7 @@ const WIZARD_COLUMNS = [
 ];
 
 const TOURS_LABELS = [
-  'Handoff: туры', 'Выдача', 'CR handoff→выдача', 'Карточка', 'CR выдача→карточка',
+  'Вход с подбора', 'Выдача', 'CR вход→выдача', 'Карточка', 'CR выдача→карточка',
   'Корзина', 'CR карточка→корзина', 'Бронь', 'CR корзина→бронь', 'Заявка', 'CR бронь→заявка',
 ];
 
@@ -86,15 +87,13 @@ function hotelEntryClients_(entryFrom, entryTo) {
   return Object.keys(clients);
 }
 
-function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
-  var entryFrom = PODBOR_FUNNEL_START > reportFrom ? PODBOR_FUNNEL_START : reportFrom;
-  var ids = hotelEntryClients_(entryFrom, reportTo);
-  if (!ids.length) return 0;
+function journeyCount_(counter, reportFrom, reportTo, entryIds, downstreamFilter) {
+  if (!entryIds || !entryIds.length) return 0;
   var matched = {};
-  for (var i = 0; i < ids.length; i += 10) {
-    var chunk = ids.slice(i, i + 10);
+  for (var i = 0; i < entryIds.length; i += 10) {
+    var chunk = entryIds.slice(i, i + 10);
     var orFilter = chunk.map(function (cid) { return "ym:s:clientID=='" + cid + "'"; }).join(' OR ');
-    var path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + reportFrom + '&date2=' + reportTo +
+    var path = '/stat/v1/data?id=' + counter + '&date1=' + reportFrom + '&date2=' + reportTo +
       '&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000' +
       '&filters=' + encodeURIComponent('(' + orFilter + ') AND ' + downstreamFilter);
     (metrikaGet_(path).data || []).forEach(function (row) {
@@ -102,6 +101,12 @@ function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
     });
   }
   return Object.keys(matched).length;
+}
+
+function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
+  var entryFrom = PODBOR_FUNNEL_START > reportFrom ? PODBOR_FUNNEL_START : reportFrom;
+  var ids = hotelEntryClients_(entryFrom, reportTo);
+  return journeyCount_(COUNTERS.hotels, reportFrom, reportTo, ids, downstreamFilter);
 }
 
 function weekStartMonday_(dayKey) {
@@ -157,13 +162,14 @@ function fetchWeek_(week) {
   });
   m.handoff_tours = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
   m.handoff_hotels = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
+  m.t_entry = usersCount_(COUNTERS.mgt, week.from, week.to, PODBOR_TOURS_ENTRY);
   m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to,
-    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
+    PODBOR_TOURS_ENTRY + " AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
   m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
-    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=tourCard'");
-  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+    PODBOR_TOURS_ENTRY + " AND ym:pv:URL=@'action=tourCard'");
+  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, PODBOR_TOURS_ENTRY);
+  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, PODBOR_TOURS_ENTRY);
+  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, PODBOR_TOURS_ENTRY);
   m.h_search = hotelJourneyCount_(week.from, week.to, "ym:pv:URL=@'russia.mosgortur.ru/search'");
   m.h_cart = hotelJourneyCount_(week.from, week.to,
     "ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
@@ -175,7 +181,7 @@ function fetchWeek_(week) {
 
 function toursValues_(m) {
   return [
-    m.handoff_tours, m.t_search, pct_(m.t_search, m.handoff_tours),
+    m.t_entry, m.t_search, pct_(m.t_search, m.t_entry),
     m.t_card, pct_(m.t_card, m.t_search), m.t_cart, pct_(m.t_cart, m.t_card),
     m.t_book, pct_(m.t_book, m.t_cart), m.t_pay, pct_(m.t_pay, m.t_book),
   ];

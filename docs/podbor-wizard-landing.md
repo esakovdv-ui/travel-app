@@ -129,7 +129,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 - `maxPrice` = бюджет визарда (сумма на поездку), `minPrice` = 70% от max
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - Регион: море → `beachLines` + `resorts=19,63,322,663,1475`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой → `resorts=536,3027,3824,3801,3737,3781,7064,42`; «не знаю» — без `resorts`
-- UTM в query **до** `#`: `/tours/?utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
+- UTM и маркер в query **до** `#`: `/tours/?podbor_ref=1&utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
 
 **Отели** (`buildHotelSearchUrl`):
 
@@ -184,28 +184,29 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ### После handoff — прокси-воронка (UTM `podbor_wizard`)
 
-Handoff ставит `utm_source=podbor_wizard`. Нижняя часть воронки считается **отдельно** (нет join user-level между счётчиками 109401746 и 90662828/97107007).
-
-В таблице **Handoff: туры / Handoff: отели** — цель `podbor_handoff` с фильтром `paramsLevel2==tour|hotel`. Это split по кнопке, не по доходу на выдачу.
+**Туры и отели после handoff** считаются на **своём** счётчике (не join с визардом 109401746):
 
 | Слой | Счётчик | Метрика |
 |------|---------|---------|
-| Handoff: туры | 109401746 | `podbor_handoff` + `format=tour` |
-| Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` |
-| Туры: выдача | 90662828 | Пользователи с URL модуля визарда + `action=search` + даты (не UTM: он был в hash) |
-| Туры: карточка | 90662828 | Пользователи с URL модуля + `action=tourCard` |
-| Туры: корзина | 90662828 | цель **326738951** `click-buyonline` в сессии с moduleId визарда |
-| Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
-| Туры: заявка | 90662828 | цель **321612203** (в Метрике называется «Успешная оплата», по продукту — лид) в сессии с moduleId визарда |
+| Handoff: туры | 109401746 | `podbor_handoff` + `format=tour` (только визард) |
+| Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` (только визард) |
+| Туры: вход | 90662828 | Пользователи с UTM `podbor_wizard` или `podbor_ref=1` |
+| Туры: выдача | 90662828 | когорта входа + URL `action=search` + `dateFrom=` |
+| Туры: карточка | 90662828 | когорта входа + URL `action=tourCard` |
+| Туры: корзина | 90662828 | цель **326738951** в визитах когорты входа |
+| Туры: бронь | 90662828 | цель **321609998** в визитах когорты входа |
+| Туры: заявка | 90662828 | цель **321612203** (в Метрике «Успешная оплата», по продукту — лид) в визитах входа |
 | Отели: выдача | 97107007 | clientID journey: заход с `podbor_ref=1` / UTM → URL `/search` |
 | Отели: корзина | 97107007 | clientID journey → URL `/packages/` (без `/success`) |
 | Отели: чекаут | 97107007 | clientID journey → **579160037** `lt_checkout_start` |
 | Отели: блок оплаты | 97107007 | clientID journey → **579160036** `payment_block_displayed` |
 | Отели: оплата | 97107007 | clientID journey → **579160040** `lt_purchase` (реальная покупка) |
 
+В блоке **ТУРЫ** первая строка — «Вход с подбора», не handoff визарда: иначе CR > 100% (разные счётчики). ModuleId один в когорту не берём — шире handoff.
+
 Цели LT-воронки — как в `yandex-metrika-mcp` (`funnel-report.mjs`, `docs/ytm-funnel-setup.md`). Legacy **358300437** «отправил контактные данные LT» / колонка «Отели: заявка» не используем. `lt_contact_submitted` (579160038) разработчики не смогли отправить — шаг пропущен.
 
-Handoff URL для отелей: `podbor_ref=1` + `utm_source=podbor_wizard` (UTM может пропасть на внутренних переходах — journey по clientID на счётчике 97107007).
+Handoff URL для отелей и туров: `podbor_ref=1` + `utm_source=podbor_wizard` в query (до `#`). У отелей UTM может пропасть на внутренних переходах — journey по clientID на 97107007.
 
 ### Журнал ответов визарда (сервер)
 

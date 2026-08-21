@@ -38,6 +38,7 @@ export function emptyFunnelMetrics() {
     handoff_hotels: 0,
     cr_start_handoff: '',
     utm_users: 0,
+    tours_entry: 0,
     tours_search: 0,
     tours_tour_card: 0,
     tours_cart: 0,
@@ -84,6 +85,14 @@ export const HOTEL_LT_GOALS = {
 /** Sletat module id from podbor handoff. Hash UTM is invisible to Metrika; this is the historical proxy. */
 export const PODBOR_TOUR_MODULE = '68ea30c6';
 export const TOURS_FROM_PODBOR = `ym:pv:URL=@'${PODBOR_TOUR_MODULE}'`;
+
+/**
+ * Заход на туры с подбора (счётчик 90662828): UTM или podbor_ref=1.
+ * Не используем moduleId один — он шире handoff (возвраты / шаринг).
+ * @see buildTourSearchUrl в public/podbor.html
+ */
+export const PODBOR_TOURS_ENTRY =
+  `(${UTM_PODBOR} OR ym:pv:URL=@'podbor_ref=1')`;
 
 /** Entry clicks on online.mosgortur.ru */
 export const ENTRY_GOALS = {
@@ -136,38 +145,48 @@ export const POST_HANDOFF = {
     label: 'Туры: выдача module6 search',
     counter: COUNTERS.mgt,
     type: 'users',
-    filter: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='`,
+    journeyEntry: PODBOR_TOURS_ENTRY,
+    filter: `${PODBOR_TOURS_ENTRY} AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='`,
+    journeyNote: 'когорта podbor_ref/UTM + выдача',
   },
   tours_tour_card: {
     key: 'tours_tour_card',
     label: 'Туры: карточка тура',
     counter: COUNTERS.mgt,
     type: 'users',
-    filter: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=tourCard'`,
+    journeyEntry: PODBOR_TOURS_ENTRY,
+    filter: `${PODBOR_TOURS_ENTRY} AND ym:pv:URL=@'action=tourCard'`,
+    journeyNote: 'когорта podbor_ref/UTM + карточка',
   },
   tours_cart: {
     key: 'tours_cart',
     label: 'Туры: корзина (Слетать click-buyonline)',
     counter: COUNTERS.mgt,
     type: 'goal',
+    journeyEntry: PODBOR_TOURS_ENTRY,
     goalId: 326738951,
-    filter: TOURS_FROM_PODBOR,
+    filter: PODBOR_TOURS_ENTRY,
+    journeyNote: 'цель в визитах когорты входа (UTM|podbor_ref)',
   },
   tours_booking: {
     key: 'tours_booking',
     label: 'Туры: забронировал (Слетать buying_submit)',
     counter: COUNTERS.mgt,
     type: 'goal',
+    journeyEntry: PODBOR_TOURS_ENTRY,
     goalId: 321609998,
-    filter: TOURS_FROM_PODBOR,
+    filter: PODBOR_TOURS_ENTRY,
+    journeyNote: 'цель в визитах когорты входа',
   },
   tours_purchase: {
     key: 'tours_purchase',
     label: 'Туры: заявка (цель «Успешная оплата» в Метрике — по факту лид)',
     counter: COUNTERS.mgt,
     type: 'goal',
+    journeyEntry: PODBOR_TOURS_ENTRY,
     goalId: 321612203,
-    filter: TOURS_FROM_PODBOR,
+    filter: PODBOR_TOURS_ENTRY,
+    journeyNote: 'цель в визитах когорты входа',
   },
   hotels_search: {
     key: 'hotels_search',
@@ -264,9 +283,9 @@ export const WIZARD_SHEET_COLUMNS = [
  * value(m) — число или CR-строка для одной недели.
  */
 export const TOURS_METRIC_ROWS = [
-  { label: 'Handoff: туры', value: (m) => m.handoff_tours },
+  { label: 'Вход с подбора', value: (m) => m.tours_entry },
   { label: 'Выдача', value: (m) => m.tours_search },
-  { label: 'CR handoff→выдача', value: (m) => crBetween(m.tours_search, m.handoff_tours) },
+  { label: 'CR вход→выдача', value: (m) => crBetween(m.tours_search, m.tours_entry) },
   { label: 'Карточка', value: (m) => m.tours_tour_card },
   { label: 'CR выдача→карточка', value: (m) => crBetween(m.tours_tour_card, m.tours_search) },
   { label: 'Корзина', value: (m) => m.tours_cart },
@@ -320,9 +339,9 @@ export const REFERENCE_ROWS = [
   [COUNTERS.wizard, '595566515', 'podbor_handoff', '«Показать туры/отели»'],
   [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
   [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
-  [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId визарда (допущение)'],
-  [COUNTERS.mgt, '321609998', 'sletat:module6:buying_submit', 'Туры: бронь по moduleId визарда (допущение)'],
-  [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка / лид по moduleId визарда'],
+  [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина (journey с podbor)'],
+  [COUNTERS.mgt, '321609998', 'sletat:module6:buying_submit', 'Туры: бронь (journey с podbor)'],
+  [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка / лид (journey с podbor)'],
   [COUNTERS.hotels, '—', 'russia.mosgortur.ru/search', 'Отели: выдача (journey с podbor)'],
   [COUNTERS.hotels, String(HOTEL_LT_GOALS.packageUrl), '/packages/ URL', 'Отели: корзина (journey с podbor)'],
   [COUNTERS.hotels, String(HOTEL_LT_GOALS.checkout), 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
@@ -333,14 +352,15 @@ export const REFERENCE_ROWS = [
   ['Не использовать', '358300437', 'отправил контактные данные LT', 'Legacy автоцель — не LT-воронка'],
   ['Не использовать', '504749523', 'Начало оформления LT (авто)', 'Legacy — дублирует lt_checkout_start'],
   ['Фильтр UTM', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
+  ['Туры с подбора', PODBOR_TOURS_ENTRY, 'когорта на 90662828', 'Вход UTM/podbor_ref → выдача/карточка/корзина/бронь/заявка'],
   ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/оплата на 97107007'],
-  ['Туры без UTM', `URL содержит ${PODBOR_TOUR_MODULE}`, 'hash trackHash', 'Выдача/карточка/корзина/бронь/оплата туров, пока UTM был в hash'],
-  ['Handoff UTM', 'utm_source=podbor_wizard', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl'],
+  ['Туры moduleId', `URL содержит ${PODBOR_TOUR_MODULE}`, 'Sletat hash', 'Технический id модуля; в когорту входа не входит (слишком широкий)'],
+  ['Handoff UTM', 'utm_source=podbor_wizard + podbor_ref=1', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl (туры и отели)'],
   ['Старт учёта', PODBOR_FUNNEL_START_DEFAULT, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
   [
     'Лист Воронка',
-    'Визард: недели строками; Туры/Отели: показатели строками, недели колонками',
+    'Визард: недели строками; Туры/Отели: показатели строками, недели колонками; туры — когорта на 90662828',
     'CR',
-    'конверсия от предыдущего шага',
+    'конверсия от предыдущего шага (туры: одна когорта UTM|moduleId)',
   ],
 ];
