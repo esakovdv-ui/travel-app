@@ -196,14 +196,14 @@ Handoff ставит `utm_source=podbor_wizard`. Нижняя часть вор�
 | Туры: карточка | 90662828 | Пользователи с URL модуля + `action=tourCard` |
 | Туры: корзина | 90662828 | цель **326738951** `click-buyonline` в сессии с moduleId визарда |
 | Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
-| Туры: оплата | 90662828 | цель **321612203** в сессии с moduleId визарда (допущение: это подбор) |
+| Туры: заявка | 90662828 | цель **321612203** (в Метрике называется «Успешная оплата», по продукту — лид) в сессии с moduleId визарда |
 | Отели: выдача | 97107007 | clientID journey: заход с `podbor_ref=1` / UTM → URL `/search` |
 | Отели: корзина | 97107007 | clientID journey → URL `/packages/` (без `/success`) |
 | Отели: чекаут | 97107007 | clientID journey → **579160037** `lt_checkout_start` |
 | Отели: блок оплаты | 97107007 | clientID journey → **579160036** `payment_block_displayed` |
-| Отели: оплата | 97107007 | clientID journey → **579160040** `lt_purchase` (основная метрика покупки) |
+| Отели: оплата | 97107007 | clientID journey → **579160040** `lt_purchase` (реальная покупка) |
 
-Цели LT-воронки — как в `yandex-metrika-mcp` (`funnel-report.mjs`, `docs/ytm-funnel-setup.md`). Legacy **358300437** «отправил контактные данные LT» не используем — это автоцель, не шаг YTM-воронки. `lt_contact_submitted` (579160038) разработчики не смогли отправить — шаг пропущен.
+Цели LT-воронки — как в `yandex-metrika-mcp` (`funnel-report.mjs`, `docs/ytm-funnel-setup.md`). Legacy **358300437** «отправил контактные данные LT» / колонка «Отели: заявка» не используем. `lt_contact_submitted` (579160038) разработчики не смогли отправить — шаг пропущен.
 
 Handoff URL для отелей: `podbor_ref=1` + `utm_source=podbor_wizard` (UTM может пропасть на внутренних переходах — journey по clientID на счётчике 97107007).
 

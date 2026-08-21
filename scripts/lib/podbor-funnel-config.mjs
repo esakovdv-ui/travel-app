@@ -46,7 +46,8 @@ export function emptyFunnelMetrics() {
     hotels_search: 0,
     hotels_package: 0,
     hotels_checkout: 0,
-    hotels_lead: 0,
+    hotels_payment_block: 0,
+    hotels_purchase: 0,
   };
 }
 
@@ -62,8 +63,23 @@ export const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
 export const PODBOR_HOTELS_ENTRY =
   "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
 
-/** Цель «отправил контактные данные LT» на счётчике отелей. */
-export const HOTEL_LEAD_GOAL_ID = 358300437;
+/**
+ * LT-воронка на счётчике 97107007 (yandex-metrika-mcp).
+ * @see ../yandex-metrika-mcp/scripts/funnel-report.mjs
+ * @see ../yandex-metrika-mcp/docs/ytm-funnel-setup.md
+ */
+export const HOTEL_LT_GOALS = {
+  /** URL /packages/ без /success */
+  packageUrl: 546439188,
+  /** JS lt_checkout_start — первый показ формы оформления */
+  checkout: 579160037,
+  /** JS payment_block_displayed — блок оплаты на экране */
+  paymentBlock: 579160036,
+  /** JS lt_payment_start — ушёл на оплату */
+  paymentStart: 579160039,
+  /** JS lt_purchase — основная метрика покупки (transaction в dataLayer) */
+  purchase: 579160040,
+};
 
 /** Sletat module id from podbor handoff. Hash UTM is invisible to Metrika; this is the historical proxy. */
 export const PODBOR_TOUR_MODULE = '68ea30c6';
@@ -147,7 +163,7 @@ export const POST_HANDOFF = {
   },
   tours_purchase: {
     key: 'tours_purchase',
-    label: 'Туры: успешная оплата',
+    label: 'Туры: заявка (цель «Успешная оплата» в Метрике — по факту лид)',
     counter: COUNTERS.mgt,
     type: 'goal',
     goalId: 321612203,
@@ -173,23 +189,33 @@ export const POST_HANDOFF = {
   },
   hotels_checkout: {
     key: 'hotels_checkout',
-    label: 'Отели: начало чекаута',
+    label: 'Отели: чекаут (lt_checkout_start)',
     counter: COUNTERS.hotels,
     type: 'journey',
     journeyEntry: PODBOR_HOTELS_ENTRY,
-    goalId: 579160037,
-    filter: 'ym:s:goal579160037reaches>0',
+    goalId: HOTEL_LT_GOALS.checkout,
+    filter: `ym:s:goal${HOTEL_LT_GOALS.checkout}reaches>0`,
     journeyNote: 'clientID: заход с podbor → lt_checkout_start',
   },
-  hotels_lead: {
-    key: 'hotels_lead',
-    label: 'Отели: заявка (контакты LT)',
+  hotels_payment_block: {
+    key: 'hotels_payment_block',
+    label: 'Отели: блок оплаты (payment_block_displayed)',
     counter: COUNTERS.hotels,
     type: 'journey',
     journeyEntry: PODBOR_HOTELS_ENTRY,
-    goalId: HOTEL_LEAD_GOAL_ID,
-    filter: `ym:s:goal${HOTEL_LEAD_GOAL_ID}reaches>0`,
-    journeyNote: 'clientID: заход с podbor → отправил контакты',
+    goalId: HOTEL_LT_GOALS.paymentBlock,
+    filter: `ym:s:goal${HOTEL_LT_GOALS.paymentBlock}reaches>0`,
+    journeyNote: 'clientID: заход с podbor → payment_block_displayed',
+  },
+  hotels_purchase: {
+    key: 'hotels_purchase',
+    label: 'Отели: оплата (lt_purchase)',
+    counter: COUNTERS.hotels,
+    type: 'journey',
+    journeyEntry: PODBOR_HOTELS_ENTRY,
+    goalId: HOTEL_LT_GOALS.purchase,
+    filter: `ym:s:goal${HOTEL_LT_GOALS.purchase}reaches>0`,
+    journeyNote: 'clientID: заход с podbor → lt_purchase',
   },
 };
 
@@ -216,11 +242,12 @@ export const SHEET_COLUMNS = [
   'Туры: карточка',
   'Туры: корзина',
   'Туры: бронь',
-  'Туры: оплата',
+  'Туры: заявка',
   'Отели: выдача',
   'Отели: корзина',
   'Отели: чекаут',
-  'Отели: заявка',
+  'Отели: блок оплаты',
+  'Отели: оплата',
   'Обновлено',
 ];
 
@@ -240,15 +267,18 @@ export const REFERENCE_ROWS = [
   [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
   [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId визарда (допущение)'],
   [COUNTERS.mgt, '321609998', 'sletat:module6:buying_submit', 'Туры: бронь по moduleId визарда (допущение)'],
-  [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId визарда (допущение)'],
-  [COUNTERS.hotels, '—', 'russia.mosgortur.ru/search', 'Отели: выдача + UTM'],
-  [COUNTERS.hotels, '546439188', '/packages/ URL', 'Отели: корзина + UTM'],
-  [COUNTERS.hotels, '579160037', 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
-  [COUNTERS.hotels, String(HOTEL_LEAD_GOAL_ID), 'отправил контактные данные LT', 'Отели: заявка (journey с podbor)'],
+  [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка / лид по moduleId визарда'],
+  [COUNTERS.hotels, '—', 'russia.mosgortur.ru/search', 'Отели: выдача (journey с podbor)'],
+  [COUNTERS.hotels, String(HOTEL_LT_GOALS.packageUrl), '/packages/ URL', 'Отели: корзина (journey с podbor)'],
+  [COUNTERS.hotels, String(HOTEL_LT_GOALS.checkout), 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
+  [COUNTERS.hotels, String(HOTEL_LT_GOALS.paymentBlock), 'payment_block_displayed', 'Отели: блок оплаты (journey с podbor)'],
+  [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата (реальная покупка)'],
   [COUNTERS.hotels, 'podbor_ref=1', 'URL handoff', 'Маркер подбора, если UTM теряется на внутренних переходах'],
   ['', '', '', ''],
+  ['Не использовать', '358300437', 'отправил контактные данные LT', 'Legacy автоцель — не LT-воронка'],
+  ['Не использовать', '504749523', 'Начало оформления LT (авто)', 'Legacy — дублирует lt_checkout_start'],
   ['Фильтр UTM', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
-  ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/заявка на 97107007'],
+  ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/оплата на 97107007'],
   ['Туры без UTM', `URL содержит ${PODBOR_TOUR_MODULE}`, 'hash trackHash', 'Выдача/карточка/корзина/бронь/оплата туров, пока UTM был в hash'],
   ['Handoff UTM', 'utm_source=podbor_wizard', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl'],
   ['Старт учёта', PODBOR_FUNNEL_START_DEFAULT, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],

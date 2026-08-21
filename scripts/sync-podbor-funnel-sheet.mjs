@@ -128,37 +128,51 @@ const MGT_TOUR_GOALS = [
 
 async function fetchHotelJourneyMetrics(dateFrom, dateTo, entryClients) {
   const counter = COUNTERS.hotels;
-  const [hotels_search, hotels_package, hotels_checkout, hotels_lead] = await Promise.all([
-    queryHotelPodborJourneyUserCount(
-      counter,
-      dateFrom,
-      dateTo,
-      entryClients,
-      POST_HANDOFF.hotels_search.filter
-    ),
-    queryHotelPodborJourneyUserCount(
-      counter,
-      dateFrom,
-      dateTo,
-      entryClients,
-      POST_HANDOFF.hotels_package.filter
-    ),
-    queryHotelPodborJourneyUserCount(
-      counter,
-      dateFrom,
-      dateTo,
-      entryClients,
-      POST_HANDOFF.hotels_checkout.filter
-    ),
-    queryHotelPodborJourneyUserCount(
-      counter,
-      dateFrom,
-      dateTo,
-      entryClients,
-      POST_HANDOFF.hotels_lead.filter
-    ),
-  ]);
-  return { hotels_search, hotels_package, hotels_checkout, hotels_lead };
+  const [hotels_search, hotels_package, hotels_checkout, hotels_payment_block, hotels_purchase] =
+    await Promise.all([
+      queryHotelPodborJourneyUserCount(
+        counter,
+        dateFrom,
+        dateTo,
+        entryClients,
+        POST_HANDOFF.hotels_search.filter
+      ),
+      queryHotelPodborJourneyUserCount(
+        counter,
+        dateFrom,
+        dateTo,
+        entryClients,
+        POST_HANDOFF.hotels_package.filter
+      ),
+      queryHotelPodborJourneyUserCount(
+        counter,
+        dateFrom,
+        dateTo,
+        entryClients,
+        POST_HANDOFF.hotels_checkout.filter
+      ),
+      queryHotelPodborJourneyUserCount(
+        counter,
+        dateFrom,
+        dateTo,
+        entryClients,
+        POST_HANDOFF.hotels_payment_block.filter
+      ),
+      queryHotelPodborJourneyUserCount(
+        counter,
+        dateFrom,
+        dateTo,
+        entryClients,
+        POST_HANDOFF.hotels_purchase.filter
+      ),
+    ]);
+  return {
+    hotels_search,
+    hotels_package,
+    hotels_checkout,
+    hotels_payment_block,
+    hotels_purchase,
+  };
 }
 
 async function fetchHotelEntryClients(rangeFrom, rangeTo, funnelStart) {
@@ -270,7 +284,8 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     tours_booking: tourGoals.tours_booking ?? 0,
     tours_purchase: tourPay.tours_purchase ?? 0,
     hotels_checkout: hotelJourney.hotels_checkout,
-    hotels_lead: hotelJourney.hotels_lead,
+    hotels_payment_block: hotelJourney.hotels_payment_block,
+    hotels_purchase: hotelJourney.hotels_purchase,
   };
   metrics.cr_start_handoff = pct(metrics.handoff, metrics.start);
   return metrics;
@@ -359,12 +374,20 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.hotels_checkout.filter
   );
   await sleep(400);
-  const hotelsLeadWeeks = await queryWeeklyHotelPodborJourneyUsers(
+  const hotelsPaymentBlockWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
     rangeFrom,
     rangeTo,
     entryClients,
-    POST_HANDOFF.hotels_lead.filter
+    POST_HANDOFF.hotels_payment_block.filter
+  );
+  await sleep(400);
+  const hotelsPurchaseWeeks = await queryWeeklyHotelPodborJourneyUsers(
+    COUNTERS.hotels,
+    rangeFrom,
+    rangeTo,
+    entryClients,
+    POST_HANDOFF.hotels_purchase.filter
   );
 
   return {
@@ -380,7 +403,8 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     hotelsSearchWeeks,
     hotelsPackageWeeks,
     hotelsCheckoutWeeks,
-    hotelsLeadWeeks,
+    hotelsPaymentBlockWeeks,
+    hotelsPurchaseWeeks,
   };
 }
 
@@ -411,7 +435,8 @@ function buildWeekRow(week, data, updatedAt) {
     tours_booking: tourGoals.tours_booking ?? 0,
     tours_purchase: pickWeekValue(data.tourPayWeeks, week.from),
     hotels_checkout: pickWeekValue(data.hotelsCheckoutWeeks, week.from),
-    hotels_lead: pickWeekValue(data.hotelsLeadWeeks, week.from),
+    hotels_payment_block: pickWeekValue(data.hotelsPaymentBlockWeeks, week.from),
+    hotels_purchase: pickWeekValue(data.hotelsPurchaseWeeks, week.from),
   };
   metrics.cr_start_handoff = pct(metrics.handoff, metrics.start);
   return rowToSheetValues(week, metrics, updatedAt);
@@ -444,7 +469,8 @@ function rowToSheetValues(week, metrics, updatedAt) {
     metrics.hotels_search,
     metrics.hotels_package,
     metrics.hotels_checkout,
-    metrics.hotels_lead,
+    metrics.hotels_payment_block,
+    metrics.hotels_purchase,
     updatedAt,
   ];
 }
@@ -498,6 +524,11 @@ async function writeToGoogleSheet(spreadsheetId, headerRow, dataRows, referenceR
   if (!sheets) return false;
 
   await ensureSheetTabs(sheets, spreadsheetId);
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: 'Воронка!A:ZZ',
+  });
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,

@@ -27,7 +27,7 @@ const COLUMNS = [
   'Неделя', 'С', 'По', 'Клик баннер', 'Клик popup', 'Старт визарда',
   'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
   'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM: пользователи', 'Туры: выдача', 'Туры: карточка',
-  'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
+  'Туры: корзина', 'Туры: бронь', 'Туры: заявка', 'Отели: выдача', 'Отели: корзина',
   'Отели: чекаут', 'Отели: блок оплаты', 'Отели: оплата', 'Обновлено',
 ];
 
@@ -189,10 +189,10 @@ function setupReference_(ss) {
     [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
     [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId'],
     [COUNTERS.mgt, '321609998', 'buying_submit', 'Туры: бронь по moduleId'],
-    [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
+    [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка / лид по moduleId'],
     [COUNTERS.hotels, String(HOTEL_LT_GOALS.checkout), 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
     [COUNTERS.hotels, String(HOTEL_LT_GOALS.paymentBlock), 'payment_block_displayed', 'Отели: блок оплаты (journey с podbor)'],
-    [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата — основная метрика покупки'],
+    [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата (реальная покупка)'],
     [COUNTERS.hotels, 'podbor_ref=1', 'URL handoff', 'Маркер подбора в handoff URL'],
     ['', '', '', ''],
     ['Не использовать', '358300437', 'отправил контактные данные LT', 'Legacy автоцель'],
