@@ -28,7 +28,9 @@ import {
   POST_HANDOFF,
   REFERENCE_ROWS,
   PODBOR_HOTELS_ENTRY,
-  PODBOR_TOURS_ENTRY,
+  PODBOR_TOURS_REF_START,
+  toursFiltersForWeek,
+  useToursRefCohort,
   getFunnelStart,
   effectiveMetricsRange,
   filterReportWeeks,
@@ -116,17 +118,10 @@ const MGT_ENTRY_GOALS = [
 
 async function fetchTourCohortMetrics(dateFrom, dateTo) {
   const counter = COUNTERS.mgt;
-  // Выдача = заход с маркером (handoff сразу открывает search)
+  const f = toursFiltersForWeek(dateFrom, dateTo);
   const [tours_search, tours_tour_card] = await Promise.all([
-    queryBatchGoals(counter, dateFrom, dateTo, [], ['ym:s:users'], POST_HANDOFF.tours_search.filter),
-    queryBatchGoals(
-      counter,
-      dateFrom,
-      dateTo,
-      [],
-      ['ym:s:users'],
-      POST_HANDOFF.tours_tour_card.filter
-    ),
+    queryBatchGoals(counter, dateFrom, dateTo, [], ['ym:s:users'], f.search),
+    queryBatchGoals(counter, dateFrom, dateTo, [], ['ym:s:users'], f.card),
   ]);
   await sleep(200);
   const tourGoals = await queryBatchGoals(
@@ -139,7 +134,7 @@ async function fetchTourCohortMetrics(dateFrom, dateTo) {
       { key: 'tours_purchase', id: POST_HANDOFF.tours_purchase.goalId },
     ],
     [],
-    PODBOR_TOURS_ENTRY
+    f.goals
   );
   const searchUsers = tours_search._users ?? 0;
   return {
@@ -297,26 +292,42 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.handoff_hotels.filter
   );
   await sleep(400);
-  console.log('  Tours cohort (podbor_ref/UTM)…');
-  // Выдача = заход с маркером (handoff сразу открывает search). Без moduleId.
-  const toursSearchWeeks = await queryWeeklyVisits(
+  console.log(`  Tours cohort (legacy module; ref с ${PODBOR_TOURS_REF_START})…`);
+  const legacyF = toursFiltersForWeek('2020-01-01');
+  const refF = toursFiltersForWeek(PODBOR_TOURS_REF_START);
+  const toursSearchLegacyWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
     rangeTo,
-    POST_HANDOFF.tours_search.filter,
+    legacyF.search,
     'ym:s:users'
   );
-  const toursEntryWeeks = toursSearchWeeks;
   await sleep(300);
-  const toursCardWeeks = await queryWeeklyVisits(
+  const toursSearchRefWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
     rangeTo,
-    POST_HANDOFF.tours_tour_card.filter,
+    refF.search,
     'ym:s:users'
   );
   await sleep(300);
-  const tourGoalWeeks = await queryWeeklyGoals(
+  const toursCardLegacyWeeks = await queryWeeklyVisits(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    legacyF.card,
+    'ym:s:users'
+  );
+  await sleep(300);
+  const toursCardRefWeeks = await queryWeeklyVisits(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    refF.card,
+    'ym:s:users'
+  );
+  await sleep(300);
+  const tourGoalLegacyWeeks = await queryWeeklyGoals(
     COUNTERS.mgt,
     rangeFrom,
     rangeTo,
@@ -325,16 +336,19 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
       { key: 'tours_booking', id: POST_HANDOFF.tours_booking.goalId },
       { key: 'tours_purchase', id: POST_HANDOFF.tours_purchase.goalId },
     ],
-    PODBOR_TOURS_ENTRY
+    legacyF.goals
   );
-  const toursCartWeeks = new Map(
-    [...tourGoalWeeks].map(([w, m]) => [w, m.tours_cart ?? 0])
-  );
-  const toursBookingWeeks = new Map(
-    [...tourGoalWeeks].map(([w, m]) => [w, m.tours_booking ?? 0])
-  );
-  const toursPurchaseWeeks = new Map(
-    [...tourGoalWeeks].map(([w, m]) => [w, m.tours_purchase ?? 0])
+  await sleep(300);
+  const tourGoalRefWeeks = await queryWeeklyGoals(
+    COUNTERS.mgt,
+    rangeFrom,
+    rangeTo,
+    [
+      { key: 'tours_cart', id: POST_HANDOFF.tours_cart.goalId },
+      { key: 'tours_booking', id: POST_HANDOFF.tours_booking.goalId },
+      { key: 'tours_purchase', id: POST_HANDOFF.tours_purchase.goalId },
+    ],
+    refF.goals
   );
   await sleep(400);
   console.log('  Hotels journey (clientID)…');
@@ -383,12 +397,12 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     wizardWeeks,
     handoffToursWeeks,
     handoffHotelsWeeks,
-    toursEntryWeeks,
-    toursSearchWeeks,
-    toursCardWeeks,
-    toursCartWeeks,
-    toursBookingWeeks,
-    toursPurchaseWeeks,
+    toursSearchLegacyWeeks,
+    toursSearchRefWeeks,
+    toursCardLegacyWeeks,
+    toursCardRefWeeks,
+    tourGoalLegacyWeeks,
+    tourGoalRefWeeks,
     hotelsSearchWeeks,
     hotelsPackageWeeks,
     hotelsCheckoutWeeks,
@@ -400,6 +414,19 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
 function metricsFromWeeklyData(week, data) {
   const entry = pickWeek(data.entryWeeks, week.from);
   const wizard = pickWeek(data.wizardWeeks, week.from);
+  const useRef = useToursRefCohort(week.from, week.to);
+  const toursSearch = pickWeekValue(
+    useRef ? data.toursSearchRefWeeks : data.toursSearchLegacyWeeks,
+    week.from
+  );
+  const toursCard = pickWeekValue(
+    useRef ? data.toursCardRefWeeks : data.toursCardLegacyWeeks,
+    week.from
+  );
+  const tourGoals = pickWeek(
+    useRef ? data.tourGoalRefWeeks : data.tourGoalLegacyWeeks,
+    week.from
+  );
 
   return {
     banner: entry.banner ?? 0,
@@ -414,12 +441,12 @@ function metricsFromWeeklyData(week, data) {
     handoff: wizard.handoff ?? 0,
     handoff_tours: pickWeekValue(data.handoffToursWeeks, week.from),
     handoff_hotels: pickWeekValue(data.handoffHotelsWeeks, week.from),
-    tours_entry: pickWeekValue(data.toursEntryWeeks, week.from),
-    tours_search: pickWeekValue(data.toursSearchWeeks, week.from),
-    tours_tour_card: pickWeekValue(data.toursCardWeeks, week.from),
-    tours_cart: pickWeekValue(data.toursCartWeeks, week.from),
-    tours_booking: pickWeekValue(data.toursBookingWeeks, week.from),
-    tours_purchase: pickWeekValue(data.toursPurchaseWeeks, week.from),
+    tours_entry: toursSearch,
+    tours_search: toursSearch,
+    tours_tour_card: toursCard,
+    tours_cart: tourGoals.tours_cart ?? 0,
+    tours_booking: tourGoals.tours_booking ?? 0,
+    tours_purchase: tourGoals.tours_purchase ?? 0,
     hotels_search: pickWeekValue(data.hotelsSearchWeeks, week.from),
     hotels_package: pickWeekValue(data.hotelsPackageWeeks, week.from),
     hotels_checkout: pickWeekValue(data.hotelsCheckoutWeeks, week.from),

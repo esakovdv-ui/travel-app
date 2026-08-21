@@ -87,12 +87,46 @@ export const PODBOR_TOUR_MODULE = '68ea30c6';
 export const TOURS_FROM_PODBOR = `ym:pv:URL=@'${PODBOR_TOUR_MODULE}'`;
 
 /**
- * Заход на туры с подбора (счётчик 90662828): UTM или podbor_ref=1.
- * Не используем moduleId один — он шире handoff (возвраты / шаринг).
- * @see buildTourSearchUrl в public/podbor.html
+ * С этой даты (МСК) в handoff туров есть podbor_ref=1.
+ * Недели целиком после даты — узкая когорта; раньше / на стыке — legacy moduleId.
  */
-export const PODBOR_TOURS_ENTRY =
+export const PODBOR_TOURS_REF_START = '2026-08-21';
+
+/** Узкая когорта: UTM или podbor_ref (как отели). */
+export const PODBOR_TOURS_ENTRY_REF =
   `(${UTM_PODBOR} OR ym:pv:URL=@'podbor_ref=1')`;
+
+/** До маркера: UTM или moduleId (широкий proxy, иначе выдача ≈ 0). */
+export const PODBOR_TOURS_ENTRY_LEGACY =
+  `(${UTM_PODBOR} OR ${TOURS_FROM_PODBOR})`;
+
+/** @deprecated use toursFiltersForWeek / PODBOR_TOURS_ENTRY_REF */
+export const PODBOR_TOURS_ENTRY = PODBOR_TOURS_ENTRY_REF;
+
+/** true только если вся неделя уже после деплоя podbor_ref. */
+export function useToursRefCohort(weekFrom, weekTo = weekFrom) {
+  return weekFrom >= PODBOR_TOURS_REF_START;
+}
+
+/** Фильтры когорты туров для конкретной недели. */
+export function toursFiltersForWeek(weekFrom, weekTo = weekFrom) {
+  if (useToursRefCohort(weekFrom, weekTo)) {
+    return {
+      mode: 'ref',
+      entry: PODBOR_TOURS_ENTRY_REF,
+      search: PODBOR_TOURS_ENTRY_REF,
+      card: `${PODBOR_TOURS_ENTRY_REF} AND ym:pv:URL=@'action=tourCard'`,
+      goals: PODBOR_TOURS_ENTRY_REF,
+    };
+  }
+  return {
+    mode: 'legacy',
+    entry: PODBOR_TOURS_ENTRY_LEGACY,
+    search: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='`,
+    card: `${TOURS_FROM_PODBOR} AND ym:pv:URL=@'action=tourCard'`,
+    goals: TOURS_FROM_PODBOR,
+  };
+}
 
 /** Entry clicks on online.mosgortur.ru */
 export const ENTRY_GOALS = {
@@ -142,52 +176,51 @@ export const POST_HANDOFF = {
   },
   tours_search: {
     key: 'tours_search',
-    label: 'Туры: выдача (вход с podbor_ref/UTM)',
+    label: 'Туры: выдача',
     counter: COUNTERS.mgt,
     type: 'users',
-    journeyEntry: PODBOR_TOURS_ENTRY,
-    // Handoff сразу открывает search — заход с маркером и есть выдача.
-    filter: PODBOR_TOURS_ENTRY,
-    journeyNote: 'landing с podbor_ref/UTM (= выдача, URL уже action=search)',
+    journeyEntry: PODBOR_TOURS_ENTRY_REF,
+    filter: PODBOR_TOURS_ENTRY_REF,
+    journeyNote: `с ${PODBOR_TOURS_REF_START}: podbor_ref/UTM; раньше: moduleId+search`,
   },
   tours_tour_card: {
     key: 'tours_tour_card',
     label: 'Туры: карточка тура',
     counter: COUNTERS.mgt,
     type: 'users',
-    journeyEntry: PODBOR_TOURS_ENTRY,
-    filter: `${PODBOR_TOURS_ENTRY} AND ym:pv:URL=@'action=tourCard'`,
-    journeyNote: 'когорта podbor_ref/UTM + карточка',
+    journeyEntry: PODBOR_TOURS_ENTRY_REF,
+    filter: `${PODBOR_TOURS_ENTRY_REF} AND ym:pv:URL=@'action=tourCard'`,
+    journeyNote: 'см. toursFiltersForWeek',
   },
   tours_cart: {
     key: 'tours_cart',
     label: 'Туры: корзина (Слетать click-buyonline)',
     counter: COUNTERS.mgt,
     type: 'goal',
-    journeyEntry: PODBOR_TOURS_ENTRY,
+    journeyEntry: PODBOR_TOURS_ENTRY_REF,
     goalId: 326738951,
-    filter: PODBOR_TOURS_ENTRY,
-    journeyNote: 'цель в визитах когорты входа (UTM|podbor_ref)',
+    filter: PODBOR_TOURS_ENTRY_REF,
+    journeyNote: 'см. toursFiltersForWeek',
   },
   tours_booking: {
     key: 'tours_booking',
     label: 'Туры: забронировал (Слетать buying_submit)',
     counter: COUNTERS.mgt,
     type: 'goal',
-    journeyEntry: PODBOR_TOURS_ENTRY,
+    journeyEntry: PODBOR_TOURS_ENTRY_REF,
     goalId: 321609998,
-    filter: PODBOR_TOURS_ENTRY,
-    journeyNote: 'цель в визитах когорты входа',
+    filter: PODBOR_TOURS_ENTRY_REF,
+    journeyNote: 'см. toursFiltersForWeek',
   },
   tours_purchase: {
     key: 'tours_purchase',
     label: 'Туры: заявка (цель «Успешная оплата» в Метрике — по факту лид)',
     counter: COUNTERS.mgt,
     type: 'goal',
-    journeyEntry: PODBOR_TOURS_ENTRY,
+    journeyEntry: PODBOR_TOURS_ENTRY_REF,
     goalId: 321612203,
-    filter: PODBOR_TOURS_ENTRY,
-    journeyNote: 'цель в визитах когорты входа',
+    filter: PODBOR_TOURS_ENTRY_REF,
+    journeyNote: 'см. toursFiltersForWeek',
   },
   hotels_search: {
     key: 'hotels_search',
@@ -353,9 +386,9 @@ export const REFERENCE_ROWS = [
   ['Не использовать', '358300437', 'отправил контактные данные LT', 'Legacy автоцель — не LT-воронка'],
   ['Не использовать', '504749523', 'Начало оформления LT (авто)', 'Legacy — дублирует lt_checkout_start'],
   ['Фильтр UTM', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
-  ['Туры с подбора', PODBOR_TOURS_ENTRY, 'когорта на 90662828', 'Вход UTM/podbor_ref → выдача/карточка/корзина/бронь/заявка'],
+  ['Туры с подбора', `с ${PODBOR_TOURS_REF_START}: ${PODBOR_TOURS_ENTRY_REF}`, 'когорта', 'До даты — moduleId (legacy), иначе выдача ≈ 0'],
   ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/оплата на 97107007'],
-  ['Туры moduleId', `URL содержит ${PODBOR_TOUR_MODULE}`, 'Sletat hash', 'Технический id модуля; в когорту входа не входит (слишком широкий)'],
+  ['Туры moduleId', `URL содержит ${PODBOR_TOUR_MODULE}`, 'legacy до podbor_ref', `proxy до ${PODBOR_TOURS_REF_START}`],
   ['Handoff UTM', 'utm_source=podbor_wizard + podbor_ref=1', 'utm_campaign={format}_{region}_{n}n', 'public/podbor.html buildHandoffUrl (туры и отели)'],
   ['Старт учёта', PODBOR_FUNNEL_START_DEFAULT, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
   [
