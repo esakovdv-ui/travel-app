@@ -2,58 +2,40 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  REFERENCE_ROWS,
-  WIZARD_SHEET_COLUMNS,
-  TOURS_SHEET_COLUMNS,
-  HOTELS_SHEET_COLUMNS,
-} from './lib/podbor-funnel-config.mjs';
+import { REFERENCE_ROWS } from './lib/podbor-funnel-config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const tsvPath = path.join(ROOT, 'storage/podbor-funnel-export.tsv');
 const outPath = path.join(ROOT, 'storage/podbor-import-embedded.gs');
 
-function loadTsv(name, fallbackHeader) {
-  const p = path.join(ROOT, 'storage', name);
-  if (!fs.existsSync(p)) return [fallbackHeader];
-  return fs.readFileSync(p, 'utf8').trim().split('\n').map((l) => l.split('\t'));
-}
-
-const wizard = loadTsv('podbor-funnel-wizard.tsv', WIZARD_SHEET_COLUMNS);
-const tours = loadTsv('podbor-funnel-tours.tsv', TOURS_SHEET_COLUMNS);
-const hotels = loadTsv('podbor-funnel-hotels.tsv', HOTELS_SHEET_COLUMNS);
+const rows = fs.existsSync(tsvPath)
+  ? fs.readFileSync(tsvPath, 'utf8').trim().split('\n').map((l) => l.split('\t'))
+  : [['ВИЗАРД']];
 const reference = REFERENCE_ROWS;
 
 const out = `function importEmbeddedFunnelData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  function ensure(name) {
-    let sh = ss.getSheetByName(name);
-    if (!sh) sh = ss.insertSheet(name);
-    return sh;
-  }
-  const wizardSh = ensure('Визард');
-  const toursSh = ensure('Туры');
-  const hotelsSh = ensure('Отели');
-  const refSh = ensure('Справочник');
-  ['Воронка', 'Лист1'].forEach(function (name) {
+  let sh = ss.getSheetByName('Воронка');
+  if (!sh) sh = ss.insertSheet('Воронка');
+  let refSh = ss.getSheetByName('Справочник');
+  if (!refSh) refSh = ss.insertSheet('Справочник');
+  ['Визард', 'Туры', 'Отели', 'Лист1'].forEach(function (name) {
     const old = ss.getSheetByName(name);
     if (old && ss.getSheets().length > 1) ss.deleteSheet(old);
   });
-  const wizard = ${JSON.stringify(wizard)};
-  const tours = ${JSON.stringify(tours)};
-  const hotels = ${JSON.stringify(hotels)};
+  const funnel = ${JSON.stringify(rows)};
   const reference = ${JSON.stringify(reference)};
-  function fill(sh, rows) {
-    sh.clear();
-    sh.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
-    sh.setFrozenRows(1);
-    sh.autoResizeColumns(1, rows[0].length);
-  }
-  fill(wizardSh, wizard);
-  fill(toursSh, tours);
-  fill(hotelsSh, hotels);
+  const width = funnel.reduce(function (max, row) { return Math.max(max, row.length); }, 0);
+  const padded = funnel.map(function (row) {
+    const copy = row.slice();
+    while (copy.length < width) copy.push('');
+    return copy;
+  });
+  sh.clear();
   refSh.clear();
+  sh.getRange(1, 1, padded.length, width).setValues(padded);
   refSh.getRange(1, 1, reference.length, reference[0].length).setValues(reference);
-  refSh.autoResizeColumns(1, 4);
+  sh.setFrozenRows(2);
 }
 `;
 

@@ -1,17 +1,7 @@
 #!/usr/bin/env node
 /**
- * Sync podbor wizard funnel to Google Sheets (3 tabs: Визард / Туры / Отели).
- *
- * Usage:
- *   node scripts/sync-podbor-funnel-sheet.mjs
- *   node scripts/sync-podbor-funnel-sheet.mjs --weeks=8
- *   node scripts/sync-podbor-funnel-sheet.mjs --from=2026-08-04 --to=2026-08-12
- *   node scripts/sync-podbor-funnel-sheet.mjs --dry-run
- *
- * Env (.env.local):
- *   YANDEX_METRIKA_TOKEN or YANDEX_API_KEY
- *   PODBOR_SHEET_ID (default: 1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ)
- *   GOOGLE_SERVICE_ACCOUNT_JSON — path to JSON key OR inline JSON string
+ * Sync podbor wizard funnel to Google Sheets.
+ * One sheet «Воронка»: wizard (weeks as rows) + tours/hotels (metrics as rows, weeks as columns).
  */
 
 import fs from 'node:fs';
@@ -43,13 +33,12 @@ import {
   filterReportWeeks,
   crBetween,
   WIZARD_SHEET_COLUMNS,
-  TOURS_SHEET_COLUMNS,
-  HOTELS_SHEET_COLUMNS,
-  SHEET_TAB_WIZARD,
-  SHEET_TAB_TOURS,
-  SHEET_TAB_HOTELS,
+  TOURS_METRIC_ROWS,
+  HOTELS_METRIC_ROWS,
+  buildMetricWeekMatrix,
+  SHEET_TAB_FUNNEL,
   SHEET_TAB_REF,
-  SHEET_TAB_LEGACY,
+  SHEET_TABS_OBSOLETE,
 } from './lib/podbor-funnel-config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -427,7 +416,7 @@ function metricsFromWeeklyData(week, data) {
   };
 }
 
-function rowWizard(week, m, updatedAt) {
+function rowWizard(week, m) {
   return [
     week.label,
     week.from,
@@ -454,48 +443,30 @@ function rowWizard(week, m, updatedAt) {
     crBetween(m.handoff_tours, m.handoff),
     m.handoff_hotels,
     crBetween(m.handoff_hotels, m.handoff),
-    updatedAt,
   ];
 }
 
-function rowTours(week, m, updatedAt) {
-  return [
-    week.label,
-    week.from,
-    week.to,
-    m.handoff_tours,
-    m.tours_search,
-    crBetween(m.tours_search, m.handoff_tours),
-    m.tours_tour_card,
-    crBetween(m.tours_tour_card, m.tours_search),
-    m.tours_cart,
-    crBetween(m.tours_cart, m.tours_tour_card),
-    m.tours_booking,
-    crBetween(m.tours_booking, m.tours_cart),
-    m.tours_purchase,
-    crBetween(m.tours_purchase, m.tours_booking),
-    updatedAt,
-  ];
-}
+/** Один лист: визард (недели×шаги) + туры/отели (показатели×недели). */
+function buildFunnelSheetValues(weeks, metricsByWeek, updatedAt) {
+  const weekLabels = weeks.map((w) => w.label);
+  const metricsList = weeks.map((w) => metricsByWeek.get(w.from));
 
-function rowHotels(week, m, updatedAt) {
-  return [
-    week.label,
-    week.from,
-    week.to,
-    m.handoff_hotels,
-    m.hotels_search,
-    crBetween(m.hotels_search, m.handoff_hotels),
-    m.hotels_package,
-    crBetween(m.hotels_package, m.hotels_search),
-    m.hotels_checkout,
-    crBetween(m.hotels_checkout, m.hotels_package),
-    m.hotels_payment_block,
-    crBetween(m.hotels_payment_block, m.hotels_checkout),
-    m.hotels_purchase,
-    crBetween(m.hotels_purchase, m.hotels_payment_block),
-    updatedAt,
-  ];
+  const values = [];
+  values.push(['ВИЗАРД', `Обновлено: ${updatedAt}`]);
+  values.push(WIZARD_SHEET_COLUMNS);
+  for (const week of weeks) {
+    values.push(rowWizard(week, metricsByWeek.get(week.from)));
+  }
+
+  values.push([]);
+  values.push(['ТУРЫ']);
+  values.push(...buildMetricWeekMatrix(TOURS_METRIC_ROWS, metricsList, weekLabels));
+
+  values.push([]);
+  values.push(['ОТЕЛИ']);
+  values.push(...buildMetricWeekMatrix(HOTELS_METRIC_ROWS, metricsList, weekLabels));
+
+  return values;
 }
 
 function loadGoogleCredentials() {
@@ -526,13 +497,13 @@ async function ensureSheetTabs(sheets, spreadsheetId) {
   const titles = new Set(sheetsMeta.map((s) => s.properties?.title));
 
   const requests = [];
-  for (const title of [SHEET_TAB_WIZARD, SHEET_TAB_TOURS, SHEET_TAB_HOTELS, SHEET_TAB_REF]) {
+  for (const title of [SHEET_TAB_FUNNEL, SHEET_TAB_REF]) {
     if (!titles.has(title)) {
       requests.push({ addSheet: { properties: { title } } });
     }
   }
-  for (const drop of ['Лист1', SHEET_TAB_LEGACY]) {
-    if (titles.has(drop)) {
+  for (const drop of SHEET_TABS_OBSOLETE) {
+    if (titles.has(drop) && drop !== SHEET_TAB_FUNNEL) {
       const sheetId = sheetsMeta.find((s) => s.properties?.title === drop)?.properties?.sheetId;
       if (sheetId != null) {
         requests.push({ deleteSheet: { sheetId } });
@@ -544,28 +515,31 @@ async function ensureSheetTabs(sheets, spreadsheetId) {
   }
 }
 
-async function writeTab(sheets, spreadsheetId, tabName, headerRow, dataRows) {
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId,
-    range: `${tabName}!A:ZZ`,
-  });
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${tabName}!A1`,
-    valueInputOption: 'RAW',
-    requestBody: { values: [headerRow, ...dataRows] },
+function padRowsToWidth(rows) {
+  const width = rows.reduce((max, row) => Math.max(max, row.length), 0);
+  return rows.map((row) => {
+    if (row.length >= width) return row;
+    return [...row, ...Array(width - row.length).fill('')];
   });
 }
 
-async function writeToGoogleSheet(spreadsheetId, wizardRows, toursRows, hotelsRows, referenceRows) {
+async function writeToGoogleSheet(spreadsheetId, funnelValues, referenceRows) {
   const sheets = await getSheetsClient();
   if (!sheets) return false;
 
   await ensureSheetTabs(sheets, spreadsheetId);
 
-  await writeTab(sheets, spreadsheetId, SHEET_TAB_WIZARD, WIZARD_SHEET_COLUMNS, wizardRows);
-  await writeTab(sheets, spreadsheetId, SHEET_TAB_TOURS, TOURS_SHEET_COLUMNS, toursRows);
-  await writeTab(sheets, spreadsheetId, SHEET_TAB_HOTELS, HOTELS_SHEET_COLUMNS, hotelsRows);
+  const padded = padRowsToWidth(funnelValues);
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${SHEET_TAB_FUNNEL}!A:ZZ`,
+  });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${SHEET_TAB_FUNNEL}!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: padded },
+  });
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
@@ -604,12 +578,10 @@ async function main() {
     timeStyle: 'short',
   }).format(new Date());
 
-  const wizardRows = [];
-  const toursRows = [];
-  const hotelsRows = [];
+  const metricsByWeek = new Map();
 
   if (reportWeeks.length === 0) {
-    console.log('  (нет недель на/после старта учёта — только заголовки)');
+    console.log('  (нет недель на/после старта учёта)');
   } else {
     const rangeFrom = reportWeeks[0].from;
     const rangeTo = reportWeeks[reportWeeks.length - 1].to;
@@ -627,35 +599,25 @@ async function main() {
       } else {
         metrics = await fetchWeekMetrics(metricsRange.from, metricsRange.to);
       }
-      wizardRows.push(rowWizard(week, metrics, updatedAt));
-      toursRows.push(rowTours(week, metrics, updatedAt));
-      hotelsRows.push(rowHotels(week, metrics, updatedAt));
+      metricsByWeek.set(week.from, metrics);
       console.log(
         `  ${week.label}: handoff=${metrics.handoff} tours=${metrics.handoff_tours} hotels=${metrics.handoff_hotels}`
       );
     }
   }
 
+  const funnelValues =
+    reportWeeks.length === 0
+      ? [['ВИЗАРД', `Обновлено: ${updatedAt}`], WIZARD_SHEET_COLUMNS]
+      : buildFunnelSheetValues(reportWeeks, metricsByWeek, updatedAt);
+
   if (dryRun) {
-    console.log('\n--- dry-run: Визард ---');
-    console.log(WIZARD_SHEET_COLUMNS.join('\t'));
-    for (const row of wizardRows) console.log(row.join('\t'));
-    console.log('\n--- dry-run: Туры ---');
-    console.log(TOURS_SHEET_COLUMNS.join('\t'));
-    for (const row of toursRows) console.log(row.join('\t'));
-    console.log('\n--- dry-run: Отели ---');
-    console.log(HOTELS_SHEET_COLUMNS.join('\t'));
-    for (const row of hotelsRows) console.log(row.join('\t'));
+    console.log('\n--- dry-run ---');
+    for (const row of funnelValues) console.log(row.join('\t'));
     return;
   }
 
-  const written = await writeToGoogleSheet(
-    sheetId,
-    wizardRows,
-    toursRows,
-    hotelsRows,
-    REFERENCE_ROWS
-  );
+  const written = await writeToGoogleSheet(sheetId, funnelValues, REFERENCE_ROWS);
   if (written) {
     console.log(`\nГотово: https://docs.google.com/spreadsheets/d/${sheetId}/edit`);
     return;
@@ -663,23 +625,18 @@ async function main() {
 
   const outDir = path.join(ROOT, 'storage');
   fs.mkdirSync(outDir, { recursive: true });
-  const writeTsv = (name, cols, rows) => {
-    const tsv = [cols.join('\t'), ...rows.map((r) => r.join('\t'))].join('\n');
-    fs.writeFileSync(path.join(outDir, name), tsv, 'utf8');
-  };
-  writeTsv('podbor-funnel-wizard.tsv', WIZARD_SHEET_COLUMNS, wizardRows);
-  writeTsv('podbor-funnel-tours.tsv', TOURS_SHEET_COLUMNS, toursRows);
-  writeTsv('podbor-funnel-hotels.tsv', HOTELS_SHEET_COLUMNS, hotelsRows);
+  const tsv = padRowsToWidth(funnelValues)
+    .map((r) => r.join('\t'))
+    .join('\n');
+  fs.writeFileSync(path.join(outDir, 'podbor-funnel-export.tsv'), tsv, 'utf8');
 
-  const embeddedPath = path.join(ROOT, 'storage/podbor-import-embedded.gs');
   spawnSync(process.execPath, ['scripts/generate-podbor-import-embedded.mjs'], {
     cwd: ROOT,
     stdio: 'ignore',
   });
 
   console.log('\nGoogle credentials не заданы (GOOGLE_SERVICE_ACCOUNT_JSON).');
-  console.log(`TSV: ${outDir}/podbor-funnel-{wizard,tours,hotels}.tsv`);
-  console.log(`Apps Script (разовый импорт): ${embeddedPath}`);
+  console.log(`TSV: ${outDir}/podbor-funnel-export.tsv`);
   console.log('Live sync: scripts/podbor-funnel-apps-script.js → setupAndSync + YANDEX_METRIKA_TOKEN');
 }
 
