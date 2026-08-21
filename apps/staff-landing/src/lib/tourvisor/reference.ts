@@ -27,10 +27,13 @@ export function getMeals() {
   })
 }
 
-/** Курорты страны: Аланья, Анталья, Кемер… Нужны для поиска по regionIds. */
-export function getRegions(countryId: number) {
+/**
+ * Курорты: Аланья, Анталья, Кемер… Нужны для поиска по regionIds.
+ * Без countryId Tourvisor отдаёт справочник целиком по всем странам.
+ */
+export function getRegions(countryId?: number) {
   return tvFetch<Region[]>('/regions', {
-    params: { countryId },
+    params: countryId ? { countryId } : {},
     revalidate: 60 * 60 * 24, // сутки — список курортов не меняется
   })
 }

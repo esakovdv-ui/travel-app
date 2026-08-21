@@ -51,3 +51,41 @@ export function prefetchRegions(countryId: number): void {
   if (!countryId || cache.has(countryId) || inFlight.has(countryId)) return
   void loadRegions(countryId)
 }
+
+/** Справочник целиком уже загружали — второй раз не ходим. */
+let allLoaded: Promise<void> | null = null
+
+/**
+ * Прогреть курорты всех стран одним запросом.
+ *
+ * Справочник целиком — 676 курортов по 93 странам, 35 КБ, около полусекунды.
+ * Дешевле, чем 63 запроса по стране, и снимает паузу для любой страны, а не
+ * только для заранее выбранных. На сервере ответ живёт сутки, так что до
+ * Tourvisor доходит один запрос в день на всех.
+ */
+export function prefetchAllRegions(): Promise<void> {
+  if (allLoaded) return allLoaded
+
+  allLoaded = staffFetch('/api/tourvisor/regions')
+    .then(r => (r.ok ? r.json() : { data: [] }))
+    .then(j => {
+      const list: RegionOption[] = Array.isArray(j.data) ? j.data : []
+      if (list.length === 0) return
+      const byCountry = new Map<number, RegionOption[]>()
+      for (const region of list) {
+        const bucket = byCountry.get(region.countryId)
+        if (bucket) bucket.push(region)
+        else byCountry.set(region.countryId, [region])
+      }
+      // Не затираем то, что уже успели загрузить поштучно.
+      for (const [countryId, regions] of byCountry) {
+        if (!cache.has(countryId)) cache.set(countryId, regions)
+      }
+    })
+    .catch(() => {
+      // Разрешаем повторную попытку: справочник не критичен, но полезен.
+      allLoaded = null
+    })
+
+  return allLoaded
+}

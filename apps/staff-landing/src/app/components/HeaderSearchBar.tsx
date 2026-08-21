@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
-import { cachedRegions, loadRegions, prefetchRegions } from '@/lib/regions-cache'
+import { cachedRegions, loadRegions, prefetchAllRegions, prefetchRegions } from '@/lib/regions-cache'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import { dateRangeToTarget, flexLabel, nightsBetween, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
 import { nightsLabel, plural, yearsLabel } from '@/lib/plural'
@@ -173,11 +173,12 @@ export function HeaderSearchBar({
     return () => { cancelled = true }
   }, [form.countryId])
 
-  // Прогреваем список курортов заранее: пока человек ведёт мышь к стране,
-  // запрос успевает сходить, и чипсы появляются в тот же миг, что и выбор.
+  // Панель «Куда» открыли — тянем справочник курортов целиком, одним
+  // запросом на 35 КБ. После этого выбор любой страны мгновенный, а не
+  // только заранее угаданных.
   useEffect(() => {
     if (openPanel !== 'destination') return
-    for (const id of POPULAR_COUNTRY_IDS.slice(0, 3)) prefetchRegions(id)
+    void prefetchAllRegions()
   }, [openPanel])
 
   const toggleRegion = useCallback((id: number) => {
