@@ -11,7 +11,10 @@ const OBSOLETE = ['Визард', 'Туры', 'Отели', 'Лист1'];
 
 const COUNTERS = { mgt: '90662828', wizard: '109401746', hotels: '97107007' };
 const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
-const PODBOR_TOURS_ENTRY = '(' + UTM_PODBOR + " OR ym:pv:URL=@'podbor_ref=1')";
+const PODBOR_TOUR_MODULE = '68ea30c6';
+const TOURS_FROM_PODBOR = "ym:pv:URL=@'" + PODBOR_TOUR_MODULE + "'";
+const PODBOR_TOURS_REF_START = '2026-08-21';
+const PODBOR_TOURS_ENTRY_REF = '(' + UTM_PODBOR + " OR ym:pv:URL=@'podbor_ref=1')";
 const PODBOR_HOTELS_ENTRY = "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
 const HOTEL_LT_GOALS = {
   checkout: 579160037,
@@ -19,6 +22,21 @@ const HOTEL_LT_GOALS = {
   purchase: 579160040,
 };
 const PODBOR_FUNNEL_START = '2026-08-13';
+
+function toursFiltersForWeek_(weekFrom) {
+  if (weekFrom >= PODBOR_TOURS_REF_START) {
+    return {
+      search: PODBOR_TOURS_ENTRY_REF,
+      card: PODBOR_TOURS_ENTRY_REF + " AND ym:pv:URL=@'action=tourCard'",
+      goals: PODBOR_TOURS_ENTRY_REF,
+    };
+  }
+  return {
+    search: TOURS_FROM_PODBOR + " AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='",
+    card: TOURS_FROM_PODBOR + " AND ym:pv:URL=@'action=tourCard'",
+    goals: TOURS_FROM_PODBOR,
+  };
+}
 
 const WIZARD_COLUMNS = [
   'Неделя', 'С', 'По', 'Клик баннер', 'Клик popup', 'Старт визарда',
@@ -162,12 +180,12 @@ function fetchWeek_(week) {
   });
   m.handoff_tours = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
   m.handoff_hotels = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
-  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to, PODBOR_TOURS_ENTRY);
-  m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
-    PODBOR_TOURS_ENTRY + " AND ym:pv:URL=@'action=tourCard'");
-  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, PODBOR_TOURS_ENTRY);
-  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, PODBOR_TOURS_ENTRY);
-  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, PODBOR_TOURS_ENTRY);
+  var tf = toursFiltersForWeek_(week.from);
+  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to, tf.search);
+  m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to, tf.card);
+  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, tf.goals);
+  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, tf.goals);
+  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, tf.goals);
   m.h_search = hotelJourneyCount_(week.from, week.to, "ym:pv:URL=@'russia.mosgortur.ru/search'");
   m.h_cart = hotelJourneyCount_(week.from, week.to,
     "ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
