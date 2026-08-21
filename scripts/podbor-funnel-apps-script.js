@@ -30,7 +30,7 @@ const WIZARD_COLUMNS = [
 ];
 
 const TOURS_LABELS = [
-  'Вход с подбора', 'Выдача', 'CR вход→выдача', 'Карточка', 'CR выдача→карточка',
+  'Handoff: туры', 'Выдача', 'CR handoff→выдача', 'Карточка', 'CR выдача→карточка',
   'Корзина', 'CR карточка→корзина', 'Бронь', 'CR корзина→бронь', 'Заявка', 'CR бронь→заявка',
 ];
 
@@ -162,9 +162,7 @@ function fetchWeek_(week) {
   });
   m.handoff_tours = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
   m.handoff_hotels = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
-  m.t_entry = usersCount_(COUNTERS.mgt, week.from, week.to, PODBOR_TOURS_ENTRY);
-  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to,
-    PODBOR_TOURS_ENTRY + " AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
+  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to, PODBOR_TOURS_ENTRY);
   m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
     PODBOR_TOURS_ENTRY + " AND ym:pv:URL=@'action=tourCard'");
   m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, PODBOR_TOURS_ENTRY);
@@ -181,7 +179,7 @@ function fetchWeek_(week) {
 
 function toursValues_(m) {
   return [
-    m.t_entry, m.t_search, pct_(m.t_search, m.t_entry),
+    m.handoff_tours, m.t_search, pct_(m.t_search, m.handoff_tours),
     m.t_card, pct_(m.t_card, m.t_search), m.t_cart, pct_(m.t_cart, m.t_card),
     m.t_book, pct_(m.t_book, m.t_cart), m.t_pay, pct_(m.t_pay, m.t_book),
   ];

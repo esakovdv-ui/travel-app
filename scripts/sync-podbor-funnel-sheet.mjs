@@ -116,16 +116,9 @@ const MGT_ENTRY_GOALS = [
 
 async function fetchTourCohortMetrics(dateFrom, dateTo) {
   const counter = COUNTERS.mgt;
-  const [tours_entry, tours_search, tours_tour_card] = await Promise.all([
-    queryBatchGoals(counter, dateFrom, dateTo, [], ['ym:s:users'], PODBOR_TOURS_ENTRY),
-    queryBatchGoals(
-      counter,
-      dateFrom,
-      dateTo,
-      [],
-      ['ym:s:users'],
-      POST_HANDOFF.tours_search.filter
-    ),
+  // Выдача = заход с маркером (handoff сразу открывает search)
+  const [tours_search, tours_tour_card] = await Promise.all([
+    queryBatchGoals(counter, dateFrom, dateTo, [], ['ym:s:users'], POST_HANDOFF.tours_search.filter),
     queryBatchGoals(
       counter,
       dateFrom,
@@ -148,9 +141,10 @@ async function fetchTourCohortMetrics(dateFrom, dateTo) {
     [],
     PODBOR_TOURS_ENTRY
   );
+  const searchUsers = tours_search._users ?? 0;
   return {
-    tours_entry: tours_entry._users ?? 0,
-    tours_search: tours_search._users ?? 0,
+    tours_entry: searchUsers,
+    tours_search: searchUsers,
     tours_tour_card: tours_tour_card._users ?? 0,
     tours_cart: tourGoals.tours_cart ?? 0,
     tours_booking: tourGoals.tours_booking ?? 0,
@@ -303,17 +297,8 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.handoff_hotels.filter
   );
   await sleep(400);
-  console.log('  Tours cohort (same-counter filters)…');
-  // Одна когорта на 90662828: вход = UTM|moduleId; шаги — вложенные фильтры / цели в визитах входа.
-  // (clientID-list journey как у отелей здесь ~1100 id → лимиты Метрики и слишком долго)
-  const toursEntryWeeks = await queryWeeklyVisits(
-    COUNTERS.mgt,
-    rangeFrom,
-    rangeTo,
-    PODBOR_TOURS_ENTRY,
-    'ym:s:users'
-  );
-  await sleep(300);
+  console.log('  Tours cohort (podbor_ref/UTM)…');
+  // Выдача = заход с маркером (handoff сразу открывает search). Без moduleId.
   const toursSearchWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
@@ -321,6 +306,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.tours_search.filter,
     'ym:s:users'
   );
+  const toursEntryWeeks = toursSearchWeeks;
   await sleep(300);
   const toursCardWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
