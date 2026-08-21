@@ -228,7 +228,9 @@
   margin-top: auto;
   padding-top: 8px;
 }
-.priceBlock {}
+.priceBlock {
+  min-width: 0;
+}
 .priceFrom {
   font-size: 0.7rem;
   color: var(--c-text-light);
@@ -239,6 +241,8 @@
   font-weight: 800;
   color: var(--c-text);
   line-height: 1.1;
+  /* «116 782 ₽» не должно разрываться перед знаком рубля */
+  white-space: nowrap;
 }
 .pricePrev {
   font-size: 0.8rem;
@@ -254,6 +258,11 @@
 
 .bookBtn {
   flex-shrink: 0;
+  /* элемент — <a>, поэтому явные inline-flex и снятие подчёркивания */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   padding: 9px 16px;
   border: none;
   border-radius: var(--radius-pill);

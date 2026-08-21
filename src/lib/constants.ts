@@ -30,12 +30,44 @@ export const STORY_STATUS_LABELS: Record<string, string> = {
 };
 
 
+/**
+ * Правовые документы Мосгортура. Лежат на online.mosgortur.ru —
+ * ссылки ведут туда напрямую, копий у нас не держим.
+ */
+export const LEGAL_DOCS = {
+  privacy: {
+    label: 'Политика конфиденциальности',
+    url: 'https://online.mosgortur.ru/documents/new-documents/соглашение_о_конфиденциальности_персональной_информации.pdf',
+  },
+  mailing: {
+    label: 'Согласие на получение рассылки',
+    url: 'https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_получение_рассылки.pdf',
+  },
+  personalData: {
+    label: 'Согласие на обработку персональных данных',
+    url: 'https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_обработку_персональных_данных_в_сети_Интернет.pdf',
+  },
+} as const;
+
 export const STORIES_RAFFLE_ENABLED = true;
+
+const MONTHS_GENITIVE = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
+
+/**
+ * Розыгрыш ежемесячный, поэтому дату не храним строкой — она протухает.
+ * Считаем последний день текущего месяца при каждом рендере.
+ */
+export function nextRaffleDrawDate(now: Date = new Date()): string {
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return `${last.getDate()} ${MONTHS_GENITIVE[last.getMonth()]} ${last.getFullYear()}`;
+}
 
 export const STORIES_RAFFLE_CONFIG = {
   emoji: '🧳',
   prizeName: 'Дорожный чемодан Samsonite',
-  drawDate: '30 июня 2026',
   chips: ['🧳 Дорожный чемодан', '🎒 Travel-набор', '🎫 Промокод на тур'],
 };
 

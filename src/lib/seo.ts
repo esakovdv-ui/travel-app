@@ -10,7 +10,12 @@ type SeoInput = {
 export function buildMetadata({ title, description = APP_DESCRIPTION, path = '/' }: SeoInput): Metadata {
   const absolutePath = path.startsWith('/') ? path : `/${path}`;
   const fullTitle = title === APP_NAME ? title : `${title} | ${APP_NAME}`;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  // На проде NEXT_PUBLIC_APP_URL может быть не задан — тогда canonical и og:image
+  // уезжали на localhost:3000, и превью ссылки в мессенджерах не отрисовывалось.
+  // В продакшен-сборке падаем на боевой домен, а не на localhost.
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.NODE_ENV === 'production' ? 'https://motrip.ru' : 'http://localhost:3000');
 
   return {
     metadataBase: new URL(appUrl),

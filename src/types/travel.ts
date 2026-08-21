@@ -100,11 +100,16 @@ export type Story = {
   rejectedAt: string | null;
   rejectionReason: string | null;
   rawAuthorName: string;
+  rawPhone: string;
   rawObject: string;
   rawPeriod: string;
   rawManager: string;
   rawText: string;
   photos: string[];
+  /** ISO-время проставления согласия на обработку ПД (обязательное) */
+  consentPersonalAt: string | null;
+  /** ISO-время проставления согласия на рассылку (необязательное) */
+  consentMailingAt: string | null;
   pubTitle: string | null;
   pubQuote: string | null;
   pubTag: string | null;

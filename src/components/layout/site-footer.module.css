@@ -7,8 +7,9 @@
 
 .inner {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 48px;
+  /* бренд + три колонки ссылок: навигация, направления, документы */
+  grid-template-columns: 1.3fr 1fr 1fr 1.2fr;
+  gap: 40px;
   padding-block: 56px 44px;
 }
 

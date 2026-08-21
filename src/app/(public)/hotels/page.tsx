@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { HotelCard, HotelData } from '@/components/tours/hotel-card';
 import { FiltersPanel, FiltersData, ActiveFilters, EMPTY_FILTERS } from '@/components/tours/filters-panel';
 import { Preloader } from '@/components/ui/preloader';
+import { toUserSearchError } from '@/lib/search-errors';
+import { hotelsLabel } from '@/lib/utils';
 import styles from '../tours/tours.module.css';
 
 const HotelMap = dynamic(
@@ -77,7 +79,7 @@ function HotelsPageInner() {
         setHotels(data.hotels ?? []);
         setFilters(data.filters ?? {});
       })
-      .catch(err => setError(err instanceof Error ? err.message : 'Неизвестная ошибка'))
+      .catch(err => setError(toUserSearchError(err)))
       .finally(() => setLoading(false));
   }, [searchParams]);
 
@@ -88,7 +90,7 @@ function HotelsPageInner() {
     <div className={styles.page}>
       <Preloader show={loading} />
 
-      {error && <div className={styles.error}>Ошибка: {error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
       {!loading && hotels.length > 0 && (
         <div className={styles.layout}>
@@ -107,7 +109,7 @@ function HotelsPageInner() {
               <p className={styles.resultsCount}>
                 {filtered.length !== hotels.length
                   ? `${filtered.length} из ${hotels.length} отелей`
-                  : `${hotels.length} отелей`}
+                  : hotelsLabel(hotels.length)}
               </p>
             </div>
 

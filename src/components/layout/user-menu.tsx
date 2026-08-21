@@ -36,7 +36,7 @@ export function UserMenu({ initialUser }: { initialUser?: UserMenuUser | null })
   // Не авторизован
   if (!user) {
     return (
-      <Link className={styles.loginBtn} href="/auth/login">
+      <Link className={styles.loginBtn} href="/login" aria-label="Войти">
         <UserIcon weight="light" size={18} aria-hidden="true" />
         <span className={styles.loginLabel}>Войти</span>
       </Link>

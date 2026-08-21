@@ -63,10 +63,22 @@ function isoToLT(iso: string, flex: number, sign: 1 | -1): string {
   return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
 }
 
+/**
+ * ДД.ММ.ГГГГ → ГГГГ-ММ-ДД. Возвращает '' на всём, что не является реальной
+ * календарной датой, иначе битый параметр в URL доезжает до new Date()
+ * и поле рендерит «NaN undefined».
+ */
 function ltToISO(s: string): string {
   if (!s) return '';
-  const [dd, mm, yyyy] = s.split('.');
-  return `${yyyy}-${mm}-${dd}`;
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+  if (!m) return '';
+  const [, dd, mm, yyyy] = m;
+  const iso = `${yyyy}-${mm}-${dd}`;
+  const d = new Date(iso + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return '';
+  // отсекаем перенос вроде 31.02 → 3 марта
+  if (d.getDate() !== Number(dd) || d.getMonth() + 1 !== Number(mm)) return '';
+  return iso;
 }
 
 function ageLabel(n: number) {
@@ -130,6 +142,7 @@ export function SearchBar({
     if (!dateRange.start || !dateRange.end) return null;
     const s = new Date(dateRange.start + 'T00:00:00');
     const e = new Date(dateRange.end + 'T00:00:00');
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return null;
     const n = Math.round((e.getTime() - s.getTime()) / 86400000);
     const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const fmt = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()]}`;

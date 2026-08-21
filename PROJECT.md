@@ -40,8 +40,14 @@
 | Страница тура/пакета | `/packages/[slug]` | Готова (mock-данные) |
 | Оформление заказа | `/checkout` | UI готов, не подключён к платёжке |
 | Личный кабинет | `/account` | **Работает** — реальные данные из БД, защищён middleware |
-| Вход | `/auth/login` | **Работает** — JWT авторизация, cookie |
-| Регистрация | `/auth/register` | **Работает** — сохранение в PostgreSQL |
+| Вход | `/login` | **Работает** — JWT авторизация, cookie |
+| Регистрация | `/register` | **Работает** — сохранение в PostgreSQL |
+
+> ⚠️ Путь `/auth/*` занимать нельзя. Nginx проксирует весь этот неймспейс на
+> OAuth-сервис Битрикс24 (`/auth/start` → `crm.mosgortur.ru/oauth/authorize`,
+> `/auth/callback`), а всё остальное под ним отдаёт `{"error":"Not found"}`.
+> Страницы входа лежали на `/auth/login` и `/auth/register` и были недоступны
+> в проде — поэтому перенесены на `/login` и `/register`.
 
 ### Лендинги (`/public/`)
 
@@ -135,7 +141,7 @@ DATABASE_URL=postgresql://travel_user:VD0HxTqhtaMyI4AdOcwNu8gAo@localhost:5432/t
 - Пароль хешируется через SHA-256 (`src/lib/security.ts`)
 - JWT-токен в `httpOnly` cookie `mt_session` на 30 дней
 - `src/lib/session.ts` — читает и верифицирует сессию на сервере
-- `src/middleware.ts` — защищает `/account`, редиректит на `/auth/login`
+- `src/middleware.ts` — защищает `/account`, редиректит на `/login`
 - `COOKIE_SECURE=true` в `.env` включает secure-флаг (нужен при HTTPS)
 
 ---

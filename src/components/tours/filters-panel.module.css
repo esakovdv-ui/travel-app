@@ -1,14 +1,12 @@
-/* ── Десктоп / мобайл переключение ── */
+/* ── Десктоп / мобайл переключение ──
+   На десктопе — статичная панель в сайдбаре.
+   На мобайле — плавающая кнопка, открывающая нижнюю шторку. */
 .desktopPanel {
   display: block;
-}
-.mobileBar {
-  display: none;
 }
 
 @media (max-width: 860px) {
   .desktopPanel { display: none; }
-  .mobileBar    { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 }
 
 /* ── Панель ── */
@@ -213,101 +211,164 @@
 }
 .priceDash { color: var(--c-text-light); }
 
-/* ── Мобильная кнопка ── */
-.mobileBtn {
-  display: inline-flex;
+/* ── Плавающая кнопка вызова фильтров ──────────────────────────────────────
+   Прижата к низу экрана по центру: до неё легко дотянуться большим пальцем,
+   и она не уезжает вместе со списком. На десктопе не нужна. */
+.fab {
+  display: none;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 150;
   align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  border: 1.5px solid var(--c-border-strong);
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: none;
   border-radius: var(--radius-pill);
-  background: var(--c-surface);
+  background: var(--c-text);
+  color: #fff;
   font: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--c-text);
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: border-color var(--transition);
+  box-shadow: 0 6px 24px rgba(20, 20, 43, 0.28);
+  transition: transform var(--transition);
 }
-.mobileBtn:hover { border-color: var(--c-text); }
-.mobileBadge {
+.fab:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+/* Показываем только на мобайле. Правило идёт после базового `display: none`,
+   иначе оно его не перебьёт — специфичность одинаковая. */
+@media (max-width: 860px) {
+  .fab { display: inline-flex; }
+}
+.fabBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: var(--radius-pill);
   background: var(--c-red);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
-.mobileCount {
-  font-size: 0.84rem;
-  color: var(--c-text-muted);
-}
 
-/* ── Мобильный drawer ── */
-.overlay {
+/* ── Нижняя шторка (мобайл) ───────────────────────────────────────────────── */
+.sheetBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(10, 15, 40, 0.5);
+  backdrop-filter: blur(2px);
   z-index: 200;
+  animation: fadeIn 0.2s ease;
 }
-.drawer {
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sheet {
   position: fixed;
-  inset: 0 0 0 auto;
-  width: min(320px, 100vw);
-  background: var(--c-surface);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 201;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  animation: slideIn 0.22s ease;
+  max-height: 88vh;
+  background: var(--c-surface);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(10, 15, 40, 0.18);
+  animation: slideUp 0.26s cubic-bezier(0.32, 0.72, 0, 1);
 }
-@keyframes slideIn {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
-.drawerHeader {
+
+/* Ручка-«таблетка» — привычный признак, что лист тянется */
+.sheetHandle {
+  width: 36px;
+  height: 4px;
+  margin: 10px auto 2px;
+  border-radius: var(--radius-pill);
+  background: var(--c-border-strong);
+  flex-shrink: 0;
+}
+
+.sheetHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 8px 20px 12px;
   border-bottom: 1px solid var(--c-border);
   flex-shrink: 0;
 }
-.drawerClose {
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: var(--c-text-muted);
-  cursor: pointer;
-  padding: 4px;
+.sheetTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-text);
 }
-.drawer .panel {
+.sheetClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(20, 20, 43, 0.07);
+  color: var(--c-text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.sheetClose:hover { background: rgba(20, 20, 43, 0.13); }
+
+/* Скроллится только тело — шапка и футер с «Показать» всегда на виду */
+.sheetBody {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.sheet .panel {
   width: 100%;
   padding: 0 20px;
-  flex: 1;
   background: none;
   box-shadow: none;
   border-radius: 0;
 }
-.drawerFooter {
-  padding: 16px 20px;
+
+/* Заголовок уже есть в шапке шторки — внутренний прячем,
+   «Сбросить» оставляем и прижимаем вправо. */
+.sheet .panelTitle { display: none; }
+.sheet .panelHeader {
+  justify-content: flex-end;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sheetFooter {
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--c-border);
   flex-shrink: 0;
 }
 .applyBtn {
   width: 100%;
+  min-height: 48px;
   padding: 12px;
   border: none;
   border-radius: var(--radius-pill);
   background: var(--c-red);
   color: #fff;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
 }

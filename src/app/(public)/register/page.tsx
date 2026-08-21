@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { buildMetadata } from '@/lib/seo';
 import { registerAction } from '@/app/actions';
 import { BrandLogo } from '@/components/layout/brand-logo';
-import styles from '../auth.module.css';
+import styles from '../login.module.css';
 
 export const metadata = buildMetadata({
   title: 'Регистрация',
@@ -50,7 +50,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         </form>
 
         <p className={styles.switchLink}>
-          Уже есть аккаунт? <Link href="/auth/login">Войти</Link>
+          Уже есть аккаунт? <Link href="/login">Войти</Link>
         </p>
       </div>
     </div>

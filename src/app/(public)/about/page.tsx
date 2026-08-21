@@ -87,7 +87,7 @@ const DESTINATIONS = [
   {
     name: 'Египет',
     count: '210 туров',
-    img: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=600&q=80',
+    img: 'https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=600&q=80',
     href: '/tours?toCountry=EG',
   },
 ];

@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Manrope, Unbounded } from 'next/font/google';
 import { ConditionalFooter } from '@/components/layout/conditional-footer';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { listPackages } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
@@ -47,7 +48,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AppProvider initialPackages={packages}>
           <SiteHeader initialUser={initialUser} />
           {children}
-          <ConditionalFooter />
+          <ConditionalFooter>
+            <SiteFooter />
+          </ConditionalFooter>
         </AppProvider>
       </body>
     </html>
