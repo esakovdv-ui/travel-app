@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
+import { cachedRegions, loadRegions, prefetchRegions } from '@/lib/regions-cache'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import { dateRangeToTarget, flexLabel, nightsBetween, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
 import { nightsLabel, plural, yearsLabel } from '@/lib/plural'
@@ -159,15 +160,25 @@ export function HeaderSearchBar({
   // теряет смысл, поэтому сбрасываем: id курортов у стран не пересекаются.
   useEffect(() => {
     if (!form.countryId) { setRegions([]); return }
+
+    // Уже грели этот список — показываем сразу, без «Загружаем курорты…».
+    const готовые = cachedRegions(form.countryId)
+    if (готовые) { setRegions(готовые); setRegionsLoading(false); return }
+
     let cancelled = false
     setRegionsLoading(true)
-    staffFetch(`/api/tourvisor/regions?countryId=${form.countryId}`)
-      .then(r => r.ok ? r.json() : { data: [] })
-      .then(j => { if (!cancelled) setRegions(Array.isArray(j.data) ? j.data : []) })
-      .catch(() => { if (!cancelled) setRegions([]) })
+    loadRegions(form.countryId)
+      .then(list => { if (!cancelled) setRegions(list) })
       .finally(() => { if (!cancelled) setRegionsLoading(false) })
     return () => { cancelled = true }
   }, [form.countryId])
+
+  // Прогреваем список курортов заранее: пока человек ведёт мышь к стране,
+  // запрос успевает сходить, и чипсы появляются в тот же миг, что и выбор.
+  useEffect(() => {
+    if (openPanel !== 'destination') return
+    for (const id of POPULAR_COUNTRY_IDS.slice(0, 3)) prefetchRegions(id)
+  }, [openPanel])
 
   const toggleRegion = useCallback((id: number) => {
     setForm(p => ({
@@ -321,6 +332,8 @@ export function HeaderSearchBar({
                       <button
                         key={c.id}
                         className={`${styles.popoverPopularBtn} ${c.id === form.countryId ? styles.popoverPopularBtnActive : ''}`}
+                        onPointerEnter={() => prefetchRegions(c.id)}
+                        onFocus={() => prefetchRegions(c.id)}
                         onClick={() => setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))}
                       >
                         {c.name}
@@ -383,6 +396,8 @@ export function HeaderSearchBar({
                 <button
                   key={c.id}
                   className={`${styles.popoverItem} ${c.id === form.countryId ? styles.popoverItemActive : ''}`}
+                  onPointerEnter={() => prefetchRegions(c.id)}
+                  onFocus={() => prefetchRegions(c.id)}
                   onClick={() => {
                     setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))
                     setCountryQuery('')

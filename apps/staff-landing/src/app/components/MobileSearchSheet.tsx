@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { staffFetch } from '@/lib/staff-client'
+import { cachedRegions, loadRegions, prefetchRegions } from '@/lib/regions-cache'
 import styles from './MobileSearchSheet.module.css'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import {
@@ -135,16 +135,27 @@ export function MobileSearchSheet({
   }, [isOpen])
 
   // Курорты выбранной страны. Не отмечено ничего — ищем по всей стране.
-  const [regions, setRegions] = useState<{ id: number; name: string }[]>([])
+  const [regions, setRegions] = useState<{ id: number; name: string }[]>(
+    () => cachedRegions(form.countryId) ?? [],
+  )
   useEffect(() => {
     if (!isOpen || !form.countryId) return
+
+    // Кэш вкладки: если список уже грели, чипсы появятся без паузы.
+    const готовые = cachedRegions(form.countryId)
+    if (готовые) { setRegions(готовые); return }
+
     let cancelled = false
-    staffFetch(`/api/tourvisor/regions?countryId=${form.countryId}`)
-      .then(r => r.ok ? r.json() : { data: [] })
-      .then(j => { if (!cancelled) setRegions(Array.isArray(j.data) ? j.data : []) })
-      .catch(() => { if (!cancelled) setRegions([]) })
+    loadRegions(form.countryId).then(list => { if (!cancelled) setRegions(list) })
     return () => { cancelled = true }
   }, [isOpen, form.countryId])
+
+  // На телефоне наведения нет, поэтому греем самые частые страны сразу при
+  // открытии шторки — к моменту выбора список обычно уже на месте.
+  useEffect(() => {
+    if (!isOpen) return
+    for (const id of popularIds.slice(0, 3)) prefetchRegions(id)
+  }, [isOpen, popularIds])
 
   if (!isOpen) return null
 
