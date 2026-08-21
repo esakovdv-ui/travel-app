@@ -329,14 +329,14 @@
   background: linear-gradient(135deg, rgba(12,36,97,0.08), rgba(12,36,97,0.03));
 }
 
-.hotelStarsOverlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+/* Звёзды над названием отеля. Раньше лежали поверх фотографии и терялись
+   на светлых снимках — сотрудники жаловались, что звёздности не видно. */
+.hotelCardStars {
   color: #f59e0b;
-  font-size: 0.75rem;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
-  letter-spacing: 1px;
+  font-size: 0.82rem;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 /* Правый блок */

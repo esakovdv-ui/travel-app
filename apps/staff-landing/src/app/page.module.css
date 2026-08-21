@@ -1444,3 +1444,61 @@ html[data-framed='1'] .authPage {
 @media (pointer: coarse) {
     .searchSegTrigger { min-height: 44px; }
 }
+
+/* ─── Курорты в панели «Куда» ───────────────────────────────────────────────
+   Выбор необязателен: ничего не отмечено — ищем по всей стране. Но сузить
+   здесь дешевле, чем ждать полную выдачу и фильтровать её потом. */
+
+.regionGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 2px 0 4px;
+}
+
+.regionChip {
+  padding: 6px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition);
+}
+.regionChip:hover { border-color: var(--c-blue); }
+.regionChipActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+}
+
+/* Сброс к «всей стране» — рядом с заголовком, чтобы выход был на виду. */
+.regionReset {
+  margin-left: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.regionHint {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  padding: 6px 0 8px;
+}
+
+/* Окно вылета при включённой гибкости — приглушённо, рядом с числом ночей. */
+.nightsHintFlex { color: var(--c-text-muted); }

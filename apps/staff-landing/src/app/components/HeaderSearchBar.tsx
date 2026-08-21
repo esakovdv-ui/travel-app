@@ -5,11 +5,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import { dateRangeToTarget, flexLabel, nightsBetween, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
-import { nightsLabel, yearsLabel } from '@/lib/plural'
+import { nightsLabel, plural, yearsLabel } from '@/lib/plural'
 import { reachGoal, StaffGoals } from '@/lib/metrika'
 import styles from '../page.module.css'
 
 interface Country { id: number; name: string }
+interface Region { id: number; name: string; countryId: number }
 
 const POPULAR_COUNTRY_IDS = [4, 1, 2, 16, 9, 47, 13, 46, 8, 12]
 
@@ -96,6 +97,7 @@ interface Props {
   initialNightsTo?: number
   initialAdults?: number
   initialChildAges?: number[]
+  initialRegionIds?: number[]
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -108,6 +110,7 @@ export function HeaderSearchBar({
   initialNightsTo = 14,
   initialAdults = 1,
   initialChildAges = [],
+  initialRegionIds = [],
 }: Props) {
   const router = useRouter()
   const searchRef = useRef<HTMLDivElement>(null)
@@ -116,6 +119,8 @@ export function HeaderSearchBar({
   const [openPanel, setOpenPanel] = useState<'destination'|'dates'|'travelers'|null>(null)
   const [countryQuery, setCountryQuery] = useState('')
   const [countries, setCountries] = useState<Country[]>([])
+  const [regions, setRegions] = useState<Region[]>([])
+  const [regionsLoading, setRegionsLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [monthsShown, setMonthsShown] = useState(2)
 
@@ -136,7 +141,33 @@ export function HeaderSearchBar({
     nightsTo: initialNightsTo,
     adults: initialAdults,
     childAges: initialChildAges,
+    // Пусто — искать по всей стране. Tourvisor принимает regionIds
+    // повторяющимися параметрами, через запятую не понимает.
+    regionIds: initialRegionIds,
   })
+
+  // Курорты выбранной страны. Меняется страна — прежний выбор курортов
+  // теряет смысл, поэтому сбрасываем: id курортов у стран не пересекаются.
+  useEffect(() => {
+    if (!form.countryId) { setRegions([]); return }
+    let cancelled = false
+    setRegionsLoading(true)
+    staffFetch(`/api/tourvisor/regions?countryId=${form.countryId}`)
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(j => { if (!cancelled) setRegions(Array.isArray(j.data) ? j.data : []) })
+      .catch(() => { if (!cancelled) setRegions([]) })
+      .finally(() => { if (!cancelled) setRegionsLoading(false) })
+    return () => { cancelled = true }
+  }, [form.countryId])
+
+  const toggleRegion = useCallback((id: number) => {
+    setForm(p => ({
+      ...p,
+      regionIds: p.regionIds.includes(id)
+        ? p.regionIds.filter(x => x !== id)
+        : [...p.regionIds, id],
+    }))
+  }, [])
 
   // Диапазон в календаре: заезд — из targetDate, выезд — плюс текущие ночи.
   const [calFrom, setCalFrom] = useState<string | null>(initTarget || null)
@@ -153,7 +184,11 @@ export function HeaderSearchBar({
       return
     }
     const nights = nightsBetween(from, to)
-    setForm(p => ({ ...p, targetDate: from, nightsFrom: nights, nightsTo: nights }))
+    // Выбранный вручную диапазон — это точный ответ на вопрос «когда».
+    // Гибкость по умолчанию ±2 дня превращала его в окно вылета 3–7 октября
+    // при выбранном 5-м, и человек не понимал, почему выдача не совпадает
+    // с тем, что он ткнул. Сбрасываем в ноль; расширить можно осознанно.
+    setForm(p => ({ ...p, targetDate: from, nightsFrom: nights, nightsTo: nights, dateFlex: 0 }))
   }
 
   function resetRange() {
@@ -226,8 +261,19 @@ export function HeaderSearchBar({
       adults: String(form.adults),
     })
     if (form.childAges.length > 0) qs.set('childs', form.childAges.join(','))
+    for (const id of form.regionIds) qs.append('regionIds', String(id))
     router.push(`/tours?${qs.toString()}`)
   }, [router, form, selectedCountry])
+
+  // «Турция» → «Турция · Аланья» → «Турция · 3 курорта». Перечислять больше
+  // двух названий некуда: сегмент и так самый узкий в строке.
+  const destinationLabel = (() => {
+    if (!selectedCountry) return 'Выберите страну'
+    const picked = regions.filter(r => form.regionIds.includes(r.id))
+    if (picked.length === 0) return selectedCountry.name
+    if (picked.length <= 2) return `${selectedCountry.name} · ${picked.map(r => r.name).join(', ')}`
+    return `${selectedCountry.name} · ${picked.length} ${plural(picked.length, ['курорт', 'курорта', 'курортов'])}`
+  })()
 
   const canSearch = form.countryId > 0 && !!calFrom && !!calTo
 
@@ -248,7 +294,7 @@ export function HeaderSearchBar({
             <span className={styles.searchSegLabel}>Куда</span>
           </span>
           <span className={styles.searchSegValue}>
-            {selectedCountry?.name ?? 'Выберите страну'}
+            {destinationLabel}
           </span>
         </button>
         {openPanel === 'destination' && (
@@ -266,7 +312,7 @@ export function HeaderSearchBar({
                       <button
                         key={c.id}
                         className={`${styles.popoverPopularBtn} ${c.id === form.countryId ? styles.popoverPopularBtnActive : ''}`}
-                        onClick={() => { setForm(p => ({ ...p, countryId: c.id })); setOpenPanel(null) }}
+                        onClick={() => setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))}
                       >
                         {c.name}
                       </button>
@@ -290,15 +336,52 @@ export function HeaderSearchBar({
                   key={c.id}
                   className={`${styles.popoverItem} ${c.id === form.countryId ? styles.popoverItemActive : ''}`}
                   onClick={() => {
-                    setForm(p => ({ ...p, countryId: c.id }))
+                    setForm(p => ({ ...p, countryId: c.id, regionIds: [] }))
                     setCountryQuery('')
-                    setOpenPanel(null)
                   }}
                 >
                   {c.name}
                 </button>
               ))}
             </div>
+
+            {/* Курорты. Ничего не отмечено — ищем по всей стране, так что
+                выбор необязателен. Зато сужение здесь экономит время: полная
+                выдача по стране набирается три с половиной минуты. */}
+            {form.countryId > 0 && (regionsLoading || regions.length > 0) && (
+              <>
+                <div className={styles.popoverDivider} />
+                <div className={styles.popoverSectionLabel}>
+                  Курорты
+                  {form.regionIds.length > 0 && (
+                    <button
+                      type="button"
+                      className={styles.regionReset}
+                      onClick={() => setForm(p => ({ ...p, regionIds: [] }))}
+                    >
+                      вся страна
+                    </button>
+                  )}
+                </div>
+                {regionsLoading ? (
+                  <div className={styles.regionHint}>Загружаем курорты…</div>
+                ) : (
+                  <div className={styles.regionGrid}>
+                    {regions.map(r => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        className={`${styles.regionChip} ${form.regionIds.includes(r.id) ? styles.regionChipActive : ''}`}
+                        onClick={() => toggleRegion(r.id)}
+                        aria-pressed={form.regionIds.includes(r.id)}
+                      >
+                        {r.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -343,6 +426,16 @@ export function HeaderSearchBar({
             {calFrom && calTo && (
               <div className={styles.nightsHint}>
                 {nightsLabel(nightsBetween(calFrom, calTo))} в отеле
+                {form.dateFlex > 0 && (
+                  /* Гибкость молча расширяла окно вылета, и выдача переставала
+                     совпадать с выбранными датами. Теперь окно названо вслух. */
+                  <span className={styles.nightsHintFlex}>
+                    {' · вылет '}
+                    {shortDate(searchDateFrom(calFrom, form.dateFlex))}
+                    {' – '}
+                    {shortDate(offsetDate(calFrom, form.dateFlex))}
+                  </span>
+                )}
               </div>
             )}
 

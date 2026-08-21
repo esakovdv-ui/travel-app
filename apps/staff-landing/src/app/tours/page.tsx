@@ -267,11 +267,15 @@ function SlidersGlyph() {
 function HotelCard({
   hotel,
   selected,
-  onClick,
+  onSelect,
+  onOpen,
 }: {
   hotel: HotelSearchResult
   selected: boolean
-  onClick: () => void
+  /** Тап по карточке — выделить и показать отель на карте. */
+  onSelect: () => void
+  /** «Смотреть» — открыть карточку отеля с номерами и бронированием. */
+  onOpen: () => void
 }) {
   const bestTour = hotel.tours[0]
 
@@ -288,8 +292,9 @@ function HotelCard({
   return (
     // Карточка была <div onClick> — с клавиатуры отель нельзя было открыть вовсе.
     <article
+      data-hotel-id={hotel.id}
       className={`${styles.hotelCard} ${selected ? styles.hotelCardSelected : ''}`}
-      onClick={onClick}
+      onClick={onSelect}
     >
       <div className={styles.hotelThumbWrap}>
         {hotel.picturelink ? (
@@ -297,12 +302,17 @@ function HotelCard({
         ) : (
           <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
         )}
-        {hotel.category > 0 && (
-          <div className={styles.hotelStarsOverlay}>{stars(hotel.category)}</div>
-        )}
       </div>
 
       <div className={styles.hotelCardBody}>
+        {/* Звёзды были наложены на фотографию: 0.75rem оранжевым поверх
+            снимка, и на светлых кадрах их не было видно. А звёздность
+            читают первой, до цены — место ей в тексте. */}
+        {hotel.category > 0 && (
+          <div className={styles.hotelCardStars} aria-label={`${hotel.category} звёзд`}>
+            {stars(hotel.category)}
+          </div>
+        )}
         <div className={styles.hotelCardTitleRow}>
           <div className={styles.hotelCardName}>{hotel.name}</div>
           {hotel.rating > 0 && (
@@ -350,7 +360,7 @@ function HotelCard({
           <button
             type="button"
             className={styles.hotelCardBookBtn}
-            onClick={e => { e.stopPropagation(); onClick() }}
+            onClick={e => { e.stopPropagation(); onOpen() }}
             aria-label={`Смотреть туры: ${hotel.name}`}
           >
             Смотреть
@@ -1024,6 +1034,36 @@ function HotelModal({
               </div>
             )}
 
+            {/* Номера идут перед описанием отеля.
+                Карточку открывают, чтобы выбрать номер и забронировать, а не
+                читать про инфраструктуру. Замер до перестановки: блок номеров
+                начинался на 1686px при высоте модалки 2381px — 71% прокрутки,
+                под десятью секциями описания. Сотрудники до него не долистывали. */}
+            {/* ── Номера и туры — сгруппировано ── */}
+            <div className={styles.modalSection} ref={roomsSectionRef}>
+              {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
+                  подпись читалась как «четыре номера». */}
+              <div className={styles.modalSectionTitle}>
+                Номера и даты — {toursLabel(hotel.tours.length)}
+              </div>
+              {roomsLoading ? (
+                <BlockSkeleton lines={4} />
+              ) : (
+                <div className={styles.roomGroups}>
+                  {roomGroups.map(group => (
+                    <RoomTourGroup
+                      key={group.roomId}
+                      group={group}
+                      bookTourId={bookTourId}
+                      onSelectTour={setBookTourId}
+                      onOpenLightbox={openLightbox}
+                      searchId={searchId}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Описание отеля.
                 Раньше здесь вручную повторялись пять почти одинаковых блоков,
                 и половина того, что отдаёт Tourvisor, просто не выводилась:
@@ -1057,31 +1097,6 @@ function HotelModal({
                 </div>
               </div>
             )}
-
-            {/* ── Номера и туры — сгруппировано ── */}
-            <div className={styles.modalSection} ref={roomsSectionRef}>
-              {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
-                  подпись читалась как «четыре номера». */}
-              <div className={styles.modalSectionTitle}>
-                Номера и даты — {toursLabel(hotel.tours.length)}
-              </div>
-              {roomsLoading ? (
-                <BlockSkeleton lines={4} />
-              ) : (
-                <div className={styles.roomGroups}>
-                  {roomGroups.map(group => (
-                    <RoomTourGroup
-                      key={group.roomId}
-                      group={group}
-                      bookTourId={bookTourId}
-                      onSelectTour={setBookTourId}
-                      onOpenLightbox={openLightbox}
-                      searchId={searchId}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* ── Мини-карта ── */}
             {hasCoords && (
@@ -1272,6 +1287,9 @@ function ToursContent() {
   const nightsTo    = Number(searchParams.get('nightsTo') ?? 14)
   const adults      = Number(searchParams.get('adults') ?? 2)
   const childsStr   = searchParams.get('childs') ?? ''
+  const regionIds   = searchParams.getAll('regionIds')
+  // Строкой — чтобы эффект поиска перезапускался при смене набора курортов.
+  const regionKey   = regionIds.join(',')
   const countryName = searchParams.get('countryName') ?? ''
 
   // ── Поиск ──────────────────────────────────────────────────────────────────
@@ -1321,8 +1339,9 @@ function ToursContent() {
       nightsTo,
       adults,
       childAges: childsStr ? childsStr.split(',').map(Number) : [],
+      regionIds: regionIds.map(Number),
     }
-  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   const [mobileForm, setMobileForm] = useState<SearchForm>(initMobileForm)
 
@@ -1368,6 +1387,7 @@ function ToursContent() {
       adults: String(mobileForm.adults),
     })
     if (mobileForm.childAges.length > 0) qs.set('childs', mobileForm.childAges.join(','))
+    for (const id of mobileForm.regionIds) qs.append('regionIds', String(id))
     router.push(`/tours?${qs.toString()}`)
   }
 
@@ -1434,6 +1454,26 @@ function ToursContent() {
   }, [showMap])
 
   useEffect(() => clearCollapseTimer, [])
+
+  /**
+   * Выделить отель, не открывая карточку.
+   *
+   * Связь карты и списка работает в обе стороны: тап по пину подсвечивает
+   * карточку и подкручивает к ней список, тап по карточке подводит карту к
+   * пину (см. эффект по selectedId в MapView). Открывает отель только
+   * «Смотреть» — и повторный тап по уже выбранному пину.
+   */
+  const selectHotel = useCallback((id: number, opts?: { scrollList?: boolean }) => {
+    setSelectedId(id)
+    if (!opts?.scrollList) return
+    // Список — свой контейнер прокрутки, поэтому block: 'nearest':
+    // 'center' дёргал бы всю страницу.
+    requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelector(`[data-hotel-id="${id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }, [])
 
   const openHotel = useCallback((hotel: HotelSearchResult, source?: 'map') => {
     reachGoal(StaffGoals.hotelOpen, {
@@ -1623,6 +1663,8 @@ function ToursContent() {
       adults: String(adults),
     })
     if (childsStr) params.set('childs', childsStr)
+    // Курорты приходят повторяющимися параметрами и такими же уходят дальше.
+    for (const id of regionIds) params.append('regionIds', id)
 
     staffFetch(`/api/tourvisor/search?${params}`)
       .then(r => r.ok ? r.json() : r.json().then((e: unknown) => Promise.reject(e)))
@@ -1640,7 +1682,7 @@ function ToursContent() {
 
     return () => { runIdRef.current++; stopPoll() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   // ── Обратный отсчёт в полосе загрузки ──────────────────────────────────────
 
@@ -1905,7 +1947,8 @@ function ToursContent() {
                   key={hotel.id}
                   hotel={hotel}
                   selected={selectedId === hotel.id}
-                  onClick={() => openHotel(hotel)}
+                  onSelect={() => selectHotel(hotel.id)}
+                  onOpen={() => openHotel(hotel)}
                 />
               ))}
             </>
@@ -1917,7 +1960,13 @@ function ToursContent() {
             <MapView
               hotels={filtered}
               selectedId={selectedId}
-              onSelect={hotel => openHotel(hotel, 'map')}
+              // Первый тап по пину выбирает карточку, повторный по тому же —
+              // открывает отель. Так у человека есть шаг осмотра перед
+              // погружением, а прежний сценарий никуда не делся.
+              onSelect={hotel => {
+                if (selectedId === hotel.id) openHotel(hotel, 'map')
+                else selectHotel(hotel.id, { scrollList: true })
+              }}
             />
           ) : (
             <div className={styles.mapPlaceholder}>
