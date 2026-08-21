@@ -241,19 +241,6 @@ export function MobileSearchSheet({
           </button>
           {step === 'destination' && (
             <div className={styles.sectionBody}>
-              <div className={styles.countryList}>
-                {popular.map(c => (
-                  <button
-                    key={c.id}
-                    className={`${styles.countryRow} ${c.id === form.countryId ? styles.countryRowActive : ''}`}
-                    onClick={() => onUpdate({ countryId: c.id, regionIds: [] })}
-                  >
-                    <span>{c.name}</span>
-                    {c.id === form.countryId && <CheckIcon />}
-                  </button>
-                ))}
-              </div>
-
               {/* Курорты — необязательное сужение. Помогает не ждать полную
                   выдачу по стране: она набирается три с половиной минуты. */}
               {regions.length > 0 && (
@@ -292,6 +279,20 @@ export function MobileSearchSheet({
                   </div>
                 </>
               )}
+
+              <div className={styles.countryList}>
+                {popular.map(c => (
+                  <button
+                    key={c.id}
+                    className={`${styles.countryRow} ${c.id === form.countryId ? styles.countryRowActive : ''}`}
+                    onClick={() => onUpdate({ countryId: c.id, regionIds: [] })}
+                  >
+                    <span>{c.name}</span>
+                    {c.id === form.countryId && <CheckIcon />}
+                  </button>
+                ))}
+              </div>
+
             </div>
           )}
         </div>
