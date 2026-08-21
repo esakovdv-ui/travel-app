@@ -5,7 +5,7 @@
  * Script Properties (Project settings → Script properties):
  *   YANDEX_METRIKA_TOKEN — OAuth-токен Яндекс.Метрики
  *
- * Триггер (опционально): setupWeeklyTrigger — каждый понедельник 09:00 МСK
+ * Триггер: setupHourlyTrigger — раз в час (предпочтительнее GitHub Actions).
  */
 
 const SHEET_FUNNEL = 'Воронка';
@@ -14,7 +14,12 @@ const SHEET_REF = 'Справочник';
 const COUNTERS = { mgt: '90662828', wizard: '109401746', hotels: '97107007' };
 const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
 const PODBOR_HOTELS_ENTRY = "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
-const HOTEL_LEAD_GOAL = 358300437;
+/** LT-воронка (yandex-metrika-mcp): lt_checkout_start, payment_block_displayed, lt_purchase */
+const HOTEL_LT_GOALS = {
+  checkout: 579160037,
+  paymentBlock: 579160036,
+  purchase: 579160040,
+};
 /** Учёт с этой даты (МСK). Тестовые прохождения до неё — нули. */
 const PODBOR_FUNNEL_START = '2026-08-13';
 
@@ -23,7 +28,7 @@ const COLUMNS = [
   'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
   'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM: пользователи', 'Туры: выдача', 'Туры: карточка',
   'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
-  'Отели: чекаут', 'Отели: заявка', 'Обновлено',
+  'Отели: чекаут', 'Отели: блок оплаты', 'Отели: оплата', 'Обновлено',
 ];
 
 const WIZARD_GOALS = [
@@ -158,8 +163,9 @@ function fetchWeek_(week) {
   m.h_search = hotelJourneyCount_(week.from, week.to, "ym:pv:URL=@'russia.mosgortur.ru/search'");
   m.h_cart = hotelJourneyCount_(week.from, week.to,
     "ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
-  m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal579160037reaches>0');
-  m.h_lead = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LEAD_GOAL + 'reaches>0');
+  m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.checkout + 'reaches>0');
+  m.h_payment = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.paymentBlock + 'reaches>0');
+  m.h_purchase = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.purchase + 'reaches>0');
   return m;
 }
 
@@ -184,12 +190,14 @@ function setupReference_(ss) {
     [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId'],
     [COUNTERS.mgt, '321609998', 'buying_submit', 'Туры: бронь по moduleId'],
     [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
-    [COUNTERS.hotels, '579160037', 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
-    [COUNTERS.hotels, String(HOTEL_LEAD_GOAL), 'отправил контактные данные LT', 'Отели: заявка (journey с podbor)'],
+    [COUNTERS.hotels, String(HOTEL_LT_GOALS.checkout), 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
+    [COUNTERS.hotels, String(HOTEL_LT_GOALS.paymentBlock), 'payment_block_displayed', 'Отели: блок оплаты (journey с podbor)'],
+    [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата — основная метрика покупки'],
     [COUNTERS.hotels, 'podbor_ref=1', 'URL handoff', 'Маркер подбора в handoff URL'],
     ['', '', '', ''],
+    ['Не использовать', '358300437', 'отправил контактные данные LT', 'Legacy автоцель'],
     ['UTM фильтр', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
-    ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/заявка'],
+    ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/оплата'],
     ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
   ];
   sh.getRange(1, 1, rows.length, 4).setValues(rows);
@@ -211,7 +219,7 @@ function setupAndSync() {
     rows.push([
       w.label, w.from, w.to, m.banner, m.popup, m.start, m.people, m.budget, m.format,
       m.region, m.dates, m.summary, m.handoff, m.handoff_tours, m.handoff_hotels, m.cr, m.utm, m.t_search, m.t_card,
-      m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_lead, updated,
+      m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_payment, m.h_purchase, updated,
     ]);
   });
 
@@ -222,20 +230,23 @@ function setupAndSync() {
   sh.autoResizeColumns(1, COLUMNS.length);
 }
 
-function setupWeeklyTrigger() {
+function setupHourlyTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'setupAndSync') ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('setupAndSync')
     .timeBased()
-    .onWeekDay(ScriptApp.WeekDay.MONDAY)
-    .atHour(9)
-    .inTimezone('Europe/Moscow')
+    .everyHours(1)
     .create();
 }
 
-/** Первый запуск: sync + еженедельный триггер (нужен YANDEX_METRIKA_TOKEN в Script Properties). */
+/** @deprecated используйте setupHourlyTrigger */
+function setupWeeklyTrigger() {
+  setupHourlyTrigger();
+}
+
+/** Первый запуск: sync + почасовой триггер (нужен YANDEX_METRIKA_TOKEN в Script Properties). */
 function setupAll() {
   setupAndSync();
-  setupWeeklyTrigger();
+  setupHourlyTrigger();
 }

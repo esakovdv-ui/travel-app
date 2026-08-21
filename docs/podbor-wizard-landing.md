@@ -198,9 +198,12 @@ Handoff ставит `utm_source=podbor_wizard`. Нижняя часть вор�
 | Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
 | Туры: оплата | 90662828 | цель **321612203** в сессии с moduleId визарда (допущение: это подбор) |
 | Отели: выдача | 97107007 | clientID journey: заход с `podbor_ref=1` / UTM → URL `/search` |
-| Отели: корзина | 97107007 | clientID journey → URL `/packages/` |
+| Отели: корзина | 97107007 | clientID journey → URL `/packages/` (без `/success`) |
 | Отели: чекаут | 97107007 | clientID journey → **579160037** `lt_checkout_start` |
-| Отели: заявка | 97107007 | clientID journey → **358300437** «отправил контактные данные LT» |
+| Отели: блок оплаты | 97107007 | clientID journey → **579160036** `payment_block_displayed` |
+| Отели: оплата | 97107007 | clientID journey → **579160040** `lt_purchase` (основная метрика покупки) |
+
+Цели LT-воронки — как в `yandex-metrika-mcp` (`funnel-report.mjs`, `docs/ytm-funnel-setup.md`). Legacy **358300437** «отправил контактные данные LT» не используем — это автоцель, не шаг YTM-воронки. `lt_contact_submitted` (579160038) разработчики не смогли отправить — шаг пропущен.
 
 Handoff URL для отелей: `podbor_ref=1` + `utm_source=podbor_wizard` (UTM может пропасть на внутренних переходах — journey по clientID на счётчике 97107007).
 
@@ -260,9 +263,9 @@ npm run podbor:setup-automation     # sync + storage/podbor-bootstrap-once.gs д
 
 1. `npm run podbor:setup-automation`
 2. Extensions → Apps Script → вставить `storage/podbor-bootstrap-once.gs`
-3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **понедельник 09:00 МСK** → `setupAndSync`
+3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **каждый час** → `setupAndSync`
 
-**GitHub Actions:** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron пн 09:00 МСK. Secret `YANDEX_METRIKA_TOKEN` задан. Для записи в Sheet добавьте `GOOGLE_SERVICE_ACCOUNT_JSON` (email SA → редактор таблицы).
+**GitHub Actions (основной путь):** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron **каждый час**. Secrets: `YANDEX_METRIKA_TOKEN` + `GOOGLE_SERVICE_ACCOUNT_JSON` (без Google SA workflow считает Метрику, но в Sheet не пишет). Email SA должен быть редактором таблицы.
 
 Без Google SA:
 

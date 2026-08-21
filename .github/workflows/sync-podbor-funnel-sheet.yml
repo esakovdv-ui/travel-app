@@ -2,7 +2,8 @@ name: Sync podbor funnel sheet
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # понедельник 09:00 МСK
+    # каждый час (UTC). Метрика для «сегодня» подтягивается с лагом ~15–60 мин.
+    - cron: '5 * * * *'
   workflow_dispatch:
 
 jobs:
