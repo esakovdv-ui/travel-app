@@ -26,6 +26,14 @@ const ZOOM_WITH_NAME = 12
  * ему кружок с числом вместо его отеля — это не ответ на вопрос «где он».
  */
 const ZOOM_UNCLUSTERED = 16
+/**
+ * Масштаб, к которому подводим карту по выбору карточки.
+ *
+ * На 16-м соседние отели курорта ещё слипались: в Текирове на месте выбранного
+ * висел кружок «2». Проверено вживую — расходятся на 17-м, там уже видны
+ * отдельные здания и понятно, что где.
+ */
+const ZOOM_ON_SELECT = 17
 
 /** Дальше этого Яндекс всё равно не пускает, а мы не пытаемся. */
 const ZOOM_MAX = 19
@@ -101,6 +109,42 @@ function createPinEl(hotel: HotelSearchResult, zoom: number, onClick: () => void
 }
 
 /**
+ * Пин выбранного отеля.
+ *
+ * Живёт вне кластеризатора и рисуется поверх всего. Иначе выбранный отель
+ * пропадал: сетка кластеризации группирует по пикселям, и два отеля в
+ * нескольких метрах друг от друга слипаются на любом масштабе — на месте
+ * «AMORE BOUTIQUE» человек видел кружок «2» и никаким приближением не мог
+ * его развести.
+ *
+ * Всегда с названием, независимо от зума: это ответ на вопрос «где мой
+ * отель», а не рядовая подпись.
+ */
+function createSelectedPinEl(hotel: HotelSearchResult): HTMLElement {
+  const el = document.createElement('div')
+  el.style.cssText = [
+    'background:#e8272a',
+    'color:#fff',
+    'padding:5px 11px',
+    'border-radius:999px',
+    'font-size:11px',
+    'font-weight:700',
+    'white-space:nowrap',
+    'box-shadow:0 3px 12px rgba(0,0,0,.4)',
+    'border:2px solid #fff',
+    'cursor:pointer',
+    'user-select:none',
+    'font-family:-apple-system,sans-serif',
+    'line-height:1.2',
+    // Поверх кластеров и соседних подписей, которые перекрывали выбранный.
+    'z-index:1000',
+    'position:relative',
+  ].join(';')
+  el.textContent = `${shortName(hotel.name)} · ${formatPriceShort(hotel.price)}`
+  return el
+}
+
+/**
  * Кружок кластера. Размер растёт вместе с числом, но не безгранично:
  * иначе в Аланье с её 69 отелями на точке получался бы блин во весь экран.
  */
@@ -136,6 +180,8 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef       = useRef<any>(null)
   const clustererRef = useRef<any>(null)
+  /** Маркер выбранного отеля — живёт отдельно от кластеризатора. */
+  const selectedMarkerRef = useRef<any>(null)
   const pinElsRef    = useRef<Map<number, HTMLElement>>(new Map())
   const hotelsRef    = useRef<HotelSearchResult[]>(hotels)
   const selectedRef  = useRef<number | null>(selectedId)
@@ -322,18 +368,53 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
     pinElsRef.current.forEach((el, id) => applyPinState(el, id === selectedId))
   }, [selectedId, hotels])
 
+  // ── Отдельный маркер выбранного отеля, поверх кластеров ──────────────────
+  //
+  // Подсветки выше недостаточно: если отель попал в кластер, его пина в DOM
+  // просто нет — подсвечивать нечего. Поэтому рисуем его сами, вне
+  // кластеризатора, и он виден всегда.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ymaps3) return
+
+    if (selectedMarkerRef.current) {
+      try { map.removeChild(selectedMarkerRef.current) } catch {}
+      selectedMarkerRef.current = null
+    }
+
+    if (selectedId == null) return
+    const hotel = hotels.find(h => h.id === selectedId)
+    if (!hotel || !hasCoords(hotel)) return
+
+    const { YMapMarker } = ymaps3
+    const el = createSelectedPinEl(hotel)
+    el.addEventListener('click', e => { e.stopPropagation(); onSelectRef.current(hotel) })
+    const marker = new YMapMarker({ coordinates: [hotel.longitude, hotel.latitude] }, el)
+    map.addChild(marker)
+    selectedMarkerRef.current = marker
+
+    return () => {
+      if (!selectedMarkerRef.current) return
+      try { map.removeChild(selectedMarkerRef.current) } catch {}
+      selectedMarkerRef.current = null
+    }
+  }, [selectedId, hotels, ymaps3])
+
   // ── Обратная связь: тап по карточке подводит карту к её пину ─────────────
   useEffect(() => {
     if (!mapRef.current || selectedId == null) return
     const hotel = hotels.find(h => h.id === selectedId)
     if (!hotel || !hasCoords(hotel)) return
-    // Раньше приближали до 12 — на нём отель часто оставался внутри кластера,
-    // и человек видел кружок с числом вместо своего отеля. Подходим ближе,
-    // чтобы сетка развела пины и было видно, где он на самом деле стоит.
+    // Приближаем ощутимо: на замере вживую именно на этом масштабе соседние
+    // отели расходятся и становится видно, что где. Меньше — подписи налезают
+    // друг на друга и выбранный теряется среди соседей.
+    //
+    // Отдельный маркер выше страхует случай, когда не помогает и это: два
+    // отеля в нескольких метрах слипаются на любом зуме.
     mapRef.current.update({
       location: {
         center: [hotel.longitude, hotel.latitude],
-        zoom: Math.min(Math.max(zoomRef.current, ZOOM_UNCLUSTERED), ZOOM_MAX),
+        zoom: Math.min(Math.max(zoomRef.current, ZOOM_ON_SELECT), ZOOM_MAX),
       },
       animation: { duration: 400 },
     })
