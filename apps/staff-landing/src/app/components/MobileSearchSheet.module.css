@@ -178,12 +178,37 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  padding: 9px 12px;
+  padding: 0 12px;
   border-radius: var(--radius-pill);
   border: 1px solid rgba(20, 20, 43, 0.14);
   font-size: 0.86rem;
   color: var(--c-text-muted);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+/*
+ * Тапабельная часть чипса. Растянута на всю пилюлю, чтобы промахнуться было
+ * негде: в чипс целятся именно как в поле, куда «надо ввести дату».
+ * Крестик сброса остаётся отдельной кнопкой рядом — вложенные button
+ * недопустимы, поэтому пилюля осталась div-обёрткой.
+ */
+.dateChipMain {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 9px 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dateChip:active {
+  background: rgba(20, 20, 43, 0.04);
 }
 
 .dateChipFilled {
@@ -204,6 +229,15 @@
 }
 
 .dateChipArrow { color: var(--c-text-muted); flex-shrink: 0; }
+
+/*
+ * Чипсы дат прилипают к верху секции, поэтому прокрутка к календарю прятала
+ * его первую неделю под ними. Отодвигаем цель прокрутки на высоту чипсов
+ * (замер — 70px) плюс небольшой зазор, чтобы месяц не подпирал их вплотную.
+ */
+.calendar {
+  scroll-margin-top: 84px;
+}
 
 /* ── Load more months button ─────────────────────────────────────────────── */
 

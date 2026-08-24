@@ -207,8 +207,16 @@ export function MobileSearchSheet({
       : []),
   ].join(', ')
 
+  /**
+   * Увести к календарю.
+   *
+   * scroll-margin-top на самом календаре (см. .calendar в модуле стилей)
+   * отодвигает цель на высоту прилипших чипсов дат — без него первая неделя
+   * месяца оказывалась под ними.
+   */
   function scrollToCal() {
-    setTimeout(() => calRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    // Календарь монтируется вместе с шагом дат — даём ему появиться.
+    setTimeout(() => calRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
   }
 
   function toggleStep(s: Step) {
@@ -362,10 +370,18 @@ export function MobileSearchSheet({
           </button>
           {step === 'dates' && (
             <div className={styles.sectionBody}>
-              {/* Date chips */}
+              {/*
+                Чипсы дат выглядят как поля ввода, и люди пытались набрать в них
+                дату руками. Печатать тут некуда — дни выбираются в календаре
+                ниже, — поэтому тап по чипсу это кнопка, которая туда и уводит.
+                Сам диапазон не трогаем: следующий тап по дню и так начинает
+                выбор заново (см. nextRange), так что терять человеку нечего.
+              */}
               <div className={styles.dateChips}>
                 <div className={`${styles.dateChip} ${calFrom ? styles.dateChipFilled : ''}`}>
-                  <span>{calFrom ? shortDate(calFrom) : 'Заезд'}</span>
+                  <button type="button" className={styles.dateChipMain} onClick={scrollToCal}>
+                    {calFrom ? shortDate(calFrom) : 'Заезд'}
+                  </button>
                   {calFrom && (
                     <button className={styles.dateChipReset}
                       onClick={() => { setCalFrom(null); setCalTo(null) }} aria-label="Сбросить дату заезда">×</button>
@@ -375,7 +391,9 @@ export function MobileSearchSheet({
                   <path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z" />
                 </svg>
                 <div className={`${styles.dateChip} ${calTo ? styles.dateChipFilled : ''}`}>
-                  <span>{calTo ? shortDate(calTo) : 'Выезд'}</span>
+                  <button type="button" className={styles.dateChipMain} onClick={scrollToCal}>
+                    {calTo ? shortDate(calTo) : 'Выезд'}
+                  </button>
                   {calTo && (
                     <button className={styles.dateChipReset}
                       onClick={() => setCalTo(null)} aria-label="Сбросить дату выезда">×</button>
@@ -400,7 +418,7 @@ export function MobileSearchSheet({
               </div>
 
               {/* Месяцы: начиная с текущего, по 4 за раз */}
-              <div ref={calRef}>
+              <div ref={calRef} className={styles.calendar}>
                 {calMonths.map(({ year, month }) => (
                   <MonthGrid key={`${year}-${month}`} year={year} month={month} calFrom={calFrom} calTo={calTo} onDay={handleDay} classes={CAL_CLASSES} />
                 ))}
