@@ -74,6 +74,18 @@ jobs:
             fi
             set_env_var COOKIE_SECURE true
             set_env_var STAFF_ADMIN_PASSWORD 'staff_mgt_2026'
+            # Очередь ответственных за заявки и наблюдатели сделки.
+            # rsync исключает .env.local, поэтому на сервер эти значения
+            # попадают только отсюда: без них очередь молча отдаёт все заявки
+            # Администратору, наблюдатели не проставляются, а уведомление в
+            # чат не уходит вовсе.
+            # 10 — Юлия Веркеенко, 8 — Анастасия Зыкова, 51 — Алевтина Иванова
+            set_env_var STAFF_DEAL_QUEUE_IDS '10,8,51'
+            # 1981 — Артур Плешаков плюс те же старшие менеджеры.
+            set_env_var STAFF_DEAL_OBSERVER_IDS '1981,10,8,51'
+            # chat1130 — «МП общая». Вебхук видит только чаты, где состоит его
+            # владелец, поэтому «Управделами МП» ему пока недоступен.
+            set_env_var STAFF_LEAD_CHAT_ID 'chat1130'
             mkdir -p "$DST/docs"
             cp -f /home/travel-app/AGENTS.md /home/travel-app/PROJECT.md /home/travel-app/README.md "$DST/docs/" 2>/dev/null || true
             cp -f /home/travel-app/docs/*.md "$DST/docs/" 2>/dev/null || true

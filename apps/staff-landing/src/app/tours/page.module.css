@@ -428,19 +428,18 @@
   font-weight: 600;
 }
 
-/* Питание и оператор в одну строку: по отдельности каждый занимал свою. */
-.hotelCardMetaRow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Оператор — справочная строка, а не акцент: цвет приглушён. */
-.hotelCardOperator {
-  font-size: 0.74rem;
-  font-weight: 600;
+/*
+ * Описание отеля. Две строки с обрезкой: нужно дать представление, а не
+ * пересказать карточку целиком.
+ */
+.hotelCardDesc {
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: var(--c-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hotelCardFooter {
@@ -1832,6 +1831,11 @@
      карты здесь только мешали бы. */
   .listPane { width: 100%; min-width: 0; flex: 1 1 auto; border-right: none; }
 
+  /* На телефоне карточка узкая и без того плотная: описание добавило бы две
+     строки каждой, а список стал бы вдвое длиннее. Пустует только широкая
+     настольная карточка — там оно и нужно. */
+  .hotelCardDesc { display: none; }
+
   .mapPane { display: none; }
   .mapPaneVisible { display: block !important; height: calc(var(--app-height, 100dvh) * 0.55); }
 
@@ -2182,18 +2186,17 @@ a.contactValue {
    * читать её боком неудобно. Сворачиваем в круглую кнопку и уводим в правый
    * нижний угол — «Фильтры» и «Карта» стоят по центру, угол свободен.
    */
+  /*
+   * Ярлычок остаётся ярлычком и на телефоне: круглая кнопка и короткая пилюля
+   * не объясняли, о чём они, — надпись объясняет. Только ужимаем: уже, мельче
+   * и без иконки, чтобы полоса у края не наезжала на карточки.
+   */
   .helpTab {
-    top: auto;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    right: 12px;
-    transform: none;
-    width: 46px;
-    height: 46px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
+    padding: 14px 6px;
+    font-size: 0.72rem;
+    box-shadow: 0 4px 14px rgba(20, 20, 43, 0.26);
   }
-  .helpTab:hover { padding-right: 0; }
-  .helpTabLabel { display: none; }
-  .helpTabIcon { width: 22px; height: 22px; }
+  .helpTab:hover { padding-right: 6px; }
+  .helpTab:active { transform: translateY(-50%) scale(0.97); }
+  .helpTabIcon { display: none; }
 }
