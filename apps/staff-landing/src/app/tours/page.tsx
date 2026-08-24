@@ -337,8 +337,14 @@ function HotelCard({
       : styles.hotelCardRatingLow
 
   // Карточка на десктопе стала вдвое шире, и прежних трёх строк ей не хватало:
-  // середина пустовала. Досыпаем то, что уже пришло в выдаче, но было видно
-  // только внутри отеля — даты, номер, оператора. Лишних запросов не делаем.
+  // середина пустовала. Досыпаем то, что уже пришло в выдаче, без лишних
+  // запросов.
+  //
+  // Показываем только то, что описывает отель целиком либо ту же самую
+  // «от»-цену. Номер и тип перелёта сюда не годятся: они у каждого тура свои,
+  // а в карточке их несколько — вынесенный наверх номер самого дешёвого
+  // выглядел бы как единственный доступный. Дата заезда остаётся: она
+  // относится к тому же предложению, что цена и число ночей рядом.
   const specs: string[] = []
   if (hotel.seaDistance && hotel.seaDistance > 0)
     specs.push(`${hotel.seaDistance} м до пляжа`)
@@ -346,13 +352,7 @@ function HotelCard({
     const start = parseTourDate(bestTour.date)
     if (start) specs.push(`заезд ${formatDateShort(start)}`)
   }
-  // roomType у операторов бывает пустым или мусорным вроде «-» — такое не
-  // показываем, чтобы не плодить пустые плашки.
-  const roomType = bestTour?.roomType?.trim()
-  if (roomType && roomType.length > 1) specs.push(roomType)
-  if (bestTour?.isCharter) specs.push('чартер')
 
-  const operatorName = bestTour?.operator?.russianName?.trim() || bestTour?.operator?.name?.trim()
   // Сколько всего вариантов внутри отеля: подсказывает, есть ли смысл заходить.
   const tourCount = hotel.tours.length
 
@@ -406,16 +406,13 @@ function HotelCard({
 
         <div className={styles.hotelCardDivider} />
 
-        <div className={styles.hotelCardMetaRow}>
-          {bestTour?.meal?.fullName && (
+        {bestTour?.meal?.fullName && (
+          <div>
             <span className={styles.hotelCardMealBadge}>
               {bestTour.meal.fullName}
             </span>
-          )}
-          {operatorName && (
-            <span className={styles.hotelCardOperator}>{operatorName}</span>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className={styles.hotelCardFooter}>
           <div className={styles.hotelCardPriceBlock}>

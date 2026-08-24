@@ -428,21 +428,6 @@
   font-weight: 600;
 }
 
-/* Питание и оператор в одну строку: по отдельности каждый занимал свою. */
-.hotelCardMetaRow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Оператор — справочная строка, а не акцент: цвет приглушён. */
-.hotelCardOperator {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--c-text-muted);
-}
-
 .hotelCardFooter {
   display: flex;
   align-items: center;
