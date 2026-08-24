@@ -20,6 +20,16 @@ interface MapViewProps {
 /** С этого приближения на пине помещается ещё и название отеля. */
 const ZOOM_WITH_NAME = 12
 
+/**
+ * Приближение, на котором сетка кластеризации почти всегда разводит отели
+ * по отдельным пинам. Нужно, когда человек выбрал отель в списке: показать
+ * ему кружок с числом вместо его отеля — это не ответ на вопрос «где он».
+ */
+const ZOOM_UNCLUSTERED = 16
+
+/** Дальше этого Яндекс всё равно не пускает, а мы не пытаемся. */
+const ZOOM_MAX = 19
+
 function formatPriceShort(n: number): string {
   if (n >= 1_000_000) return (Math.round(n / 100_000) / 10) + 'М'
   if (n >= 1_000) return Math.round(n / 1_000) + 'К'
@@ -268,7 +278,25 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
           createClusterEl(features_.length, () => {
             const lons = features_.map(f => f.geometry.coordinates[0])
             const lats = features_.map(f => f.geometry.coordinates[1])
-            const pad = 0.02
+            const spanLon = Math.max(...lons) - Math.min(...lons)
+            const spanLat = Math.max(...lats) - Math.min(...lats)
+
+            // Отели одного курорта часто стоят почти в одной точке. Тогда
+            // границы кластера вырождаются, и подгонка под них не меняет
+            // масштаб — кружок оставался кружком, сколько по нему ни жми.
+            // В таком случае просто шагаем вглубь.
+            if (Math.max(spanLon, spanLat) < 0.004) {
+              map.update({
+                location: {
+                  center: coordinates,
+                  zoom: Math.min(Math.max(zoomRef.current + 3, ZOOM_UNCLUSTERED), ZOOM_MAX),
+                },
+                animation: { duration: 350 },
+              })
+              return
+            }
+
+            const pad = Math.max(spanLon, spanLat) * 0.15
             map.update({
               location: {
                 bounds: [
@@ -299,10 +327,13 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
     if (!mapRef.current || selectedId == null) return
     const hotel = hotels.find(h => h.id === selectedId)
     if (!hotel || !hasCoords(hotel)) return
+    // Раньше приближали до 12 — на нём отель часто оставался внутри кластера,
+    // и человек видел кружок с числом вместо своего отеля. Подходим ближе,
+    // чтобы сетка развела пины и было видно, где он на самом деле стоит.
     mapRef.current.update({
       location: {
         center: [hotel.longitude, hotel.latitude],
-        zoom: Math.max(zoomRef.current, ZOOM_WITH_NAME),
+        zoom: Math.min(Math.max(zoomRef.current, ZOOM_UNCLUSTERED), ZOOM_MAX),
       },
       animation: { duration: 400 },
     })

@@ -18,6 +18,7 @@ import {
   computeFilterOptions,
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
+import { reportSeenRegions } from '@/lib/region-availability-client'
 import { staffFetch } from '@/lib/staff-client'
 import { useStaffGuard } from '@/lib/use-staff-guard'
 import { useAppHeight } from '@/lib/use-app-height'
@@ -264,6 +265,56 @@ function SlidersGlyph() {
 
 // ─── Карточка отеля ───────────────────────────────────────────────────────────
 
+/**
+ * «Не нашли подходящее» — выход для того, кто пролистал выдачу впустую.
+ *
+ * Стоит в конце списка и в обеих пустых выдачах: это те два места, где человек
+ * закрывал вкладку. Заявка уходит в CRM так же, как бронь, только менеджер
+ * подбирает руками.
+ */
+function HelpCta({ onClick }: { onClick: () => void }) {
+  return (
+    <div className={styles.helpCta}>
+      <div className={styles.helpCtaText}>
+        <div className={styles.helpCtaTitle}>Не нашли подходящий тур?</div>
+        <div className={styles.helpCtaHint}>
+          Здесь только то, что операторы отдали в поиск. Расскажите, что нужно, —
+          менеджер подберёт вариант вручную и поможет забронировать.
+        </div>
+      </div>
+      <button type="button" className={styles.helpCtaBtn} onClick={onClick}>
+        Помогите подобрать
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Всегда доступный вход в подбор.
+ *
+ * Карточка в конце списка ловит только тех, кто пролистал выдачу до конца.
+ * Человеку, который с первого экрана понял, что хочет другого, идти было
+ * некуда. Ярлык висит у правого края и не занимает места в раскладке.
+ *
+ * Отсчитывается от оболочки .toursPage, а не от вьюпорта: во фрейме fixed
+ * зацепился бы за высоту растянутого фрейма и уехал бы за экран.
+ */
+function HelpTab({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={styles.helpTab}
+      onClick={onClick}
+      aria-label="Помогите подобрать тур"
+    >
+      <svg className={styles.helpTabIcon} width="18" height="18" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+        <path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z" />
+      </svg>
+      <span className={styles.helpTabLabel}>Подобрать тур</span>
+    </button>
+  )
+}
+
 function HotelCard({
   hotel,
   selected,
@@ -285,9 +336,25 @@ function HotelCard({
       ? styles.hotelCardRatingMid
       : styles.hotelCardRatingLow
 
+  // Карточка на десктопе стала вдвое шире, и прежних трёх строк ей не хватало:
+  // середина пустовала. Досыпаем то, что уже пришло в выдаче, но было видно
+  // только внутри отеля — даты, номер, оператора. Лишних запросов не делаем.
   const specs: string[] = []
   if (hotel.seaDistance && hotel.seaDistance > 0)
     specs.push(`${hotel.seaDistance} м до пляжа`)
+  if (bestTour?.date) {
+    const start = parseTourDate(bestTour.date)
+    if (start) specs.push(`заезд ${formatDateShort(start)}`)
+  }
+  // roomType у операторов бывает пустым или мусорным вроде «-» — такое не
+  // показываем, чтобы не плодить пустые плашки.
+  const roomType = bestTour?.roomType?.trim()
+  if (roomType && roomType.length > 1) specs.push(roomType)
+  if (bestTour?.isCharter) specs.push('чартер')
+
+  const operatorName = bestTour?.operator?.russianName?.trim() || bestTour?.operator?.name?.trim()
+  // Сколько всего вариантов внутри отеля: подсказывает, есть ли смысл заходить.
+  const tourCount = hotel.tours.length
 
   return (
     // Карточка была <div onClick> — с клавиатуры отель нельзя было открыть вовсе.
@@ -339,13 +406,16 @@ function HotelCard({
 
         <div className={styles.hotelCardDivider} />
 
-        {bestTour?.meal?.fullName && (
-          <div>
+        <div className={styles.hotelCardMetaRow}>
+          {bestTour?.meal?.fullName && (
             <span className={styles.hotelCardMealBadge}>
               {bestTour.meal.fullName}
             </span>
-          </div>
-        )}
+          )}
+          {operatorName && (
+            <span className={styles.hotelCardOperator}>{operatorName}</span>
+          )}
+        </div>
 
         <div className={styles.hotelCardFooter}>
           <div className={styles.hotelCardPriceBlock}>
@@ -354,7 +424,10 @@ function HotelCard({
               {hotel.price.toLocaleString('ru-RU')} ₽
             </div>
             {bestTour?.nights && (
-              <div className={styles.hotelCardNights}>{nightsLabel(bestTour.nights)}</div>
+              <div className={styles.hotelCardNights}>
+                {nightsLabel(bestTour.nights)}
+                {tourCount > 1 && ` · ${tourCount} вариантов`}
+              </div>
             )}
           </div>
           <button
@@ -1311,6 +1384,19 @@ function ToursContent() {
 
   // ── Фильтры ────────────────────────────────────────────────────────────────
 
+  // ── Заявка «не нашли подходящее» ───────────────────────────────────────────
+  //
+  // Выдача Tourvisor — это то, что отдали операторы, а не весь рынок: часть
+  // туров собирается только руками. Без этой формы человек, не увидев своего
+  // варианта, просто уходил со страницы, и заявка не доходила до отдела.
+  const [helpOpen, setHelpOpen]             = useState(false)
+  const [helpName, setHelpName]             = useState('')
+  const [helpPhone, setHelpPhone]           = useState('')
+  const [helpComment, setHelpComment]       = useState('')
+  const [helpSubmitting, setHelpSubmitting] = useState(false)
+  const [helpDone, setHelpDone]             = useState(false)
+  const [helpError, setHelpError]           = useState('')
+
   const [filters, setFilters]       = useState<FilterState>(DEFAULT_FILTERS)
   const [sortKey, setSortKey]       = useState<SortKey>('popular')
   const [sheetOpen, setSheetOpen]   = useState(false)
@@ -1524,11 +1610,20 @@ function ToursContent() {
     if (pollTimer.current) { clearTimeout(pollTimer.current); pollTimer.current = null }
   }, [])
 
+  /**
+   * Курорты, встреченные в этом поиске. Копим их, чтобы по завершении
+   * отправить в журнал наблюдений — он задаёт порядок чипсов в форме.
+   */
+  const seenRegionsRef = useRef<Set<number>>(new Set())
+
   /** Забирает текущую выдачу и возвращает число отелей в ней. */
   const fetchResults = useCallback(async (searchId: string): Promise<number | null> => {
     const res = await staffFetch(`/api/tourvisor/results/${searchId}?limit=${RESULTS_LIMIT}`)
     if (!res.ok) return null
     const data: HotelSearchResult[] = await res.json()
+    for (const hotel of data) {
+      if (hotel.region?.id) seenRegionsRef.current.add(hotel.region.id)
+    }
     setHotels(data)
     return data.length
   }, [])
@@ -1553,6 +1648,9 @@ function ToursContent() {
     setProgress(0)
     setPhase('starting')
     deadlineRef.current = null
+    // Курорты копим по одному поиску: без сброса в журнал ушли бы вперемешку
+    // курорты прошлой страны.
+    seenRegionsRef.current = new Set()
 
     const sleep = (ms: number) => new Promise<void>(resolve => {
       pollTimer.current = setTimeout(resolve, ms)
@@ -1648,6 +1746,12 @@ function ToursContent() {
       if (!alive()) return
       setProgress(100)
       setPhase('done')
+      // Журнал наполняем только поиском по всей стране. Если человек сам
+      // выбрал курорты, выдача сужена его фильтром, и записать её значило бы
+      // объявить остальные курорты страны пустыми.
+      if (regionIds.length === 0) {
+        reportSeenRegions(countryId, dateFrom, [...seenRegionsRef.current])
+      }
       reachGoal(StaffGoals.toursResults, {
         country: countryName || '',
         hotels: count,
@@ -1727,6 +1831,72 @@ function ToursContent() {
     parts.push(`${adults} взр.`)
     return parts.join(' · ')
   })()
+
+  /**
+   * Заявка на подбор: человек не нашёл подходящий вариант.
+   *
+   * Шлём тем же маршрутом, что и обычную бронь, но с kind='help' и параметрами
+   * поиска вместо тура: менеджеру важно знать, что именно человек искал в тот
+   * момент, когда решил, что подходящего нет.
+   */
+  async function handleHelp(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (helpSubmitting) return
+
+    const name = helpName.trim()
+    const phone = helpPhone.trim()
+    if (name.length < 2) {
+      setHelpError('Укажите, как к вам обращаться — хотя бы имя.')
+      return
+    }
+    if (!isPhoneComplete(phone)) {
+      setHelpError('Проверьте телефон: нужны 11 цифр, например +7 999 123-45-67.')
+      return
+    }
+
+    setHelpSubmitting(true)
+    setHelpError('')
+
+    try {
+      const res = await staffFetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'help',
+          name,
+          phone,
+          comment: helpComment.trim(),
+          search: {
+            country: countryName || undefined,
+            // Та же строка, что человек видел в шапке: менеджеру не придётся
+            // гадать, о каком именно окне дат идёт речь.
+            dates: searchSummary,
+            // Взрослые уже есть в searchSummary, а дети — нет: отдельную строку
+            // шлём только ради них, иначе в описании сделки «2 взр.» повторится.
+            people: childsStr
+              ? `${adults} взр. + ${childsStr.split(',').length} реб.`
+              : undefined,
+            found: hotels.length,
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(await leadErrorMessage(res))
+      reachGoal(StaffGoals.leadSuccess, { kind: 'help', country: countryName || '' })
+      setHelpDone(true)
+    } catch (err) {
+      reachGoal(StaffGoals.leadFail)
+      setHelpError(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+    } finally {
+      setHelpSubmitting(false)
+    }
+  }
+
+  function closeHelp() {
+    setHelpOpen(false)
+    setHelpDone(false)
+    setHelpError('')
+    setHelpComment('')
+  }
 
   // Подхедер: число выводится отдельным <strong>, поэтому здесь — только хвост.
   const subheaderTail = hotels.length !== filtered.length
@@ -1924,9 +2094,14 @@ function ToursContent() {
                 {countryName ? ` «${countryName}»` : ''}. Попробуйте сдвинуть даты,
                 увеличить разброс «±дней» или выбрать другое направление.
               </div>
-              <button className={styles.resetFiltersBtn} onClick={() => router.push('/')}>
-                Изменить параметры поиска
-              </button>
+              <div className={styles.emptyStateActions}>
+                <button className={styles.resetFiltersBtn} onClick={() => router.push('/')}>
+                  Изменить параметры поиска
+                </button>
+                <button className={styles.emptyStateSecondaryBtn} onClick={() => setHelpOpen(true)}>
+                  Помогите подобрать
+                </button>
+              </div>
             </div>
           ) : filtered.length === 0 && phase === 'done' ? (
             <div className={styles.emptyState}>
@@ -1936,9 +2111,14 @@ function ToursContent() {
               <div className={styles.emptyStateHint}>
                 Всего найдено {hotelsLabel(hotels.length)}. Ослабьте фильтры, чтобы увидеть варианты.
               </div>
-              <button className={styles.resetFiltersBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
-                Сбросить фильтры
-              </button>
+              <div className={styles.emptyStateActions}>
+                <button className={styles.resetFiltersBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
+                  Сбросить фильтры
+                </button>
+                <button className={styles.emptyStateSecondaryBtn} onClick={() => setHelpOpen(true)}>
+                  Помогите подобрать
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -1951,6 +2131,10 @@ function ToursContent() {
                   onOpen={() => openHotel(hotel)}
                 />
               ))}
+              {/* Выдача Tourvisor — это то, что отдали операторы, а не весь
+                  рынок. Дойдя до конца списка и не найдя своего, человек
+                  раньше просто закрывал вкладку. */}
+              {phase === 'done' && <HelpCta onClick={() => setHelpOpen(true)} />}
             </>
           )}
         </div>
@@ -2019,6 +2203,75 @@ function ToursContent() {
           onClose={closeModal}
           searchId={searchIdRef.current ?? ''}
         />
+      )}
+
+      {/* Ярлык подбора: доступен на любом шаге, пока форма не открыта. */}
+      {!helpOpen && !modalHotel && <HelpTab onClick={() => setHelpOpen(true)} />}
+
+      {/* ── Форма «помогите подобрать» ── */}
+      {helpOpen && (
+        <div className={styles.helpOverlay} onClick={closeHelp}>
+          <div className={styles.helpCard} onClick={e => e.stopPropagation()}>
+            {helpDone ? (
+              <div className={styles.bookingSuccess}>
+                <div className={styles.bookingSuccessIcon}>✓</div>
+                <div className={styles.bookingSuccessTitle}>Заявка принята</div>
+                <div className={styles.bookingSuccessText}>
+                  Менеджер отдела свяжется с вами и подберёт варианты вручную.
+                </div>
+                <button className={styles.stickyFooterBtn} onClick={closeHelp}>Закрыть</button>
+              </div>
+            ) : (
+              <>
+                <button className={styles.bookingBackBtn} onClick={closeHelp}>← Назад к турам</button>
+                <div className={styles.bookingTitle}>Поможем подобрать тур</div>
+                <div className={styles.helpCardHint}>
+                  Опишите, что нужно, — менеджер поищет за пределами онлайн-выдачи
+                  и вернётся с вариантами.
+                </div>
+
+                {/* Что человек искал — уходит в заявку и без повторного ввода. */}
+                <div className={styles.bookingSummary}>
+                  <div className={styles.bookingSummaryDetails}>{searchSummary}</div>
+                </div>
+
+                <form onSubmit={handleHelp} className={styles.bookingForm}>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-name">Ваше имя</label>
+                    <input
+                      id="help-name" className="input" type="text" required
+                      placeholder="Как к вам обращаться" autoComplete="name"
+                      value={helpName} onChange={e => setHelpName(e.target.value)}
+                      aria-invalid={helpError ? true : undefined}
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-phone">Телефон</label>
+                    <input
+                      id="help-phone" className="input" type="tel" inputMode="tel" required
+                      placeholder="+7 999 123-45-67" autoComplete="tel"
+                      value={helpPhone} onChange={e => setHelpPhone(e.target.value)}
+                      aria-invalid={helpError ? true : undefined}
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-comment">Что ищете</label>
+                    <textarea
+                      id="help-comment" className={`input ${styles.helpTextarea}`} rows={3}
+                      placeholder="Например: две недели у моря в сентябре, бюджет до 150 тысяч, нужен номер с балконом"
+                      value={helpComment} onChange={e => setHelpComment(e.target.value)}
+                    />
+                  </div>
+                  {helpError && <div className={styles.bookingError} role="alert">{helpError}</div>}
+                  <button type="submit" className="btn btn-red btn-block" disabled={helpSubmitting}>
+                    {helpSubmitting ? 'Отправка…' : 'Отправить заявку'}
+                  </button>
+                </form>
+                <div className={styles.bookingNote}>Мы свяжемся с вами в течение рабочего дня</div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       <MobileSearchSheet
