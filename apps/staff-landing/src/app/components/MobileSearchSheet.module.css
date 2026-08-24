@@ -518,3 +518,13 @@
   border-color: var(--c-blue);
   color: #fff;
 }
+
+/*
+ * Курорт без встреченных предложений на этот месяц. Приглушён, но нажимается:
+ * состав операторов у Tourvisor меняется от поиска к поиску, «не видели» —
+ * ещё не «нет».
+ */
+.regionsChipQuiet {
+  opacity: 0.45;
+}
+.regionsChipQuiet.regionsChipOn { opacity: 1; }

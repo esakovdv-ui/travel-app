@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { cachedRegions, loadRegions, prefetchAllRegions } from '@/lib/regions-cache'
+import { cachedAvailability, loadAvailability } from '@/lib/region-availability-client'
+import type { Availability } from '@/lib/region-availability-client'
 import styles from './MobileSearchSheet.module.css'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import {
@@ -9,6 +11,7 @@ import {
   isoDate,
   nightsBetween,
   offsetDate,
+  searchDateFrom,
   shortDate,
 } from '@/lib/date-utils'
 import { yearsLabel } from '@/lib/plural'
@@ -157,6 +160,28 @@ export function MobileSearchSheet({
     void prefetchAllRegions()
   }, [isOpen])
 
+  // Порядок курортов по наблюдённым предложениям — тот же, что на десктопе.
+  const [availability, setAvailability] = useState<Availability | null>(null)
+  useEffect(() => {
+    const dateFrom = form.targetDate ? searchDateFrom(form.targetDate, form.dateFlex) : ''
+    if (!isOpen || !form.countryId || !dateFrom) { setAvailability(null); return }
+
+    const готовое = cachedAvailability(form.countryId, dateFrom)
+    if (готовое) { setAvailability(готовое); return }
+
+    let cancelled = false
+    loadAvailability(form.countryId, dateFrom)
+      .then(a => { if (!cancelled) setAvailability(a) })
+    return () => { cancelled = true }
+  }, [isOpen, form.countryId, form.targetDate, form.dateFlex])
+
+  /** Курорты с подтверждёнными предложениями — вперёд. Никого не убираем. */
+  const orderedRegions = useMemo(() => {
+    if (!availability?.known) return regions
+    const seen = availability.seen
+    return [...regions].sort((a, b) => Number(seen.has(b.id)) - Number(seen.has(a.id)))
+  }, [regions, availability])
+
   if (!isOpen) return null
 
   const popular = popularIds
@@ -269,13 +294,18 @@ export function MobileSearchSheet({
                     )}
                   </div>
                   <div className={styles.regionsGrid}>
-                    {regions.map(rg => {
+                    {orderedRegions.map(rg => {
                       const on = form.regionIds.includes(rg.id)
+                      const тихий = availability?.known === true && !availability.seen.has(rg.id)
                       return (
                         <button
                           key={rg.id}
                           type="button"
-                          className={`${styles.regionsChip} ${on ? styles.regionsChipOn : ''}`}
+                          className={[
+                            styles.regionsChip,
+                            on ? styles.regionsChipOn : '',
+                            тихий ? styles.regionsChipQuiet : '',
+                          ].filter(Boolean).join(' ')}
                           aria-pressed={on}
                           onClick={() => onUpdate({
                             regionIds: on

@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { staffFetch } from '@/lib/staff-client'
 import { cachedRegions, loadRegions, prefetchAllRegions, prefetchRegions } from '@/lib/regions-cache'
+import { cachedAvailability, loadAvailability } from '@/lib/region-availability-client'
+import type { Availability } from '@/lib/region-availability-client'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import { dateRangeToTarget, flexLabel, nightsBetween, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
 import { nightsLabel, plural, yearsLabel } from '@/lib/plural'
@@ -131,6 +133,7 @@ export function HeaderSearchBar({
   const [countries, setCountries] = useState<Country[]>([])
   const [regions, setRegions] = useState<Region[]>([])
   const [regionsLoading, setRegionsLoading] = useState(false)
+  const [availability, setAvailability] = useState<Availability | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [monthsShown, setMonthsShown] = useState(CAL_MONTHS_START)
 
@@ -180,6 +183,34 @@ export function HeaderSearchBar({
     if (openPanel !== 'destination') return
     void prefetchAllRegions()
   }, [openPanel])
+
+  // Наблюдённые предложения по стране и месяцу заезда — ими сортируем чипсы.
+  // Дат ещё нет — сортировать нечем, показываем справочный порядок.
+  useEffect(() => {
+    const dateFrom = form.targetDate ? searchDateFrom(form.targetDate, form.dateFlex) : ''
+    if (!form.countryId || !dateFrom) { setAvailability(null); return }
+
+    const готовое = cachedAvailability(form.countryId, dateFrom)
+    if (готовое) { setAvailability(готовое); return }
+
+    let cancelled = false
+    loadAvailability(form.countryId, dateFrom)
+      .then(a => { if (!cancelled) setAvailability(a) })
+    return () => { cancelled = true }
+  }, [form.countryId, form.targetDate, form.dateFlex])
+
+  /**
+   * Курорты с подтверждёнными предложениями — вперёд, остальные следом.
+   *
+   * Именно порядок, а не отбор: состав операторов у Tourvisor пляшет от
+   * поиска к поиску, поэтому отсутствие курорта в журнале не доказывает, что
+   * он пуст. Внутри каждой группы держим исходный порядок справочника.
+   */
+  const orderedRegions = useMemo(() => {
+    if (!availability?.known) return regions
+    const seen = availability.seen
+    return [...regions].sort((a, b) => Number(seen.has(b.id)) - Number(seen.has(a.id)))
+  }, [regions, availability])
 
   const toggleRegion = useCallback((id: number) => {
     setForm(p => ({
@@ -367,17 +398,25 @@ export function HeaderSearchBar({
                   <div className={styles.regionHint}>Загружаем курорты…</div>
                 ) : (
                   <div className={styles.regionGrid}>
-                    {regions.map(r => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        className={`${styles.regionChip} ${form.regionIds.includes(r.id) ? styles.regionChipActive : ''}`}
-                        onClick={() => toggleRegion(r.id)}
-                        aria-pressed={form.regionIds.includes(r.id)}
-                      >
-                        {r.name}
-                      </button>
-                    ))}
+                    {orderedRegions.map(r => {
+                      const тихий = availability?.known === true && !availability.seen.has(r.id)
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          className={[
+                            styles.regionChip,
+                            form.regionIds.includes(r.id) ? styles.regionChipActive : '',
+                            тихий ? styles.regionChipQuiet : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => toggleRegion(r.id)}
+                          aria-pressed={form.regionIds.includes(r.id)}
+                          title={тихий ? 'На эти даты предложений пока не встречалось' : undefined}
+                        >
+                          {r.name}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </>

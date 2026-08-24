@@ -1485,6 +1485,17 @@ html[data-framed='1'] .authPage {
   color: #fff;
 }
 
+/*
+ * Курорт, по которому на выбранный месяц предложений пока не встречалось.
+ * Приглушаем, но оставляем кликабельным: Tourvisor отдаёт операторов не
+ * одинаково от поиска к поиску, поэтому «не видели» — это не «нет».
+ */
+.regionChipQuiet {
+  opacity: 0.45;
+}
+.regionChipQuiet:hover { opacity: 1; }
+.regionChipQuiet.regionChipActive { opacity: 1; }
+
 /* Сброс к «всей стране» — рядом с заголовком, чтобы выход был на виду. */
 .regionReset {
   margin-left: 8px;

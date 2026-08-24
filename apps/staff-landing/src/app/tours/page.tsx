@@ -18,6 +18,7 @@ import {
   computeFilterOptions,
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
+import { reportSeenRegions } from '@/lib/region-availability-client'
 import { staffFetch } from '@/lib/staff-client'
 import { useStaffGuard } from '@/lib/use-staff-guard'
 import { useAppHeight } from '@/lib/use-app-height'
@@ -1524,11 +1525,20 @@ function ToursContent() {
     if (pollTimer.current) { clearTimeout(pollTimer.current); pollTimer.current = null }
   }, [])
 
+  /**
+   * Курорты, встреченные в этом поиске. Копим их, чтобы по завершении
+   * отправить в журнал наблюдений — он задаёт порядок чипсов в форме.
+   */
+  const seenRegionsRef = useRef<Set<number>>(new Set())
+
   /** Забирает текущую выдачу и возвращает число отелей в ней. */
   const fetchResults = useCallback(async (searchId: string): Promise<number | null> => {
     const res = await staffFetch(`/api/tourvisor/results/${searchId}?limit=${RESULTS_LIMIT}`)
     if (!res.ok) return null
     const data: HotelSearchResult[] = await res.json()
+    for (const hotel of data) {
+      if (hotel.region?.id) seenRegionsRef.current.add(hotel.region.id)
+    }
     setHotels(data)
     return data.length
   }, [])
@@ -1553,6 +1563,9 @@ function ToursContent() {
     setProgress(0)
     setPhase('starting')
     deadlineRef.current = null
+    // Курорты копим по одному поиску: без сброса в журнал ушли бы вперемешку
+    // курорты прошлой страны.
+    seenRegionsRef.current = new Set()
 
     const sleep = (ms: number) => new Promise<void>(resolve => {
       pollTimer.current = setTimeout(resolve, ms)
@@ -1648,6 +1661,12 @@ function ToursContent() {
       if (!alive()) return
       setProgress(100)
       setPhase('done')
+      // Журнал наполняем только поиском по всей стране. Если человек сам
+      // выбрал курорты, выдача сужена его фильтром, и записать её значило бы
+      // объявить остальные курорты страны пустыми.
+      if (regionIds.length === 0) {
+        reportSeenRegions(countryId, dateFrom, [...seenRegionsRef.current])
+      }
       reachGoal(StaffGoals.toursResults, {
         country: countryName || '',
         hotels: count,
