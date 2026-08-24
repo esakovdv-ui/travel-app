@@ -2186,18 +2186,17 @@ a.contactValue {
    * читать её боком неудобно. Сворачиваем в круглую кнопку и уводим в правый
    * нижний угол — «Фильтры» и «Карта» стоят по центру, угол свободен.
    */
+  /*
+   * Ярлычок остаётся ярлычком и на телефоне: круглая кнопка и короткая пилюля
+   * не объясняли, о чём они, — надпись объясняет. Только ужимаем: уже, мельче
+   * и без иконки, чтобы полоса у края не наезжала на карточки.
+   */
   .helpTab {
-    top: auto;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    right: 12px;
-    transform: none;
-    width: 46px;
-    height: 46px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
+    padding: 14px 6px;
+    font-size: 0.72rem;
+    box-shadow: 0 4px 14px rgba(20, 20, 43, 0.26);
   }
-  .helpTab:hover { padding-right: 0; }
-  .helpTabLabel { display: none; }
-  .helpTabIcon { width: 22px; height: 22px; }
+  .helpTab:hover { padding-right: 6px; }
+  .helpTab:active { transform: translateY(-50%) scale(0.97); }
+  .helpTabIcon { display: none; }
 }
