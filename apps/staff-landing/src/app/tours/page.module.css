@@ -428,6 +428,20 @@
   font-weight: 600;
 }
 
+/*
+ * Описание отеля. Две строки с обрезкой: нужно дать представление, а не
+ * пересказать карточку целиком.
+ */
+.hotelCardDesc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .hotelCardFooter {
   display: flex;
   align-items: center;
@@ -1816,6 +1830,11 @@
   /* На телефоне список занимает всю ширину: настольные min-width и доля
      карты здесь только мешали бы. */
   .listPane { width: 100%; min-width: 0; flex: 1 1 auto; border-right: none; }
+
+  /* На телефоне карточка узкая и без того плотная: описание добавило бы две
+     строки каждой, а список стал бы вдвое длиннее. Пустует только широкая
+     настольная карточка — там оно и нужно. */
+  .hotelCardDesc { display: none; }
 
   .mapPane { display: none; }
   .mapPaneVisible { display: block !important; height: calc(var(--app-height, 100dvh) * 0.55); }

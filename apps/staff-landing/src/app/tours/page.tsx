@@ -396,6 +396,14 @@ function HotelCard({
           </div>
         )}
 
+        {/* Описание приходит в выдаче у всех отелей (замер: 185 из 185) и
+            относится к отелю целиком, а не к одному варианту. Показываем
+            только на десктопе: там карточка широкая и середина пустует, а на
+            телефоне она и без того плотная — см. .hotelCardDesc в стилях. */}
+        {hotel.hotelDescription && (
+          <div className={styles.hotelCardDesc}>{hotel.hotelDescription}</div>
+        )}
+
         {specs.length > 0 && (
           <div className={styles.hotelCardSpecs}>
             {specs.map(s => (
