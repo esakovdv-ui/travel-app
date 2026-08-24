@@ -91,14 +91,17 @@ export async function POST(req: Request) {
     const sCountry = str(search.country)
     const sRegions = str(search.regions)
     const sDates   = str(search.dates)
-    const sNights  = str(search.nights)
     const sPeople  = str(search.people)
     const sBudget  = str(search.budget)
     const sFound   = num(search.found)
 
     commentLines.push('ЗАЯВКА НА ПОДБОР — сотрудник не нашёл подходящий вариант в выдаче.')
-    if (sCountry) commentLines.push(`Искал: ${sCountry}${sRegions ? `, ${sRegions}` : ''}`)
-    if (sDates)   commentLines.push(`Даты: ${sDates}${sNights ? ` (${sNights})` : ''}`)
+    // sDates — строка из шапки портала, она уже начинается со страны:
+    // «Россия · 12 сен – 20 сен · 8 ночей · ±1 день · 2 взр.». Отдельная
+    // строка со страной повторяла бы её дважды, поэтому она на подхвате —
+    // на случай, если дат почему-то не пришло.
+    if (sDates) commentLines.push(`Искал: ${sDates}`)
+    else if (sCountry) commentLines.push(`Искал: ${sCountry}${sRegions ? `, ${sRegions}` : ''}`)
     if (sPeople)  commentLines.push(`Туристы: ${sPeople}`)
     if (sBudget)  commentLines.push(`Бюджет: ${sBudget}`)
     if (sFound != null) commentLines.push(`Показано вариантов: ${sFound}`)

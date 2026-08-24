@@ -1871,7 +1871,11 @@ function ToursContent() {
             // Та же строка, что человек видел в шапке: менеджеру не придётся
             // гадать, о каком именно окне дат идёт речь.
             dates: searchSummary,
-            people: `${adults} взр.${childsStr ? ` + ${childsStr.split(',').length} реб.` : ''}`,
+            // Взрослые уже есть в searchSummary, а дети — нет: отдельную строку
+            // шлём только ради них, иначе в описании сделки «2 взр.» повторится.
+            people: childsStr
+              ? `${adults} взр. + ${childsStr.split(',').length} реб.`
+              : undefined,
             found: hotels.length,
           },
         }),
