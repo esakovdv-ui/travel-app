@@ -2067,12 +2067,14 @@ a.contactValue {
 }
 
 /*
- * Оверлей формы. В отличие от формы брони он накрывает страницу целиком
- * (position: fixed): его открывают из списка, а не из карточки отеля, и
- * привязывать его к области списка незачем.
+ * Оверлей формы. Накрывает страницу целиком, но отсчитывается от оболочки
+ * .toursPage, а не от вьюпорта: внутри iframe родитель растягивает фрейм под
+ * контент, и position: fixed зацепился бы за эти ~2400px — карточка уехала бы
+ * на два экрана вниз. Ровно по этой причине fixed убран со всех плавающих
+ * элементов страницы.
  */
 .helpOverlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(20, 20, 43, 0.45);
   z-index: 60;
@@ -2129,4 +2131,69 @@ a.contactValue {
   resize: vertical;
   min-height: 76px;
   font: inherit;
+}
+
+/* ─── Ярлык подбора: всегда под рукой ──────────────────────────────────── */
+
+/*
+ * Висит у правого края по центру высоты. Вертикальная надпись — чтобы занимать
+ * полосу в 40px и не отъедать ширину у списка и карты.
+ *
+ * Позиция — absolute от .toursPage: во фрейме fixed цепляется за высоту
+ * растянутого родителем фрейма и уносит элемент за пределы видимой части.
+ */
+.helpTab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 10px;
+
+  border: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--c-red);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(20, 20, 43, 0.22);
+  transition: padding-right var(--transition), background var(--transition);
+}
+.helpTab:hover { padding-right: 16px; }
+
+.helpTabIcon { flex-shrink: 0; }
+
+.helpTabLabel {
+  writing-mode: vertical-rl;
+  /* Без поворота вертикальный текст читается сверху вниз «лёжа на боку». */
+  transform: rotate(180deg);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  /*
+   * На телефоне вертикальная плашка по центру края перекрыла бы карточки, а
+   * читать её боком неудобно. Сворачиваем в круглую кнопку и уводим в правый
+   * нижний угол — «Фильтры» и «Карта» стоят по центру, угол свободен.
+   */
+  .helpTab {
+    top: auto;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    right: 12px;
+    transform: none;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .helpTab:hover { padding-right: 0; }
+  .helpTabLabel { display: none; }
+  .helpTabIcon { width: 22px; height: 22px; }
 }
