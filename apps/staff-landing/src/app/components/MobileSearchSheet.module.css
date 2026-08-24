@@ -494,6 +494,39 @@
   cursor: pointer;
 }
 
+/*
+ * Лента курортов под шапкой «Куда». Живёт вне тела шага, поэтому её отступы
+ * повторяют .sectionBody — иначе чипсы прилипали бы к краю карточки.
+ */
+.regionsStrip {
+  padding: 0 18px 16px;
+}
+.regionsStrip .regionsLabel {
+  margin-top: 0;
+}
+
+/*
+ * Одна строка с горизонтальной прокруткой вместо переносимой сетки.
+ * Сетка из 46 чипсов разворачивалась на весь экран и уводила «Когда» и
+ * «Кто едет» за фолд — человек упирался в стену кнопок и не видел следующий
+ * шаг. Строка держит высоту постоянной, а обрезанный правый чипс сам
+ * показывает, что список продолжается.
+ */
+.regionsRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  /* Чтобы крайние чипсы не липли к краям при прокрутке. */
+  padding: 2px 18px 2px 0;
+  margin-right: -18px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.regionsRow::-webkit-scrollbar { display: none; }
+.regionsRow > * { flex: 0 0 auto; }
+
 .regionsGrid {
   display: flex;
   flex-wrap: wrap;

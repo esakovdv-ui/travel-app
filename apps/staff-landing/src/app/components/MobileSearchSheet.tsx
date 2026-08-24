@@ -275,58 +275,68 @@ export function MobileSearchSheet({
             </div>
             <ChevronIcon open={step === 'destination'} />
           </button>
+          {/*
+            Курорты — необязательное сужение, поэтому лента, а не сетка внутри
+            шага. Раскрытая сетка из 46 чипсов занимала весь экран и уводила
+            «Когда» и «Кто едет» далеко за фолд: человек видел стену кнопок и
+            красный «Поиск», но не следующий шаг. Одна строка с горизонтальной
+            прокруткой держит курорты на виду и никого не заслоняет, а порядок
+            по наблюдённым предложениям выводит вперёд те, где что-то есть.
+          */}
+          {form.countryId > 0 && regions.length > 0 && (
+            <div className={styles.regionsStrip}>
+              <div className={styles.regionsLabel}>
+                Курорты
+                {form.regionIds.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.regionsReset}
+                    onClick={() => onUpdate({ regionIds: [] })}
+                  >
+                    вся страна
+                  </button>
+                )}
+              </div>
+              <div className={styles.regionsRow}>
+                {orderedRegions.map(rg => {
+                  const on = form.regionIds.includes(rg.id)
+                  const тихий = availability?.known === true && !availability.seen.has(rg.id)
+                  return (
+                    <button
+                      key={rg.id}
+                      type="button"
+                      className={[
+                        styles.regionsChip,
+                        on ? styles.regionsChipOn : '',
+                        тихий ? styles.regionsChipQuiet : '',
+                      ].filter(Boolean).join(' ')}
+                      aria-pressed={on}
+                      onClick={() => onUpdate({
+                        regionIds: on
+                          ? form.regionIds.filter(x => x !== rg.id)
+                          : [...form.regionIds, rg.id],
+                      })}
+                    >
+                      {rg.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {step === 'destination' && (
             <div className={styles.sectionBody}>
-              {/* Курорты — необязательное сужение. Помогает не ждать полную
-                  выдачу по стране: она набирается три с половиной минуты. */}
-              {regions.length > 0 && (
-                <>
-                  <div className={styles.regionsLabel}>
-                    Курорты
-                    {form.regionIds.length > 0 && (
-                      <button
-                        type="button"
-                        className={styles.regionsReset}
-                        onClick={() => onUpdate({ regionIds: [] })}
-                      >
-                        вся страна
-                      </button>
-                    )}
-                  </div>
-                  <div className={styles.regionsGrid}>
-                    {orderedRegions.map(rg => {
-                      const on = form.regionIds.includes(rg.id)
-                      const тихий = availability?.known === true && !availability.seen.has(rg.id)
-                      return (
-                        <button
-                          key={rg.id}
-                          type="button"
-                          className={[
-                            styles.regionsChip,
-                            on ? styles.regionsChipOn : '',
-                            тихий ? styles.regionsChipQuiet : '',
-                          ].filter(Boolean).join(' ')}
-                          aria-pressed={on}
-                          onClick={() => onUpdate({
-                            regionIds: on
-                              ? form.regionIds.filter(x => x !== rg.id)
-                              : [...form.regionIds, rg.id],
-                          })}
-                        >
-                          {rg.name}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-
               <div className={styles.countryList}>
                 {popular.map(c => (
                   <button
                     key={c.id}
                     className={`${styles.countryRow} ${c.id === form.countryId ? styles.countryRowActive : ''}`}
-                    onClick={() => onUpdate({ countryId: c.id, regionIds: [] })}
+                    onClick={() => {
+                      onUpdate({ countryId: c.id, regionIds: [] })
+                      // Курорты остались лентой на виду, поэтому держать шаг
+                      // открытым больше незачем: ведём к датам, как раньше.
+                      setStep('dates')
+                    }}
                   >
                     <span>{c.name}</span>
                     {c.id === form.countryId && <CheckIcon />}
