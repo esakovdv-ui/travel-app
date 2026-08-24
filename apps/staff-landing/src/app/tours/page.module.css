@@ -273,9 +273,16 @@
 
 /* ─── Список отелей ─────────────────────────────────────────────────────── */
 
+/*
+ * Список тянется, карта — нет.
+ *
+ * Раньше было наоборот: список сидел в жёстких 400px, а карта забирала весь
+ * остаток, и на широком мониторе получалось ~780px карты против 400px
+ * карточек. Читают всё-таки карточки, поэтому лишнее место отдаём им.
+ */
 .listPane {
-  width: 400px;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 420px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -419,6 +426,21 @@
   color: #7a5200;
   font-size: 0.74rem;
   font-weight: 600;
+}
+
+/* Питание и оператор в одну строку: по отдельности каждый занимал свою. */
+.hotelCardMetaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Оператор — справочная строка, а не акцент: цвет приглушён. */
+.hotelCardOperator {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
 }
 
 .hotelCardFooter {
@@ -582,7 +604,9 @@
 /* ─── Карта ─────────────────────────────────────────────────────────────── */
 
 .mapPane {
-  flex: 1;
+  /* Доля от ширины, но с потолком: на большом мониторе карте незачем расти
+     дальше — она и так вся видна, а место полезнее карточкам. */
+  flex: 0 0 clamp(320px, 34%, 620px);
   position: relative;
   min-width: 0;
   /* Яндекс-контролы («Открыть Яндекс Карты», копирайт) имеют собственные высокие
@@ -1804,7 +1828,9 @@
      повторял его слово в слово и съедал ещё 48px. */
   .subheaderSearching { display: none; }
 
-  .listPane { width: 100%; border-right: none; }
+  /* На телефоне список занимает всю ширину: настольные min-width и доля
+     карты здесь только мешали бы. */
+  .listPane { width: 100%; min-width: 0; flex: 1 1 auto; border-right: none; }
 
   .mapPane { display: none; }
   .mapPaneVisible { display: block !important; height: calc(var(--app-height, 100dvh) * 0.55); }
@@ -1982,4 +2008,125 @@ a.contactValue {
 .subheaderQuiet {
   color: var(--c-text-muted);
   font-size: 0.78rem;
+}
+
+/* ─── «Не нашли подходящее»: карточка в списке и форма подбора ──────────── */
+
+/*
+ * Карточка-приглашение в конце списка. Намеренно не похожа на отель: не белая
+ * плитка, а мягкая подложка с пунктиром — иначе читалась бы как ещё один
+ * вариант и терялась среди них.
+ */
+.helpCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(20, 20, 43, 0.18);
+  background: rgba(20, 20, 43, 0.03);
+}
+
+.helpCtaText {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.helpCtaTitle {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 4px;
+}
+
+.helpCtaHint {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+.helpCtaBtn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: 1.5px solid var(--c-red);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--c-red);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.helpCtaBtn:hover {
+  background: var(--c-red);
+  color: #fff;
+}
+
+/*
+ * Оверлей формы. В отличие от формы брони он накрывает страницу целиком
+ * (position: fixed): его открывают из списка, а не из карточки отеля, и
+ * привязывать его к области списка незачем.
+ */
+.helpOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 43, 0.45);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.helpCard {
+  width: 100%;
+  max-width: 460px;
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Форма выше экрана на невысоких окнах — прокручиваем её, а не обрезаем. */
+  max-height: calc(var(--app-height, 100dvh) - 40px);
+  overflow-y: auto;
+}
+
+/*
+ * Типографика карточки: чем меньше ступеней, тем спокойнее читается.
+ *
+ * Было шесть разных сочетаний размера и насыщенности на один экран — при
+ * одном и том же Manrope это читается как «шрифты разные». Свели к трём:
+ * заголовок, основной текст, мелкий. Поля не трогаем: на мобильных им нужен
+ * ровно 16px, иначе Safari зумит страницу при фокусе (см. globals.css).
+ */
+.helpCard .bookingTitle {
+  font-size: 1.02rem;
+}
+
+.helpCardHint,
+.helpCard .bookingSummaryDetails {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+}
+
+.helpCardHint {
+  margin-top: -6px;
+}
+
+.helpCard .bookingNote {
+  font-size: 0.78rem;
+}
+
+.helpTextarea {
+  resize: vertical;
+  min-height: 76px;
+  font: inherit;
 }
