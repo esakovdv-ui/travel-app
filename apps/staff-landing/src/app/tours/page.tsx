@@ -3,7 +3,6 @@
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { BrandLogo, MgtBadge } from '../components/Brand'
 import { HeaderSearchBar } from '../components/HeaderSearchBar'
 import { MobileSearchSheet } from '../components/MobileSearchSheet'
 import type { SearchForm } from '../components/MobileSearchSheet'
@@ -1914,11 +1913,17 @@ function ToursContent() {
   return (
     <div className={styles.toursPage}>
 
-      {/* ─── Хедер ───────────────────────────────────────────────────────── */}
+      {/* ─── Хедер ───────────────────────────────────────────────────────────
+          Только строка поиска, без логотипов.
+
+          Портал живёт во фрейме под шапкой родителя, и каждая наша строка
+          отнимает высоту у выдачи дважды: сначала чужая шапка, потом наша.
+          Логотипы «Мои путешествия» и «Мосгортур» и так стоят в футере, а
+          здесь занимали целый ряд — на телефоне это был ряд без единой
+          полезной кнопки. */}
       <header className={pageStyles.siteHeader}>
         <div className="shell">
           <div className={pageStyles.headerInner}>
-            <BrandLogo />
             <div style={{ flex: 1, minWidth: 0 }}>
               <HeaderSearchBar
                 initialCountryId={countryId}
@@ -1930,7 +1935,6 @@ function ToursContent() {
                 initialChildAges={childsStr ? childsStr.split(',').map(Number) : []}
               />
             </div>
-            <MgtBadge />
           </div>
         </div>
       </header>
