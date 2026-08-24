@@ -426,7 +426,7 @@ function HotelCard({
             {bestTour?.nights && (
               <div className={styles.hotelCardNights}>
                 {nightsLabel(bestTour.nights)}
-                {tourCount > 1 && ` · ${tourCount} вариантов`}
+                {tourCount > 1 && ` · ${tourCount} ${variantsWord(tourCount)}`}
               </div>
             )}
           </div>
