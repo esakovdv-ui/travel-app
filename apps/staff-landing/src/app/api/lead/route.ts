@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { bitrixCall, notifyChat, setDealObservers, userName } from '@/lib/bitrix'
+import { nextAssignee, observersFor } from '@/lib/lead-queue'
 
 function clamp(value: unknown, max: number): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : ''
@@ -13,49 +15,6 @@ function normalizePhone(input: string): string | null {
     return '+7' + digits
   }
   return null
-}
-
-const BITRIX_TIMEOUT_MS = 10_000
-const BITRIX_RETRIES = 2
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-async function bitrixCall<T = unknown>(method: string, payload: Record<string, unknown>): Promise<T> {
-  const domain = process.env.BITRIX_DOMAIN
-  const token = process.env.WEBHOOK_TOKEN
-  if (!domain || !token) throw new Error('misconfigured')
-
-  const url = `https://${domain}/rest/${token}/${method}.json`
-  let lastReason = 'unknown'
-
-  for (let attempt = 0; attempt <= BITRIX_RETRIES; attempt++) {
-    if (attempt > 0) await sleep(400 * attempt) // 400 мс, затем 800 мс
-
-    let res: Response
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        // Без таймаута зависший Битрикс держал бы запрос сотрудника до победного.
-        signal: AbortSignal.timeout(BITRIX_TIMEOUT_MS),
-      })
-    } catch (e) {
-      lastReason = e instanceof Error ? `${e.name}: ${e.message}` : 'network_error'
-      continue
-    }
-
-    const data = await res.json().catch(() => ({} as Record<string, unknown>))
-
-    if (res.ok && !data?.error) return data.result as T
-
-    lastReason = JSON.stringify(data).slice(0, 300)
-    // 4xx от Битрикса (кривые поля, протухший вебхук) повтором не лечатся.
-    if (res.status < 500 && res.status !== 429) break
-  }
-
-  console.error(`staff-lead: ${method} failed after ${BITRIX_RETRIES + 1} attempts — ${lastReason}`)
-  throw new Error('bitrix_error')
 }
 
 async function findContactByPhone(phone: string): Promise<number | null> {
@@ -98,7 +57,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 })
   }
 
+  // Два вида заявки. 'help' — человек не нашёл подходящий тур в выдаче и
+  // просит подобрать руками; тура в ней нет, зато есть параметры поиска.
+  const kind = body.kind === 'help' ? 'help' : 'tour'
+
   const tour = body.tour && typeof body.tour === 'object' ? body.tour as Record<string, unknown> : {}
+  const search = body.search && typeof body.search === 'object' ? body.search as Record<string, unknown> : {}
 
   const str = (v: unknown) => typeof v === 'string' && v ? v : null
   const num = (v: unknown) => typeof v === 'number' && isFinite(v) ? v : null
@@ -122,6 +86,26 @@ export async function POST(req: Request) {
   const operator  = str(tour.operator)
   const opLink    = str(tour.operatorLink)
 
+  if (kind === 'help') {
+    // Что человек искал в момент, когда решил, что подходящего нет.
+    const sCountry = str(search.country)
+    const sRegions = str(search.regions)
+    const sDates   = str(search.dates)
+    const sNights  = str(search.nights)
+    const sPeople  = str(search.people)
+    const sBudget  = str(search.budget)
+    const sFound   = num(search.found)
+
+    commentLines.push('ЗАЯВКА НА ПОДБОР — сотрудник не нашёл подходящий вариант в выдаче.')
+    if (sCountry) commentLines.push(`Искал: ${sCountry}${sRegions ? `, ${sRegions}` : ''}`)
+    if (sDates)   commentLines.push(`Даты: ${sDates}${sNights ? ` (${sNights})` : ''}`)
+    if (sPeople)  commentLines.push(`Туристы: ${sPeople}`)
+    if (sBudget)  commentLines.push(`Бюджет: ${sBudget}`)
+    if (sFound != null) commentLines.push(`Показано вариантов: ${sFound}`)
+    if (email)    commentLines.push(`Email: ${email}`)
+    if (comment)  commentLines.push(`\nПожелания: ${comment}`)
+  }
+
   if (hotel)    commentLines.push(`Отель: ${hotel}${stars ? ` ${'★'.repeat(stars)}` : ''}${rating ? ` · рейтинг ${rating}` : ''}`)
   if (country)  commentLines.push(`Страна: ${country}${region ? `, ${region}` : ''}`)
   if (dateStart) commentLines.push(`Даты: ${dateStart}${dateEnd ? ` — ${dateEnd}` : ''}${nights ? ` (${nights} ночей)` : ''}`)
@@ -132,8 +116,10 @@ export async function POST(req: Request) {
   if (price != null) commentLines.push(`Цена: ${price.toLocaleString('ru-RU')} ₽`)
   if (operator) commentLines.push(`Оператор: ${operator}`)
   if (opLink)   commentLines.push(`Ссылка оператора: ${opLink}`)
-  if (email)    commentLines.push(`Email: ${email}`)
-  if (comment)  commentLines.push(`\nКомментарий: ${comment}`)
+  // Для заявки на подбор почта и пожелания уже добавлены выше — иначе легли бы
+  // в описание дважды.
+  if (kind === 'tour' && email)   commentLines.push(`Email: ${email}`)
+  if (kind === 'tour' && comment) commentLines.push(`\nКомментарий: ${comment}`)
 
   const comments = commentLines.join('\n')
 
@@ -144,10 +130,11 @@ export async function POST(req: Request) {
     ? `C${categoryId}:${rawStageId}`
     : rawStageId
 
-  // Ответственный менеджер. Раньше был зашит «1» — при смене ответственного
-  // приходилось править код и пересобирать.
-  const parsedAssignee = parseInt(process.env.STAFF_DEAL_ASSIGNED_BY_ID ?? '', 10)
-  const assignedById = Number.isInteger(parsedAssignee) && parsedAssignee > 0 ? parsedAssignee : 1
+  // Ответственный — следующий менеджер по кругу. Раньше здесь было число из
+  // настройки, а у самой сделки вдобавок зашита единица, поэтому все заявки
+  // доставались одному человеку независимо от настройки.
+  const assignedById = await nextAssignee()
+  const observerIds = observersFor(assignedById)
 
   try {
     let contactId = await findContactByPhone(phone)
@@ -165,7 +152,10 @@ export async function POST(req: Request) {
     }
 
     const hotelName = hotel ?? 'тур'
-    const dealTitle = `${name} — ${hotelName}${stars ? ` ${'★'.repeat(stars)}` : ''}${country ? `, ${country}` : ''}`
+    const searchCountry = str(search.country)
+    const dealTitle = kind === 'help'
+      ? `${name} — подбор тура${searchCountry ? `, ${searchCountry}` : ''}`
+      : `${name} — ${hotelName}${stars ? ` ${'★'.repeat(stars)}` : ''}${country ? `, ${country}` : ''}`
     const dealId = await bitrixCall<number>('crm.deal.add', {
       fields: {
         TITLE: dealTitle,
@@ -174,13 +164,26 @@ export async function POST(req: Request) {
         CONTACT_ID: contactId,
         TYPE_ID: '1',
         SOURCE_ID: 'UC_58Z62L',
-        ASSIGNED_BY_ID: 1,
+        ASSIGNED_BY_ID: assignedById,
         OPENED: 'Y',
         COMMENTS: comments,
         ...(price != null ? { OPPORTUNITY: price, CURRENCY_ID: 'RUB' } : {}),
         ...(str(tour.dateStartIso) ? { CLOSEDATE: str(tour.dateStartIso) } : {}),
       },
     })
+
+    // Наблюдатели и чат — уже после того, как сделка создана: их сбой не должен
+    // превращать принятую заявку в ошибку для сотрудника.
+    await setDealObservers(dealId, observerIds)
+
+    const dealUrl = `https://${process.env.BITRIX_DOMAIN}/crm/deal/details/${dealId}/`
+    const heading = kind === 'help'
+      ? '🔎 Заявка на подбор тура'
+      : '🧳 Новая заявка на тур'
+    const assigneeName = await userName(assignedById)
+    await notifyChat(
+      `${heading}\n${dealTitle}\nТелефон: ${phone}\nОтветственный: ${assigneeName}\n${dealUrl}`,
+    )
 
     return NextResponse.json({ ok: true, dealId, contactId })
   } catch (e) {
