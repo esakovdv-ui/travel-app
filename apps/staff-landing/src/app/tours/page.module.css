@@ -2155,7 +2155,6 @@ a.contactValue {
 
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 16px 10px;
 
   border: 0;
@@ -2170,8 +2169,6 @@ a.contactValue {
   transition: padding-right var(--transition), background var(--transition);
 }
 .helpTab:hover { padding-right: 16px; }
-
-.helpTabIcon { flex-shrink: 0; }
 
 .helpTabLabel {
   writing-mode: vertical-rl;
@@ -2198,5 +2195,4 @@ a.contactValue {
   }
   .helpTab:hover { padding-right: 6px; }
   .helpTab:active { transform: translateY(-50%) scale(0.97); }
-  .helpTabIcon { display: none; }
 }

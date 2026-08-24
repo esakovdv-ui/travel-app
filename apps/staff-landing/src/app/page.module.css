@@ -750,6 +750,8 @@ html[data-framed='1'] .authPage {
   flex-direction: column;
   gap: 2px;
   margin-top: 4px;
+  /* По той же причине, что и .regionGrid выше. */
+  flex-shrink: 0;
 }
 
 .popoverItem {
@@ -1463,6 +1465,13 @@ html[data-framed='1'] .authPage {
   max-height: 168px;
   overflow-y: auto;
   padding: 2px 0 4px;
+  /*
+   * Не даём сжиматься. Попап — flex-колонка со своей прокруткой, и его дети
+   * ужимались раньше, чем он начинал скроллиться: у Турции 20 курортов
+   * схлопывались в одну строку 30px при содержимом в 329px. Пусть лучше
+   * прокручивается сам попап — он для этого и ограничен по высоте.
+   */
+  flex-shrink: 0;
 }
 
 .regionChip {
