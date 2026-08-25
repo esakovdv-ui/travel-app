@@ -309,14 +309,22 @@
 }
 
 /* Фото — левая колонка, overflow:hidden только здесь для скруглений */
+/*
+ * Фотографии дали больше места: карточка на десктопе шириной около 700px, и
+ * 150px под снимок читались как марка на конверте. Доля вместо жёсткой
+ * ширины — на узких экранах не съедает текст, на широких растёт вместе с
+ * карточкой.
+ */
 .hotelThumbWrap {
-  width: 150px;
-  flex-shrink: 0;
+  flex: 0 0 clamp(150px, 32%, 280px);
   position: relative;
   background: var(--c-blue-subtle);
   overflow: hidden;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   align-self: stretch;
+  /* Снимок 4:3 — привычная пропорция отельных фото; при коротком описании
+     карточка иначе получалась ниже, чем нужно кадру. */
+  min-height: 180px;
 }
 
 .hotelThumb {
@@ -1525,6 +1533,16 @@
   gap: 10px;
 }
 
+/* Цена, «₽/чел» и пометка о разнице — одним столбиком, чтобы правый край
+   строки оставался узким: раньше они шли в ряд и выдавливали «Выбрать». */
+.tourPriceGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
 .tourIncludedBadge {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
@@ -2203,4 +2221,365 @@ a.contactValue {
   }
   .helpTab:hover { padding-right: 6px; }
   .helpTab:active { transform: translateY(-50%) scale(0.97); }
+}
+
+
+/* ─── Галерея в карточке ───────────────────────────────────────────────── */
+
+.hotelGallery {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Стрелки. Появляются по наведению на десктопе — иначе две кнопки поверх
+ * каждого снимка превращали список в рябь. На телефоне наведения нет, поэтому
+ * там они видны всегда: иначе листать было бы нечем, кроме свайпа вслепую.
+ */
+.galleryArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--c-text);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(20, 20, 43, 0.22);
+  opacity: 0;
+  transition: opacity var(--transition), background var(--transition);
+}
+.hotelGallery:hover .galleryArrow { opacity: 1; }
+.galleryArrow:hover { background: #fff; }
+.galleryArrowPrev { left: 8px; }
+.galleryArrowNext { right: 8px; }
+
+.galleryDots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.galleryDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(20, 20, 43, 0.4);
+}
+.galleryDotOn { background: #fff; }
+
+/* Счётчик — для тех отелей, где кадров больше, чем точек. */
+.galleryCount {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.55);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.hotelGallery:hover .galleryCount { opacity: 1; }
+
+@media (max-width: 900px) {
+  /* Наведения нет — стрелки и счётчик показываем постоянно. */
+  .galleryArrow { opacity: 1; }
+  .galleryCount { opacity: 1; }
+}
+
+/* Подсказка о прочих вариантах перелёта под деталями рейса. */
+.flightAlt {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+/* Пометка самого дешёвого варианта и надбавка у остальных. */
+.tourCheapest {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1a7f37;
+  white-space: nowrap;
+}
+.tourDiff {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--c-text-light);
+  white-space: nowrap;
+}
+
+/* Заголовки внутри описания номера: «В номере», «Расположение», «Вид». */
+.roomDescLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.roomServices { margin-top: 6px; }
+
+@media (max-width: 900px) {
+  /*
+   * Строка варианта на телефоне складывается в два этажа.
+   *
+   * В один ряд не помещались ни плашки слева, ни цена с кнопкой справа:
+   * «Выбрать» уезжала за правый край экрана и нажать её было нечем. Теперь
+   * сверху даты и условия, снизу цена слева и кнопка справа.
+   */
+  .roomTourRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .roomTourRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* В своём ряду цену выравниваем по левому краю — под условиями выше. */
+  .tourPriceGroup { align-items: flex-start; }
+}
+
+/* ─── Разделы карточки отеля ───────────────────────────────────────────── */
+
+/*
+ * Липкая полоса: к ценам можно вернуться с любого места описания, не
+ * отматывая назад. Прилипает к верху прокручиваемого тела модалки.
+ */
+.modalTabs {
+  position: sticky;
+  /* Тело модалки прокручивается с отступом сверху — прилипаем под него,
+     иначе полоса вылезала бы из-под края. */
+  top: -20px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  padding: 10px 0;
+  margin-bottom: 4px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  /*
+   * Не сжиматься. Тело модалки — flex-колонка, а у элемента с собственным
+   * overflow автоматический минимальный размер равен нулю: полоса схлопывалась
+   * в 21px, кнопки внутри — в 16px при отступах 8+8, то есть текст обрезался
+   * ровно пополам. Та же ловушка, что была с сеткой курортов в попапе «Куда».
+   */
+  flex-shrink: 0;
+}
+.modalTabs::-webkit-scrollbar { display: none; }
+
+.modalTab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.modalTab:hover { background: rgba(20, 20, 43, 0.05); }
+
+.modalTabOn {
+  background: var(--c-blue);
+  color: #fff;
+}
+.modalTabOn:hover { background: var(--c-blue); }
+
+/* ─── Шаг выбора перелёта ──────────────────────────────────────────────── */
+
+.flightPickSummary {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--c-blue-subtle);
+  margin-bottom: 10px;
+}
+.flightPickRoom { font-size: 0.92rem; font-weight: 700; color: var(--c-text); }
+.flightPickDates { font-size: 0.8rem; color: var(--c-text-muted); margin-top: 2px; }
+
+.flightPickNote {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+  margin-bottom: 10px;
+}
+
+.flightPickLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 12px 0 6px;
+}
+
+/*
+ * Список рейсов. Колонок нет: цена от рейса не зависит, выбирают только время,
+ * поэтому строка короткая и одинаковая — так проще пробежать глазами.
+ */
+.flightPickList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flightPickRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition), background var(--transition);
+}
+.flightPickRow:hover { border-color: var(--c-blue); }
+
+.flightPickRowOn {
+  border-color: var(--c-blue);
+  background: var(--c-blue-subtle);
+}
+
+/* Строка варианта: два плеча слева, доплата справа. */
+.flightPickRow {
+  align-items: center;
+}
+.flightPickLegs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flightSide { display: block; min-width: 0; }
+.flightSideDir {
+  display: inline-block;
+  min-width: 62px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+}
+.flightSideTime {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.flightSideMeta {
+  display: block;
+  margin-left: 62px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+.flightPickPrice { flex-shrink: 0; text-align: right; }
+.flightPickExtra { font-size: 0.86rem; font-weight: 700; color: var(--c-text); white-space: nowrap; }
+.flightPickIncluded { font-size: 0.76rem; font-weight: 600; color: #1a7f37; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  /* Подпись плеча уводим на свою строку: «ТУДА» и время в один ряд не влезали. */
+  .flightSideMeta { margin-left: 0; }
+  .flightSideDir { min-width: 0; margin-right: 8px; }
+}
+
+/* Фильтр по времени вылета — над списком рейсов. */
+.flightSlots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.flightSlot {
+  padding: 6px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition);
+}
+.flightSlot:hover { border-color: var(--c-blue); }
+
+.flightSlotOn {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+}
+
+/* Число вариантов в интервале — приглушённее подписи. */
+.flightSlotCount { opacity: 0.6; font-weight: 700; }
+
+/* Ряд фильтра: подпись плеча и кнопки-интервалы. */
+.flightSlotsRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.flightSlotsLabel {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+/* Выбранный рейс в сводке формы заявки. */
+.bookingSummaryFlight {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+/* «Повторить» рядом с сообщением о неудачном запросе рейсов. */
+.flightRetryBtn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--c-blue);
+  text-decoration: underline;
+  cursor: pointer;
 }
