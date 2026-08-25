@@ -2293,3 +2293,35 @@ a.contactValue {
   .galleryArrow { opacity: 1; }
   .galleryCount { opacity: 1; }
 }
+
+/* Подсказка о прочих вариантах перелёта под деталями рейса. */
+.flightAlt {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+/* Пометка самого дешёвого варианта и надбавка у остальных. */
+.tourCheapest {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1a7f37;
+  white-space: nowrap;
+}
+.tourDiff {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--c-text-light);
+  white-space: nowrap;
+}
+
+/* Заголовки внутри описания номера: «В номере», «Расположение», «Вид». */
+.roomDescLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.roomServices { margin-top: 6px; }

@@ -164,7 +164,14 @@ interface FlightLeg {
 type FlightEntry =
   | { st: 'loading' }
   | { st: 'error' }
-  | { st: 'ok'; forward: FlightLeg | null; backward: FlightLeg | null }
+  | {
+      st: 'ok'
+      forward: FlightLeg | null
+      backward: FlightLeg | null
+      options: number
+      priceFrom: number | null
+      priceTo: number | null
+    }
 
 function parseLeg(raw: any): FlightLeg | null {
   if (!raw || typeof raw !== 'object') return null
@@ -186,13 +193,51 @@ function parseLeg(raw: any): FlightLeg | null {
   }
 }
 
-function parseFlightsResponse(raw: unknown): { forward: FlightLeg | null; backward: FlightLeg | null } {
+/**
+ * Заглушка вместо рейса.
+ *
+ * Первым в списке идёт вариант с isDefault, и у чартеров это сплошь и рядом
+ * пустышка: номер «SU000», вылет и прилёт в 00:00. Замер на боевом: из 122
+ * вариантов такой ровно один — и именно его мы и показывали, пока настоящий
+ * рейс «SU2156 12:45 → 18:10» лежал следующей строкой. Отсюда и ощущение,
+ * что рейсы не подгружаются: они подгружались, мы рисовали заглушку.
+ */
+function isStubLeg(raw: any): boolean {
+  if (!raw) return true
+  const dep = raw.departure?.time ?? ''
+  const arr = raw.arrival?.time ?? ''
+  const blank = (t: string) => t === '' || t === '00:00'
+  return blank(dep) && blank(arr)
+}
+
+function parseFlightsResponse(raw: unknown): {
+  forward: FlightLeg | null
+  backward: FlightLeg | null
+  /** Сколько вариантов перелёта предложил оператор. */
+  options: number
+  /** Разброс цен между ними: выбор рейса меняет стоимость тура. */
+  priceFrom: number | null
+  priceTo: number | null
+} {
   const r = raw as any
-  const first = Array.isArray(r?.flights) ? r.flights[0] : null
-  if (!first) return { forward: null, backward: null }
+  const list: any[] = Array.isArray(r?.flights) ? r.flights
+    : Array.isArray(r?.data?.flights) ? r.data.flights
+    : []
+  if (list.length === 0) return { forward: null, backward: null, options: 0, priceFrom: null, priceTo: null }
+
+  // Берём первый вариант с настоящим рейсом; если таких нет — что есть.
+  const chosen = list.find(f => !isStubLeg(f.forward?.[0])) ?? list[0]
+
+  const prices = list
+    .map(f => Number(f?.price?.value))
+    .filter(n => Number.isFinite(n) && n > 0)
+
   return {
-    forward:  parseLeg(first.forward?.[0] ?? null),
-    backward: parseLeg(first.backward?.[0] ?? null),
+    forward:  parseLeg(chosen.forward?.[0] ?? null),
+    backward: parseLeg(chosen.backward?.[0] ?? null),
+    options: list.length,
+    priceFrom: prices.length ? Math.min(...prices) : null,
+    priceTo:   prices.length ? Math.max(...prices) : null,
   }
 }
 
@@ -640,8 +685,12 @@ function FlightLegRow({ leg, dir }: { leg: FlightLeg; dir: string }) {
           <span className={styles.flightTag}>{leg.companyName} {leg.number}</span>
           {leg.plane && <span className={styles.flightTag}>{leg.plane}</span>}
           <span className={styles.flightTag}>{cls}</span>
+          {/* Ноль здесь означает «оператор не указал», а не «багажа нет».
+              Замер: у всех 122 вариантов baggage=0 и carryOn пустой. Раньше
+              мы на этом основании писали «ручная кладь» — то есть уверенно
+              сообщали, что багаж не входит, хотя данных об этом нет. */}
           <span className={styles.flightTag}>
-            {leg.baggage > 0 ? `багаж ${leg.baggage} кг` : 'ручная кладь'}
+            {leg.baggage > 0 ? `багаж ${leg.baggage} кг` : 'багаж не указан'}
           </span>
         </div>
       </div>
@@ -706,6 +755,10 @@ function RoomTourGroup({
   const { room, name, tours } = group
   const shown = listExpanded ? tours : tours.slice(0, 5)
 
+  // Сравнимость: при десяти строках выбор превращался в чтение столбика чисел.
+  // Помечаем самый дешёвый и показываем, на сколько дороже каждый следующий.
+  const minPrice = tours.length ? Math.min(...tours.map(t => t.price)) : 0
+
   // Fetch flight details when a tour row is expanded
   useEffect(() => {
     if (!expandedTourId || !searchId) return
@@ -716,8 +769,8 @@ function RoomTourGroup({
     staffFetch(`/api/tourvisor/tours/${expandedTourId}/flights`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => {
-        const { forward, backward } = parseFlightsResponse(data)
-        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'ok', forward, backward } }))
+        const parsed = parseFlightsResponse(data)
+        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'ok', ...parsed } }))
       })
       .catch(() => {
         setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'error' } }))
@@ -749,11 +802,17 @@ function RoomTourGroup({
           {room && (
             <div className={styles.roomBlockMeta}>
               {room.area != null && <span>{room.area} м²</span>}
+              {/* Число комнат приходило в данных, но не выводилось: «2 комнаты,
+                  55 м²» отвечает на вопрос о номере лучше, чем одна площадь. */}
+              {room.roomCount != null && room.roomCount > 1 && (
+                <span>{room.roomCount} комн.</span>
+              )}
               {room.bedroomCount != null && room.bedroomCount > 0 && (
                 <span>{room.bedroomCount} спал.</span>
               )}
-              {room.hasBalcony && <span>Балкон</span>}
-              {room.hasKitchen && <span>Кухня</span>}
+              {/* Балкон и кухня больше не дублируем отдельными плашками: они и
+                  так входят в список услуг ниже, который раньше не выводился
+                  вовсе. Две плашки из десятка пунктов только сбивали. */}
             </div>
           )}
           <div className={styles.roomBlockMinPrice}>от {formatPrice(tours[0].price)}</div>
@@ -761,10 +820,28 @@ function RoomTourGroup({
       </div>
 
       {/* Описание номера (HTML из Tourvisor) */}
-      {room && (room.sleepingPlaces || room.description || room.comment) && (
+      {room && (room.sleepingPlaces || room.description || room.comment
+                || room.services || room.location || room.viewDescription) && (
         <div className={styles.roomDesc}>
           {room.sleepingPlaces && (
             <div dangerouslySetInnerHTML={{ __html: room.sleepingPlaces }} />
+          )}
+          {/* Услуги номера приходили всегда и не показывались ни разу: «Балкон,
+              Кухня, Мягкая мебель, Шкаф или гардероб…». Именно по ним человек
+              и выбирает между номерами одного отеля. */}
+          {room.services && (
+            <div className={styles.roomServices}>
+              <div className={styles.roomDescLabel}>В номере</div>
+              <div dangerouslySetInnerHTML={{ __html: room.services }} />
+            </div>
+          )}
+          {room.location && (
+            <div><span className={styles.roomDescLabel}>Расположение</span>{' '}
+              <span dangerouslySetInnerHTML={{ __html: room.location }} /></div>
+          )}
+          {room.viewDescription && (
+            <div><span className={styles.roomDescLabel}>Вид</span>{' '}
+              <span dangerouslySetInnerHTML={{ __html: room.viewDescription }} /></div>
           )}
           {room.description && (
             <div dangerouslySetInnerHTML={{ __html: room.description }} />
@@ -812,12 +889,24 @@ function RoomTourGroup({
                   {tour.placement && (
                     <span className={styles.tourRoomTag}>{tour.placement}</span>
                   )}
+                  {/* Тип перелёта есть в фильтрах, а в самой строке его не было:
+                      человек отбирал по нему и не видел, что выбрал. */}
+                  <span className={styles.tourRoomTag}>
+                    {tour.isCharter ? 'чартер' : 'регуляр'}
+                  </span>
                 </button>
                 <div className={styles.roomTourRight}>
                   <div className={styles.tourPrice}>{formatPrice(tour.price)}</div>
                   {perPerson && (
                     <div className={styles.tourPricePerPerson}>
                       {perPerson.toLocaleString('ru-RU')} ₽/чел
+                    </div>
+                  )}
+                  {tour.price === minPrice ? (
+                    <div className={styles.tourCheapest}>самый дешёвый</div>
+                  ) : (
+                    <div className={styles.tourDiff}>
+                      +{(tour.price - minPrice).toLocaleString('ru-RU')} ₽
                     </div>
                   )}
                   <button
@@ -850,6 +939,19 @@ function RoomTourGroup({
                       {flight.backward && <FlightLegRow leg={flight.backward} dir="Обратно" />}
                       {!flight.forward && !flight.backward && (
                         <span className={styles.flightError}>Данные рейса не получены</span>
+                      )}
+                      {/* У оператора обычно не один рейс, и выбор меняет цену
+                          тура — на замере разброс составил 16 682 ₽. Раньше об
+                          этом не говорилось ничего, и показанный рейс читался
+                          как единственно возможный. */}
+                      {flight.options > 1 && (
+                        <div className={styles.flightAlt}>
+                          Ещё {flight.options - 1} {variantsWord(flight.options - 1)} перелёта
+                          {flight.priceFrom != null && flight.priceTo != null && flight.priceTo > flight.priceFrom
+                            ? ` — от ${formatPrice(flight.priceFrom)} до ${formatPrice(flight.priceTo)}`
+                            : ''}
+                          . Менеджер подберёт при бронировании.
+                        </div>
                       )}
                     </>
                   )}
