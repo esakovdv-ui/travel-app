@@ -1478,8 +1478,17 @@ function HotelModal({
     [flightOptions, slotOut, slotBack, inSlot],
   )
 
-  // Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
-  useEffect(() => { if (bookTourId) setTab('flight') }, [bookTourId])
+  /**
+   * Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
+   * Сняли выбор — возвращаем к номерам.
+   *
+   * Без возврата человек оставался на вкладке «Перелёт», которой уже нет:
+   * кнопка исчезала вместе с выбором, а тело модалки становилось пустым —
+   * выглядело так, будто предложения перестали выводиться.
+   */
+  useEffect(() => {
+    setTab(bookTourId ? 'flight' : 'rooms')
+  }, [bookTourId])
 
   const rawSections: [title: string, html: string | undefined][] = [
     ['Об отеле',                desc?.common?.description],
