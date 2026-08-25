@@ -2545,3 +2545,29 @@ a.contactValue {
 
 /* Число вариантов в интервале — приглушённее подписи. */
 .flightSlotCount { opacity: 0.6; font-weight: 700; }
+
+/* Ряд фильтра: подпись плеча и кнопки-интервалы. */
+.flightSlotsRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.flightSlotsLabel {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+/* Выбранный рейс в сводке формы заявки. */
+.bookingSummaryFlight {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}

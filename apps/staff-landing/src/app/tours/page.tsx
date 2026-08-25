@@ -863,6 +863,38 @@ function FlightSideRow({ side, dir }: { side: FlightSide; dir: string }) {
   )
 }
 
+/** Ряд кнопок-интервалов для одного плеча. */
+function FlightSlotRow({
+  label, value, counts, onPick,
+}: {
+  label: string
+  value: SlotKey
+  counts: Record<string, number>
+  onPick: (key: SlotKey) => void
+}) {
+  // Пустые интервалы прячем: кнопка с нулём только дразнит.
+  const shown = DEPARTURE_SLOTS.filter(sl => sl.key === 'any' || counts[sl.key] > 0)
+  if (shown.length <= 1) return null
+  return (
+    <div className={styles.flightSlotsRow}>
+      <span className={styles.flightSlotsLabel}>{label}</span>
+      <div className={styles.flightSlots}>
+        {shown.map(sl => (
+          <button
+            key={sl.key}
+            type="button"
+            className={`${styles.flightSlot} ${value === sl.key ? styles.flightSlotOn : ''}`}
+            aria-pressed={value === sl.key}
+            onClick={() => onPick(sl.key)}
+          >
+            {sl.label} <span className={styles.flightSlotCount}>{counts[sl.key]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function FlightSkeleton() {
   return (
     <div className={styles.flightSkeleton}>
@@ -1228,8 +1260,24 @@ function HotelModal({
     setLightboxOpen(true)
   }
 
+  /**
+   * Кнопка «Оставить заявку» в шапке карточки.
+   *
+   * Раньше она только прокручивала к номерам — и на вкладках «Перелёт», «Об
+   * отеле» или «На карте» не делала ничего: блока номеров там нет в разметке,
+   * прокручивать не к чему. Кнопка выглядела рабочей и молчала.
+   *
+   * Если тур уже выбран — открываем форму: человек прошёл весь путь, вести его
+   * обратно к списку незачем. Если нет — возвращаем на вкладку с номерами и
+   * подводим к ним.
+   */
   function scrollToRooms() {
-    roomsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (bookTourId) { setBookFormOpen(true); return }
+    setTab('rooms')
+    // Секция рисуется вместе со сменой вкладки — ждём кадр отрисовки.
+    requestAnimationFrame(() => {
+      roomsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   async function handleBook(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -1373,10 +1421,11 @@ function HotelModal({
   const [flightsState, setFlightsState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [pickFlight, setPickFlight] = useState<string | null>(null)
   const [flightsExpanded, setFlightsExpanded] = useState(false)
-  const [slot, setSlot] = useState<SlotKey>('any')
+  const [slotOut, setSlotOut] = useState<SlotKey>('any')
+  const [slotBack, setSlotBack] = useState<SlotKey>('any')
 
   useEffect(() => {
-    setPickFlight(null); setFlightsExpanded(false); setSlot('any')
+    setPickFlight(null); setFlightsExpanded(false); setSlotOut('any'); setSlotBack('any')
     if (!bookTourId) { setFlightsState('idle'); setFlightsRaw(null); return }
     let cancelled = false
     setFlightsState('loading')
@@ -1397,28 +1446,37 @@ function HotelModal({
   const flightBase = flightOptions.length ? flightOptions[0].price : 0
   const FLIGHTS_VISIBLE = 6
 
-  /** Сколько вариантов в каждом интервале — числом на кнопке фильтра. */
-  const slotCounts = useMemo(() => {
+  /** Попадает ли время в интервал. Не разобрали час — пропускаем. */
+  const inSlot = useCallback((time: string, key: SlotKey) => {
+    if (key === 'any') return true
+    const sl = DEPARTURE_SLOTS.find(x => x.key === key)!
+    const h = departureHour(time)
+    return h == null || (h >= sl.from && h < sl.to)
+  }, [])
+
+  /**
+   * Числа на кнопках считаем с учётом соседнего фильтра.
+   *
+   * Иначе «Утро 55» осталось бы на месте после сужения обратного рейса, и
+   * человек жал бы на интервал, где на самом деле ничего нет.
+   */
+  const slotCounts = useCallback((which: 'out' | 'back') => {
+    const other = which === 'out' ? slotBack : slotOut
+    const pool = flightOptions.filter(o =>
+      inSlot(which === 'out' ? (o.back?.depTime ?? '') : o.out.depTime, other))
     const counts: Record<string, number> = {}
-    for (const s of DEPARTURE_SLOTS) {
-      counts[s.key] = s.key === 'any'
-        ? flightOptions.length
-        : flightOptions.filter(o => {
-            const h = departureHour(o.out.depTime)
-            return h == null || (h >= s.from && h < s.to)
-          }).length
+    for (const sl of DEPARTURE_SLOTS) {
+      counts[sl.key] = pool.filter(o =>
+        inSlot(which === 'out' ? o.out.depTime : (o.back?.depTime ?? ''), sl.key)).length
     }
     return counts
-  }, [flightOptions])
+  }, [flightOptions, slotOut, slotBack, inSlot])
 
-  const visibleFlights = useMemo(() => {
-    if (slot === 'any') return flightOptions
-    const s = DEPARTURE_SLOTS.find(x => x.key === slot)!
-    return flightOptions.filter(o => {
-      const h = departureHour(o.out.depTime)
-      return h == null || (h >= s.from && h < s.to)
-    })
-  }, [flightOptions, slot])
+  const visibleFlights = useMemo(
+    () => flightOptions.filter(o =>
+      inSlot(o.out.depTime, slotOut) && inSlot(o.back?.depTime ?? '', slotBack)),
+    [flightOptions, slotOut, slotBack, inSlot],
+  )
 
   // Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
   useEffect(() => { if (bookTourId) setTab('flight') }, [bookTourId])
@@ -1682,29 +1740,34 @@ function HotelModal({
                 {flightsState === 'ok' && flightOptions.length > 0 && (
                   <>
                     <div className={styles.flightPickNote}>
-                      {slot === 'any'
+                      {slotOut === 'any' && slotBack === 'any'
                         ? `${flightOptions.length} ${variantsWord(flightOptions.length)} перелёта.`
                         : `${visibleFlights.length} из ${flightOptions.length}.`}
                       Выберите удобный — пожелание уйдёт в заявку, окончательную
                       стоимость подтвердит менеджер.
                     </div>
 
-                    {/* Фильтр по времени вылета. Показываем, только когда
-                        вариантов много: на двух-трёх строках он лишний. */}
+                    {/* Фильтры по времени. Показываем, только когда вариантов
+                        много: на двух-трёх строках они лишние. Обратный рейс —
+                        отдельным рядом: сузив вылет туда, человек всё равно
+                        остаётся с десятком возвращений. */}
                     {flightOptions.length > FLIGHTS_VISIBLE && (
-                      <div className={styles.flightSlots}>
-                        {DEPARTURE_SLOTS.filter(sl => sl.key === 'any' || slotCounts[sl.key] > 0).map(sl => (
-                          <button
-                            key={sl.key}
-                            type="button"
-                            className={`${styles.flightSlot} ${slot === sl.key ? styles.flightSlotOn : ''}`}
-                            aria-pressed={slot === sl.key}
-                            onClick={() => { setSlot(sl.key); setFlightsExpanded(false) }}
-                          >
-                            {sl.label} <span className={styles.flightSlotCount}>{slotCounts[sl.key]}</span>
-                          </button>
-                        ))}
-                      </div>
+                      <>
+                        <FlightSlotRow
+                          label="Вылет туда"
+                          value={slotOut}
+                          counts={slotCounts('out')}
+                          onPick={k => { setSlotOut(k); setFlightsExpanded(false) }}
+                        />
+                        {flightOptions.some(o => o.back) && (
+                          <FlightSlotRow
+                            label="Вылет обратно"
+                            value={slotBack}
+                            counts={slotCounts('back')}
+                            onPick={k => { setSlotBack(k); setFlightsExpanded(false) }}
+                          />
+                        )}
+                      </>
                     )}
 
                     <div className={styles.flightPickList}>
@@ -1853,6 +1916,19 @@ function HotelModal({
                         {' · '}{nightsLabel(selectedTour.nights)}
                         {selectedTour.meal?.fullName && ` · ${selectedTour.meal.fullName}`}
                       </div>
+                      {/* Выбранный рейс: он уходит в заявку, значит человек
+                          должен увидеть его перед отправкой. Раньше сводка
+                          обрывалась на питании, и проверить было нечего. */}
+                      {(() => {
+                        const f = flightOptions.find(o => o.key === pickFlight)
+                        if (!f) return null
+                        return (
+                          <div className={styles.bookingSummaryFlight}>
+                            Перелёт: туда {f.out.depTime} {f.out.depPort}→{f.out.arrPort}
+                            {f.back && `, обратно ${f.back.depTime} ${f.back.depPort}→${f.back.arrPort}`}
+                          </div>
+                        )
+                      })()}
                       <div className={styles.bookingSummaryPrice}>{formatPrice(selectedTour.price)}</div>
                     </div>
                   )}
