@@ -14,11 +14,33 @@ export function getDepartures() {
   })
 }
 
-export function getCountries(departureId: number = DEFAULT_DEPARTURE_ID) {
-  return tvFetch<Country[]>('/countries', {
+/**
+ * Страны, по которым из Москвы нет ничего.
+ *
+ * Не сезонная пустота, а полная: поиск не возвращает ни одного отеля, сколько
+ * ни двигай даты. Замеры по окнам вылета (+дней от сегодня):
+ *
+ *   Кипр (15)     — 0 отелей на +21, +45, +75, +140, +200
+ *   Италия (24)   — 0 на +21, +45, +75, +140
+ *   Хорватия (22) — 0 на +21, +75, +140, +200
+ *
+ * Мерили мимо фильтра операторов, то есть по всей базе Tourvisor: в портале,
+ * где остаются только наши туроператоры, их тем более не будет.
+ *
+ * Важно, чем это отличается от «пустых курортов», которые мы намеренно НЕ
+ * прячем. Поиск по стране возвращает выборку, а не всё: по России он отдаёт
+ * Сочи и Крым, а до Санкт-Петербурга не доходит — и тот выглядит пустым, хотя
+ * у него 95 отелей на тех же датах. Здесь выборке теряться не в чем: ответ
+ * пуст целиком. Поэтому страну скрыть можно, а курорт — нет.
+ */
+const DEAD_COUNTRY_IDS: readonly number[] = [15, 24, 22]
+
+export async function getCountries(departureId: number = DEFAULT_DEPARTURE_ID) {
+  const countries = await tvFetch<Country[]>('/countries', {
     params: { departureId },
     revalidate: 60 * 60, // 1 час
   })
+  return countries.filter(c => !DEAD_COUNTRY_IDS.includes(c.id))
 }
 
 export function getMeals() {
@@ -44,6 +66,30 @@ const DEPARTURE_HOME_REGIONS: Record<number, readonly number[]> = {
 }
 
 /**
+ * Курорты, по которым нет ничего ни на одних датах.
+ *
+ * Мерили каждый по отдельности, с фильтром по этому курорту — только так
+ * данным можно верить. Поиск по стране целиком возвращает выборку: в нём
+ * «пустыми» выглядели 38 российских курортов из 47, включая Санкт-Петербург,
+ * у которого на тех же датах 95 отелей. Поштучно живых оказалось 39.
+ *
+ * Каждый из перечисленных дал ноль на семи окнах вылета: +21, +75, +140 дней
+ * и отдельно зимних — около 23 декабря, 5 января, 1 февраля и 13 марта.
+ * Зимние добавлены нарочно ради Шерегеша и Великого Устюга: горнолыжный и
+ * новогодний, их сезон мог не попасть в первые три окна. Не попал бы — но и
+ * в свой сезон они пусты.
+ */
+const DEAD_REGION_IDS: readonly number[] = [
+  471, // Великий Устюг
+  498, // Шерегеш
+  527, // Золотое Кольцо
+  613, // Ростовская обл.
+  617, // Псков
+  661, // Воронеж
+  697, // Адыгея
+]
+
+/**
  * Курорты: Аланья, Анталья, Кемер… Нужны для поиска по regionIds.
  * Без countryId Tourvisor отдаёт справочник целиком по всем странам.
  *
@@ -56,7 +102,6 @@ export async function getRegions(countryId?: number) {
     revalidate: 60 * 60 * 24, // сутки — список курортов не меняется
   })
 
-  const hidden = DEPARTURE_HOME_REGIONS[DEFAULT_DEPARTURE_ID]
-  if (!hidden?.length) return regions
-  return regions.filter(r => !hidden.includes(r.id))
+  const home = DEPARTURE_HOME_REGIONS[DEFAULT_DEPARTURE_ID] ?? []
+  return regions.filter(r => !home.includes(r.id) && !DEAD_REGION_IDS.includes(r.id))
 }
