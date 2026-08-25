@@ -77,6 +77,10 @@ function applyPinState(el: HTMLElement, selected: boolean): void {
   el.style.background = selected ? '#e8272a' : '#0c2461'
   el.style.transform  = selected ? 'scale(1.18)' : 'scale(1)'
   el.style.zIndex     = selected ? '2' : '1'
+  // Выбранный отель рисуется отдельным маркером поверх кластеров, поэтому
+  // обычный пин на его месте прячем — иначе две одинаковые подписи ложились
+  // одна на другую и давали задвоенную тень.
+  el.style.visibility = selected ? 'hidden' : 'visible'
 }
 
 /** Подпись пина: на дальнем зуме только цена, на ближнем — ещё и название. */
