@@ -309,14 +309,22 @@
 }
 
 /* Фото — левая колонка, overflow:hidden только здесь для скруглений */
+/*
+ * Фотографии дали больше места: карточка на десктопе шириной около 700px, и
+ * 150px под снимок читались как марка на конверте. Доля вместо жёсткой
+ * ширины — на узких экранах не съедает текст, на широких растёт вместе с
+ * карточкой.
+ */
 .hotelThumbWrap {
-  width: 150px;
-  flex-shrink: 0;
+  flex: 0 0 clamp(150px, 32%, 280px);
   position: relative;
   background: var(--c-blue-subtle);
   overflow: hidden;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   align-self: stretch;
+  /* Снимок 4:3 — привычная пропорция отельных фото; при коротком описании
+     карточка иначе получалась ниже, чем нужно кадру. */
+  min-height: 180px;
 }
 
 .hotelThumb {
@@ -2203,4 +2211,85 @@ a.contactValue {
   }
   .helpTab:hover { padding-right: 6px; }
   .helpTab:active { transform: translateY(-50%) scale(0.97); }
+}
+
+
+/* ─── Галерея в карточке ───────────────────────────────────────────────── */
+
+.hotelGallery {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Стрелки. Появляются по наведению на десктопе — иначе две кнопки поверх
+ * каждого снимка превращали список в рябь. На телефоне наведения нет, поэтому
+ * там они видны всегда: иначе листать было бы нечем, кроме свайпа вслепую.
+ */
+.galleryArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--c-text);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(20, 20, 43, 0.22);
+  opacity: 0;
+  transition: opacity var(--transition), background var(--transition);
+}
+.hotelGallery:hover .galleryArrow { opacity: 1; }
+.galleryArrow:hover { background: #fff; }
+.galleryArrowPrev { left: 8px; }
+.galleryArrowNext { right: 8px; }
+
+.galleryDots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.galleryDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(20, 20, 43, 0.4);
+}
+.galleryDotOn { background: #fff; }
+
+/* Счётчик — для тех отелей, где кадров больше, чем точек. */
+.galleryCount {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.55);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.hotelGallery:hover .galleryCount { opacity: 1; }
+
+@media (max-width: 900px) {
+  /* Наведения нет — стрелки и счётчик показываем постоянно. */
+  .galleryArrow { opacity: 1; }
+  .galleryCount { opacity: 1; }
 }

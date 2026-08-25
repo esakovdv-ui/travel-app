@@ -18,6 +18,7 @@ import {
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
 import { reportSeenRegions } from '@/lib/region-availability-client'
+import { cachedPhotos, loadPhotos } from '@/lib/hotel-photos'
 import { staffFetch } from '@/lib/staff-client'
 import { useStaffGuard } from '@/lib/use-staff-guard'
 import { useAppHeight } from '@/lib/use-app-height'
@@ -314,6 +315,135 @@ function HelpTab({ onClick }: { onClick: () => void }) {
   )
 }
 
+/**
+ * Галерея карточки: первое фото из выдачи, остальные — по требованию.
+ *
+ * Первый кадр приходит вместе со списком, поэтому карточка рисуется сразу и
+ * без единого запроса. Остальные два десятка лежат в отдельном запросе на
+ * отель — за ними идём только когда человек начал листать. Иначе сотня
+ * карточек в списке разом упёрлась бы в лимит эндпоинта, а листают единицы.
+ */
+function HotelGallery({ hotel, onOpen }: { hotel: HotelSearchResult; onOpen: () => void }) {
+  const first = hotel.picturelink
+  const [photos, setPhotos] = useState<string[]>(() => cachedPhotos(hotel.id) ?? (first ? [first] : []))
+  const [index, setIndex] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const touchX = useRef<number | null>(null)
+  // Длину читаем из ref: сразу после загрузки состояние ещё старое, и
+  // перемотка считала бы остаток по одному кадру.
+  const photosRef = useRef<string[]>(photos)
+  useEffect(() => { photosRef.current = photos }, [photos])
+
+  // Список поменялся (новый поиск) — начинаем с первого кадра.
+  useEffect(() => {
+    const start = cachedPhotos(hotel.id) ?? (first ? [first] : [])
+    setPhotos(start)
+    photosRef.current = start
+    setIndex(0)
+  }, [hotel.id, first])
+
+  /** Подтянуть остальные кадры. Вызываем при первом же намерении листать. */
+  const ensurePhotos = useCallback(async () => {
+    if (cachedPhotos(hotel.id) || loading) return
+    setLoading(true)
+    const list = await loadPhotos(hotel.id)
+    setLoading(false)
+    if (list.length > 1) {
+      // Кадр из выдачи и первый из галереи — разные файлы одного отеля.
+      // Показываем галерею целиком, начиная с того же места.
+      setPhotos(list)
+      photosRef.current = list
+      setIndex(0)
+    }
+  }, [hotel.id, loading])
+
+  const move = useCallback((delta: number) => {
+    setIndex(i => {
+      const n = photosRef.current.length
+      if (n < 2) return 0
+      return (i + delta + n) % n
+    })
+  }, [])
+
+  /**
+   * Шаг по галерее.
+   *
+   * Дожидаемся загрузки, а потом листаем: если двигать сразу, первый клик
+   * уходит в пустоту — кадров ещё один, перематывать нечего, и человеку
+   * приходится жать дважды.
+   */
+  const step = useCallback(async (delta: number) => {
+    await ensurePhotos()
+    move(delta)
+  }, [ensurePhotos, move])
+
+  if (!first && photos.length === 0) {
+    return <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
+  }
+
+  const many = photos.length > 1
+
+  return (
+    <div
+      className={styles.hotelGallery}
+      onPointerEnter={() => { void ensurePhotos() }}
+      onTouchStart={e => { touchX.current = e.touches[0].clientX; void ensurePhotos() }}
+      onTouchEnd={e => {
+        if (touchX.current == null) return
+        const dx = e.changedTouches[0].clientX - touchX.current
+        touchX.current = null
+        if (Math.abs(dx) > 30) void step(dx < 0 ? 1 : -1)
+      }}
+    >
+      <img
+        src={photos[index] ?? first}
+        alt={hotel.name}
+        className={styles.hotelThumb}
+        loading="lazy"
+        onClick={e => { e.stopPropagation(); onOpen() }}
+      />
+
+      {many && (
+        <>
+          <button
+            type="button"
+            className={`${styles.galleryArrow} ${styles.galleryArrowPrev}`}
+            onClick={e => { e.stopPropagation(); void step(-1) }}
+            aria-label="Предыдущее фото"
+          >‹</button>
+          <button
+            type="button"
+            className={`${styles.galleryArrow} ${styles.galleryArrowNext}`}
+            onClick={e => { e.stopPropagation(); void step(1) }}
+            aria-label="Следующее фото"
+          >›</button>
+          {/* Точек столько же, сколько кадров, но не больше восьми: у отеля
+              бывает за двадцать снимков, и лента точек превращалась в кашу. */}
+          <div className={styles.galleryDots} aria-hidden="true">
+            {photos.slice(0, 8).map((_, i) => (
+              <span
+                key={i}
+                className={`${styles.galleryDot} ${i === Math.min(index, 7) ? styles.galleryDotOn : ''}`}
+              />
+            ))}
+          </div>
+          <div className={styles.galleryCount}>{index + 1}/{photos.length}</div>
+        </>
+      )}
+
+      {/* Пока не листали — одна стрелка вперёд как приглашение. */}
+      {!many && hotel.hasPictures && (
+        <button
+          type="button"
+          className={`${styles.galleryArrow} ${styles.galleryArrowNext}`}
+          onClick={e => { e.stopPropagation(); void step(1) }}
+          aria-label="Показать фотографии"
+        >›</button>
+      )}
+    </div>
+  )
+}
+
 function HotelCard({
   hotel,
   selected,
@@ -363,11 +493,7 @@ function HotelCard({
       onClick={onSelect}
     >
       <div className={styles.hotelThumbWrap}>
-        {hotel.picturelink ? (
-          <img src={hotel.picturelink} alt={hotel.name} className={styles.hotelThumb} loading="lazy" />
-        ) : (
-          <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
-        )}
+        <HotelGallery hotel={hotel} onOpen={onOpen} />
       </div>
 
       <div className={styles.hotelCardBody}>
