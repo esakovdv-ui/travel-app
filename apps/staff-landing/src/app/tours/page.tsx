@@ -1429,11 +1429,12 @@ function HotelModal({
                 начинался на 1686px при высоте модалки 2381px — 71% прокрутки,
                 под десятью секциями описания. Сотрудники до него не долистывали. */}
             {/* ── Номера и туры — сгруппировано ── */}
-            <div
-              className={styles.modalSection}
-              ref={roomsSectionRef}
-              hidden={tab !== 'rooms'}
-            >
+            {/* Условный рендер, а не атрибут hidden: .modalSection задаёт
+                display:flex, и правило класса перебивает браузерное
+                [hidden]{display:none} — блок номеров оставался виден на
+                вкладке «Об отеле». */}
+            {tab === 'rooms' && (
+            <div className={styles.modalSection} ref={roomsSectionRef}>
               {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
                   подпись читалась как «четыре номера». */}
               <div className={styles.modalSectionTitle}>
@@ -1456,6 +1457,7 @@ function HotelModal({
                 </div>
               )}
             </div>
+            )}
 
             {/* Описание отеля.
                 Раньше здесь вручную повторялись пять почти одинаковых блоков,
