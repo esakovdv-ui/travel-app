@@ -212,6 +212,29 @@ function isStubLeg(raw: any): boolean {
   return blank(dep) && blank(arr)
 }
 
+/**
+ * Интервалы вылета для фильтра.
+ *
+ * Выбирают перелёт по времени: цена у вариантов чаще всего одинаковая, а
+ * вылетать в пять утра и в полдень — разные вещи. Листать полторы сотни строк
+ * никто не станет, поэтому даём сузить.
+ */
+const DEPARTURE_SLOTS = [
+  { key: 'any',     label: 'Любое',        from: 0,  to: 24 },
+  { key: 'night',   label: 'Ночь 00–06',   from: 0,  to: 6 },
+  { key: 'morning', label: 'Утро 06–12',   from: 6,  to: 12 },
+  { key: 'day',     label: 'День 12–18',   from: 12, to: 18 },
+  { key: 'evening', label: 'Вечер 18–24',  from: 18, to: 24 },
+] as const
+
+type SlotKey = (typeof DEPARTURE_SLOTS)[number]['key']
+
+/** Час вылета из «07:40». Не разобрали — пропускаем через любой фильтр. */
+function departureHour(time: string): number | null {
+  const m = /^(\d{1,2}):/.exec(time)
+  return m ? +m[1] : null
+}
+
 /** Одно плечо перелёта для строки выбора. */
 interface FlightSide {
   company: string
@@ -890,9 +913,6 @@ function RoomTourGroup({
   searchId: string
 }) {
   const [listExpanded, setListExpanded] = useState(false)
-  const [expandedTourId, setExpandedTourId] = useState<string | null>(null)
-  const [flightCache, setFlightCache] = useState<Record<string, FlightEntry>>({})
-  const fetchedRef = useRef<Set<string>>(new Set())
 
   const { room, name, tours } = group
   // Три строки, как у «Слетать» и Level.Travel: они прячут остальное за одной
@@ -906,23 +926,9 @@ function RoomTourGroup({
   // Помечаем самый дешёвый и показываем, на сколько дороже каждый следующий.
   const minPrice = tours.length ? Math.min(...tours.map(t => t.price)) : 0
 
-  // Fetch flight details when a tour row is expanded
-  useEffect(() => {
-    if (!expandedTourId || !searchId) return
-    if (!group.tours.some(t => t.id === expandedTourId)) return
-    if (fetchedRef.current.has(expandedTourId)) return
-    fetchedRef.current.add(expandedTourId)
-    setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'loading' } }))
-    staffFetch(`/api/tourvisor/tours/${expandedTourId}/flights`)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => {
-        const parsed = parseFlightsResponse(data)
-        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'ok', ...parsed } }))
-      })
-      .catch(() => {
-        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'error' } }))
-      })
-  }, [expandedTourId, searchId, group.tours])
+  // Рейсы больше не тянем здесь: этим занимается вкладка «Перелёт», которая
+  // открывается по нажатию «Выбрать». Раньше запрос уходил дважды — строка
+  // раскрывалась тем же нажатием и дублировала его.
 
   return (
     <div className={styles.roomBlock}>
@@ -1003,25 +1009,26 @@ function RoomTourGroup({
       <div className={styles.roomToursList}>
         {shown.map(tour => {
           const selected = bookTourId === tour.id
-          const isExpanded = expandedTourId === tour.id
           // При одном взрослом «₽/чел» дословно повторяет общую цену — на SGL
           // в строке стояли два одинаковых числа подряд.
           const perPerson = tour.adults > 1 ? Math.round(tour.price / tour.adults) : null
-          const flight = flightCache[tour.id]
           return (
             <Fragment key={tour.id}>
               {/* Строку раскрывала обёртка <div onClick>. Кнопку в кнопку вложить
                   нельзя, поэтому раскрытие повесили на левую половину, а «Выбрать»
                   осталось отдельной кнопкой — обе доступны с клавиатуры. */}
               <div
-                className={`${styles.roomTourRow} ${selected ? styles.roomTourRowSelected : ''} ${isExpanded ? styles.roomTourRowExpanded : ''}`}
+                className={`${styles.roomTourRow} ${selected ? styles.roomTourRowSelected : ''}`}
               >
+                {/* Раньше левая половина раскрывала детали рейса. Они переехали
+                    на вкладку «Перелёт», и кнопка осталась бы мёртвой — теперь
+                    она выбирает тур, как и «Выбрать» справа: попасть по строке
+                    проще, чем по кнопке. */}
                 <button
                   type="button"
                   className={styles.roomTourLeft}
-                  onClick={() => setExpandedTourId(prev => prev === tour.id ? null : tour.id)}
-                  aria-expanded={isExpanded}
-                  aria-label={`${formatDateRange(tour.date, tour.nights)}, ${nightsLabel(tour.nights)} — показать рейс`}
+                  onClick={() => onSelectTour(selected ? null : tour.id)}
+                  aria-label={`${formatDateRange(tour.date, tour.nights)}, ${nightsLabel(tour.nights)} — выбрать тур`}
                 >
                   <span className={styles.tourDate}>{formatDateRange(tour.date, tour.nights)}</span>
                   <span className={styles.tourNights}>{nightsLabel(tour.nights)}</span>
@@ -1066,9 +1073,7 @@ function RoomTourGroup({
                     aria-pressed={selected}
                     onClick={e => {
                       e.stopPropagation()
-                      const next = selected ? null : tour.id
-                      onSelectTour(next)
-                      if (next) setExpandedTourId(next)
+                      onSelectTour(selected ? null : tour.id)
                     }}
                   >
                     {selected ? '✓ Выбран' : 'Выбрать'}
@@ -1076,39 +1081,6 @@ function RoomTourGroup({
                 </div>
               </div>
 
-              {/* Детали рейса — для развёрнутого тура */}
-              {isExpanded && (
-                <div className={styles.flightDetails} onClick={e => e.stopPropagation()}>
-                  <div className={styles.flightDetailsLabel}>Рейс</div>
-                  {!flight || flight.st === 'loading' ? (
-                    <FlightSkeleton />
-                  ) : flight.st === 'error' ? (
-                    <span className={styles.flightError}>Данные недоступны</span>
-                  ) : (
-                    <>
-                      {flight.forward  && <FlightLegRow leg={flight.forward}  dir="Туда" />}
-                      {flight.backward && <FlightLegRow leg={flight.backward} dir="Обратно" />}
-                      {!flight.forward && !flight.backward && (
-                        <span className={styles.flightError}>Данные рейса не получены</span>
-                      )}
-                      {/* У оператора обычно не один рейс, и выбор меняет цену
-                          тура — на замере разброс составил 16 682 ₽. Раньше об
-                          этом не говорилось ничего, и показанный рейс читался
-                          как единственно возможный. */}
-                      {flight.options > 1 && (
-                        <div className={styles.flightAlt}>
-                          У оператора {flight.outboundCount} {variantsWord(flight.outboundCount)} вылета
-                          {flight.inboundCount > 1 ? ` и ${flight.inboundCount} обратно` : ''}
-                          {flight.priceFrom != null && flight.priceTo != null && flight.priceTo > flight.priceFrom
-                            ? `, от ${formatPrice(flight.priceFrom)} до ${formatPrice(flight.priceTo)}`
-                            : ' по той же цене'}
-                          . Удобное время подберёт менеджер.
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
             </Fragment>
           )
         })}
@@ -1315,6 +1287,12 @@ function HotelModal({
               adults: selectedTour.adults,
               childs: selectedTour.childs,
               placement: selectedTour.placement,
+              // Номер в заявку не уходил вовсе: был только placement («DBL»),
+              // то есть размещение, а не категория. Человек выбирает «comfort
+              // sea view», видит его в нижней плашке — а менеджер получал
+              // сделку, из которой номер не понять.
+              room: selectedRoomName || null,
+              roomType: selectedTour.roomType || null,
               flightProgram: selectedTour.name,
               // Пожелание по времени вылета: забронировать конкретный рейс мы
               // не можем, но донести до менеджера — можем.
@@ -1395,9 +1373,10 @@ function HotelModal({
   const [flightsState, setFlightsState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
   const [pickFlight, setPickFlight] = useState<string | null>(null)
   const [flightsExpanded, setFlightsExpanded] = useState(false)
+  const [slot, setSlot] = useState<SlotKey>('any')
 
   useEffect(() => {
-    setPickFlight(null); setFlightsExpanded(false)
+    setPickFlight(null); setFlightsExpanded(false); setSlot('any')
     if (!bookTourId) { setFlightsState('idle'); setFlightsRaw(null); return }
     let cancelled = false
     setFlightsState('loading')
@@ -1413,8 +1392,33 @@ function HotelModal({
     [flightsState, flightsRaw],
   )
   // Дешёвый вариант — точка отсчёта для доплаты, как «Доплата + 865» у «Слетать».
+  // Считаем по всем вариантам, а не по отфильтрованным: иначе доплата прыгала
+  // бы при смене фильтра, хотя цена тура не менялась.
   const flightBase = flightOptions.length ? flightOptions[0].price : 0
   const FLIGHTS_VISIBLE = 6
+
+  /** Сколько вариантов в каждом интервале — числом на кнопке фильтра. */
+  const slotCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const s of DEPARTURE_SLOTS) {
+      counts[s.key] = s.key === 'any'
+        ? flightOptions.length
+        : flightOptions.filter(o => {
+            const h = departureHour(o.out.depTime)
+            return h == null || (h >= s.from && h < s.to)
+          }).length
+    }
+    return counts
+  }, [flightOptions])
+
+  const visibleFlights = useMemo(() => {
+    if (slot === 'any') return flightOptions
+    const s = DEPARTURE_SLOTS.find(x => x.key === slot)!
+    return flightOptions.filter(o => {
+      const h = departureHour(o.out.depTime)
+      return h == null || (h >= s.from && h < s.to)
+    })
+  }, [flightOptions, slot])
 
   // Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
   useEffect(() => { if (bookTourId) setTab('flight') }, [bookTourId])
@@ -1657,10 +1661,20 @@ function HotelModal({
                 {/* Формулировка подсмотрена у «Слетать»: рейсы могут не прийти,
                     но заявке это не мешает. Прежнее «Данные недоступны»
                     пугало на ровном месте. */}
-                {(flightsState === 'error'
-                  || (flightsState === 'ok' && flightOptions.length === 0)) && (
+                {/* Два разных случая, и раньше они выглядели одинаково.
+                    Запрос упал — это одно. Оператор ответил, но прислал только
+                    заглушку без времени вылета — совсем другое: данные мы
+                    получили, просто рейсов в них нет. Писать «не удалось
+                    получить» во втором случае неверно. */}
+                {flightsState === 'error' && (
                   <div className={styles.flightPickNote}>
-                    Не удалось получить информацию о рейсах. Заявку это не
+                    Не удалось запросить рейсы. Заявку это не блокирует —
+                    менеджер подберёт перелёт и пришлёт детали.
+                  </div>
+                )}
+                {flightsState === 'ok' && flightOptions.length === 0 && (
+                  <div className={styles.flightPickNote}>
+                    Оператор не указал рейсы по этому туру. Заявку это не
                     блокирует — менеджер подберёт перелёт и пришлёт детали.
                   </div>
                 )}
@@ -1668,13 +1682,33 @@ function HotelModal({
                 {flightsState === 'ok' && flightOptions.length > 0 && (
                   <>
                     <div className={styles.flightPickNote}>
-                      {flightOptions.length} {variantsWord(flightOptions.length)} перелёта.
+                      {slot === 'any'
+                        ? `${flightOptions.length} ${variantsWord(flightOptions.length)} перелёта.`
+                        : `${visibleFlights.length} из ${flightOptions.length}.`}
                       Выберите удобный — пожелание уйдёт в заявку, окончательную
                       стоимость подтвердит менеджер.
                     </div>
 
+                    {/* Фильтр по времени вылета. Показываем, только когда
+                        вариантов много: на двух-трёх строках он лишний. */}
+                    {flightOptions.length > FLIGHTS_VISIBLE && (
+                      <div className={styles.flightSlots}>
+                        {DEPARTURE_SLOTS.filter(sl => sl.key === 'any' || slotCounts[sl.key] > 0).map(sl => (
+                          <button
+                            key={sl.key}
+                            type="button"
+                            className={`${styles.flightSlot} ${slot === sl.key ? styles.flightSlotOn : ''}`}
+                            aria-pressed={slot === sl.key}
+                            onClick={() => { setSlot(sl.key); setFlightsExpanded(false) }}
+                          >
+                            {sl.label} <span className={styles.flightSlotCount}>{slotCounts[sl.key]}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     <div className={styles.flightPickList}>
-                      {(flightsExpanded ? flightOptions : flightOptions.slice(0, FLIGHTS_VISIBLE))
+                      {(flightsExpanded ? visibleFlights : visibleFlights.slice(0, FLIGHTS_VISIBLE))
                         .map(opt => {
                           const extra = opt.price - flightBase
                           return (
@@ -1699,7 +1733,7 @@ function HotelModal({
                         })}
                     </div>
 
-                    {flightOptions.length > FLIGHTS_VISIBLE && (
+                    {visibleFlights.length > FLIGHTS_VISIBLE && (
                       <button
                         type="button"
                         className={styles.showMoreToursBtn}
@@ -1707,7 +1741,7 @@ function HotelModal({
                       >
                         {flightsExpanded
                           ? 'Свернуть ↑'
-                          : `Показать ещё ${flightOptions.length - FLIGHTS_VISIBLE} ↓`}
+                          : `Показать ещё ${visibleFlights.length - FLIGHTS_VISIBLE} ↓`}
                       </button>
                     )}
                   </>

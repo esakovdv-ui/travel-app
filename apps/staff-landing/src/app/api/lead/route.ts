@@ -78,6 +78,8 @@ export async function POST(req: Request) {
   const nights    = num(tour.nights)
   const meal      = str(tour.meal)
   const placement = str(tour.placement)
+  const room      = str(tour.room)
+  const roomType  = str(tour.roomType)
   const adults    = num(tour.adults)
   const childs    = num(tour.childs)
   const flightProg = str(tour.flightProgram)
@@ -114,6 +116,12 @@ export async function POST(req: Request) {
   if (country)  commentLines.push(`Страна: ${country}${region ? `, ${region}` : ''}`)
   if (dateStart) commentLines.push(`Даты: ${dateStart}${dateEnd ? ` — ${dateEnd}` : ''}${nights ? ` (${nights} ночей)` : ''}`)
   if (meal)     commentLines.push(`Питание: ${meal}`)
+  // Категория номера идёт перед размещением: «comfort sea view» менеджеру
+  // говорит больше, чем «DBL».
+  if (room || roomType) {
+    const label = room && roomType && room !== roomType ? `${room} (${roomType})` : room || roomType
+    commentLines.push(`Номер: ${label}`)
+  }
   if (placement) commentLines.push(`Размещение: ${placement}`)
   if (adults != null) commentLines.push(`Туристы: ${adults} взр.${childs ? ` + ${childs} реб.` : ''}`)
   if (flightProg) commentLines.push(`Перелёт: ${flightProg}${isCharter ? ' (чартер)' : ' (регуляр)'}`)
