@@ -857,7 +857,9 @@ function RoomTourGroup({
         {shown.map(tour => {
           const selected = bookTourId === tour.id
           const isExpanded = expandedTourId === tour.id
-          const perPerson = tour.adults > 0 ? Math.round(tour.price / tour.adults) : null
+          // При одном взрослом «₽/чел» дословно повторяет общую цену — на SGL
+          // в строке стояли два одинаковых числа подряд.
+          const perPerson = tour.adults > 1 ? Math.round(tour.price / tour.adults) : null
           const flight = flightCache[tour.id]
           return (
             <Fragment key={tour.id}>
@@ -896,19 +898,21 @@ function RoomTourGroup({
                   </span>
                 </button>
                 <div className={styles.roomTourRight}>
-                  <div className={styles.tourPrice}>{formatPrice(tour.price)}</div>
-                  {perPerson && (
-                    <div className={styles.tourPricePerPerson}>
-                      {perPerson.toLocaleString('ru-RU')} ₽/чел
-                    </div>
-                  )}
-                  {tour.price === minPrice ? (
-                    <div className={styles.tourCheapest}>самый дешёвый</div>
-                  ) : (
-                    <div className={styles.tourDiff}>
-                      +{(tour.price - minPrice).toLocaleString('ru-RU')} ₽
-                    </div>
-                  )}
+                  <div className={styles.tourPriceGroup}>
+                    <div className={styles.tourPrice}>{formatPrice(tour.price)}</div>
+                    {perPerson && (
+                      <div className={styles.tourPricePerPerson}>
+                        {perPerson.toLocaleString('ru-RU')} ₽/чел
+                      </div>
+                    )}
+                    {tour.price === minPrice ? (
+                      <div className={styles.tourCheapest}>самый дешёвый</div>
+                    ) : (
+                      <div className={styles.tourDiff}>
+                        +{(tour.price - minPrice).toLocaleString('ru-RU')} ₽
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className={`${styles.tourSelectBtn} ${selected ? styles.tourSelectBtnActive : ''}`}
