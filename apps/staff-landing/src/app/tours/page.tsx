@@ -212,6 +212,99 @@ function isStubLeg(raw: any): boolean {
   return blank(dep) && blank(arr)
 }
 
+/** Одно плечо перелёта для строки выбора. */
+interface FlightSide {
+  company: string
+  number: string
+  depTime: string
+  depDate: string
+  depPort: string
+  arrTime: string
+  arrDate: string
+  arrPort: string
+  /** Пересадок: сегментов минус один. */
+  stops: number
+  /** «10+8кг», «Только РК» или пусто, если оператор не сказал. */
+  baggage: string
+  isCharter: boolean
+}
+
+/** Вариант перелёта: пара «туда + обратно» и её цена. */
+interface FlightOption {
+  key: string
+  out: FlightSide
+  back: FlightSide | null
+  price: number
+}
+
+/** Длительность плеча по времени вылета и прилёта. */
+function legDuration(dep: string, arr: string): string {
+  const toMin = (t: string) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t)
+    return m ? +m[1] * 60 + +m[2] : null
+  }
+  const a = toMin(dep), b = toMin(arr)
+  if (a == null || b == null) return ''
+  // Прилёт «раньше» вылета — рейс через полночь.
+  const diff = b >= a ? b - a : b + 24 * 60 - a
+  const h = Math.floor(diff / 60), min = diff % 60
+  return min ? `${h} ч ${min} м` : `${h} ч`
+}
+
+function buildSide(segments: any[]): FlightSide | null {
+  const first = segments?.[0]
+  const last = segments?.[segments.length - 1]
+  if (!first) return null
+  const bag = Number(first.baggage ?? 0)
+  const carry = typeof first.carryOn === 'string' ? first.carryOn.trim() : ''
+  return {
+    company: first.company?.name ?? '',
+    number: first.number ?? '',
+    depTime: first.departure?.time ?? '',
+    depDate: first.departure?.date ?? '',
+    depPort: first.departure?.port?.id ?? '',
+    arrTime: last.arrival?.time ?? '',
+    arrDate: last.arrival?.date ?? '',
+    arrPort: last.arrival?.port?.id ?? '',
+    stops: Math.max(0, segments.length - 1),
+    // Оператор часто не заполняет ни то, ни другое — тогда молчим, а не
+    // выдумываем «только ручная кладь», как делали раньше.
+    baggage: bag > 0 ? `${bag} кг` : carry || '',
+    isCharter: first.charter === true,
+  }
+}
+
+/**
+ * Варианты перелёта парами.
+ *
+ * Раньше я раскладывал их на два независимых списка — «туда» и «обратно», —
+ * предполагая, что сочетать можно свободно. Это допущение: оператор отдаёт
+ * готовые пары, и на замере они складывались в полную решётку 11×11 только
+ * потому, что так вышло. У «Слетать» каждый вариант — именно пара, и цена у
+ * пар разная («Доплата + 865», «+ 13 963»). Показываем как есть.
+ */
+function buildFlightOptions(raw: unknown): FlightOption[] {
+  const r = raw as any
+  const list: any[] = Array.isArray(r?.flights) ? r.flights
+    : Array.isArray(r?.data?.flights) ? r.data.flights : []
+
+  const seen = new Set<string>()
+  const options: FlightOption[] = []
+
+  for (const item of list) {
+    if (isStubLeg(item.forward?.[0])) continue
+    const out = buildSide(item.forward ?? [])
+    if (!out) continue
+    const back = buildSide(item.backward ?? [])
+    const key = [out.number, out.depTime, back?.number ?? '', back?.depTime ?? ''].join('|')
+    if (seen.has(key)) continue
+    seen.add(key)
+    options.push({ key, out, back, price: Number(item?.price?.value) || 0 })
+  }
+
+  return options.sort((a, b) => a.price - b.price || a.out.depTime.localeCompare(b.out.depTime))
+}
+
 function parseFlightsResponse(raw: unknown): {
   forward: FlightLeg | null
   backward: FlightLeg | null
@@ -718,6 +811,35 @@ function FlightLegRow({ leg, dir }: { leg: FlightLeg; dir: string }) {
   )
 }
 
+/**
+ * Одно плечо в строке выбора.
+ *
+ * Набор полей подсмотрен у «Слетать»: авиакомпания, время и аэропорт вылета,
+ * время в пути, время и аэропорт прилёта, прямой или с пересадкой, багаж.
+ * Аэропорт важен отдельно — из Москвы летают и из VKO, и из SVO, и человеку
+ * это не всё равно.
+ */
+function FlightSideRow({ side, dir }: { side: FlightSide; dir: string }) {
+  const dur = legDuration(side.depTime, side.arrTime)
+  return (
+    <span className={styles.flightSide}>
+      <span className={styles.flightSideDir}>{dir}</span>
+      <span className={styles.flightSideTime}>
+        {side.depTime} {side.depPort} → {side.arrTime} {side.arrPort}
+      </span>
+      <span className={styles.flightSideMeta}>
+        {[
+          side.company,
+          side.number,
+          dur && `в пути ${dur}`,
+          side.stops === 0 ? 'прямой' : `${side.stops} ${side.stops === 1 ? 'пересадка' : 'пересадки'}`,
+          side.baggage ? `багаж ${side.baggage}` : 'багаж не указан',
+        ].filter(Boolean).join(' · ')}
+      </span>
+    </span>
+  )
+}
+
 function FlightSkeleton() {
   return (
     <div className={styles.flightSkeleton}>
@@ -1194,6 +1316,20 @@ function HotelModal({
               childs: selectedTour.childs,
               placement: selectedTour.placement,
               flightProgram: selectedTour.name,
+              // Пожелание по времени вылета: забронировать конкретный рейс мы
+              // не можем, но донести до менеджера — можем.
+              flightPreference: (() => {
+                const p = flightOptions.find(f => f.key === pickFlight)
+                if (!p) return null
+                const parts = [
+                  `туда ${p.out.depTime} ${p.out.depPort}→${p.out.arrPort} (${p.out.company} ${p.out.number})`,
+                ]
+                if (p.back) {
+                  parts.push(`обратно ${p.back.depTime} ${p.back.depPort}→${p.back.arrPort} (${p.back.company} ${p.back.number})`)
+                }
+                if (p.price > flightBase) parts.push(`доплата ${(p.price - flightBase).toLocaleString('ru-RU')} ₽`)
+                return parts.join(', ')
+              })(),
               isCharter: selectedTour.isCharter,
               operator: selectedTour.operator?.russianName || selectedTour.operator?.name,
               operatorLink: link,
@@ -1244,8 +1380,44 @@ function HotelModal({
    * цену, уходит к описанию, возвращается, меняет дату. Порядок ему навязывать
    * незачем.
    */
-  type ModalTab = 'rooms' | 'about' | 'map'
+  type ModalTab = 'rooms' | 'flight' | 'about' | 'map'
   const [tab, setTab] = useState<ModalTab>('rooms')
+
+  /**
+   * Шаг выбора перелёта.
+   *
+   * Появляется, когда тур выбран, — как отдельная страница «Выбор перелёта» у
+   * «Слетать», куда попадают после нажатия «Выбрать». Забронировать конкретный
+   * рейс мы не можем, оформляет менеджер, поэтому выбор здесь — пожелание: оно
+   * уходит в заявку и менеджер видит, во сколько человеку удобно лететь.
+   */
+  const [flightsRaw, setFlightsRaw] = useState<unknown>(null)
+  const [flightsState, setFlightsState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [pickFlight, setPickFlight] = useState<string | null>(null)
+  const [flightsExpanded, setFlightsExpanded] = useState(false)
+
+  useEffect(() => {
+    setPickFlight(null); setFlightsExpanded(false)
+    if (!bookTourId) { setFlightsState('idle'); setFlightsRaw(null); return }
+    let cancelled = false
+    setFlightsState('loading')
+    staffFetch(`/api/tourvisor/tours/${bookTourId}/flights`)
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(data => { if (!cancelled) { setFlightsRaw(data); setFlightsState('ok') } })
+      .catch(() => { if (!cancelled) setFlightsState('error') })
+    return () => { cancelled = true }
+  }, [bookTourId])
+
+  const flightOptions = useMemo(
+    () => (flightsState === 'ok' ? buildFlightOptions(flightsRaw) : []),
+    [flightsState, flightsRaw],
+  )
+  // Дешёвый вариант — точка отсчёта для доплаты, как «Доплата + 865» у «Слетать».
+  const flightBase = flightOptions.length ? flightOptions[0].price : 0
+  const FLIGHTS_VISIBLE = 6
+
+  // Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
+  useEffect(() => { if (bookTourId) setTab('flight') }, [bookTourId])
 
   const rawSections: [title: string, html: string | undefined][] = [
     ['Об отеле',                desc?.common?.description],
@@ -1403,6 +1575,15 @@ function HotelModal({
               {/* Пока описание грузится, разделов ещё нет — но кнопку показываем
                   сразу, иначе полоса дёргалась бы, подставляя вкладку задним
                   числом под уже нацеленный палец. */}
+              {bookTourId && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'flight'}
+                  className={`${styles.modalTab} ${tab === 'flight' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('flight')}
+                >
+                  Перелёт
+                </button>
+              )}
               {(loading || descSections.length > 0 || contacts.length > 0) && (
                 <button
                   type="button" role="tab" aria-selected={tab === 'about'}
@@ -1457,6 +1638,81 @@ function HotelModal({
                 </div>
               )}
             </div>
+            )}
+
+            {/* ── Шаг «Перелёт» ── */}
+            {tab === 'flight' && selectedTour && (
+              <div className={styles.modalSection}>
+                <div className={styles.flightPickSummary}>
+                  <div className={styles.flightPickRoom}>{selectedRoomName || hotel.name}</div>
+                  <div className={styles.flightPickDates}>
+                    {formatDateRange(selectedTour.date, selectedTour.nights)}
+                    {' · '}{nightsLabel(selectedTour.nights)}
+                    {' · '}{formatPrice(selectedTour.price)}
+                  </div>
+                </div>
+
+                {flightsState === 'loading' && <FlightSkeleton />}
+
+                {/* Формулировка подсмотрена у «Слетать»: рейсы могут не прийти,
+                    но заявке это не мешает. Прежнее «Данные недоступны»
+                    пугало на ровном месте. */}
+                {(flightsState === 'error'
+                  || (flightsState === 'ok' && flightOptions.length === 0)) && (
+                  <div className={styles.flightPickNote}>
+                    Не удалось получить информацию о рейсах. Заявку это не
+                    блокирует — менеджер подберёт перелёт и пришлёт детали.
+                  </div>
+                )}
+
+                {flightsState === 'ok' && flightOptions.length > 0 && (
+                  <>
+                    <div className={styles.flightPickNote}>
+                      {flightOptions.length} {variantsWord(flightOptions.length)} перелёта.
+                      Выберите удобный — пожелание уйдёт в заявку, окончательную
+                      стоимость подтвердит менеджер.
+                    </div>
+
+                    <div className={styles.flightPickList}>
+                      {(flightsExpanded ? flightOptions : flightOptions.slice(0, FLIGHTS_VISIBLE))
+                        .map(opt => {
+                          const extra = opt.price - flightBase
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              className={`${styles.flightPickRow} ${pickFlight === opt.key ? styles.flightPickRowOn : ''}`}
+                              aria-pressed={pickFlight === opt.key}
+                              onClick={() => setPickFlight(p => (p === opt.key ? null : opt.key))}
+                            >
+                              <span className={styles.flightPickLegs}>
+                                <FlightSideRow side={opt.out} dir="Туда" />
+                                {opt.back && <FlightSideRow side={opt.back} dir="Обратно" />}
+                              </span>
+                              <span className={styles.flightPickPrice}>
+                                {extra > 0
+                                  ? <span className={styles.flightPickExtra}>+{extra.toLocaleString('ru-RU')} ₽</span>
+                                  : <span className={styles.flightPickIncluded}>без доплаты</span>}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+
+                    {flightOptions.length > FLIGHTS_VISIBLE && (
+                      <button
+                        type="button"
+                        className={styles.showMoreToursBtn}
+                        onClick={() => setFlightsExpanded(v => !v)}
+                      >
+                        {flightsExpanded
+                          ? 'Свернуть ↑'
+                          : `Показать ещё ${flightOptions.length - FLIGHTS_VISIBLE} ↓`}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             )}
 
             {/* Описание отеля.

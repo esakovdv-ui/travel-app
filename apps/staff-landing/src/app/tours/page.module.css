@@ -2367,7 +2367,9 @@ a.contactValue {
  */
 .modalTabs {
   position: sticky;
-  top: 0;
+  /* Тело модалки прокручивается с отступом сверху — прилипаем под него,
+     иначе полоса вылезала бы из-под края. */
+  top: -20px;
   z-index: 3;
   display: flex;
   gap: 4px;
@@ -2377,6 +2379,13 @@ a.contactValue {
   border-bottom: 1px solid var(--c-border);
   overflow-x: auto;
   scrollbar-width: none;
+  /*
+   * Не сжиматься. Тело модалки — flex-колонка, а у элемента с собственным
+   * overflow автоматический минимальный размер равен нулю: полоса схлопывалась
+   * в 21px, кнопки внутри — в 16px при отступах 8+8, то есть текст обрезался
+   * ровно пополам. Та же ловушка, что была с сеткой курортов в попапе «Куда».
+   */
+  flex-shrink: 0;
 }
 .modalTabs::-webkit-scrollbar { display: none; }
 
@@ -2401,3 +2410,106 @@ a.contactValue {
   color: #fff;
 }
 .modalTabOn:hover { background: var(--c-blue); }
+
+/* ─── Шаг выбора перелёта ──────────────────────────────────────────────── */
+
+.flightPickSummary {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--c-blue-subtle);
+  margin-bottom: 10px;
+}
+.flightPickRoom { font-size: 0.92rem; font-weight: 700; color: var(--c-text); }
+.flightPickDates { font-size: 0.8rem; color: var(--c-text-muted); margin-top: 2px; }
+
+.flightPickNote {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+  margin-bottom: 10px;
+}
+
+.flightPickLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 12px 0 6px;
+}
+
+/*
+ * Список рейсов. Колонок нет: цена от рейса не зависит, выбирают только время,
+ * поэтому строка короткая и одинаковая — так проще пробежать глазами.
+ */
+.flightPickList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flightPickRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition), background var(--transition);
+}
+.flightPickRow:hover { border-color: var(--c-blue); }
+
+.flightPickRowOn {
+  border-color: var(--c-blue);
+  background: var(--c-blue-subtle);
+}
+
+/* Строка варианта: два плеча слева, доплата справа. */
+.flightPickRow {
+  align-items: center;
+}
+.flightPickLegs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flightSide { display: block; min-width: 0; }
+.flightSideDir {
+  display: inline-block;
+  min-width: 62px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+}
+.flightSideTime {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.flightSideMeta {
+  display: block;
+  margin-left: 62px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+.flightPickPrice { flex-shrink: 0; text-align: right; }
+.flightPickExtra { font-size: 0.86rem; font-weight: 700; color: var(--c-text); white-space: nowrap; }
+.flightPickIncluded { font-size: 0.76rem; font-weight: 600; color: #1a7f37; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  /* Подпись плеча уводим на свою строку: «ТУДА» и время в один ряд не влезали. */
+  .flightSideMeta { margin-left: 0; }
+  .flightSideDir { min-width: 0; margin-right: 8px; }
+}

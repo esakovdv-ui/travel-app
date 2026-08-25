@@ -81,6 +81,7 @@ export async function POST(req: Request) {
   const adults    = num(tour.adults)
   const childs    = num(tour.childs)
   const flightProg = str(tour.flightProgram)
+  const flightPref = str(tour.flightPreference)
   const isCharter  = tour.isCharter === true
   const price     = num(tour.price)
   const operator  = str(tour.operator)
@@ -116,6 +117,7 @@ export async function POST(req: Request) {
   if (placement) commentLines.push(`Размещение: ${placement}`)
   if (adults != null) commentLines.push(`Туристы: ${adults} взр.${childs ? ` + ${childs} реб.` : ''}`)
   if (flightProg) commentLines.push(`Перелёт: ${flightProg}${isCharter ? ' (чартер)' : ' (регуляр)'}`)
+  if (flightPref) commentLines.push(`Пожелание по рейсу: ${flightPref}`)
   if (price != null) commentLines.push(`Цена: ${price.toLocaleString('ru-RU')} ₽`)
   if (operator) commentLines.push(`Оператор: ${operator}`)
   if (opLink)   commentLines.push(`Ссылка оператора: ${opLink}`)
