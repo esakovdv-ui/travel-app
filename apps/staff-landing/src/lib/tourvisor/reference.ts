@@ -14,11 +14,33 @@ export function getDepartures() {
   })
 }
 
-export function getCountries(departureId: number = DEFAULT_DEPARTURE_ID) {
-  return tvFetch<Country[]>('/countries', {
+/**
+ * Страны, по которым из Москвы нет ничего.
+ *
+ * Не сезонная пустота, а полная: поиск не возвращает ни одного отеля, сколько
+ * ни двигай даты. Замеры по окнам вылета (+дней от сегодня):
+ *
+ *   Кипр (15)     — 0 отелей на +21, +45, +75, +140, +200
+ *   Италия (24)   — 0 на +21, +45, +75, +140
+ *   Хорватия (22) — 0 на +21, +75, +140, +200
+ *
+ * Мерили мимо фильтра операторов, то есть по всей базе Tourvisor: в портале,
+ * где остаются только наши туроператоры, их тем более не будет.
+ *
+ * Важно, чем это отличается от «пустых курортов», которые мы намеренно НЕ
+ * прячем. Поиск по стране возвращает выборку, а не всё: по России он отдаёт
+ * Сочи и Крым, а до Санкт-Петербурга не доходит — и тот выглядит пустым, хотя
+ * у него 95 отелей на тех же датах. Здесь выборке теряться не в чем: ответ
+ * пуст целиком. Поэтому страну скрыть можно, а курорт — нет.
+ */
+const DEAD_COUNTRY_IDS: readonly number[] = [15, 24, 22]
+
+export async function getCountries(departureId: number = DEFAULT_DEPARTURE_ID) {
+  const countries = await tvFetch<Country[]>('/countries', {
     params: { departureId },
     revalidate: 60 * 60, // 1 час
   })
+  return countries.filter(c => !DEAD_COUNTRY_IDS.includes(c.id))
 }
 
 export function getMeals() {
