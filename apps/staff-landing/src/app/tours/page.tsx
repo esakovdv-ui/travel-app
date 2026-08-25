@@ -169,6 +169,8 @@ type FlightEntry =
       forward: FlightLeg | null
       backward: FlightLeg | null
       options: number
+      outboundCount: number
+      inboundCount: number
       priceFrom: number | null
       priceTo: number | null
     }
@@ -215,6 +217,9 @@ function parseFlightsResponse(raw: unknown): {
   backward: FlightLeg | null
   /** Сколько вариантов перелёта предложил оператор. */
   options: number
+  /** Из скольких рейсов туда и обратно они складываются. */
+  outboundCount: number
+  inboundCount: number
   /** Разброс цен между ними: выбор рейса меняет стоимость тура. */
   priceFrom: number | null
   priceTo: number | null
@@ -223,19 +228,34 @@ function parseFlightsResponse(raw: unknown): {
   const list: any[] = Array.isArray(r?.flights) ? r.flights
     : Array.isArray(r?.data?.flights) ? r.data.flights
     : []
-  if (list.length === 0) return { forward: null, backward: null, options: 0, priceFrom: null, priceTo: null }
+  if (list.length === 0) {
+    return { forward: null, backward: null, options: 0, outboundCount: 0, inboundCount: 0, priceFrom: null, priceTo: null }
+  }
 
   // Берём первый вариант с настоящим рейсом; если таких нет — что есть.
   const chosen = list.find(f => !isStubLeg(f.forward?.[0])) ?? list[0]
 
+  // Считаем только по настоящим рейсам: у заглушки своя цена, и сравнение с
+  // ней давало ложный «разброс» — на замере 99 106 против 115 788, хотя все
+  // 121 реальные комбинации стоят ровно одинаково.
   const prices = list
+    .filter(f => !isStubLeg(f.forward?.[0]))
     .map(f => Number(f?.price?.value))
     .filter(n => Number.isFinite(n) && n > 0)
+
+  // Комбинаций много (121 на замере), но складываются они из коротких списков:
+  // 11 рейсов туда и 11 обратно. Считаем именно их — «ещё 120 вариантов»
+  // ничего не говорит, а «11 рейсов туда» говорит.
+  const real = list.filter(f => !isStubLeg(f.forward?.[0]))
+  const outbound = new Set(real.map(f => f.forward?.[0]?.number).filter(Boolean))
+  const inbound  = new Set(real.map(f => f.backward?.[0]?.number).filter(Boolean))
 
   return {
     forward:  parseLeg(chosen.forward?.[0] ?? null),
     backward: parseLeg(chosen.backward?.[0] ?? null),
     options: list.length,
+    outboundCount: outbound.size,
+    inboundCount: inbound.size,
     priceFrom: prices.length ? Math.min(...prices) : null,
     priceTo:   prices.length ? Math.max(...prices) : null,
   }
@@ -950,11 +970,12 @@ function RoomTourGroup({
                           как единственно возможный. */}
                       {flight.options > 1 && (
                         <div className={styles.flightAlt}>
-                          Ещё {flight.options - 1} {variantsWord(flight.options - 1)} перелёта
+                          У оператора {flight.outboundCount} {variantsWord(flight.outboundCount)} вылета
+                          {flight.inboundCount > 1 ? ` и ${flight.inboundCount} обратно` : ''}
                           {flight.priceFrom != null && flight.priceTo != null && flight.priceTo > flight.priceFrom
-                            ? ` — от ${formatPrice(flight.priceFrom)} до ${formatPrice(flight.priceTo)}`
-                            : ''}
-                          . Менеджер подберёт при бронировании.
+                            ? `, от ${formatPrice(flight.priceFrom)} до ${formatPrice(flight.priceTo)}`
+                            : ' по той же цене'}
+                          . Удобное время подберёт менеджер.
                         </div>
                       )}
                     </>
