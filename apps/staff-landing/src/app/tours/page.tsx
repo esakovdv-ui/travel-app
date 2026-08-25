@@ -22,7 +22,7 @@ import { cachedPhotos, loadPhotos } from '@/lib/hotel-photos'
 import { staffFetch } from '@/lib/staff-client'
 import { useStaffGuard } from '@/lib/use-staff-guard'
 import { useAppHeight } from '@/lib/use-app-height'
-import { hotelsLabel, hotelsWord, nightsLabel, secondsWord, toursLabel, variantsWord } from '@/lib/plural'
+import { hotelsLabel, hotelsWord, nightsLabel, secondsWord, toursLabel, toursWord, variantsWord } from '@/lib/plural'
 import { dateRangeToTarget, flexLabel, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
 import { reachGoal, StaffGoals } from '@/lib/metrika'
 import type { HotelSearchResult, HotelDescription, HotelRoom, TourSummary } from '@/lib/tourvisor/types'
@@ -773,7 +773,12 @@ function RoomTourGroup({
   const fetchedRef = useRef<Set<string>>(new Set())
 
   const { room, name, tours } = group
-  const shown = listExpanded ? tours : tours.slice(0, 5)
+  // Три строки, как у «Слетать» и Level.Travel: они прячут остальное за одной
+  // ссылкой и умещают сотню туров в экран. У нас каждый тур был своей строкой,
+  // отсюда и стена. Пять — уже перебор, потому что оператора мы не выводим и
+  // соседние строки отличаются только ценой.
+  const VISIBLE_TOURS = 3
+  const shown = listExpanded ? tours : tours.slice(0, VISIBLE_TOURS)
 
   // Сравнимость: при десяти строках выбор превращался в чтение столбика чисел.
   // Помечаем самый дешёвый и показываем, на сколько дороже каждый следующий.
@@ -985,12 +990,14 @@ function RoomTourGroup({
             </Fragment>
           )
         })}
-        {tours.length > 5 && (
+        {tours.length > VISIBLE_TOURS && (
           <button
             className={styles.showMoreToursBtn}
             onClick={() => setListExpanded(v => !v)}
           >
-            {listExpanded ? 'Свернуть ↑' : `Ещё ${tours.length - 5} ${variantsWord(tours.length - 5)} ↓`}
+            {listExpanded
+              ? 'Свернуть ↑'
+              : `Ещё ${tours.length - VISIBLE_TOURS} ${toursWord(tours.length - VISIBLE_TOURS)} ↓`}
           </button>
         )}
       </div>
@@ -1221,6 +1228,25 @@ function HotelModal({
 
   // Всё, что Tourvisor знает об отеле. Порядок — от «что это вообще за отель»
   // к деталям. Пустые блоки отсеиваются: у разных отелей заполнены разные поля.
+  /**
+   * Разделы карточки.
+   *
+   * Всё лежало одним свитком: номера, а следом двенадцать описательных блоков,
+   * контакты и карта. Отсюда и ощущение переполненности — не от строк с
+   * турами, а от того, что на экране сразу всё.
+   *
+   * Так же разведено у «Слетать» («Номера · Описание и услуги · На карте ·
+   * Отзывы») и у Level.Travel, где описание вынесено на отдельный экран.
+   * Берём вариант «Слетать»: переключение внутри карточки, без лишнего
+   * перехода — портал служебный, лишние клики тут не нужны.
+   *
+   * Это разделы, а не шаги мастера: выбор тура нелинеен — человек смотрит
+   * цену, уходит к описанию, возвращается, меняет дату. Порядок ему навязывать
+   * незачем.
+   */
+  type ModalTab = 'rooms' | 'about' | 'map'
+  const [tab, setTab] = useState<ModalTab>('rooms')
+
   const rawSections: [title: string, html: string | undefined][] = [
     ['Об отеле',                desc?.common?.description],
     ['Расположение',            desc?.common?.place],
@@ -1364,13 +1390,50 @@ function HotelModal({
               </div>
             )}
 
+            {/* Полоса разделов. Липкая, чтобы вернуться к ценам можно было с
+                любого места описания, а не прокруткой обратно. */}
+            <div className={styles.modalTabs} role="tablist">
+              <button
+                type="button" role="tab" aria-selected={tab === 'rooms'}
+                className={`${styles.modalTab} ${tab === 'rooms' ? styles.modalTabOn : ''}`}
+                onClick={() => setTab('rooms')}
+              >
+                Номера и цены
+              </button>
+              {/* Пока описание грузится, разделов ещё нет — но кнопку показываем
+                  сразу, иначе полоса дёргалась бы, подставляя вкладку задним
+                  числом под уже нацеленный палец. */}
+              {(loading || descSections.length > 0 || contacts.length > 0) && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'about'}
+                  className={`${styles.modalTab} ${tab === 'about' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('about')}
+                >
+                  Об отеле
+                </button>
+              )}
+              {hasCoords && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'map'}
+                  className={`${styles.modalTab} ${tab === 'map' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('map')}
+                >
+                  На карте
+                </button>
+              )}
+            </div>
+
             {/* Номера идут перед описанием отеля.
                 Карточку открывают, чтобы выбрать номер и забронировать, а не
                 читать про инфраструктуру. Замер до перестановки: блок номеров
                 начинался на 1686px при высоте модалки 2381px — 71% прокрутки,
                 под десятью секциями описания. Сотрудники до него не долистывали. */}
             {/* ── Номера и туры — сгруппировано ── */}
-            <div className={styles.modalSection} ref={roomsSectionRef}>
+            <div
+              className={styles.modalSection}
+              ref={roomsSectionRef}
+              hidden={tab !== 'rooms'}
+            >
               {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
                   подпись читалась как «четыре номера». */}
               <div className={styles.modalSectionTitle}>
@@ -1400,9 +1463,9 @@ function HotelModal({
                 услуги отеля, что входит в номер, детская инфраструктура,
                 платные услуги, анимация, контакты. Именно по ним и понятно,
                 что это за отель. */}
-            {loading && <BlockSkeleton lines={4} />}
+            {loading && tab === 'about' && <BlockSkeleton lines={4} />}
 
-            {!loading && descSections.map(section => (
+            {!loading && tab === 'about' && descSections.map(section => (
               <div key={section.title} className={styles.modalSection}>
                 <div className={styles.modalSectionTitle}>{section.title}</div>
                 <div
@@ -1412,7 +1475,7 @@ function HotelModal({
               </div>
             ))}
 
-            {!loading && contacts.length > 0 && (
+            {!loading && tab === 'about' && contacts.length > 0 && (
               <div className={styles.modalSection}>
                 <div className={styles.modalSectionTitle}>Контакты отеля</div>
                 <div className={styles.contactList}>
@@ -1429,9 +1492,8 @@ function HotelModal({
             )}
 
             {/* ── Мини-карта ── */}
-            {hasCoords && (
+            {hasCoords && tab === 'map' && (
               <div className={styles.modalSection}>
-                <div className={styles.modalSectionTitle}>На карте</div>
                 <HotelMiniMap lat={hotel.latitude} lng={hotel.longitude} />
               </div>
             )}

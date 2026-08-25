@@ -2358,3 +2358,46 @@ a.contactValue {
   /* В своём ряду цену выравниваем по левому краю — под условиями выше. */
   .tourPriceGroup { align-items: flex-start; }
 }
+
+/* ─── Разделы карточки отеля ───────────────────────────────────────────── */
+
+/*
+ * Липкая полоса: к ценам можно вернуться с любого места описания, не
+ * отматывая назад. Прилипает к верху прокручиваемого тела модалки.
+ */
+.modalTabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  padding: 10px 0;
+  margin-bottom: 4px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.modalTabs::-webkit-scrollbar { display: none; }
+
+.modalTab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.modalTab:hover { background: rgba(20, 20, 43, 0.05); }
+
+.modalTabOn {
+  background: var(--c-blue);
+  color: #fff;
+}
+.modalTabOn:hover { background: var(--c-blue); }
