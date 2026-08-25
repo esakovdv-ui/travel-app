@@ -1424,17 +1424,40 @@ function HotelModal({
   const [slotOut, setSlotOut] = useState<SlotKey>('any')
   const [slotBack, setSlotBack] = useState<SlotKey>('any')
 
+  /**
+   * Загрузка рейсов с повтором.
+   *
+   * Раньше первая же неудача показывала «не удалось» без права на вторую
+   * попытку и без кнопки — человек застревал. На стороне Турвизора запрос
+   * повторяется трижды, но если моргнул наш собственный маршрут, до тех
+   * повторов дело не доходит. Пробуем ещё раз сами, а потом отдаём кнопку.
+   */
+  const loadFlights = useCallback(async (tourId: string, signal: { cancelled: boolean }) => {
+    setFlightsState('loading')
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 700))
+      try {
+        const res = await staffFetch(`/api/tourvisor/tours/${tourId}/flights`)
+        if (!res.ok) throw new Error(String(res.status))
+        const data = await res.json()
+        if (signal.cancelled) return
+        setFlightsRaw(data)
+        setFlightsState('ok')
+        return
+      } catch {
+        if (signal.cancelled) return
+      }
+    }
+    if (!signal.cancelled) setFlightsState('error')
+  }, [])
+
   useEffect(() => {
     setPickFlight(null); setFlightsExpanded(false); setSlotOut('any'); setSlotBack('any')
     if (!bookTourId) { setFlightsState('idle'); setFlightsRaw(null); return }
-    let cancelled = false
-    setFlightsState('loading')
-    staffFetch(`/api/tourvisor/tours/${bookTourId}/flights`)
-      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(data => { if (!cancelled) { setFlightsRaw(data); setFlightsState('ok') } })
-      .catch(() => { if (!cancelled) setFlightsState('error') })
-    return () => { cancelled = true }
-  }, [bookTourId])
+    const signal = { cancelled: false }
+    void loadFlights(bookTourId, signal)
+    return () => { signal.cancelled = true }
+  }, [bookTourId, loadFlights])
 
   const flightOptions = useMemo(
     () => (flightsState === 'ok' ? buildFlightOptions(flightsRaw) : []),
@@ -1737,6 +1760,17 @@ function HotelModal({
                   <div className={styles.flightPickNote}>
                     Не удалось запросить рейсы. Заявку это не блокирует —
                     менеджер подберёт перелёт и пришлёт детали.
+                    {' '}
+                    <button
+                      type="button"
+                      className={styles.flightRetryBtn}
+                      onClick={() => {
+                        if (!bookTourId) return
+                        void loadFlights(bookTourId, { cancelled: false })
+                      }}
+                    >
+                      Повторить
+                    </button>
                   </div>
                 )}
                 {flightsState === 'ok' && flightOptions.length === 0 && (
