@@ -263,7 +263,8 @@
     .summary dd { margin: 0; font-weight: 700; text-align: right; }
     .contact-card {
       background: var(--white); border: 1px solid var(--line);
-      border-radius: 15px; padding: 18px; margin-bottom: 8px;
+      border-radius: 15px; padding: 18px;
+      margin-top: 16px; margin-bottom: 8px;
     }
     .contact-card h3 {
       margin: 0 0 6px; font-size: 17px; font-weight: 800;
@@ -689,7 +690,7 @@
               <input type="text" id="contactName" name="name" autocomplete="name" maxlength="100" placeholder="Как к вам обращаться" required>
             </label>
             <label>Телефон
-              <input type="tel" id="contactPhone" name="phone" autocomplete="tel" maxlength="20" inputmode="tel" placeholder="+7 999 123-45-67" required>
+              <input type="tel" id="contactPhone" name="phone" autocomplete="tel" maxlength="18" inputmode="numeric" placeholder="+7 (___) ___-__-__" required>
             </label>
           </div>
           <label class="contact-consent">
@@ -1611,6 +1612,237 @@
       openHandoff(buildHandoffUrl());
     });
 
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) {
+        raw = raw.slice(1);
+      }
+      return raw.slice(0, 10);
+    }
+
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
+      return formatted.length;
+    }
+
+    function createPhoneMaskController(input) {
+      let digits = '';
+      let skipKeydown = false;
+
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        try {
+          const cursor = cursorFromDigitIndex(formatted, index);
+          const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+          input.setSelectionRange(safeCursor, safeCursor);
+        } catch (_) { /* iOS / readonly */ }
+      }
+
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+      }
+
+      function selectionDigitRange() {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) {
+          setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+        }
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) {
+          setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+        }
+      }
+
+      function handleKeydown(event) {
+        if (input.disabled || input.readOnly) return;
+        const { from, to } = selectionDigitRange();
+
+        if (event.key === 'Backspace') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (event.key === 'Delete') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
+          return;
+        }
+
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        if (input.disabled) return;
+        render(digits.length);
+        if (!digits.length) {
+          try {
+            input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+          } catch (_) { /* ignore */ }
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        if (!digits.length) {
+          input.value = '';
+        } else {
+          input.value = formatNationalDigits(digits);
+        }
+      });
+
+      input.addEventListener('click', () => {
+        if (input.disabled) return;
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+
+      input.addEventListener('beforeinput', (event) => {
+        if (input.disabled) return;
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+
+        if (inputType === 'deleteContentBackward') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (inputType === 'deleteContentForward') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (
+          inputType === 'insertText'
+          || inputType === 'insertFromPaste'
+          || inputType === 'insertReplacementText'
+          || inputType === 'insertFromDrop'
+        ) {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) {
+            event.preventDefault();
+            return;
+          }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          if (from !== to) {
+            const merged = (digits.slice(0, from) + normalizePastedDigits(chunk) + digits.slice(to)).slice(0, 10);
+            setDigits(merged, from + normalizePastedDigits(chunk).length);
+            return;
+          }
+          insertAt(from, chunk);
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) {
+          skipKeydown = false;
+          return;
+        }
+        handleKeydown(event);
+      });
+
+      input.addEventListener('paste', (event) => {
+        if (input.disabled) return;
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, from + normalized.length);
+      });
+
+      return {
+        getValue() {
+          return digits.length ? `+7${digits}` : '';
+        },
+        getDigitCount() {
+          return digits.length;
+        },
+        isComplete() {
+          return digits.length === 10;
+        },
+      };
+    }
+
+    const contactPhoneCtrl = createPhoneMaskController(document.getElementById('contactPhone'));
+
     function maskPhoneLocal(phone) {
       const digits = String(phone || '').replace(/\D/g, '');
       if (digits.length < 4) return '****';
@@ -1640,7 +1872,7 @@
       document.getElementById('contactOk').hidden = true;
 
       const name = (document.getElementById('contactName').value || '').trim();
-      const phone = (document.getElementById('contactPhone').value || '').trim();
+      const phone = contactPhoneCtrl.getValue();
       const consent = document.getElementById('contactConsent').checked;
       const website = (document.querySelector('#contactForm input[name="website"]')?.value || '').trim();
 
@@ -1648,8 +1880,9 @@
         setContactError('Укажите имя');
         return;
       }
-      if (!phone) {
-        setContactError('Укажите телефон');
+      if (!contactPhoneCtrl.isComplete()) {
+        setContactError('Введите номер полностью: +7 (___) ___-__-__');
+        document.getElementById('contactPhone').focus();
         return;
       }
       if (!consent) {
