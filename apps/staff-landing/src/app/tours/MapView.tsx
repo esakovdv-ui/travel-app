@@ -3,7 +3,7 @@
 // Яндекс Карты JS API v3 — загружается динамически (ssr: false из page.tsx).
 // Координаты: [longitude, latitude] — порядок Яндекса, не Leaflet.
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HotelSearchResult } from '@/lib/tourvisor/types'
 
 declare global {
@@ -425,12 +425,13 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId])
 
-  // ── fitBounds: только когда меняется сам набор отелей ────────────────────
+  // ── fitBounds ────────────────────────────────────────────────────────────
   // Раньше это жило в эффекте маркеров и переигрывалось на каждый ререндер
   // (selectedId, новая ссылка onSelect) — карта дёргалась к границам.
-  useEffect(() => {
-    if (!ymaps3 || !mapRef.current || !boundsKey) return
-    const valid = hotels.filter(hasCoords)
+  const fitToHotels = useCallback((animate = true) => {
+    const map = mapRef.current
+    if (!map) return
+    const valid = hotelsRef.current.filter(hasCoords)
     if (valid.length === 0) return
 
     const lons = valid.map(h => h.longitude)
@@ -443,17 +444,52 @@ export default function MapView({ hotels, selectedId, onSelect }: MapViewProps) 
     // При {location:{bounds, duration}} Яндекс v3 молча игнорирует всё обновление —
     // из-за этого карта оставалась на стартовых [37,35] zoom 4 (пол-Ближнего Востока
     // в кадре) вместо того, чтобы подстроиться под найденные отели.
-    mapRef.current.update({
+    map.update({
       location: {
         bounds: [
           [Math.min(...lons) - padLon, Math.min(...lats) - padLat],
           [Math.max(...lons) + padLon, Math.max(...lats) + padLat],
         ],
       },
-      animation: { duration: 400 },
+      animation: { duration: animate ? 400 : 0 },
     })
+  }, [])
+
+  // Меняется набор отелей — подстраиваемся под него.
+  useEffect(() => {
+    if (!ymaps3 || !boundsKey) return
+    fitToHotels()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ymaps3, boundsKey])
+
+  /*
+   * Подгон при появлении контейнера.
+   *
+   * На телефоне .mapPane скрыт через display:none, пока не нажата «Карта», а
+   * карта создаётся сразу вместе со списком. Яндекс считает зум под размер
+   * контейнера, и от коробки 0x0 у него получается минимальный зум — в кадре
+   * вся планета. Набор отелей при этом не менялся, поэтому эффект выше второй
+   * раз не срабатывал, и таким первый показ карты и оставался.
+   *
+   * Ловим переход размера из нуля в ненулевой и повторяем подгон. Без
+   * анимации: она смотрится как рывок на только что открывшейся карте.
+   */
+  useEffect(() => {
+    const el = containerRef.current
+    if (!ymaps3 || !el) return
+
+    const sized = () => el.clientWidth > 0 && el.clientHeight > 0
+    let hadSize = sized()
+
+    const ro = new ResizeObserver(() => {
+      const has = sized()
+      if (has && !hadSize) fitToHotels(false)
+      hadSize = has
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ymaps3])
 
   return <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
 }
