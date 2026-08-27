@@ -122,7 +122,7 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 
 | Формат | Регион | Куда | Выдача |
 |--------|--------|------|--------|
-| Тур | любой (кроме МО) | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
+| Тур | любой (кроме МО) | `online.mosgortur.ru/tours/?…&target=module6&action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
 | Тур | у моря | + `beachLines=1,2,3&ticketsIncluded=true&resorts=19,63,322,663,1475` | Популярные черноморские направления без Крыма |
 | Тур | СПб / Калининград / Казань | + `resorts=1264` / `3788` / `495` | Только выбранное направление |
 | Тур | Другой регион | + `resorts=536,3027,3824,3801,3737,3781,7064,42` | Пул популярных не-морских регионов |
@@ -137,15 +137,15 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 
 ### Параметры
 
-**Туры** (`buildTourSearchUrl`) — hash Sletat:
+**Туры** (`buildTourSearchUrl`) — query Sletat (`target=module6`, не hash):
 
 - `adults`, `kids` = возрасты через запятую (`7,10`), не количество
 - `dateFrom` = `dateTo` = заезд (`DD/MM/YYYY`); `minNights` = `maxNights` = число ночей
 - `maxPrice` = бюджет визарда (сумма на поездку), `minPrice` = 70% от max
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - Регион: море → `beachLines` + `resorts=19,63,322,663,1475`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой → `resorts=536,3027,3824,3801,3737,3781,7064,42`; «не знаю» — без `resorts`
-- UTM и маркер в query **до** `#`: `/tours/?podbor_ref=1&utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
-- **Важно:** в hash не кодировать `/` в датах и `,` в списках (`dateFrom=10/09/2026`, не `10%2F09%2F2026`). `URLSearchParams` ломает старт поиска Слетать — остаётся пустая форма.
+- UTM и поиск в одном query: `/tours/?podbor_ref=1&utm_source=podbor_wizard&…&target=module6&action=search&moduleId=…&…`
+- **Не использовать `#module6?…`:** на `online.mosgortur.ru` плагин UTM делает `router.replace({ query })` без `hash` — hash теряется до старта Слетать, остаётся пустая форма. Слетать читает и `target=module6&…` из query; UTM-replace эти ключи сохраняет.
 
 **Отели** (`buildHotelSearchUrl`):
 
@@ -156,8 +156,8 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 
 ### Проверено
 
-1. Тур + море → `/tours/?utm_source=podbor_wizard#module6?action=search&…&beachLines=1,2,3` + kids ages  
-2. Тур + другой → тот же модуль с датами/людьми  
+1. Тур + море → `/tours/?utm_source=podbor_wizard&target=module6&action=search&…&beachLines=1,2,3` + kids ages  
+2. Тур + СПб / другой → тот же query-формат с `resorts` / датами / людьми; после открытия — выдача, не пустая форма  
 3. Отель + море / МО / СПб → `russia.mosgortur.ru/search/…` с датой и ночами  
 
 ---
