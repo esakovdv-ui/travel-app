@@ -39,11 +39,16 @@ export const podborAnswersSchema = z.object({
   checkOut: z.string().optional(),
   nights: z.number().int().positive().optional(),
   handoffUrl: z.string().optional(),
+  /** Имя с формы контакта — без телефона в хранилище. */
+  contactName: z.string().max(100).optional(),
+  /** Маска телефона, например +7***1234 */
+  phoneMasked: z.string().max(20).optional(),
+  bitrixDealId: z.number().int().positive().optional(),
 });
 
 export const podborEventSchema = z.object({
   at: z.string().min(1),
-  type: z.enum(['start', 'step', 'handoff']),
+  type: z.enum(['start', 'step', 'handoff', 'lead_submit']),
   step: z.string().optional(),
   answers: podborAnswersSchema.optional(),
 });
@@ -100,7 +105,7 @@ export function isPodborAdminPassword(password: string): boolean {
 
 export type TrackPodborInput = {
   sessionId: string;
-  type: 'start' | 'step' | 'handoff';
+  type: 'start' | 'step' | 'handoff' | 'lead_submit';
   step?: string;
   answers?: PodborAnswers;
   embedded?: boolean;
@@ -214,6 +219,9 @@ export function podborSessionsToTsv(sessions: PodborSession[]): string {
     'check_out',
     'nights',
     'handoff_url',
+    'contact_name',
+    'phone_masked',
+    'bitrix_deal_id',
     'referer',
   ].join('\t');
 
@@ -239,6 +247,9 @@ export function podborSessionsToTsv(sessions: PodborSession[]): string {
       s.answers.checkOut ?? '',
       s.answers.nights ?? '',
       s.answers.handoffUrl ?? '',
+      s.answers.contactName ?? '',
+      s.answers.phoneMasked ?? '',
+      s.answers.bitrixDealId ?? '',
       s.referer ?? '',
     ].join('\t')
   );
