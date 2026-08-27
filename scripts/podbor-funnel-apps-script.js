@@ -45,6 +45,7 @@ const WIZARD_COLUMNS = [
   'CR → даты', 'Шаг: даты', 'CR → итог', 'Шаг: итог',
   'CR → handoff', 'Handoff', 'CR старт→handoff',
   'Handoff: туры', 'CR туры от handoff', 'Handoff: отели', 'CR отели от handoff',
+  'Лид (контакт)', 'CR итог→лид',
 ];
 
 const TOURS_LABELS = [
@@ -63,6 +64,7 @@ const WIZARD_GOALS = [
   { key: 'budget', id: 595566510 }, { key: 'format', id: 595566511 },
   { key: 'region', id: 595566512 }, { key: 'dates', id: 595566513 },
   { key: 'summary', id: 595566514 }, { key: 'handoff', id: 595566515 },
+  { key: 'lead', id: 602593348 },
 ];
 
 function metrikaGet_(path) {
@@ -249,6 +251,7 @@ function setupReference_(ss) {
     [COUNTERS.mgt, '595574819', 'podbor_popup_click', 'Клик popup'],
     [COUNTERS.wizard, '595566508', 'podbor_start', 'Старт визарда'],
     [COUNTERS.wizard, '595566515', 'podbor_handoff', 'Handoff'],
+    [COUNTERS.wizard, '602593348', 'podbor_lead_submit', 'Лид: имя+телефон → Битрикс'],
     [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка'],
     [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата'],
     ['Лист Воронка', 'Визард: недели строками; Туры/Отели: показатели×недели', '', ''],
@@ -282,6 +285,7 @@ function setupAndSync() {
       pct_(m.handoff, m.summary), m.handoff, pct_(m.handoff, m.start),
       m.handoff_tours, pct_(m.handoff_tours, m.handoff),
       m.handoff_hotels, pct_(m.handoff_hotels, m.handoff),
+      m.lead, pct_(m.lead, m.summary),
     ]);
     toursCols.push(toursValues_(m));
     hotelsCols.push(hotelsValues_(m));
