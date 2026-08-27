@@ -698,7 +698,7 @@
             <span>Согласен(на) на <a href="https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_обработку_персональных_данных_в_сети_Интернет.pdf" target="_blank" rel="noopener">обработку персональных данных</a></span>
           </label>
           <p class="contact-error" id="contactError" hidden></p>
-          <p class="contact-ok" id="contactOk" hidden>Заявку приняли. Можно открыть подборку ниже.</p>
+          <p class="contact-ok" id="contactOk" hidden>Заявку приняли. Можно открыть подборку выше, нажав на кнопку «Показать туры».</p>
           <div class="contact-actions">
             <button type="submit" class="btn btn-secondary" id="contactSubmit">Оставить телефон менеджеру</button>
           </div>
@@ -1941,6 +1941,10 @@
         });
 
         document.getElementById('contactOk').hidden = false;
+        document.getElementById('contactOk').textContent =
+          'Заявку приняли. Можно открыть подборку выше, нажав на кнопку «' +
+          (state.format === 'hotel' ? 'Показать отели' : 'Показать туры') +
+          '».';
         document.getElementById('contactSubmit').disabled = true;
         document.getElementById('contactSubmit').textContent = 'Заявку приняли';
         document.getElementById('contactName').disabled = true;
