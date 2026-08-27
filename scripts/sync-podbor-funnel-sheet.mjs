@@ -251,6 +251,7 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
     dates: wizard.dates ?? 0,
     summary: wizard.summary ?? 0,
     handoff: wizard.handoff ?? 0,
+    lead: wizard.lead ?? 0,
     handoff_tours: handoffTours.handoff_tours ?? 0,
     handoff_hotels: handoffHotels.handoff_hotels ?? 0,
     tours_entry: tourJourney.tours_entry,
@@ -439,6 +440,7 @@ function metricsFromWeeklyData(week, data) {
     dates: wizard.dates ?? 0,
     summary: wizard.summary ?? 0,
     handoff: wizard.handoff ?? 0,
+    lead: wizard.lead ?? 0,
     handoff_tours: pickWeekValue(data.handoffToursWeeks, week.from),
     handoff_hotels: pickWeekValue(data.handoffHotelsWeeks, week.from),
     tours_entry: toursSearch,
@@ -482,6 +484,8 @@ function rowWizard(week, m) {
     crBetween(m.handoff_tours, m.handoff),
     m.handoff_hotels,
     crBetween(m.handoff_hotels, m.handoff),
+    m.lead,
+    crBetween(m.lead, m.summary),
   ];
 }
 
