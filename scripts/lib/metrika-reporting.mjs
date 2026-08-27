@@ -34,23 +34,105 @@ export function encFilter(filter) {
   return encodeURIComponent(filter);
 }
 
-export async function metrikaApi(path, token = ensureMetrikaToken(), attempt = 0) {
-  const response = await fetch(`https://api-metrika.yandex.net${path}`, {
-    headers: { Authorization: `OAuth ${token}` },
-    signal: AbortSignal.timeout(60000),
-  });
-  const text = await response.text();
-  if (response.status === 429 && attempt < 5) {
-    const waitMs = text.includes('quota_requests')
-      ? 60000 * (attempt + 1)
-      : 15000 * (attempt + 1);
-    await sleep(waitMs);
-    return metrikaApi(path, token, attempt + 1);
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const METRIKA_MAX_ATTEMPTS = 8;
+
+function metrikaError(status, text, code) {
+  const err = new Error(`metrika ${status}: ${text.slice(0, 400)}`);
+  err.status = status;
+  if (code) err.code = code;
+  return err;
+}
+
+function isTransientNetworkError(err) {
+  if (!err) return false;
+  if (err.name === 'TimeoutError' || err.name === 'AbortError') return true;
+  const msg = String(err.message || err);
+  return /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket|network/i.test(msg);
+}
+
+/**
+ * Reporting API with retries for quota / 5xx / network.
+ * QUERY_TOO_COMPLICATED is thrown without blind retry — callers should split the query.
+ */
+export async function metrikaApi(apiPath, token = ensureMetrikaToken(), attempt = 0) {
+  try {
+    const response = await fetch(`https://api-metrika.yandex.net${apiPath}`, {
+      headers: { Authorization: `OAuth ${token}` },
+      signal: AbortSignal.timeout(90000),
+    });
+    const text = await response.text();
+
+    if (response.status === 400 && /too complicated|query_error/i.test(text)) {
+      throw metrikaError(400, text, 'QUERY_TOO_COMPLICATED');
+    }
+
+    const retryableHttp =
+      response.status === 429 ||
+      response.status === 500 ||
+      response.status === 502 ||
+      response.status === 503 ||
+      response.status === 504;
+
+    if (retryableHttp && attempt < METRIKA_MAX_ATTEMPTS - 1) {
+      const quota = text.includes('quota_requests');
+      const waitMs = quota
+        ? Math.min(300000, 90000 * (attempt + 1))
+        : Math.min(120000, 20000 * (attempt + 1));
+      console.warn(
+        `metrika ${response.status}${quota ? ' (quota)' : ''}: retry ${attempt + 1}/${METRIKA_MAX_ATTEMPTS - 1} in ${Math.round(waitMs / 1000)}s`
+      );
+      await sleep(waitMs);
+      return metrikaApi(apiPath, token, attempt + 1);
+    }
+
+    if (!response.ok) {
+      throw metrikaError(response.status, text);
+    }
+    return JSON.parse(text);
+  } catch (err) {
+    if (err?.code === 'QUERY_TOO_COMPLICATED') throw err;
+    if (isTransientNetworkError(err) && attempt < METRIKA_MAX_ATTEMPTS - 1) {
+      const waitMs = Math.min(90000, 15000 * (attempt + 1));
+      console.warn(
+        `metrika network: ${err.message || err.name}; retry ${attempt + 1}/${METRIKA_MAX_ATTEMPTS - 1} in ${Math.round(waitMs / 1000)}s`
+      );
+      await sleep(waitMs);
+      return metrikaApi(apiPath, token, attempt + 1);
+    }
+    throw err;
   }
-  if (!response.ok) {
-    throw new Error(`metrika ${response.status}: ${text.slice(0, 400)}`);
+}
+
+function midDay(dateFrom, dateTo) {
+  const a = Date.parse(`${dateFrom}T12:00:00Z`);
+  const b = Date.parse(`${dateTo}T12:00:00Z`);
+  if (!(a < b)) return null;
+  const mid = new Date((a + b) / 2);
+  return mid.toISOString().slice(0, 10);
+}
+
+function addCalendarDay(dayKey, days) {
+  const d = new Date(`${dayKey}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function eachWeekStart(dateFrom, dateTo) {
+  const weeks = [];
+  const start = new Date(`${dateFrom}T12:00:00Z`);
+  const dow = start.getUTCDay();
+  const toMonday = dow === 0 ? -6 : 1 - dow;
+  start.setUTCDate(start.getUTCDate() + toMonday);
+  const end = new Date(`${dateTo}T12:00:00Z`);
+  while (start <= end) {
+    weeks.push(start.toISOString().slice(0, 10));
+    start.setUTCDate(start.getUTCDate() + 7);
   }
-  return JSON.parse(text);
+  return weeks;
 }
 
 /** Users + reaches for a goal in date range. */
@@ -150,10 +232,6 @@ export async function queryBatchGoals(counterId, dateFrom, dateTo, goals, extraM
   return out;
 }
 
-export function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /** Unique clientIDs with any visit matching entryFilter in [entryFrom, entryTo]. */
 export async function queryPodborHotelEntryClients(
   counterId,
@@ -161,20 +239,42 @@ export async function queryPodborHotelEntryClients(
   entryTo,
   entryFilter
 ) {
-  const data = await metrikaApi(
-    `/stat/v1/data?id=${counterId}&date1=${entryFrom}&date2=${entryTo}` +
-      `&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000` +
-      `&filters=${encFilter(entryFilter)}`
-  );
-  return new Set(
-    (data.data ?? []).map((row) => row.dimensions[0]?.name).filter(Boolean)
-  );
+  try {
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${entryFrom}&date2=${entryTo}` +
+        `&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000` +
+        `&filters=${encFilter(entryFilter)}`
+    );
+    return new Set(
+      (data.data ?? []).map((row) => row.dimensions[0]?.name).filter(Boolean)
+    );
+  } catch (err) {
+    if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+    const mid = midDay(entryFrom, entryTo);
+    if (!mid || mid <= entryFrom || mid >= entryTo) throw err;
+    console.warn(
+      `metrika entry clients too complex ${entryFrom}…${entryTo}; split at ${mid}`
+    );
+    const left = await queryPodborHotelEntryClients(
+      counterId,
+      entryFrom,
+      mid,
+      entryFilter
+    );
+    const right = await queryPodborHotelEntryClients(
+      counterId,
+      addCalendarDay(mid, 1),
+      entryTo,
+      entryFilter
+    );
+    return new Set([...left, ...right]);
+  }
 }
 
 /** Alias: тот же API для туров / отелей. */
 export const queryPodborEntryClients = queryPodborHotelEntryClients;
 
-function chunkClientIds(clientIds, size = 10) {
+function chunkClientIds(clientIds, size = 8) {
   const chunks = [];
   for (let i = 0; i < clientIds.length; i += size) {
     chunks.push(clientIds.slice(i, i + size));
@@ -182,8 +282,31 @@ function chunkClientIds(clientIds, size = 10) {
   return chunks;
 }
 
+async function fetchJourneyChunkByWeek(
+  counterId,
+  dateFrom,
+  dateTo,
+  orFilter,
+  downstreamFilter,
+  byWeek
+) {
+  const data = await metrikaApi(
+    `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+      `&metrics=ym:s:visits&dimensions=ym:s:startOfWeek,ym:s:clientID&group=week&limit=10000` +
+      `&filters=${encFilter(`(${orFilter}) AND ${downstreamFilter}`)}`
+  );
+  for (const row of data.data ?? []) {
+    const weekStart = row.dimensions[0]?.name;
+    const clientId = row.dimensions[1]?.name;
+    if (!weekStart || !clientId) continue;
+    if (!byWeek.has(weekStart)) byWeek.set(weekStart, new Set());
+    byWeek.get(weekStart).add(clientId);
+  }
+}
+
 /**
  * Map weekStart → Set(clientID) for entry clients who hit downstreamFilter.
+ * On QUERY_TOO_COMPLICATED falls back to smaller chunks, then week-by-week.
  */
 export async function queryWeeklyPodborJourneyClientSets(
   counterId,
@@ -195,21 +318,42 @@ export async function queryWeeklyPodborJourneyClientSets(
   const byWeek = new Map();
   if (!entryClientIds?.size) return byWeek;
 
-  for (const chunk of chunkClientIds([...entryClientIds])) {
+  for (const chunk of chunkClientIds([...entryClientIds], 8)) {
     const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
-    const data = await metrikaApi(
-      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
-        `&metrics=ym:s:visits&dimensions=ym:s:startOfWeek,ym:s:clientID&group=week&limit=10000` +
-        `&filters=${encFilter(`(${orFilter}) AND ${downstreamFilter}`)}`
-    );
-    for (const row of data.data ?? []) {
-      const weekStart = row.dimensions[0]?.name;
-      const clientId = row.dimensions[1]?.name;
-      if (!weekStart || !clientId) continue;
-      if (!byWeek.has(weekStart)) byWeek.set(weekStart, new Set());
-      byWeek.get(weekStart).add(clientId);
+    try {
+      await fetchJourneyChunkByWeek(
+        counterId,
+        dateFrom,
+        dateTo,
+        orFilter,
+        downstreamFilter,
+        byWeek
+      );
+    } catch (err) {
+      if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+      console.warn(
+        `metrika journey chunk too complex (${chunk.length} ids, ${dateFrom}…${dateTo}); retry week-by-week`
+      );
+      for (const weekStart of eachWeekStart(dateFrom, dateTo)) {
+        const weekEnd = addCalendarDay(weekStart, 6);
+        const from = weekStart < dateFrom ? dateFrom : weekStart;
+        const to = weekEnd > dateTo ? dateTo : weekEnd;
+        if (from > to) continue;
+        for (const small of chunkClientIds(chunk, 4)) {
+          const smallOr = small.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
+          await fetchJourneyChunkByWeek(
+            counterId,
+            from,
+            to,
+            smallOr,
+            downstreamFilter,
+            byWeek
+          );
+          await sleep(400);
+        }
+      }
     }
-    await sleep(100);
+    await sleep(400);
   }
   return byWeek;
 }
@@ -249,7 +393,7 @@ export async function queryHotelPodborJourneyUserCount(
 ) {
   if (!entryClientIds?.size) return 0;
   const matched = new Set();
-  for (const chunk of chunkClientIds([...entryClientIds])) {
+  for (const chunk of chunkClientIds([...entryClientIds], 8)) {
     const orFilter = chunk.map((cid) => `ym:s:clientID=='${cid}'`).join(' OR ');
     const data = await metrikaApi(
       `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
@@ -259,7 +403,7 @@ export async function queryHotelPodborJourneyUserCount(
     for (const row of data.data ?? []) {
       if (row.dimensions[0]?.name) matched.add(row.dimensions[0].name);
     }
-    await sleep(100);
+    await sleep(400);
   }
   return matched.size;
 }
@@ -271,34 +415,66 @@ export async function queryHotelPodborJourneyUserCount(
 export async function queryWeeklyGoals(counterId, dateFrom, dateTo, goals, filter = null) {
   const goalMetrics = goals.map((g) => `ym:s:goal${g.id}users`).join(',');
   const f = filter ? `&filters=${encFilter(filter)}` : '';
-  const data = await metrikaApi(
-    `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
-      `&metrics=${goalMetrics}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
-  );
-  const byWeek = new Map();
-  for (const row of data.data ?? []) {
-    const weekStart = row.dimensions[0].name;
-    const metrics = {};
-    goals.forEach((g, i) => {
-      metrics[g.key] = row.metrics[i] ?? 0;
-    });
-    byWeek.set(weekStart, metrics);
+  try {
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=${goalMetrics}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+    );
+    const byWeek = new Map();
+    for (const row of data.data ?? []) {
+      const weekStart = row.dimensions[0].name;
+      const metrics = {};
+      goals.forEach((g, i) => {
+        metrics[g.key] = row.metrics[i] ?? 0;
+      });
+      byWeek.set(weekStart, metrics);
+    }
+    return byWeek;
+  } catch (err) {
+    if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+    const mid = midDay(dateFrom, dateTo);
+    if (!mid || mid <= dateFrom || mid >= dateTo) throw err;
+    console.warn(`metrika weekly goals too complex ${dateFrom}…${dateTo}; split at ${mid}`);
+    const left = await queryWeeklyGoals(counterId, dateFrom, mid, goals, filter);
+    const right = await queryWeeklyGoals(
+      counterId,
+      addCalendarDay(mid, 1),
+      dateTo,
+      goals,
+      filter
+    );
+    return new Map([...left, ...right]);
   }
-  return byWeek;
 }
 
 /** Weekly unique users for one goal with arbitrary filter. Map weekStart -> users */
 export async function queryWeeklyGoalUsers(counterId, dateFrom, dateTo, goalId, filter = null) {
   const f = filter ? `&filters=${encFilter(filter)}` : '';
-  const data = await metrikaApi(
-    `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
-      `&metrics=ym:s:goal${goalId}users&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
-  );
-  const byWeek = new Map();
-  for (const row of data.data ?? []) {
-    byWeek.set(row.dimensions[0].name, row.metrics[0] ?? 0);
+  try {
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=ym:s:goal${goalId}users&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+    );
+    const byWeek = new Map();
+    for (const row of data.data ?? []) {
+      byWeek.set(row.dimensions[0].name, row.metrics[0] ?? 0);
+    }
+    return byWeek;
+  } catch (err) {
+    if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+    const mid = midDay(dateFrom, dateTo);
+    if (!mid || mid <= dateFrom || mid >= dateTo) throw err;
+    console.warn(`metrika weekly goal users too complex ${dateFrom}…${dateTo}; split at ${mid}`);
+    const left = await queryWeeklyGoalUsers(counterId, dateFrom, mid, goalId, filter);
+    const right = await queryWeeklyGoalUsers(
+      counterId,
+      addCalendarDay(mid, 1),
+      dateTo,
+      goalId,
+      filter
+    );
+    return new Map([...left, ...right]);
   }
-  return byWeek;
 }
 
 /** @deprecated use queryWeeklyGoalUsers */
@@ -307,15 +483,31 @@ export const queryWeeklyGoalReaches = queryWeeklyGoalUsers;
 /** Weekly users or visits with filter. Map weekStart -> number. Default: users. */
 export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter, metric = 'ym:s:users') {
   const f = filter ? `&filters=${encFilter(filter)}` : '';
-  const data = await metrikaApi(
-    `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
-      `&metrics=${metric}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
-  );
-  const byWeek = new Map();
-  for (const row of data.data ?? []) {
-    byWeek.set(row.dimensions[0].name, row.metrics[0] ?? 0);
+  try {
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=${metric}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+    );
+    const byWeek = new Map();
+    for (const row of data.data ?? []) {
+      byWeek.set(row.dimensions[0].name, row.metrics[0] ?? 0);
+    }
+    return byWeek;
+  } catch (err) {
+    if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+    const mid = midDay(dateFrom, dateTo);
+    if (!mid || mid <= dateFrom || mid >= dateTo) throw err;
+    console.warn(`metrika weekly visits too complex ${dateFrom}…${dateTo}; split at ${mid}`);
+    const left = await queryWeeklyVisits(counterId, dateFrom, mid, filter, metric);
+    const right = await queryWeeklyVisits(
+      counterId,
+      addCalendarDay(mid, 1),
+      dateTo,
+      filter,
+      metric
+    );
+    return new Map([...left, ...right]);
   }
-  return byWeek;
 }
 
 /**

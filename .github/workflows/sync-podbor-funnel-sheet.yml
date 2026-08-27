@@ -9,6 +9,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,9 +17,30 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - name: Sync Metrika → Google Sheet
+      - name: Sync Metrika → Google Sheet (with retries)
         env:
           YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           PODBOR_SHEET_ID: 1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ
-        run: node scripts/sync-podbor-funnel-sheet.mjs --weeks=8
+        run: |
+          set -uo pipefail
+          MAX_ATTEMPTS=4
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "::group::Sync attempt ${attempt}/${MAX_ATTEMPTS}"
+            if node scripts/sync-podbor-funnel-sheet.mjs --weeks=8; then
+              echo "::endgroup::"
+              echo "Sync succeeded on attempt ${attempt}"
+              exit 0
+            fi
+            status=$?
+            echo "::endgroup::"
+            echo "Attempt ${attempt} failed with exit ${status}"
+            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+              echo "All ${MAX_ATTEMPTS} attempts failed"
+              exit 1
+            fi
+            wait_sec=$((attempt * 180))
+            echo "Waiting ${wait_sec}s before retry…"
+            sleep "$wait_sec"
+          done
+          exit 1

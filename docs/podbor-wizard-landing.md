@@ -276,7 +276,7 @@ npm run podbor:setup-automation     # sync + storage/podbor-bootstrap-once.gs д
 2. Extensions → Apps Script → вставить `storage/podbor-bootstrap-once.gs`
 3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **каждый час** → `setupAndSync`
 
-**GitHub Actions (основной путь):** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron **каждый час**. Secrets: `YANDEX_METRIKA_TOKEN` + `GOOGLE_SERVICE_ACCOUNT_JSON` (без Google SA workflow считает Метрику, но в Sheet не пишет). Email SA должен быть редактором таблицы.
+**GitHub Actions (основной путь):** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron **каждый час**. При ошибке job делает до **4 попыток** с паузой 3–12 мин; внутри скрипта — ретраи Метрики (квота/5xx) и Google Sheets, а тяжёлые запросы дробятся. Secrets: `YANDEX_METRIKA_TOKEN` + `GOOGLE_SERVICE_ACCOUNT_JSON` (без Google SA workflow считает Метрику, но в Sheet не пишет). Email SA должен быть редактором таблицы.
 
 Без Google SA:
 
