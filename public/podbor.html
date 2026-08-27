@@ -1542,7 +1542,9 @@
       ].join('_');
       const maxPrice = state.budget || 80000;
       const minPrice = Math.round(maxPrice * 0.7);
-      const params = new URLSearchParams({
+      // Hash для Слетать: не использовать URLSearchParams — он кодирует / и ,
+      // в %2F/%2C, и модуль тогда не стартует поиск (остаётся пустая форма).
+      const hashParams = {
         action: 'search',
         moduleId: '68ea30c6-f7a0-4a8c-9775-ccd5a3063a02',
         country: '150',
@@ -1563,23 +1565,34 @@
         isOnlyAccommodation: 'false',
         isRailwaySupported: 'false',
         tourFormRequiredFields: '0',
-      });
+      };
+      if (state.kidsAges.length) {
+        hashParams.kids = state.kidsAges.join(',');
+      }
+      if (state.region === 'sea') {
+        hashParams.beachLines = '1,2,3';
+        hashParams.ticketsIncluded = 'true';
+      }
+      const resorts = tourResortsParam(state.region);
+      if (resorts) hashParams.resorts = resorts;
+
+      const hashQuery = Object.keys(hashParams)
+        .map((key) => {
+          const raw = String(hashParams[key]);
+          const encoded = encodeURIComponent(raw)
+            .replace(/%2F/gi, '/')
+            .replace(/%2C/gi, ',');
+          return `${encodeURIComponent(key)}=${encoded}`;
+        })
+        .join('&');
+
       const utm = new URLSearchParams({
         podbor_ref: '1',
         utm_source: 'podbor_wizard',
         utm_campaign: campaign,
         utm_medium: 'wizard',
       });
-      if (state.kidsAges.length) {
-        params.set('kids', state.kidsAges.join(','));
-      }
-      if (state.region === 'sea') {
-        params.set('beachLines', '1,2,3');
-        params.set('ticketsIncluded', 'true');
-      }
-      const resorts = tourResortsParam(state.region);
-      if (resorts) params.set('resorts', resorts);
-      return `https://online.mosgortur.ru/tours/?${utm.toString()}#module6?${params.toString()}`;
+      return `https://online.mosgortur.ru/tours/?${utm.toString()}#module6?${hashQuery}`;
     }
 
     function buildHandoffUrl() {

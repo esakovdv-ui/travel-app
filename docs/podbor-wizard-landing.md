@@ -145,6 +145,7 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - Регион: море → `beachLines` + `resorts=19,63,322,663,1475`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой → `resorts=536,3027,3824,3801,3737,3781,7064,42`; «не знаю» — без `resorts`
 - UTM и маркер в query **до** `#`: `/tours/?podbor_ref=1&utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
+- **Важно:** в hash не кодировать `/` в датах и `,` в списках (`dateFrom=10/09/2026`, не `10%2F09%2F2026`). `URLSearchParams` ломает старт поиска Слетать — остаётся пустая форма.
 
 **Отели** (`buildHotelSearchUrl`):
 
