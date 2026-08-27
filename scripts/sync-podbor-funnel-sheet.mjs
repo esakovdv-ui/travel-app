@@ -270,12 +270,12 @@ async function fetchWeekMetrics(dateFrom, dateTo) {
 async function fetchAllWeeklyData(rangeFrom, rangeTo) {
   const funnelStart = getFunnelStart();
   const entryClients = await fetchHotelEntryClients(rangeFrom, rangeTo, funnelStart);
-  await sleep(400);
+  await sleep(800);
 
   const entryWeeks = await queryWeeklyGoals(COUNTERS.mgt, rangeFrom, rangeTo, MGT_ENTRY_GOALS);
-  await sleep(400);
+  await sleep(800);
   const wizardWeeks = await queryWeeklyGoals(COUNTERS.wizard, rangeFrom, rangeTo, WIZARD_GOALS);
-  await sleep(400);
+  await sleep(800);
   const handoffToursWeeks = await queryWeeklyGoalUsers(
     COUNTERS.wizard,
     rangeFrom,
@@ -283,7 +283,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.handoff_tours.goalId,
     POST_HANDOFF.handoff_tours.filter
   );
-  await sleep(400);
+  await sleep(800);
   const handoffHotelsWeeks = await queryWeeklyGoalUsers(
     COUNTERS.wizard,
     rangeFrom,
@@ -291,7 +291,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     POST_HANDOFF.handoff_hotels.goalId,
     POST_HANDOFF.handoff_hotels.filter
   );
-  await sleep(400);
+  await sleep(800);
   console.log(`  Tours cohort (legacy module; ref с ${PODBOR_TOURS_REF_START})…`);
   const legacyF = toursFiltersForWeek('2020-01-01');
   const refF = toursFiltersForWeek(PODBOR_TOURS_REF_START);
@@ -302,7 +302,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     legacyF.search,
     'ym:s:users'
   );
-  await sleep(300);
+  await sleep(600);
   const toursSearchRefWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
@@ -310,7 +310,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     refF.search,
     'ym:s:users'
   );
-  await sleep(300);
+  await sleep(600);
   const toursCardLegacyWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
@@ -318,7 +318,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     legacyF.card,
     'ym:s:users'
   );
-  await sleep(300);
+  await sleep(600);
   const toursCardRefWeeks = await queryWeeklyVisits(
     COUNTERS.mgt,
     rangeFrom,
@@ -326,7 +326,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     refF.card,
     'ym:s:users'
   );
-  await sleep(300);
+  await sleep(600);
   const tourGoalLegacyWeeks = await queryWeeklyGoals(
     COUNTERS.mgt,
     rangeFrom,
@@ -338,7 +338,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     ],
     legacyF.goals
   );
-  await sleep(300);
+  await sleep(600);
   const tourGoalRefWeeks = await queryWeeklyGoals(
     COUNTERS.mgt,
     rangeFrom,
@@ -350,7 +350,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     ],
     refF.goals
   );
-  await sleep(400);
+  await sleep(800);
   console.log('  Hotels journey (clientID)…');
   const hotelsSearchWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
@@ -359,7 +359,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     entryClients,
     POST_HANDOFF.hotels_search.filter
   );
-  await sleep(400);
+  await sleep(800);
   const hotelsPackageWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
     rangeFrom,
@@ -367,7 +367,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     entryClients,
     POST_HANDOFF.hotels_package.filter
   );
-  await sleep(400);
+  await sleep(800);
   const hotelsCheckoutWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
     rangeFrom,
@@ -375,7 +375,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     entryClients,
     POST_HANDOFF.hotels_checkout.filter
   );
-  await sleep(400);
+  await sleep(800);
   const hotelsPaymentBlockWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
     rangeFrom,
@@ -383,7 +383,7 @@ async function fetchAllWeeklyData(rangeFrom, rangeTo) {
     entryClients,
     POST_HANDOFF.hotels_payment_block.filter
   );
-  await sleep(400);
+  await sleep(800);
   const hotelsPurchaseWeeks = await queryWeeklyHotelPodborJourneyUsers(
     COUNTERS.hotels,
     rangeFrom,
@@ -562,34 +562,65 @@ function padRowsToWidth(rows) {
   });
 }
 
+async function withGoogleRetry(label, fn, attempts = 6) {
+  let lastErr;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = String(err?.message || err);
+      const retryable =
+        /unavailable|timeout|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket|rate|429|502|503|504|internal error|backend error/i.test(
+          msg
+        );
+      if (!retryable || attempt === attempts - 1) throw err;
+      const waitMs = Math.min(120000, 5000 * 2 ** attempt);
+      console.warn(
+        `Google Sheets «${label}» failed (${msg.slice(0, 140)}); retry ${attempt + 1}/${attempts - 1} in ${Math.round(waitMs / 1000)}s`
+      );
+      await sleep(waitMs);
+    }
+  }
+  throw lastErr;
+}
+
 async function writeToGoogleSheet(spreadsheetId, funnelValues, referenceRows) {
   const sheets = await getSheetsClient();
   if (!sheets) return false;
 
-  await ensureSheetTabs(sheets, spreadsheetId);
+  await withGoogleRetry('ensure tabs', () => ensureSheetTabs(sheets, spreadsheetId));
 
   const padded = padRowsToWidth(funnelValues);
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId,
-    range: `${SHEET_TAB_FUNNEL}!A:ZZ`,
-  });
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${SHEET_TAB_FUNNEL}!A1`,
-    valueInputOption: 'RAW',
-    requestBody: { values: padded },
-  });
+  await withGoogleRetry('clear funnel', () =>
+    sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: `${SHEET_TAB_FUNNEL}!A:ZZ`,
+    })
+  );
+  await withGoogleRetry('write funnel', () =>
+    sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${SHEET_TAB_FUNNEL}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: padded },
+    })
+  );
 
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId,
-    range: `${SHEET_TAB_REF}!A:ZZ`,
-  });
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${SHEET_TAB_REF}!A1`,
-    valueInputOption: 'RAW',
-    requestBody: { values: referenceRows },
-  });
+  await withGoogleRetry('clear ref', () =>
+    sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: `${SHEET_TAB_REF}!A:ZZ`,
+    })
+  );
+  await withGoogleRetry('write ref', () =>
+    sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${SHEET_TAB_REF}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: { values: referenceRows },
+    })
+  );
 
   return true;
 }
