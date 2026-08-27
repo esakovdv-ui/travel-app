@@ -39,6 +39,8 @@ flowchart TD
   region --> dates[5. Даты на календаре]
   dates --> summary[6. Итог]
   summary --> handoff[Туры / Отели]
+  summary --> contact["Имя и телефон → Битрикс category 12"]
+  contact --> handoff
 ```
 
 ### Шаг 1 — Кто едет
@@ -92,9 +94,22 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 
 Оценка = цена × ночи × люди × 0.88 для отеля. Пороги: ≤105% бюджета — ок, ≤135% — доплата, выше — скорее не влезает.
 
-### Шаг 6 — Итог → handoff
+### Шаг 6 — Итог → handoff / контакт
 
-CTA «Показать туры» / «Показать отели». Из iframe — переход в `window.top`.
+Основной CTA: «Показать туры» / «Показать отели» → `openHandoff`. Из iframe — переход в `window.top`.
+
+Необязательно на том же экране: имя + телефон + согласие на ПДн → `POST /api/podbor-lead` → сделка в Битрикс [category/12](https://crm.mosgortur.ru/crm/deal/category/12/) (`STAGE_ID: C12:NEW`). Handoff не блокируется.
+
+| Поле | Значение |
+|------|----------|
+| Название | `Подбор: {формат}, {регион}, {даты} — {имя}` |
+| UTM | `utm_source=podbor_wizard` (+ medium/campaign) |
+| SOURCE_ID | `WEBFORM` или env `PODBOR_BITRIX_SOURCE_ID` |
+| Ответственный | `1` или env `PODBOR_BITRIX_ASSIGNED_BY_ID` |
+| Дедуп | открытая сделка «Подбор:…» по телефону в category/12 за 48 ч |
+| SLA в комментарии | связаться через 2–4 часа, если нет самостоятельной оплаты |
+
+Метрика: `reachGoal('podbor_lead_submit')` на счётчике 109401746 — цель завести в кабинете Метрики.
 
 ---
 
@@ -172,6 +187,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 | 595566513 | `podbor_step_dates` | Дошли до шага дат | `nights`, `checkIn`, `checkOut` |
 | 595566514 | `podbor_step_summary` | Дошли до итога | `format`, `region`, `nights`, `budget`, `adults`, `kids` |
 | 595566515 | `podbor_handoff` | Нажали «Показать туры/отели» | те же + даты |
+| *(создать)* | `podbor_lead_submit` | Отправили имя и телефон менеджеру | те же + `duplicate` |
 
 ### Вход с сайта МГТ (90662828)
 

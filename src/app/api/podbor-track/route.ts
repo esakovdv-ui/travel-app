@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 const bodySchema = z.object({
   sessionId: z.string().min(8).max(80),
-  type: z.enum(['start', 'step', 'handoff']),
+  type: z.enum(['start', 'step', 'handoff', 'lead_submit']),
   step: z.string().min(1).max(40).optional(),
   answers: podborAnswersSchema.optional(),
   embedded: z.boolean().optional(),
