@@ -45,7 +45,7 @@ const WIZARD_COLUMNS = [
   'CR → даты', 'Шаг: даты', 'CR → итог', 'Шаг: итог',
   'CR → handoff', 'Handoff', 'CR старт→handoff',
   'Handoff: туры', 'CR туры от handoff', 'Handoff: отели', 'CR отели от handoff',
-  'Лид (контакт)', 'CR итог→лид',
+  'Лид (контакт)', 'CR итог→лид', 'Заказ (Битrix)', 'CR лид→заказ',
 ];
 
 const TOURS_LABELS = [
@@ -173,6 +173,57 @@ function effectiveMetricsRange_(week) {
   return { from: from, to: week.to };
 }
 
+function bitrixPost_(method, payload) {
+  var props = PropertiesService.getScriptProperties();
+  var base = (props.getProperty('BITRIX_REST_BASE_URL') || 'https://it.mosgortur.ru/b24catch').replace(/\/+$/, '');
+  var token = (props.getProperty('BITRIX_WEBHOOK_TOKEN') || '1981/0ly7df3o8j23eq30').replace(/^\/+|\/+$/g, '');
+  var url = base + '/' + token + '/' + method.replace(/\.json$/i, '') + '.json';
+  var resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload || {}),
+    muteHttpExceptions: true,
+  });
+  var code = resp.getResponseCode();
+  var data = JSON.parse(resp.getContentText() || '{}');
+  if (code !== 200 || data.error) {
+    throw new Error('Bitrix ' + code + ': ' + (data.error_description || data.error || ''));
+  }
+  return data;
+}
+
+function bitrixListAll_(method, payload) {
+  var out = [];
+  var start = 0;
+  while (true) {
+    var data = bitrixPost_(method, Object.assign({}, payload, { start: start }));
+    var rows = data.result || [];
+    if (Array.isArray(rows)) out = out.concat(rows);
+    if (!data.next) break;
+    start = data.next;
+  }
+  return out;
+}
+
+/** Сделки «Подбор: …» category/12 на этапе C12:WON, DATE_CREATE в неделе. */
+function podborBitrixWonCount_(weekFrom, weekTo) {
+  var deals = bitrixListAll_('crm.deal.list', {
+    filter: {
+      CATEGORY_ID: 12,
+      STAGE_ID: 'C12:WON',
+      '>=DATE_CREATE': weekFrom + ' 00:00:00',
+      '<=DATE_CREATE': weekTo + ' 23:59:59',
+    },
+    select: ['ID', 'TITLE', 'DATE_CREATE'],
+    order: { DATE_CREATE: 'ASC' },
+  });
+  var n = 0;
+  deals.forEach(function (d) {
+    if ((d.TITLE || '').trim().toLowerCase().indexOf('подбор:') === 0) n += 1;
+  });
+  return n;
+}
+
 function fetchWeek_(week) {
   const m = {};
   m.banner = goalUsers_(COUNTERS.mgt, 595574818, week.from, week.to);
@@ -194,6 +245,11 @@ function fetchWeek_(week) {
   m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.checkout + 'reaches>0');
   m.h_payment = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.paymentBlock + 'reaches>0');
   m.h_purchase = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.purchase + 'reaches>0');
+  try {
+    m.lead_order = podborBitrixWonCount_(week.from, week.to);
+  } catch (e) {
+    m.lead_order = 0;
+  }
   return m;
 }
 
@@ -252,6 +308,7 @@ function setupReference_(ss) {
     [COUNTERS.wizard, '595566508', 'podbor_start', 'Старт визарда'],
     [COUNTERS.wizard, '595566515', 'podbor_handoff', 'Handoff'],
     [COUNTERS.wizard, '602593348', 'podbor_lead_submit', 'Лид: имя+телефон → Битрикс'],
+    ['Битrix', 'category/12', 'C12:WON', 'Заказ: «Подбор: …» → Успешно сформирована заявка'],
     [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка'],
     [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата'],
     ['Лист Воронка', 'Визард: недели строками; Туры/Отели: показатели×недели', '', ''],
@@ -286,6 +343,7 @@ function setupAndSync() {
       m.handoff_tours, pct_(m.handoff_tours, m.handoff),
       m.handoff_hotels, pct_(m.handoff_hotels, m.handoff),
       m.lead, pct_(m.lead, m.summary),
+      m.lead_order, pct_(m.lead_order, m.lead),
     ]);
     toursCols.push(toursValues_(m));
     hotelsCols.push(hotelsValues_(m));

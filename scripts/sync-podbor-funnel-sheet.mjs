@@ -10,6 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { google } from 'googleapis';
 import { loadEnvLocal } from './lib/load-env-local.mjs';
+import { fetchPodborBitrixWonByWeek } from './lib/podbor-bitrix-funnel.mjs';
 import {
   ensureMetrikaToken,
   queryBatchGoals,
@@ -486,6 +487,8 @@ function rowWizard(week, m) {
     crBetween(m.handoff_hotels, m.handoff),
     m.lead,
     crBetween(m.lead, m.summary),
+    m.lead_order,
+    crBetween(m.lead_order, m.lead),
   ];
 }
 
@@ -665,6 +668,14 @@ async function main() {
     const weeklyData = await fetchAllWeeklyData(rangeFrom, rangeTo);
     await sleep(300);
 
+    let bitrixWonByWeek = new Map();
+    try {
+      console.log('Fetching Bitrix podbor WON…');
+      bitrixWonByWeek = await fetchPodborBitrixWonByWeek(reportWeeks, funnelStart);
+    } catch (err) {
+      console.warn(`Bitrix podbor WON skipped: ${err.message || err}`);
+    }
+
     for (const week of reportWeeks) {
       const metricsRange = effectiveMetricsRange(week, funnelStart);
       let metrics;
@@ -673,9 +684,10 @@ async function main() {
       } else {
         metrics = await fetchWeekMetrics(metricsRange.from, metricsRange.to);
       }
+      metrics.lead_order = bitrixWonByWeek.get(week.from) ?? 0;
       metricsByWeek.set(week.from, metrics);
       console.log(
-        `  ${week.label}: handoff=${metrics.handoff} tours=${metrics.handoff_tours} hotels=${metrics.handoff_hotels}`
+        `  ${week.label}: handoff=${metrics.handoff} lead=${metrics.lead} order=${metrics.lead_order}`
       );
     }
   }
