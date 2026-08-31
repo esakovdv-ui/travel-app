@@ -35,6 +35,7 @@ export function emptyFunnelMetrics() {
     summary: 0,
     handoff: 0,
     lead: 0,
+    lead_order: 0,
     handoff_tours: 0,
     handoff_hotels: 0,
     cr_start_handoff: '',
@@ -314,6 +315,8 @@ export const WIZARD_SHEET_COLUMNS = [
   'CR отели от handoff',
   'Лид (контакт)',
   'CR итог→лид',
+  'Заказ (Битrix)',
+  'CR лид→заказ',
 ];
 
 /**
@@ -376,6 +379,7 @@ export const REFERENCE_ROWS = [
   [COUNTERS.wizard, '595566514', 'podbor_step_summary', 'Итог'],
   [COUNTERS.wizard, '595566515', 'podbor_handoff', '«Показать туры/отели»'],
   [COUNTERS.wizard, '602593348', 'podbor_lead_submit', 'Отправили имя и телефон → Битрикс category/12'],
+  ['Битrix', 'category/12', 'C12:WON', 'Сделка «Подбор: …» → этап «Успешно сформирована заявка» (DATE_CREATE в неделе)'],
   [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
   [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
   ['Битрикс', 'category/12', 'C12:NEW', 'POST /api/podbor-lead — сделка «Подбор: …»'],
