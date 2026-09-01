@@ -1477,8 +1477,13 @@
       `;
     }
 
+    function sortShiftsForDisplay(items) {
+      return [...items].sort((a, b) => Number(Boolean(a.isSoldOut)) - Number(Boolean(b.isSoldOut)));
+    }
+
     function renderShifts() {
-      shiftGrid.innerHTML = shifts.map(shiftTemplate).join('');
+      const displayShifts = sortShiftsForDisplay(shifts);
+      shiftGrid.innerHTML = displayShifts.map(shiftTemplate).join('');
       shiftSelect.innerHTML = '<option value="">Выберите смену</option>';
       shifts.filter((shift) => !shift.isSoldOut).forEach((shift) => {
         const option = document.createElement('option');
