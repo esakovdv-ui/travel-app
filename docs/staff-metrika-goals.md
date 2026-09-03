@@ -86,6 +86,33 @@ staff_lead_success      — заявка отправлена в Bitrix
 5. `staff_book_open`
 6. `staff_lead_success`
 
+## Google Sheet — отчётность
+
+Таблица обновляется каждый час (GitHub Actions **Sync staff funnel sheet**).
+
+Листы:
+
+| Лист | Что внутри |
+|------|------------|
+| **Воронка** | Этапы строками: посетители, сессии, целевые действия (reaches), CR |
+| **По неделям** | Те же этапы, недели колонками, числа = посетители |
+| **Справочник** | ID целей, фильтр URL, поля Битрикса |
+
+Этапы: заход на `staff.motrip.ru` → попытка входа → успешный вход → поиск → выдача → отель → форма заявки → заявка (Метрика) → сделки в Битриксе (category 22, `SOURCE_ID=UC_58Z62L`). «Не пустили» и «ошибка отправки» — боковые ветки, в CR-цепочку не входят.
+
+Счётчик **109401746** общий с motrip.ru: визиты фильтруются `ym:s:startURL=@'staff.motrip.ru'`. Цели `staff_*` уникальны.
+
+Обновление:
+
+```bash
+npm run staff:funnel-sync          # Metrika + Bitrix → Google Sheet
+npm run staff:funnel-sync -- --dry-run
+```
+
+Переменные: `YANDEX_METRIKA_TOKEN`, `GOOGLE_SERVICE_ACCOUNT_JSON`, опционально `STAFF_SHEET_ID`, `STAFF_FUNNEL_START` (по умолчанию `2026-08-12`).
+
+Secrets workflow те же, что у воронки подбора. Email сервис-аккаунта Google должен быть редактором таблицы.
+
 ## Проверка
 
 После деплоя: `curl -sL https://staff.motrip.ru/ | grep 109401746` — в HTML должно быть число **109401746**, не ошибка Next.js.

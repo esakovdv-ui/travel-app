@@ -1,0 +1,56 @@
+name: Sync staff funnel sheet
+
+on:
+  schedule:
+    # каждый час (UTC). Метрика для «сегодня» подтягивается с лагом ~15–60 мин.
+    - cron: '20 * * * *'
+  workflow_dispatch:
+    inputs:
+      create_sheet:
+        description: 'Создать новую Google-таблицу, если STAFF_SHEET_ID пустой'
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Sync Metrika → Google Sheet (with retries)
+        env:
+          YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          STAFF_SHEET_ID: ''
+          STAFF_SHEET_SHARE_EMAIL: esakov.dv@gmail.com
+        run: |
+          set -uo pipefail
+          CREATE_FLAG=""
+          if [ "${{ github.event.inputs.create_sheet }}" = "true" ]; then
+            CREATE_FLAG="--create"
+          fi
+          MAX_ATTEMPTS=4
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "::group::Sync attempt ${attempt}/${MAX_ATTEMPTS}"
+            if node scripts/sync-staff-funnel-sheet.mjs --weeks=8 $CREATE_FLAG; then
+              echo "::endgroup::"
+              echo "Sync succeeded on attempt ${attempt}"
+              exit 0
+            fi
+            status=$?
+            echo "::endgroup::"
+            echo "Attempt ${attempt} failed with exit ${status}"
+            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+              echo "All ${MAX_ATTEMPTS} attempts failed"
+              exit 1
+            fi
+            wait_sec=$((attempt * 180))
+            echo "Waiting ${wait_sec}s before retry…"
+            sleep "$wait_sec"
+          done
+          exit 1
