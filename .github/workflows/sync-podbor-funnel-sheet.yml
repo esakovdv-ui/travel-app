@@ -5,9 +5,15 @@ on:
     # каждый час (UTC). Метрика для «сегодня» подтягивается с лагом ~15–60 мин.
     - cron: '5 * * * *'
   workflow_dispatch:
+    inputs:
+      create_staff_sheet:
+        description: 'Create staff.motrip.ru funnel spreadsheet (one-off)'
+        type: boolean
+        default: false
 
 jobs:
   sync:
+    if: ${{ github.event.inputs.create_staff_sheet != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -44,3 +50,21 @@ jobs:
             sleep "$wait_sec"
           done
           exit 1
+
+  create-staff-sheet:
+    if: ${{ github.event.inputs.create_staff_sheet == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Create staff funnel Google Sheet
+        env:
+          YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          STAFF_SHEET_SHARE_EMAIL: esakov.dv@gmail.com
+        run: node scripts/sync-staff-funnel-sheet.mjs --weeks=8 --create
