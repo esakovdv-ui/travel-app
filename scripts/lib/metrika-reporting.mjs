@@ -480,6 +480,120 @@ export async function queryWeeklyGoalUsers(counterId, dateFrom, dateTo, goalId, 
 /** @deprecated use queryWeeklyGoalUsers */
 export const queryWeeklyGoalReaches = queryWeeklyGoalUsers;
 
+function chunkItems(items, size) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+function goalStatMetrics(goalId) {
+  return [`ym:s:goal${goalId}users`, `ym:s:goal${goalId}visits`, `ym:s:goal${goalId}reaches`];
+}
+
+function parseGoalStatTriple(metrics, offset) {
+  return {
+    users: metrics[offset] ?? 0,
+    visits: metrics[offset + 1] ?? 0,
+    reaches: metrics[offset + 2] ?? 0,
+  };
+}
+
+/**
+ * Users + visits + reaches for many goals. Max 6 goals per request (18 metrics).
+ * goals: [{ id, key }]
+ * @returns {Promise<Record<string, { users: number, visits: number, reaches: number }>>}
+ */
+export async function queryBatchGoalStats(counterId, dateFrom, dateTo, goals, filter = null) {
+  const out = {};
+  const f = filter ? `&filters=${encFilter(filter)}` : '';
+  const groups = chunkItems(goals, 6);
+  for (let gi = 0; gi < groups.length; gi += 1) {
+    const group = groups[gi];
+    const metrics = group.flatMap((g) => goalStatMetrics(g.id)).join(',');
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}&metrics=${metrics}${f}`
+    );
+    const totals = data.totals ?? [];
+    group.forEach((g, i) => {
+      out[g.key] = parseGoalStatTriple(totals, i * 3);
+    });
+    if (gi < groups.length - 1) await sleep(300);
+  }
+  return out;
+}
+
+/**
+ * Weekly users+visits+reaches for many goals. Map weekStart → { [key]: { users, visits, reaches } }.
+ */
+export async function queryWeeklyGoalStats(counterId, dateFrom, dateTo, goals, filter = null) {
+  const byWeek = new Map();
+  const f = filter ? `&filters=${encFilter(filter)}` : '';
+  const groups = chunkItems(goals, 6);
+
+  async function mergeGroup(group, from, to) {
+    try {
+      const metrics = group.flatMap((g) => goalStatMetrics(g.id)).join(',');
+      const data = await metrikaApi(
+        `/stat/v1/data?id=${counterId}&date1=${from}&date2=${to}` +
+          `&metrics=${metrics}&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+      );
+      for (const row of data.data ?? []) {
+        const weekStart = row.dimensions[0].name;
+        if (!byWeek.has(weekStart)) byWeek.set(weekStart, {});
+        const slot = byWeek.get(weekStart);
+        group.forEach((g, i) => {
+          slot[g.key] = parseGoalStatTriple(row.metrics ?? [], i * 3);
+        });
+      }
+    } catch (err) {
+      if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+      const mid = midDay(from, to);
+      if (!mid || mid <= from || mid >= to) throw err;
+      console.warn(`metrika weekly goal stats too complex ${from}…${to}; split at ${mid}`);
+      await mergeGroup(group, from, mid);
+      await mergeGroup(group, addCalendarDay(mid, 1), to);
+    }
+  }
+
+  for (let gi = 0; gi < groups.length; gi += 1) {
+    await mergeGroup(groups[gi], dateFrom, dateTo);
+    if (gi < groups.length - 1) await sleep(300);
+  }
+  return byWeek;
+}
+
+/** Weekly users and visits. Map weekStart → { users, visits }. */
+export async function queryWeeklyUsersVisits(counterId, dateFrom, dateTo, filter = null) {
+  const f = filter ? `&filters=${encFilter(filter)}` : '';
+  try {
+    const data = await metrikaApi(
+      `/stat/v1/data?id=${counterId}&date1=${dateFrom}&date2=${dateTo}` +
+        `&metrics=ym:s:users,ym:s:visits&dimensions=ym:s:startOfWeek&group=week&sort=ym:s:startOfWeek${f}`
+    );
+    const byWeek = new Map();
+    for (const row of data.data ?? []) {
+      byWeek.set(row.dimensions[0].name, {
+        users: row.metrics[0] ?? 0,
+        visits: row.metrics[1] ?? 0,
+      });
+    }
+    return byWeek;
+  } catch (err) {
+    if (err?.code !== 'QUERY_TOO_COMPLICATED') throw err;
+    const mid = midDay(dateFrom, dateTo);
+    if (!mid || mid <= dateFrom || mid >= dateTo) throw err;
+    console.warn(`metrika weekly users/visits too complex ${dateFrom}…${dateTo}; split at ${mid}`);
+    const left = await queryWeeklyUsersVisits(counterId, dateFrom, mid, filter);
+    const right = await queryWeeklyUsersVisits(
+      counterId,
+      addCalendarDay(mid, 1),
+      dateTo,
+      filter
+    );
+    return new Map([...left, ...right]);
+  }
+}
+
 /** Weekly users or visits with filter. Map weekStart -> number. Default: users. */
 export async function queryWeeklyVisits(counterId, dateFrom, dateTo, filter, metric = 'ym:s:users') {
   const f = filter ? `&filters=${encFilter(filter)}` : '';
