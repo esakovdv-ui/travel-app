@@ -62,11 +62,9 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - name: Create staff funnel Google Sheet
+      - name: Sync staff funnel into shared spreadsheet
         env:
           YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          STAFF_SHEET_SHARE_EMAIL: esakov.dv@gmail.com
-        run: |
-          node -e 'const j=JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON); console.log("SA_EMAIL="+j.client_email)'
-          node scripts/sync-staff-funnel-sheet.mjs --weeks=8 --create
+          STAFF_SHEET_ID: 1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ
+        run: node scripts/sync-staff-funnel-sheet.mjs --weeks=8

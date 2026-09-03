@@ -102,9 +102,9 @@ export const STAFF_GOALS = [
   },
 ];
 
-export const SHEET_TAB_FUNNEL = 'Воронка';
-export const SHEET_TAB_WEEKS = 'По неделям';
-export const SHEET_TAB_REF = 'Справочник';
+export const SHEET_TAB_FUNNEL = 'Staff · Воронка';
+export const SHEET_TAB_WEEKS = 'Staff · По неделям';
+export const SHEET_TAB_REF = 'Staff · Справочник';
 
 export const FUNNEL_COLUMNS = [
   'Этап',
@@ -144,13 +144,13 @@ export const REFERENCE_ROWS = [
     'Недели до этой даты не выводятся в отчёт',
   ],
   [
-    'Лист Воронка',
+    'Лист Staff · Воронка',
     'Этапы строками, период = выбранные недели',
     'Посетители / сессии / reaches',
     'Уники за весь период, не сумма недель',
   ],
   [
-    'Лист По неделям',
+    'Лист Staff · По неделям',
     'Этапы строками, недели колонками',
     'Посетители (goal*users)',
     'Битрикс — число сделок за неделю',

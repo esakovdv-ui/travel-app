@@ -36,8 +36,8 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MSK = 'Europe/Moscow';
-/** Заполняется после первого создания таблицы. */
-const DEFAULT_SHEET_ID = '';
+/** Таблица уже расшарена на SA (та же, что воронка подбора). Отдельные листы Staff · *. */
+const DEFAULT_SHEET_ID = '1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ';
 
 function parseArgs(argv) {
   let weeks = 8;
