@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Раннее бронирование отдыха на 2027 год — предоплата 5 000 ₽ | Мои Путешествия</title>
-  <meta name="description" content="Не нужно ждать сертификат: выберите тур, отель или детский лагерь на 2027 год и внесите 5 000 ₽. Сертификат примените после получения. Акция с 17 ноября по 25 декабря 2026." />
+  <meta name="description" content="Сертификата пока нет? Забронируйте тур, отель или детский лагерь на 2027 год с предоплатой 5 000 ₽, а сертификат примените после получения — до 16 февраля 2027 года. Акция с 17 ноября по 25 декабря 2026." />
   <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://motrip.ru/early-booking" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Раннее бронирование отдыха на 2027 год" />
-  <meta property="og:description" content="Внесите 5 000 ₽ сейчас, а сертификат примените после его получения." />
+  <meta property="og:description" content="5 000 ₽ сейчас, сертификат — до 16 февраля 2027 года, остаток — не позднее чем за 30 дней до отдыха." />
   <meta property="og:url" content="https://motrip.ru/early-booking" />
   <meta property="og:image" content="https://motrip.ru/early-booking-hero.jpg" />
   <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png" />
@@ -44,22 +44,24 @@
       --panel: #f4f4f5;
       --radius: 24px;
       --shadow: 0 12px 32px rgba(0, 0, 0, .08);
+      --focus: 0 0 0 3px #fff, 0 0 0 6px #1e6fff;
       --max: 1180px;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
-    body { margin: 0; font-family: Mulish, Arial, sans-serif; background: var(--cream); color: var(--text); }
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+    body { margin: 0; font-family: Mulish, Arial, sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
     a { color: inherit; }
     img { display: block; max-width: 100%; }
+    :focus-visible { outline: none; box-shadow: var(--focus); border-radius: 12px; }
     .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
     .panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); }
 
     .site { background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); position: sticky; top: 0; z-index: 10; }
     .site-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; }
     .site-logo img { height: 34px; width: auto; }
-    .site nav { display: flex; gap: 22px; font-size: 15px; font-weight: 800; }
-    .site nav a { text-decoration: none; }
-    .site nav a:hover { color: var(--orange); }
+    .site nav { display: flex; gap: 6px; font-size: 15px; font-weight: 800; }
+    .site nav a { text-decoration: none; padding: 8px 12px; border-radius: 10px; white-space: nowrap; }
+    .site nav a:hover { color: var(--orange-dark); background: var(--cream); }
 
     .btn {
       min-height: 48px;
@@ -76,86 +78,65 @@
       text-decoration: none;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba(255, 133, 0, .22);
+      transition: background .15s, color .15s, box-shadow .15s;
     }
     .btn:hover { background: #fff; color: var(--orange); outline: 1px solid var(--orange); box-shadow: none; }
+    .btn:focus-visible { box-shadow: var(--focus); }
     .btn-secondary { background: var(--cream); color: var(--orange-dark); outline: 1px solid rgba(255,133,0,.35); box-shadow: none; }
     .btn-secondary:hover { background: var(--orange); color: #fff; outline: 0; }
 
     .hero { padding: 28px 0 10px; }
-    .hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); gap: 18px; }
-    .hero-main { padding: clamp(24px, 4vw, 44px); display: flex; flex-direction: column; justify-content: center; }
-    .eyebrow { margin: 0 0 12px; color: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
+    .hero-main { padding: clamp(22px, 4vw, 40px); }
+    .eyebrow { margin: 0 0 10px; color: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
     h1 { margin: 0; font-size: clamp(32px, 3.8vw, 52px); line-height: 1.06; letter-spacing: -.03em; }
-    .lead { margin: 18px 0 0; color: var(--body); font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.5; max-width: 560px; }
-    .hero-dates { margin: 12px 0 0; font-size: 16px; font-weight: 900; color: var(--text); }
-    .offer-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px; }
-    .price-pill {
-      display: inline-flex;
-      gap: .3em;
-      padding: 12px 20px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
-      color: #fff;
-      font-size: clamp(18px, 2.2vw, 24px);
-      font-weight: 900;
-      box-shadow: 0 10px 28px rgba(229,57,53,.3);
-    }
-    .cert-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 11px 16px;
-      border-radius: 999px;
+    .lead { margin: 16px 0 0; color: var(--body); font-size: clamp(17px, 1.7vw, 19px); font-weight: 700; line-height: 1.5; max-width: 560px; }
+    .hero-dates { display: inline-flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; padding: 8px 14px; border-radius: 999px; background: var(--panel); font-size: 15px; font-weight: 900; }
+    .hero-dates span:first-child { color: var(--muted); font-weight: 800; }
+
+    .no-cert {
+      margin-top: 20px;
+      padding: 18px 20px;
+      border-radius: 20px;
       background: var(--green-soft);
-      color: var(--green);
-      font-size: 16px;
-      font-weight: 900;
-      line-height: 1.25;
+      color: #173d16;
     }
-    .cert-chip::before { content: "✓"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.6); font-size: 13px; flex-shrink: 0; }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-    .hero-photo { position: relative; min-height: 460px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .no-cert-title { margin: 0; font-size: 20px; font-weight: 900; }
+    .no-cert-text { margin: 6px 0 14px; font-weight: 700; line-height: 1.45; }
+    .no-cert-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .no-cert-points li { padding: 12px 14px; border-radius: 14px; background: #fff; font-size: 15px; font-weight: 800; line-height: 1.35; color: var(--body); }
+    .no-cert-points strong { font-weight: 900; color: var(--text); }
+    .no-cert-points li:first-child strong { font-size: 20px; color: var(--promo-red); }
+    .no-cert-points li:nth-child(2) strong { color: var(--green); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .hero-photo { position: relative; min-height: 420px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
     .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .hero-photo-badge {
-      position: absolute;
-      left: 18px;
-      bottom: 18px;
-      right: 18px;
-      padding: 16px 18px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.94);
-      font-weight: 800;
-    }
-    .hero-photo-badge strong { display: block; font-size: 20px; }
-    .hero-photo-badge span { color: var(--body); }
 
     .timer-panel { margin-top: 18px; padding: 18px 22px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; }
     .timer-panel h2 { margin: 0; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.1; }
     .timer-panel p { margin: 6px 0 0; color: var(--muted); font-weight: 700; }
     .timer { display: grid; grid-template-columns: repeat(4, minmax(72px, 1fr)); gap: 8px; }
+    .timer[hidden] { display: none; }
     .time-box { border-radius: 14px; background: var(--panel); text-align: center; padding: 12px 8px; }
     .time-num { display: block; font-size: clamp(24px, 3vw, 36px); color: var(--promo-red); font-weight: 900; }
     .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
 
     section { padding: 34px 0; }
-    .section-title { margin: 0 0 8px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.06; letter-spacing: -.02em; }
-    .section-lead { margin: 0 0 20px; color: var(--body); font-size: 18px; font-weight: 700; max-width: 760px; line-height: 1.5; }
+    .section-title { margin: 0 0 8px; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -.02em; }
+    .section-lead { margin: 0 0 20px; color: var(--body); font-size: 18px; font-weight: 700; max-width: 780px; line-height: 1.5; }
 
     .benefits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .benefit { padding: 22px; }
     .benefit-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,133,0,.12); color: var(--orange-dark); display: grid; place-items: center; font-size: 22px; font-weight: 900; }
-    .benefit h3 { margin: 14px 0 6px; font-size: 20px; }
+    .benefit h3 { margin: 14px 0 6px; font-size: 20px; line-height: 1.15; }
     .benefit p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
     .benefit--accent { outline: 2px solid var(--green-soft); }
     .benefit--accent .benefit-icon { background: var(--green-soft); color: var(--green); }
 
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-    .tab { border: 0; background: #fff; border-radius: 999px; padding: 11px 18px; font: inherit; font-weight: 900; cursor: pointer; outline: 1px solid rgba(0,0,0,.08); }
-    .tab.is-on { background: #111; color: #fff; outline: 0; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .grid[hidden] { display: none; }
-    .card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
-    .card-img { height: 210px; position: relative; background: #eceef0; }
+    .offers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 16px; align-items: stretch; }
+    .card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform .15s, box-shadow .15s; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 18px 38px rgba(0,0,0,.12); }
+    .card-img { height: 190px; position: relative; background: #eceef0; }
     .card-img img { width: 100%; height: 100%; object-fit: cover; }
     .card-badge {
       position: absolute;
@@ -170,29 +151,73 @@
       box-shadow: 0 6px 18px rgba(229,57,53,.35);
     }
     .card-body { padding: 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-    .card h3 { margin: 0; font-size: 23px; line-height: 1.12; }
+    .card h3 { margin: 0; font-size: 22px; line-height: 1.12; }
     .card p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
     .card .btn { margin-top: auto; width: 100%; }
+    .offers-note { margin: 16px 0 0; padding: 12px 16px; border-radius: 14px; background: #fff; color: var(--muted); font-size: 15px; font-weight: 800; }
 
-    .how { padding: clamp(24px, 4vw, 40px); }
-    .how .section-lead { margin-bottom: 24px; }
-    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .step { padding: 22px; border-radius: 20px; background: var(--cream); position: relative; }
-    .step--cert { background: var(--green-soft); }
-    .num { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--orange); color: #fff; font-weight: 900; font-size: 15px; }
+    .how { padding: clamp(24px, 4vw, 40px); border: 3px solid var(--green-soft); }
+    .how .section-lead { margin-bottom: 28px; }
+    .steps { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0; padding: 0; list-style: none; }
+    .steps::before {
+      content: "";
+      position: absolute;
+      top: 20px;
+      left: 12.5%;
+      right: 12.5%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--green));
+      border-radius: 3px;
+    }
+    .step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .num {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+      box-shadow: 0 0 0 6px #fff;
+    }
     .step--cert .num { background: var(--green); }
-    .step h3 { margin: 12px 0 6px; font-size: 20px; line-height: 1.15; }
+    .step-card { margin-top: 14px; padding: 18px; border-radius: 18px; background: var(--cream); flex: 1; width: 100%; text-align: left; }
+    .step--cert .step-card { background: var(--green-soft); }
+    .step h3 { margin: 0 0 6px; font-size: 19px; line-height: 1.15; }
     .step p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
-    .step-deadline { margin-top: 8px !important; color: var(--green) !important; font-weight: 900 !important; }
+    .step .step-extra { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(33,110,31,.35); font-size: 14px; color: #3d5a3c; }
+    .how-note { margin: 20px 0 0; color: var(--muted); font-weight: 800; }
 
-    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .dates-card { padding: 24px; }
-    .dates-card h3 { margin: 0 0 8px; font-size: 18px; color: var(--muted); }
-    .dates-card p { margin: 0; font-size: clamp(22px, 2.4vw, 28px); font-weight: 900; line-height: 1.2; }
+    .dates-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .dates-card { padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+    .dates-card h3 { margin: 0; font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .dates-value { margin: 0; font-size: clamp(20px, 2vw, 24px); font-weight: 900; line-height: 1.2; }
+    .dates-caption { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
+    .dates-card--cert { background: var(--green-soft); }
 
-    .faq details { background: #fff; border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; box-shadow: var(--shadow); }
-    .faq summary { font-weight: 900; font-size: 18px; cursor: pointer; }
-    .faq p { margin: 10px 0 0; color: var(--body); font-weight: 700; line-height: 1.5; }
+    .faq-list { display: grid; gap: 10px; }
+    .faq details { background: #fff; border-radius: 16px; box-shadow: var(--shadow); }
+    .faq summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      font-weight: 900;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 16px;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--cream); color: var(--orange-dark); display: grid; place-items: center; font-size: 20px; line-height: 1; }
+    .faq details[open] summary::after { content: "−"; }
+    .faq summary:hover { color: var(--orange-dark); }
+    .faq p { margin: 0; padding: 0 18px 18px; color: var(--body); font-weight: 700; line-height: 1.5; }
 
     .cta-final { padding: clamp(24px, 4vw, 40px); display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
     .cta-final h2 { margin: 0 0 6px; font-size: clamp(26px, 3vw, 38px); }
@@ -201,23 +226,29 @@
     footer { padding: 26px 0 40px; color: var(--muted); font-weight: 700; font-size: 14px; }
     footer a { color: var(--orange-dark); }
 
-    @media (max-width: 1024px) {
-      .steps { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 960px) {
-      .benefits { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 1080px) {
+      .offers, .dates-grid, .benefits { grid-template-columns: repeat(2, 1fr); }
+      .steps { grid-template-columns: repeat(2, 1fr); row-gap: 24px; }
+      .steps::before { display: none; }
     }
     @media (max-width: 860px) {
-      .site nav { display: none; }
-      .hero-grid, .grid, .dates-grid, .timer-panel, .cta-final { grid-template-columns: 1fr; }
-      .hero-photo { min-height: 280px; }
+      .site-bar { flex-wrap: wrap; padding: 8px 0; min-height: 0; }
+      .site nav { width: 100%; overflow-x: auto; margin: 0 -12px; padding: 0 0 4px; scrollbar-width: none; }
+      .site nav::-webkit-scrollbar { display: none; }
+      .hero-grid, .timer-panel, .cta-final { grid-template-columns: 1fr; }
+      .hero-photo { min-height: 220px; }
+      .hero-dates { border-radius: 14px; }
+      .no-cert-points { grid-template-columns: 1fr; }
     }
-    @media (max-width: 520px) {
-      .benefits, .steps { grid-template-columns: 1fr; }
+    @media (max-width: 600px) {
+      .offers, .dates-grid, .benefits { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; row-gap: 0; }
+      .steps::before { display: block; top: 22px; bottom: 22px; left: 21px; right: auto; width: 3px; height: auto; background: linear-gradient(180deg, var(--orange), var(--green)); }
+      .step { flex-direction: row; align-items: flex-start; gap: 14px; padding-bottom: 14px; }
+      .num { flex-shrink: 0; }
+      .step-card { margin-top: 0; }
       .timer { grid-template-columns: repeat(4, 1fr); }
       .btn { width: 100%; }
-      .price-pill, .cert-chip { width: 100%; justify-content: center; }
-      .cert-chip { border-radius: 16px; }
     }
   </style>
 </head>
@@ -225,10 +256,10 @@
   <header class="site">
     <div class="container site-bar">
       <a class="site-logo" href="https://online.mosgortur.ru/"><img src="/logo-moi-puteshestviya.svg" alt="Мои Путешествия" /></a>
-      <nav>
-        <a href="#products">Что бронировать</a>
-        <a href="#how">Как участвовать</a>
+      <nav aria-label="Разделы страницы">
+        <a href="#products">Что можно забронировать</a>
         <a href="#dates">Сроки</a>
+        <a href="#how">Как участвовать</a>
         <a href="#faq">Вопросы</a>
       </nav>
     </div>
@@ -239,14 +270,21 @@
       <div class="container">
         <div class="hero-grid">
           <div class="panel hero-main">
-            <p class="eyebrow">Сезон 2027</p>
-            <h1>Раннее бронирование отдыха на&nbsp;2027&nbsp;год</h1>
-            <p class="lead">Выберите тур, отель или детский лагерь и внесите <span data-cfg="prepayment">5 000 ₽</span>. Даже если сертификат будет выдан позже, вы сможете применить его к бронированию после получения, а остаток доплатить по графику.</p>
-            <p class="hero-dates">Акция действует <span data-cfg="promoRangeLong">с 17 ноября по 25 декабря 2026 года</span>.</p>
-            <div class="offer-row">
-              <div class="price-pill">Предоплата <span data-cfg="prepayment">5 000 ₽</span></div>
-              <div class="cert-chip">Сертификат можно применить после его получения</div>
+            <p class="eyebrow">Сезон <span data-cfg="season">2027</span></p>
+            <h1>Раннее бронирование отдыха на&nbsp;<span data-cfg="season">2027</span>&nbsp;год</h1>
+            <p class="lead">Выберите тур, отель или детский лагерь и внесите <span data-cfg="prepayment">5 000 ₽</span>. Даже если сертификат ещё не получен, вы сможете применить его к бронированию после получения.</p>
+            <p class="hero-dates"><span>Бронирование по акции:</span> <span data-cfg="bookingRange">17 ноября — 25 декабря 2026 года</span></p>
+
+            <div class="no-cert" role="note">
+              <p class="no-cert-title">Сертификата пока нет?</p>
+              <p class="no-cert-text">Не нужно ждать его получения. Забронируйте отдых сейчас, а сертификат примените позднее — до <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
+              <ul class="no-cert-points">
+                <li><strong data-cfg="prepayment">5&nbsp;000&nbsp;₽</strong> сейчас</li>
+                <li>Сертификат — <strong>до <span data-cfg="certDeadline">16 февраля 2027 года</span></strong></li>
+                <li>Остаток — <strong>не позднее чем за <span data-cfg="finalDays">30</span> дней до отдыха</strong></li>
+              </ul>
             </div>
+
             <div class="hero-actions">
               <a class="btn" href="#products">Выбрать отдых</a>
               <a class="btn btn-secondary" href="#how">Как участвовать</a>
@@ -254,19 +292,15 @@
           </div>
           <div class="hero-photo">
             <img src="/early-booking-hero.jpg" alt="Семья на море" />
-            <div class="hero-photo-badge">
-              <strong>Не нужно ждать сертификат</strong>
-              <span>Бронируйте сейчас — сертификат примените позже</span>
-            </div>
           </div>
         </div>
 
         <div class="panel timer-panel">
           <div>
             <h2 id="timer-title">До старта акции</h2>
-            <p id="timer-sub">Акция стартует <span data-cfg="promoStart">17 ноября 2026</span></p>
+            <p id="timer-sub">Акция стартует <span data-cfg="bookingStart">17 ноября 2026 года</span></p>
           </div>
-          <div class="timer" aria-live="polite">
+          <div class="timer" id="timer" aria-live="polite">
             <div class="time-box"><span class="time-num" id="t-d">00</span><span class="time-label">дней</span></div>
             <div class="time-box"><span class="time-num" id="t-h">00</span><span class="time-label">часов</span></div>
             <div class="time-box"><span class="time-num" id="t-m">00</span><span class="time-label">минут</span></div>
@@ -278,12 +312,12 @@
 
     <section>
       <div class="container">
-        <h2 class="section-title">Почему бронировать заранее</h2>
+        <h2 class="section-title">Почему стоит бронировать заранее</h2>
         <div class="benefits">
-          <div class="panel benefit"><div class="benefit-icon">₽</div><h3>Небольшая предоплата</h3><p>Достаточно внести <span data-cfg="prepayment">5 000 ₽</span>, чтобы закрепить поездку.</p></div>
-          <div class="panel benefit"><div class="benefit-icon">★</div><h3>Лучший выбор</h3><p>Пока свободны популярные отели, даты и смены в лагерях.</p></div>
-          <div class="panel benefit"><div class="benefit-icon">⏱</div><h3>Доплата по графику</h3><p>Остаток — частями, график виден в личном кабинете.</p></div>
-          <div class="panel benefit benefit--accent"><div class="benefit-icon">✓</div><h3>Не нужно ждать сертификат</h3><p>Забронируйте отдых сейчас, а сертификат примените после его получения.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">₽</div><h3>Предоплата всего <span data-cfg="prepayment">5 000 ₽</span></h3><p>Внесите предоплату после подтверждения бронирования, чтобы закрепить выбранный отдых.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">★</div><h3>Больше вариантов</h3><p>Пока доступны популярные даты, отели, туры и смены в детских лагерях.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">⏱</div><h3>Доплата по графику</h3><p>Оставшуюся сумму нужно внести не позднее чем за <span data-cfg="finalDays">30</span> дней до начала отдыха.</p></div>
+          <div class="panel benefit benefit--accent"><div class="benefit-icon">✓</div><h3>Не нужно ждать сертификат</h3><p>Забронируйте отдых сейчас, а сертификат примените после его получения — до <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p></div>
         </div>
       </div>
     </section>
@@ -291,19 +325,13 @@
     <section id="products">
       <div class="container">
         <h2 class="section-title">Что можно забронировать</h2>
-        <p class="section-lead">Предложения с отметкой «Раннее бронирование» в каталоге — участвуют в акции.</p>
-        <div class="tabs" role="tablist">
-          <button class="tab is-on" type="button" role="tab" data-tab="tours">Туры</button>
-          <button class="tab" type="button" role="tab" data-tab="hotels">Отели</button>
-          <button class="tab" type="button" role="tab" data-tab="camps">Детские лагеря</button>
-        </div>
-
-        <div class="grid" data-panel="tours">
+        <p class="section-lead">Выберите подходящий вариант отдыха. В акции участвуют предложения с отметкой «Раннее бронирование».</p>
+        <div class="offers">
           <article class="card">
             <div class="card-img"><img src="/early-booking-hero.jpg" alt="Туры по России" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
               <h3>Туры по России</h3>
-              <p>Готовые туры с проживанием и проездом — выберите направление и даты.</p>
+              <p>Готовые туры с проживанием и проездом. Выберите направление и подходящие даты.</p>
               <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=tours">Смотреть туры</a>
             </div>
           </article>
@@ -311,49 +339,28 @@
             <div class="card-img"><img src="/early-booking-train.jpg" alt="Поезд вдоль моря" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
               <h3>На море поездом</h3>
-              <p>Туры в Анапу и Крым с ж/д билетами туда и обратно.</p>
-              <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=rail">Туры с ж/д</a>
+              <p>Туры в Анапу и Крым с железнодорожными билетами туда и обратно.</p>
+              <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=rail">Смотреть туры с ж/д</a>
             </div>
           </article>
-        </div>
-
-        <div class="grid" data-panel="hotels" hidden>
           <article class="card">
             <div class="card-img"><img src="/early-booking-hotels.jpg" alt="Отель у бассейна" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
               <h3>Отели по России</h3>
-              <p>Проживание без перелёта: курорты, города, загородный отдых.</p>
+              <p>Проживание без перелёта: курорты, города и загородный отдых.</p>
               <a class="btn" href="https://online.mosgortur.ru/new/russia-hotels?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=hotels">Смотреть отели</a>
-            </div>
-          </article>
-        </div>
-
-        <div class="grid" data-panel="camps" hidden>
-          <article class="card">
-            <div class="card-img"><img src="/raduga-hero.png" alt="Лагерь «Радуга»" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
-            <div class="card-body">
-              <h3>«Радуга»</h3>
-              <p>Смены сезона 2027 в детском лагере «Радуга».</p>
-              <a class="btn" href="https://online.mosgortur.ru/new/raduga?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=raduga">Смены «Радуги»</a>
-            </div>
-          </article>
-          <article class="card">
-            <div class="card-img"><img src="/vlasevo-hero-final.png" alt="Лагерь «Власьево»" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
-            <div class="card-body">
-              <h3>«Власьево»</h3>
-              <p>Смены сезона 2027 в детском лагере «Власьево».</p>
-              <a class="btn" href="https://motrip.ru/vlasevo?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=vlasevo">Смены «Власьево»</a>
             </div>
           </article>
           <article class="card">
             <div class="card-img"><img src="/early-booking-camps.jpg" alt="Дети в лагере на море" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
-              <h3>Лагеря на море</h3>
-              <p>Детские лагеря на побережье — смотрите смены в каталоге.</p>
-              <a class="btn" href="https://online.mosgortur.ru/kids?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=camps">Каталог лагерей</a>
+              <h3>Детские лагеря</h3>
+              <p>Смены в детских лагерях на море и в Подмосковье. Все доступные варианты собраны в одном каталоге.</p>
+              <a class="btn" href="https://online.mosgortur.ru/kids?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=camps">Смотреть лагеря</a>
             </div>
           </article>
         </div>
+        <p class="offers-note">В акции не участвуют авиаперевозки, невозвратные тарифы и услуги за пределами Российской Федерации.</p>
       </div>
     </section>
 
@@ -361,18 +368,30 @@
       <div class="container">
         <div class="panel how">
           <h2 class="section-title">Сертификат получите позже? Бронируйте сейчас</h2>
-          <p class="section-lead">Чтобы участвовать в акции, не нужно ждать оформления сертификата. Выберите отдых во время акции и внесите предоплату <span data-cfg="prepayment">5 000 ₽</span>. После получения сертификата примените его к бронированию. Стоимость сертификата будет учтена при расчёте оставшейся суммы.</p>
-          <div class="steps">
-            <div class="step"><span class="num">1</span><h3>Выберите отдых</h3><p>Найдите тур, отель или детский лагерь с отметкой «Раннее бронирование».</p></div>
-            <div class="step"><span class="num">2</span><h3>Внесите <span data-cfg="prepayment">5 000 ₽</span></h3><p>Предоплата закрепляет выбранный вариант отдыха.</p></div>
-            <div class="step step--cert">
-              <span class="num">3</span>
-              <h3>Получите и примените сертификат</h3>
-              <p>После получения сертификата сообщите о намерении использовать его для оплаты и выполните действия, предусмотренные правилами акции.</p>
-              <p class="step-deadline" data-cfg-deadline hidden></p>
-            </div>
-            <div class="step"><span class="num">4</span><h3>Доплатите остаток</h3><p>Оставшуюся после предоплаты и применения сертификата сумму внесите по графику.</p></div>
-          </div>
+          <p class="section-lead">Для участия в акции не нужно ждать оформления сертификата. Выберите отдых и внесите <span data-cfg="prepayment">5 000 ₽</span>. После получения сертификата примените его к созданному бронированию до <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
+          <ol class="steps">
+            <li class="step">
+              <span class="num" aria-hidden="true">1</span>
+              <div class="step-card"><h3>Выберите отдых</h3><p>Найдите тур, отель или детский лагерь с отметкой «Раннее бронирование».</p></div>
+            </li>
+            <li class="step">
+              <span class="num" aria-hidden="true">2</span>
+              <div class="step-card"><h3>Забронируйте и внесите <span data-cfg="prepayment">5 000 ₽</span></h3><p>После подтверждения бронирования внесите предоплату в течение <span data-cfg="prepaymentHours">48 часов</span>, но не позднее <span data-cfg="prepaymentDeadline">27 декабря 2026 года</span>.</p></div>
+            </li>
+            <li class="step step--cert">
+              <span class="num" aria-hidden="true">3</span>
+              <div class="step-card">
+                <h3>Примените сертификат</h3>
+                <p>После получения сертификата заполните заявление на его применение. Сделать это нужно не позднее <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
+                <p class="step-extra">Форма заявления предоставляется в личном кабинете заказчика. Заявление можно передать через официальный офис организатора или направить по почтовому адресу в соответствии с правилами акции.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="num" aria-hidden="true">4</span>
+              <div class="step-card"><h3>Доплатите остаток</h3><p>Из стоимости отдыха будут вычтены предоплата и сумма применённого сертификата. Оставшуюся сумму необходимо внести не позднее чем за <span data-cfg="finalDays">30</span> календарных дней до начала отдыха.</p></div>
+            </li>
+          </ol>
+          <p class="how-note">Сертификатом можно оплатить до <span data-cfg="certAmount">40 000 ₽</span> на каждого указанного в сертификате человека.</p>
         </div>
       </div>
     </section>
@@ -382,12 +401,23 @@
         <h2 class="section-title">Сроки акции и отдыха</h2>
         <div class="dates-grid">
           <div class="panel dates-card">
-            <h3>Бронирование по акции</h3>
-            <p data-cfg="promoRange">17 ноября — 25 декабря 2026 года</p>
+            <h3>Бронирование</h3>
+            <p class="dates-value" data-cfg="bookingRange">17 ноября — 25 декабря 2026 года</p>
+            <p class="dates-caption">Забронировать отдых по условиям акции нужно до <span data-cfg="bookingEndDay">25 декабря</span> включительно.</p>
+          </div>
+          <div class="panel dates-card">
+            <h3>Предоплата</h3>
+            <p class="dates-value">В течение <span data-cfg="prepaymentHours">48 часов</span> после подтверждения</p>
+            <p class="dates-caption">Крайний срок внесения предоплаты — <span data-cfg="prepaymentDeadline">27 декабря 2026 года</span>.</p>
+          </div>
+          <div class="panel dates-card dates-card--cert">
+            <h3>Применение сертификата</h3>
+            <p class="dates-value">До <span data-cfg="certDeadline">16 февраля 2027 года</span></p>
+            <p class="dates-caption">Сертификат можно применить после его получения к уже созданному бронированию.</p>
           </div>
           <div class="panel dates-card">
             <h3>Даты отдыха</h3>
-            <p data-cfg="travelRange">28 марта — 15 ноября 2027 года</p>
+            <p class="dates-value" data-cfg="restRange">28 марта — 15 ноября 2027 года</p>
           </div>
         </div>
       </div>
@@ -396,34 +426,56 @@
     <section id="faq" class="faq">
       <div class="container">
         <h2 class="section-title">Вопросы</h2>
-        <details open>
-          <summary>Можно ли забронировать отдых, если сертификат ещё не получен?</summary>
-          <p>Да. Выберите отдых во время акции и внесите предоплату <span data-cfg="prepayment">5 000 ₽</span>. После получения сертификата его можно будет применить к этому бронированию в соответствии с правилами акции.</p>
-        </details>
-        <details>
-          <summary>Что произойдёт с внесёнными <span data-cfg="prepayment">5 000 ₽</span> после применения сертификата?</summary>
-          <p>Предоплата останется частью оплаты бронирования. Сертификат уменьшит оставшуюся сумму к оплате.</p>
-        </details>
-        <details>
-          <summary>До какой даты нужно применить сертификат?</summary>
-          <p data-cfg-deadline-faq>Срок применения сертификата будет указан в правилах акции. Уточните его у менеджера при бронировании.</p>
-        </details>
-        <details>
-          <summary>Какие предложения участвуют в акции?</summary>
-          <p>Туры, отели и детские лагеря, отмеченные в каталоге значком «Раннее бронирование».</p>
-        </details>
-        <details>
-          <summary>До какой даты можно забронировать по акции?</summary>
-          <p>Акция действует <span data-cfg="promoRangeLong">с 17 ноября по 25 декабря 2026 года</span>.</p>
-        </details>
-        <details>
-          <summary>Сколько нужно заплатить сразу?</summary>
-          <p>Предоплата — <span data-cfg="prepayment">5 000 ₽</span>. Оставшуюся сумму вы вносите по графику платежей, он доступен в личном кабинете.</p>
-        </details>
-        <details>
-          <summary>На какие даты можно поехать?</summary>
-          <p>Даты отдыха по акции — <span data-cfg="travelRange">28 марта — 15 ноября 2027 года</span>.</p>
-        </details>
+        <div class="faq-list">
+          <details open>
+            <summary>Можно ли участвовать в акции, если сертификат ещё не получен?</summary>
+            <p>Да. Забронируйте отдых во время акции и внесите предоплату <span data-cfg="prepayment">5 000 ₽</span>. После получения сертификата его можно применить к этому бронированию до <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
+          </details>
+          <details>
+            <summary>Сколько нужно заплатить сразу?</summary>
+            <p>Предоплата составляет <span data-cfg="prepayment">5 000 ₽</span>. Её нужно внести в течение <span data-cfg="prepaymentHours">48 часов</span> после подтверждения бронирования, но не позднее <span data-cfg="prepaymentDeadline">27 декабря 2026 года</span>.</p>
+          </details>
+          <details>
+            <summary><span>Что произойдёт с внесёнными <span data-cfg="prepayment">5 000 ₽</span> после применения сертификата?</span></summary>
+            <p>Предоплата останется частью оплаты отдыха. После применения сертификата оставшаяся сумма рассчитывается за вычетом предоплаты и использованного номинала сертификата.</p>
+          </details>
+          <details>
+            <summary>До какой даты можно применить сертификат?</summary>
+            <p>Сертификат необходимо применить после его получения, но не позднее <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
+          </details>
+          <details>
+            <summary>Как применить сертификат?</summary>
+            <p>После получения сертификата заполните заявление на его применение. Форма заявления доступна в личном кабинете заказчика. Заявление необходимо передать способом, предусмотренным правилами акции.</p>
+          </details>
+          <details>
+            <summary>Что делать, если предоплата и сертификат превышают стоимость отдыха?</summary>
+            <p>Можно подать заявление на возврат неиспользованных денежных средств, внесённых по договору. Порядок возврата определяется правилами акции.</p>
+          </details>
+          <details>
+            <summary>Когда нужно оплатить оставшуюся сумму?</summary>
+            <p>Оставшуюся после применения предоплаты и сертификата сумму нужно внести не позднее чем за <span data-cfg="finalDays">30</span> календарных дней до начала отдыха.</p>
+          </details>
+          <details>
+            <summary>На какие даты можно забронировать отдых?</summary>
+            <p>Отдых должен пройти в период <span data-cfg="restRangeLong">с 28 марта по 15 ноября 2027 года</span>.</p>
+          </details>
+          <details>
+            <summary>Какие предложения участвуют в акции?</summary>
+            <p>Туры, отели и детские лагеря на территории России, отмеченные в каталоге значком «Раннее бронирование».</p>
+          </details>
+          <details>
+            <summary>Что не участвует в акции?</summary>
+            <p>В акции не участвуют авиаперевозки, невозвратные тарифы и услуги за пределами Российской Федерации.</p>
+          </details>
+          <details>
+            <summary>Можно ли изменить даты, направление или состав участников?</summary>
+            <p>Изменения возможны при наличии технической возможности и после согласования с партнёрами. При изменении бронирования могут потребоваться оплата фактически понесённых расходов и соблюдение правил использования сертификата.</p>
+          </details>
+          <details>
+            <summary>Что произойдёт при отмене отдыха после применения сертификата?</summary>
+            <p>После применения к бронированию сертификат считается использованным. Возможность его дальнейшего учёта рассматривается индивидуально в соответствии с правилами акции и с учётом фактически понесённых расходов.</p>
+          </details>
+        </div>
       </div>
     </section>
 
@@ -431,8 +483,8 @@
       <div class="container">
         <div class="panel cta-final">
           <div>
-            <h2>Забронируйте отдых на 2027 год</h2>
-            <p>Внесите <span data-cfg="prepayment">5 000 ₽</span> сейчас, а сертификат примените после его получения.</p>
+            <h2>Забронируйте отдых на <span data-cfg="season">2027</span> год</h2>
+            <p>Внесите <span data-cfg="prepayment">5 000 ₽</span> сейчас, а сертификат примените после его получения — до <span data-cfg="certDeadline">16 февраля 2027 года</span>.</p>
           </div>
           <a class="btn" href="#products">Выбрать отдых</a>
         </div>
@@ -445,92 +497,96 @@
   </footer>
 
   <script>
-    // Параметры акции. certificateDeadline и finalPaymentDeadline — только из утверждённых правил 2027 года.
-    const PROMO = {
-      start: '2026-11-17',
-      end: '2026-12-25',
-      prepayment: 5000,
-      travelStart: '2027-03-28',
-      travelEnd: '2027-11-15',
-      certificateNominal: 40000,
-      certificateDeadline: null,
-      finalPaymentDeadline: null,
+    const earlyBookingConfig = {
+      season: 2027,
+      bookingStart: '2026-11-17T00:00:00+03:00',
+      bookingEnd: '2026-12-25T23:59:59+03:00',
+      prepaymentDeadline: '2026-12-27T23:59:59+03:00',
+      prepaymentAmount: 5000,
+      prepaymentHoursAfterConfirmation: 48,
+      certificateAmountPerPerson: 40000,
+      certificateApplyDeadline: '2027-02-16T23:59:59+03:00',
+      restPeriodStart: '2027-03-28',
+      latestRestStart: '2027-11-14',
+      restPeriodEnd: '2027-11-15',
+      finalPaymentDaysBeforeStart: 30,
     };
 
     const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    const parts = (iso) => { const [y, m, d] = iso.split('-').map(Number); return { y, m, d }; };
+    const parts = (iso) => { const [y, m, d] = iso.slice(0, 10).split('-').map(Number); return { y, m, d }; };
     const dayMonth = (iso) => { const p = parts(iso); return `${p.d} ${MONTHS[p.m - 1]}`; };
     const fullDate = (iso) => `${dayMonth(iso)} ${parts(iso).y}`;
-    const rubles = (n) => `${n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} ₽`;
-    const range = (from, to) => {
-      const a = parts(from); const b = parts(to);
-      return a.y === b.y
-        ? `${dayMonth(from)} — ${dayMonth(to)} ${b.y} года`
-        : `${fullDate(from)} — ${fullDate(to)} года`;
+    const withYear = (iso) => `${fullDate(iso)} года`;
+    const rubles = (n) => `${n.toLocaleString('ru-RU').replace(/\s/g, '\u00a0')}\u00a0₽`;
+    const hours = (n) => {
+      const mod10 = n % 10; const mod100 = n % 100;
+      const word = mod10 === 1 && mod100 !== 11 ? 'часа' : 'часов';
+      return `${n} ${word}`;
     };
-    const rangeLong = (from, to) => {
-      const a = parts(from); const b = parts(to);
-      return a.y === b.y
-        ? `с ${dayMonth(from)} по ${dayMonth(to)} ${b.y} года`
-        : `с ${fullDate(from)} по ${fullDate(to)} года`;
-    };
+    const range = (from, to) => (parts(from).y === parts(to).y
+      ? `${dayMonth(from)} — ${dayMonth(to)} ${parts(to).y} года`
+      : `${fullDate(from)} — ${fullDate(to)} года`);
+    const rangeLong = (from, to) => (parts(from).y === parts(to).y
+      ? `с ${dayMonth(from)} по ${dayMonth(to)} ${parts(to).y} года`
+      : `с ${fullDate(from)} по ${fullDate(to)} года`);
 
+    const cfg = earlyBookingConfig;
     const values = {
-      prepayment: rubles(PROMO.prepayment),
-      promoStart: fullDate(PROMO.start),
-      promoRange: range(PROMO.start, PROMO.end),
-      promoRangeLong: rangeLong(PROMO.start, PROMO.end),
-      travelRange: range(PROMO.travelStart, PROMO.travelEnd),
+      season: String(cfg.season),
+      prepayment: rubles(cfg.prepaymentAmount),
+      prepaymentHours: hours(cfg.prepaymentHoursAfterConfirmation),
+      prepaymentDeadline: withYear(cfg.prepaymentDeadline),
+      certAmount: rubles(cfg.certificateAmountPerPerson),
+      certDeadline: withYear(cfg.certificateApplyDeadline),
+      bookingStart: withYear(cfg.bookingStart),
+      bookingEndDay: dayMonth(cfg.bookingEnd),
+      bookingRange: range(cfg.bookingStart, cfg.bookingEnd),
+      restRange: range(cfg.restPeriodStart, cfg.restPeriodEnd),
+      restRangeLong: rangeLong(cfg.restPeriodStart, cfg.restPeriodEnd),
+      finalDays: String(cfg.finalPaymentDaysBeforeStart),
     };
     document.querySelectorAll('[data-cfg]').forEach((el) => {
       const value = values[el.getAttribute('data-cfg')];
       if (value) el.textContent = value;
     });
-    if (PROMO.certificateDeadline) {
-      const deadline = `до ${fullDate(PROMO.certificateDeadline)} года`;
-      const stepEl = document.querySelector('[data-cfg-deadline]');
-      stepEl.textContent = `Применить сертификат нужно ${deadline}.`;
-      stepEl.hidden = false;
-      document.querySelector('[data-cfg-deadline-faq]').textContent = `Сертификат нужно применить к бронированию ${deadline}.`;
-    }
 
-    const tabs = document.querySelectorAll('.tab');
-    const panels = document.querySelectorAll('[data-panel]');
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((item) => item.classList.toggle('is-on', item === tab));
-        panels.forEach((panel) => {
-          panel.hidden = panel.getAttribute('data-panel') !== tab.getAttribute('data-tab');
-        });
+    const faqItems = document.querySelectorAll('.faq details');
+    faqItems.forEach((item) => {
+      item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        faqItems.forEach((other) => { if (other !== item) other.open = false; });
       });
     });
 
-    const START = new Date(`${PROMO.start}T00:00:00+03:00`).getTime();
-    const END = new Date(`${PROMO.end}T23:59:59+03:00`).getTime();
+    const START = new Date(cfg.bookingStart).getTime();
+    const END = new Date(cfg.bookingEnd).getTime();
     const pad = (n) => String(n).padStart(2, '0');
     const titleEl = document.getElementById('timer-title');
     const subEl = document.getElementById('timer-sub');
+    const timerEl = document.getElementById('timer');
+    let timerId = null;
     function tick() {
       const now = Date.now();
-      let target = START;
-      if (now >= START && now <= END) {
-        target = END;
-        titleEl.textContent = 'До конца акции';
-        subEl.textContent = `Бронируйте до ${fullDate(PROMO.end)}`;
-      } else if (now > END) {
-        titleEl.textContent = 'Акция завершена';
-        subEl.textContent = 'Следите за новыми предложениями на online.mosgortur.ru';
-        ['t-d', 't-h', 't-m', 't-s'].forEach((id) => { document.getElementById(id).textContent = '00'; });
+      if (now >= START) {
+        timerEl.hidden = true;
+        if (now <= END) {
+          titleEl.textContent = 'Акция уже началась';
+          subEl.textContent = `Бронируйте по условиям акции до ${values.bookingEndDay} включительно`;
+        } else {
+          titleEl.textContent = 'Акция завершена';
+          subEl.textContent = 'Следите за новыми предложениями на online.mosgortur.ru';
+          clearInterval(timerId);
+        }
         return;
       }
-      const diff = Math.max(0, target - now);
+      const diff = START - now;
       document.getElementById('t-d').textContent = pad(Math.floor(diff / 86400000));
       document.getElementById('t-h').textContent = pad(Math.floor(diff / 3600000) % 24);
       document.getElementById('t-m').textContent = pad(Math.floor(diff / 60000) % 60);
       document.getElementById('t-s').textContent = pad(Math.floor(diff / 1000) % 60);
     }
     tick();
-    setInterval(tick, 1000);
+    timerId = setInterval(tick, 1000);
   </script>
 </body>
 </html>
