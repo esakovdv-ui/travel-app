@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Превью popup — раннее бронирование 2027</title>
+  <style>
+    :root { --orange: #ff6600; --orange-hover: #e55a00; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Mulish, Manrope, system-ui, sans-serif;
+      background: rgba(0,0,0,.55);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .modal {
+      position: relative;
+      width: min(100%, 1056px);
+      border-radius: 20px;
+      overflow: hidden;
+      background: #1b2430;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+    }
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .bg {
+      display: flex;
+      min-height: 420px;
+      background:
+        linear-gradient(90deg, rgba(17,17,17,.72) 0%, rgba(17,17,17,.28) 58%, rgba(17,17,17,.08) 100%),
+        linear-gradient(145deg, #ffb74d, #e65100 42%, #1565c0);
+    }
+    .content { width: min(100%, 52%); padding: 48px 40px; color: #fff; }
+    .eyebrow { margin: 0 0 12px; font-size: clamp(16px, 2vw, 22px); font-weight: 700; }
+    .title { margin: 0 0 12px; font-size: clamp(28px, 3.4vw, 42px); font-weight: 900; line-height: 1.08; }
+    .sub { margin: 0 0 24px; font-size: clamp(16px, 1.6vw, 22px); font-weight: 700; line-height: 1.35; }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 10px 28px;
+      border-radius: 6px;
+      background: var(--orange);
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .cta:hover { background: var(--orange-hover); }
+    .note { margin-top: 16px; max-width: 1056px; color: #ddd; font-size: 13px; text-align: center; }
+    @media (max-width: 768px) {
+      .bg { min-height: 492px; align-items: flex-end; background: linear-gradient(180deg, #ffb74d, #e65100 40%, #0d47a1); }
+      .content { width: 100%; padding: 28px 24px 32px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="popup-title">
+      <button type="button" class="close" aria-label="Закрыть">&times;</button>
+      <div class="bg">
+        <div class="content">
+          <p class="eyebrow">Сезон 2027</p>
+          <h2 class="title" id="popup-title">Раннее бронирование</h2>
+          <p class="sub">Предоплата 5 000 ₽ до 25 декабря. Туры, отели и лагеря.</p>
+          <a class="cta" href="https://motrip.ru/early-booking?utm_source=mgt_site&utm_medium=popup&utm_campaign=early_booking_2027&utm_content=home_popup">Смотреть условия</a>
+        </div>
+      </div>
+    </div>
+    <p class="note">Превью. На проде подложка — фото в /promo_images/, текст и кнопка — живой HTML. Даты и сумма — черновик до согласования маркетинга.</p>
+  </div>
+</body>
+</html>

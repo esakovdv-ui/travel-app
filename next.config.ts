@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
         source: '/podbor-prototype',
         destination: '/podbor-prototype.html',
       },
+      {
+        source: '/early-booking',
+        destination: '/early-booking.html',
+      },
     ];
   },
   typescript: {
