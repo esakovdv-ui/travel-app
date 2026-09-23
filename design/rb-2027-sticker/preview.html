@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Превью стикера — раннее бронирование 2027</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Mulish, Manrope, system-ui, sans-serif; background: #f4f1ec; color: #111; }
+    .page { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; }
+    h1 { margin: 0 0 6px; font-size: 16px; color: #667085; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 16px; }
+    a.card {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 10px 24px rgba(0,0,0,.06);
+    }
+    .photo { height: 140px; position: relative; }
+    .badge {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ff5722, #e53935);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      pointer-events: none;
+    }
+    .body { padding: 14px 14px 16px; }
+    .body strong { display: block; font-size: 18px; }
+    .body span { display: block; margin-top: 6px; color: #475569; font-weight: 700; font-size: 14px; }
+    .note { margin-top: 16px; color: #667085; font-size: 13px; font-weight: 700; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Стикер на карточке предложения. Клик открывает это предложение, не лендинг.</h1>
+    <div class="grid">
+      <a class="card" href="https://online.mosgortur.ru/tours/">
+        <div class="photo" style="background:linear-gradient(145deg,#ffd180,#ff7043)"><span class="badge">Раннее бронирование</span></div>
+        <div class="body"><strong>Тур, который в акции</strong><span>Клик — карточка этого тура</span></div>
+      </a>
+      <a class="card" href="https://online.mosgortur.ru/new/russia-hotels">
+        <div class="photo" style="background:linear-gradient(145deg,#b3e5fc,#0288d1)"><span class="badge">Раннее бронирование</span></div>
+        <div class="body"><strong>Отель, который в акции</strong><span>Клик — карточка этого отеля</span></div>
+      </a>
+      <a class="card" href="https://online.mosgortur.ru/kids">
+        <div class="photo" style="background:linear-gradient(145deg,#c8e6c9,#2e7d32)"><span class="badge">Раннее бронирование</span></div>
+        <div class="body"><strong>Лагерь, который в акции</strong><span>Клик — карточка этой смены</span></div>
+      </a>
+    </div>
+    <p class="note">Бейдж не отдельная ссылка. На предложения вне акции стикера нет. Если в выдаче Nuxt слота для бейджа нет — сначала оценить слот, вёрстку «как в Турах 2025» не копировать.</p>
+  </div>
+</body>
+</html>

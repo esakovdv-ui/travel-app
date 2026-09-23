@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Раннее бронирование 2027 — Мосгортур</title>
+  <meta name="description" content="Акция раннего бронирования сезона 2027: предоплата 5 000 ₽, туры, отели и детские лагеря. Черновик условий до согласования маркетинга." />
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="canonical" href="https://motrip.ru/early-booking" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange: #ff8500;
+      --orange-dark: #e65100;
+      --cream: #fff7f1;
+      --green: #009b22;
+      --promo-red: #e53935;
+      --promo-red-dark: #c62828;
+      --promo-orange: #ff5722;
+      --text: #111;
+      --muted: #667085;
+      --panel: #f4f4f5;
+      --white: #fff;
+      --radius: 24px;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .08);
+      --max: 1120px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Mulish, Arial, sans-serif; background: var(--cream); color: var(--text); }
+    a { color: inherit; }
+    .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    .draft {
+      background: #111;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      padding: 10px 16px;
+    }
+    .draft span { color: #ffd54f; }
+    header.site {
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .site-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 72px;
+    }
+    .logo { font-weight: 900; letter-spacing: -.03em; font-size: 20px; text-decoration: none; }
+    .logo b { color: var(--orange); }
+    nav { display: flex; gap: 18px; font-size: 14px; font-weight: 800; }
+    nav a { text-decoration: none; }
+    .hero { padding: 28px 0 8px; }
+    .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
+    .panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .hero-main { padding: clamp(22px, 4vw, 40px); }
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(34px, 4vw, 56px); line-height: 1.05; letter-spacing: -.03em; }
+    .lead { margin: 16px 0 0; color: #475569; font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.45; max-width: 560px; }
+    .price-pill {
+      display: inline-flex;
+      margin-top: 18px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
+      color: #fff;
+      font-size: clamp(16px, 2vw, 20px);
+      font-weight: 900;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .btn {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: conic-gradient(from -3.29deg at 100% -13%, #fc0, #f60 360deg);
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: var(--cream);
+      color: var(--orange-dark);
+      outline: 1px solid rgba(255, 133, 0, .35);
+    }
+    .dates {
+      padding: 22px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .dates h2 { margin: 0; font-size: 22px; }
+    .date-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #eee; font-weight: 800; }
+    .date-row span { color: var(--muted); font-weight: 700; }
+    section { padding: 28px 0; }
+    .section-title { margin: 0 0 14px; font-size: clamp(28px, 3vw, 42px); letter-spacing: -.02em; line-height: 1.08; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .tab {
+      border: 0;
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      outline: 1px solid rgba(0,0,0,.08);
+    }
+    .tab.is-on { background: #111; color: #fff; outline: 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+    .card-visual { height: 140px; position: relative; }
+    .card-visual span {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .card h3 { margin: 0; font-size: 22px; }
+    .card p { margin: 0; color: #475569; font-weight: 700; }
+    .card .btn { margin-top: auto; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .step { background: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
+    .num { color: var(--orange); font-weight: 900; font-size: 13px; letter-spacing: .06em; }
+    .faq details { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: var(--shadow); }
+    .faq summary { font-weight: 900; cursor: pointer; }
+    .faq p { margin: 10px 0 0; color: #475569; font-weight: 700; }
+    .rules { color: var(--muted); font-size: 14px; font-weight: 700; }
+    footer { padding: 28px 0 40px; color: var(--muted); font-weight: 700; font-size: 14px; }
+    @media (max-width: 860px) {
+      nav { display: none; }
+      .hero-grid, .grid, .steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="draft">Черновик условий — даты и сумма до согласования маркетинга. Ориентир прошлого сезона, сдвиг на 2027: старт <span>17.11.2026</span>, конец <span>25.12.2026</span>, предоплата <span>5 000 ₽</span>.</div>
+  <header class="site">
+    <div class="container site-bar">
+      <a class="logo" href="https://online.mosgortur.ru/">МОСГОР<b>ТУР</b></a>
+      <nav>
+        <a href="#products">Что бронируем</a>
+        <a href="#pay">Как оплатить</a>
+        <a href="#faq">Вопросы</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="panel hero-main">
+          <p class="eyebrow">Сезон 2027</p>
+          <h1>Раннее бронирование</h1>
+          <p class="lead">Зафиксируйте отдых на сезон 2027: туры по России, отели без перелёта и детские лагеря. Сейчас достаточно предоплаты, остальное — по графику.</p>
+          <div class="price-pill">Предоплата 5 000 ₽</div>
+          <div class="hero-actions">
+            <a class="btn" href="#products">Выбрать отдых</a>
+            <a class="btn btn-secondary" href="#rules">Правила акции</a>
+          </div>
+        </div>
+        <div class="panel dates">
+          <h2>Сроки</h2>
+          <div class="date-row"><span>Прогрев</span> с 2 ноября 2026</div>
+          <div class="date-row"><span>Старт акции</span> 17 ноября 2026</div>
+          <div class="date-row"><span>Конец акции</span> 25 декабря 2026</div>
+          <div class="date-row"><span>Отдых с сертификатом</span> 28.03.2027 — 15.11.2027</div>
+          <div class="date-row"><span>Без сертификата</span> до 31.12.2027</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="products">
+      <div class="container">
+        <h2 class="section-title">Что можно забронировать</h2>
+        <div class="tabs" role="tablist">
+          <button class="tab is-on" type="button" data-tab="tours">Туры</button>
+          <button class="tab" type="button" data-tab="hotels">Отели</button>
+          <button class="tab" type="button" data-tab="camps">Лагеря</button>
+        </div>
+        <div class="grid" data-panel="tours">
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#ffd180,#ff7043)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Туры по России</h3>
+              <p>Ж/д и пакеты туроператоров без авиа. Список отелей внутри акции сузим к старту.</p>
+              <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=tours">Смотреть туры</a>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#ffe082,#fb8c00)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Анапа и Крым с ж/д</h3>
+              <p>Направления, которые в прошлом сезоне были ядром акции. Состав подтвердит продукт.</p>
+              <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=rail">Туры с ж/д</a>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#c5e1a5,#43a047)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Сертификат</h3>
+              <p>Номинал до 40 000 ₽ на человека. К круизам и гостевым домам сертификат может не применяться.</p>
+              <a class="btn" href="https://online.mosgortur.ru/for-tourists/how-get-certificate/">Как получить</a>
+            </div>
+          </article>
+        </div>
+        <div class="grid" data-panel="hotels" hidden>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#b3e5fc,#0288d1)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Отели без авиа</h3>
+              <p>Размещение по России. В акцию попадут только объекты, которые продукт отметит к старту.</p>
+              <a class="btn" href="https://online.mosgortur.ru/new/russia-hotels?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=hotels">Смотреть отели</a>
+            </div>
+          </article>
+        </div>
+        <div class="grid" data-panel="camps" hidden>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#ffcc80,#f4511e)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Радуга</h3>
+              <p>Смены, которые успеем выставить в акцию. Договор и цены — до старта.</p>
+              <a class="btn" href="https://online.mosgortur.ru/new/raduga?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=raduga">Смены Радуги</a>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#c8e6c9,#2e7d32)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Власьево</h3>
+              <p>Отдельные смены раннего бронирования, не весь каталог лагеря.</p>
+              <a class="btn" href="https://motrip.ru/vlasevo?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=vlasevo">Смены Власьево</a>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-visual" style="background:linear-gradient(145deg,#b2ebf2,#00838f)"><span>РБ</span></div>
+            <div class="card-body">
+              <h3>Лагеря на море</h3>
+              <p>Только партнёры, с кем договор будет до 17 ноября 2026. Лагеря МО без актуальных цен не включаем.</p>
+              <a class="btn" href="https://online.mosgortur.ru/kids?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=camps">Каталог лагерей</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pay">
+      <div class="container">
+        <h2 class="section-title">Как оплатить</h2>
+        <div class="steps">
+          <div class="step"><div class="num">01</div><h3>Предоплата 5 000 ₽</h3><p>Фиксирует цену акции. Сумма — черновик, как в сезоне 2026.</p></div>
+          <div class="step"><div class="num">02</div><h3>График доплаты</h3><p>Остаток — по графику в личном кабинете. Текст про РБ только у заявок этой акции.</p></div>
+          <div class="step"><div class="num">03</div><h3>Сертификат</h3><p>Можно применить там, где продукт это разрешил. Исключения объяснит горячая линия.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq">
+      <div class="container">
+        <h2 class="section-title">Вопросы</h2>
+        <details open>
+          <summary>До какой даты действует акция?</summary>
+          <p>Черновик: с 17 ноября по 25 декабря 2026. Прогрев — с 2 ноября. Финальные даты подтвердит маркетинг.</p>
+        </details>
+        <details>
+          <summary>Сколько нужно внести сейчас?</summary>
+          <p>Черновик предоплаты — 5 000 ₽. Это не полная стоимость тура.</p>
+        </details>
+        <details>
+          <summary>На какие даты отдыха можно бронировать?</summary>
+          <p>С сертификатом — с 28 марта по 15 ноября 2027. Без сертификата — до 31 декабря 2027.</p>
+        </details>
+        <details>
+          <summary>Где правила?</summary>
+          <p id="rules" class="rules">PDF правил сезона 2027 ещё нет. Пока не подменяем его файлом 2025 года. Ссылку добавим, когда юридический текст будет готов.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">Мосгортур · раннее бронирование сезона 2027 · страница-черновик на motrip.ru</div>
+  </footer>
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('[data-panel]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.classList.toggle('is-on', item === tab));
+        panels.forEach((panel) => {
+          panel.hidden = panel.getAttribute('data-panel') !== tab.getAttribute('data-tab');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

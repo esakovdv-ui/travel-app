@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Превью баннера хедера — раннее бронирование 2027</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Mulish, Manrope, system-ui, sans-serif; background: #f4f1ec; color: #111; }
+    .page { max-width: 1120px; margin: 0 auto; padding: 24px 16px 40px; }
+    h1 { margin: 0 0 8px; font-size: 16px; color: #667085; font-weight: 700; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+    }
+    .logo { font-weight: 900; letter-spacing: -.03em; }
+    .logo b { color: #ff8500; }
+    .slot { font-size: 12px; font-weight: 800; color: #98a2b3; text-transform: uppercase; letter-spacing: .04em; }
+    .banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      color: #fff;
+      text-decoration: none;
+      background: linear-gradient(90deg, #e65100, #ff8500 55%, #1565c0);
+    }
+    .banner strong { display: block; font-size: clamp(18px, 2vw, 22px); }
+    .banner span { display: block; margin-top: 4px; font-weight: 700; opacity: .95; }
+    .cta {
+      flex-shrink: 0;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: #fff;
+      color: #e65100;
+      font-weight: 900;
+    }
+    .note { margin-top: 16px; color: #667085; font-size: 13px; font-weight: 700; max-width: 720px; }
+    @media (max-width: 720px) {
+      .banner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Превью слота в текущем хедере, не макет хедера 2025</h1>
+    <div class="header">
+      <div class="logo">МОСГОР<b>ТУР</b></div>
+      <div class="slot">Слот баннера в хедере</div>
+    </div>
+    <a class="banner" href="https://motrip.ru/early-booking?utm_source=mgt_site&utm_medium=banner&utm_campaign=early_booking_2027&utm_content=header">
+      <div>
+        <strong>Раннее бронирование 2027</strong>
+        <span>Предоплата 5 000 ₽ · до 25 декабря</span>
+      </div>
+      <span class="cta">Условия</span>
+    </a>
+    <p class="note">Текст живой. Сумма и дата — черновик. Клик ведёт на motrip.ru/early-booking, не в подбор и не на карточку тура.</p>
+  </div>
+</body>
+</html>
