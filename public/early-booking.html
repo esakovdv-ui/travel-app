@@ -3,89 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Раннее бронирование 2027 — Мосгортур</title>
-  <meta name="description" content="Акция раннего бронирования сезона 2027: предоплата 5 000 ₽, туры, отели и детские лагеря. Черновик условий до согласования маркетинга." />
-  <meta name="robots" content="noindex,nofollow" />
+  <title>Раннее бронирование 2027 — предоплата 5 000 ₽ | Мои Путешествия</title>
+  <meta name="description" content="Раннее бронирование отдыха на сезон 2027: туры по России, отели и детские лагеря с предоплатой 5 000 ₽. Акция действует с 17 ноября по 25 декабря 2026." />
+  <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://motrip.ru/early-booking" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Раннее бронирование 2027 — предоплата 5 000 ₽" />
+  <meta property="og:description" content="Туры, отели и детские лагеря на сезон 2027. Акция с 17 ноября по 25 декабря 2026." />
+  <meta property="og:url" content="https://motrip.ru/early-booking" />
+  <meta property="og:image" content="https://motrip.ru/early-booking-hero.jpg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="https://online.mosgortur.ru/new/favicon/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=109401746', 'ym');
+
+    ym(109401746, 'init', {ssr:true, webvisor:true, clickmap:true, referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109401746" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
   <style>
     :root {
       --orange: #ff8500;
       --orange-dark: #e65100;
       --cream: #fff7f1;
-      --green: #009b22;
       --promo-red: #e53935;
-      --promo-red-dark: #c62828;
       --promo-orange: #ff5722;
       --text: #111;
       --muted: #667085;
+      --body: #475569;
       --panel: #f4f4f5;
-      --white: #fff;
       --radius: 24px;
       --shadow: 0 12px 32px rgba(0, 0, 0, .08);
-      --max: 1120px;
+      --max: 1180px;
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body { margin: 0; font-family: Mulish, Arial, sans-serif; background: var(--cream); color: var(--text); }
     a { color: inherit; }
+    img { display: block; max-width: 100%; }
     .container { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
-    .draft {
-      background: #111;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      text-align: center;
-      padding: 10px 16px;
-    }
-    .draft span { color: #ffd54f; }
-    header.site {
-      background: #fff;
-      border-bottom: 1px solid rgba(0,0,0,.06);
-    }
-    .site-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      min-height: 72px;
-    }
-    .logo { font-weight: 900; letter-spacing: -.03em; font-size: 20px; text-decoration: none; }
-    .logo b { color: var(--orange); }
-    nav { display: flex; gap: 18px; font-size: 14px; font-weight: 800; }
-    nav a { text-decoration: none; }
-    .hero { padding: 28px 0 8px; }
-    .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
     .panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); }
-    .hero-main { padding: clamp(22px, 4vw, 40px); }
-    .eyebrow {
-      margin: 0 0 10px;
-      color: var(--orange);
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-    h1 { margin: 0; font-size: clamp(34px, 4vw, 56px); line-height: 1.05; letter-spacing: -.03em; }
-    .lead { margin: 16px 0 0; color: #475569; font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.45; max-width: 560px; }
-    .price-pill {
-      display: inline-flex;
-      margin-top: 18px;
-      padding: 12px 18px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
-      color: #fff;
-      font-size: clamp(16px, 2vw, 20px);
-      font-weight: 900;
-    }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+
+    .site { background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); position: sticky; top: 0; z-index: 10; }
+    .site-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; }
+    .site-logo img { height: 34px; width: auto; }
+    .site nav { display: flex; gap: 22px; font-size: 15px; font-weight: 800; }
+    .site nav a { text-decoration: none; }
+    .site nav a:hover { color: var(--orange); }
+
     .btn {
-      min-height: 46px;
+      min-height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 18px;
+      padding: 12px 22px;
       border: 0;
       border-radius: 12px;
       background: conic-gradient(from -3.29deg at 100% -13%, #fc0, #f60 360deg);
@@ -94,74 +73,136 @@
       font-weight: 900;
       text-decoration: none;
       cursor: pointer;
+      box-shadow: 0 10px 24px rgba(255, 133, 0, .22);
     }
-    .btn-secondary {
-      background: var(--cream);
-      color: var(--orange-dark);
-      outline: 1px solid rgba(255, 133, 0, .35);
-    }
-    .dates {
-      padding: 22px;
-      display: grid;
-      gap: 12px;
-      align-content: start;
-    }
-    .dates h2 { margin: 0; font-size: 22px; }
-    .date-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #eee; font-weight: 800; }
-    .date-row span { color: var(--muted); font-weight: 700; }
-    section { padding: 28px 0; }
-    .section-title { margin: 0 0 14px; font-size: clamp(28px, 3vw, 42px); letter-spacing: -.02em; line-height: 1.08; }
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .tab {
-      border: 0;
-      background: #fff;
+    .btn:hover { background: #fff; color: var(--orange); outline: 1px solid var(--orange); box-shadow: none; }
+    .btn-secondary { background: var(--cream); color: var(--orange-dark); outline: 1px solid rgba(255,133,0,.35); box-shadow: none; }
+    .btn-secondary:hover { background: var(--orange); color: #fff; outline: 0; }
+
+    .hero { padding: 28px 0 10px; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); gap: 18px; }
+    .hero-main { padding: clamp(24px, 4vw, 44px); display: flex; flex-direction: column; justify-content: center; }
+    .eyebrow { margin: 0 0 12px; color: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(36px, 4.4vw, 60px); line-height: 1.04; letter-spacing: -.03em; }
+    .lead { margin: 18px 0 0; color: var(--body); font-size: clamp(17px, 1.8vw, 20px); font-weight: 700; line-height: 1.5; max-width: 540px; }
+    .price-pill {
+      display: inline-flex;
+      align-self: flex-start;
+      gap: 8px;
+      margin-top: 22px;
+      padding: 12px 20px;
       border-radius: 999px;
-      padding: 10px 16px;
-      font: inherit;
+      background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
+      color: #fff;
+      font-size: clamp(18px, 2.2vw, 24px);
       font-weight: 900;
-      cursor: pointer;
-      outline: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 10px 28px rgba(229,57,53,.3);
     }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .hero-photo { position: relative; min-height: 460px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero-photo-badge {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      right: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.94);
+      font-weight: 800;
+    }
+    .hero-photo-badge strong { display: block; font-size: 20px; }
+    .hero-photo-badge span { color: var(--body); }
+
+    .timer-panel { margin-top: 18px; padding: 18px 22px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; }
+    .timer-panel h2 { margin: 0; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.1; }
+    .timer-panel p { margin: 6px 0 0; color: var(--muted); font-weight: 700; }
+    .timer { display: grid; grid-template-columns: repeat(4, minmax(72px, 1fr)); gap: 8px; }
+    .time-box { border-radius: 14px; background: var(--panel); text-align: center; padding: 12px 8px; }
+    .time-num { display: block; font-size: clamp(24px, 3vw, 36px); color: var(--promo-red); font-weight: 900; }
+    .time-label { font-size: 12px; font-weight: 800; color: var(--muted); }
+
+    section { padding: 34px 0; }
+    .section-title { margin: 0 0 8px; font-size: clamp(30px, 3.4vw, 46px); line-height: 1.06; letter-spacing: -.02em; }
+    .section-lead { margin: 0 0 20px; color: var(--body); font-size: 18px; font-weight: 700; max-width: 720px; }
+
+    .benefits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .benefit { padding: 22px; }
+    .benefit-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,133,0,.12); color: var(--orange-dark); display: grid; place-items: center; font-size: 22px; font-weight: 900; }
+    .benefit h3 { margin: 14px 0 6px; font-size: 20px; }
+    .benefit p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .tab { border: 0; background: #fff; border-radius: 999px; padding: 11px 18px; font: inherit; font-weight: 900; cursor: pointer; outline: 1px solid rgba(0,0,0,.08); }
     .tab.is-on { background: #111; color: #fff; outline: 0; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid[hidden] { display: none; }
     .card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
-    .card-visual { height: 140px; position: relative; }
-    .card-visual span {
+    .card-img { height: 210px; position: relative; background: #eceef0; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .card-img.grad { display: grid; place-items: center; color: #fff; font-size: 44px; font-weight: 900; }
+    .card-badge {
       position: absolute;
       left: 12px;
       top: 12px;
+      padding: 7px 12px;
+      border-radius: 999px;
       background: linear-gradient(135deg, var(--promo-orange), var(--promo-red));
       color: #fff;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 900;
+      box-shadow: 0 6px 18px rgba(229,57,53,.35);
     }
-    .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-    .card h3 { margin: 0; font-size: 22px; }
-    .card p { margin: 0; color: #475569; font-weight: 700; }
-    .card .btn { margin-top: auto; }
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .step { background: #fff; border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
-    .num { color: var(--orange); font-weight: 900; font-size: 13px; letter-spacing: .06em; }
-    .faq details { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: var(--shadow); }
-    .faq summary { font-weight: 900; cursor: pointer; }
-    .faq p { margin: 10px 0 0; color: #475569; font-weight: 700; }
-    .rules { color: var(--muted); font-size: 14px; font-weight: 700; }
-    footer { padding: 28px 0 40px; color: var(--muted); font-weight: 700; font-size: 14px; }
+    .card-body { padding: 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .card h3 { margin: 0; font-size: 23px; line-height: 1.12; }
+    .card p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
+    .card .btn { margin-top: auto; width: 100%; }
+
+    .dates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .dates-card { padding: 24px; }
+    .dates-card h3 { margin: 0 0 14px; font-size: 22px; }
+    .date-row { display: flex; justify-content: space-between; gap: 12px; padding: 13px 0; border-top: 1px solid #eee; font-weight: 800; }
+    .date-row span { color: var(--muted); font-weight: 700; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .step { padding: 24px; }
+    .num { color: var(--orange); font-weight: 900; font-size: 14px; letter-spacing: .06em; }
+    .step h3 { margin: 10px 0 6px; font-size: 21px; }
+    .step p { margin: 0; color: var(--body); font-weight: 700; line-height: 1.45; }
+
+    .faq details { background: #fff; border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; box-shadow: var(--shadow); }
+    .faq summary { font-weight: 900; font-size: 18px; cursor: pointer; }
+    .faq p { margin: 10px 0 0; color: var(--body); font-weight: 700; line-height: 1.5; }
+
+    .cta-final { padding: clamp(24px, 4vw, 40px); display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+    .cta-final h2 { margin: 0 0 6px; font-size: clamp(26px, 3vw, 38px); }
+    .cta-final p { margin: 0; color: var(--body); font-weight: 700; }
+
+    footer { padding: 26px 0 40px; color: var(--muted); font-weight: 700; font-size: 14px; }
+    footer a { color: var(--orange-dark); }
+
+    @media (max-width: 960px) {
+      .benefits { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 860px) {
-      nav { display: none; }
-      .hero-grid, .grid, .steps { grid-template-columns: 1fr; }
+      .site nav { display: none; }
+      .hero-grid, .grid, .steps, .dates-grid, .timer-panel, .cta-final { grid-template-columns: 1fr; }
+      .hero-photo { min-height: 300px; }
+    }
+    @media (max-width: 520px) {
+      .benefits { grid-template-columns: 1fr; }
+      .timer { grid-template-columns: repeat(4, 1fr); }
+      .btn { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div class="draft">Черновик условий — даты и сумма до согласования маркетинга. Ориентир прошлого сезона, сдвиг на 2027: старт <span>17.11.2026</span>, конец <span>25.12.2026</span>, предоплата <span>5 000 ₽</span>.</div>
   <header class="site">
     <div class="container site-bar">
-      <a class="logo" href="https://online.mosgortur.ru/">МОСГОР<b>ТУР</b></a>
+      <a class="site-logo" href="https://online.mosgortur.ru/"><img src="/logo-moi-puteshestviya.svg" alt="Мои Путешествия" /></a>
       <nav>
-        <a href="#products">Что бронируем</a>
+        <a href="#products">Что бронировать</a>
+        <a href="#dates">Сроки</a>
         <a href="#pay">Как оплатить</a>
         <a href="#faq">Вопросы</a>
       </nav>
@@ -170,24 +211,50 @@
 
   <main>
     <section class="hero">
-      <div class="container hero-grid">
-        <div class="panel hero-main">
-          <p class="eyebrow">Сезон 2027</p>
-          <h1>Раннее бронирование</h1>
-          <p class="lead">Зафиксируйте отдых на сезон 2027: туры по России, отели без перелёта и детские лагеря. Сейчас достаточно предоплаты, остальное — по графику.</p>
-          <div class="price-pill">Предоплата 5 000 ₽</div>
-          <div class="hero-actions">
-            <a class="btn" href="#products">Выбрать отдых</a>
-            <a class="btn btn-secondary" href="#rules">Правила акции</a>
+      <div class="container">
+        <div class="hero-grid">
+          <div class="panel hero-main">
+            <p class="eyebrow">Сезон 2027</p>
+            <h1>Раннее бронирование</h1>
+            <p class="lead">Забронируйте отдых на следующий сезон уже сейчас: туры по России, отели и детские лагеря. Внесите предоплату, остальное — по графику.</p>
+            <div class="price-pill">Предоплата 5 000 ₽</div>
+            <div class="hero-actions">
+              <a class="btn" href="#products">Выбрать отдых</a>
+              <a class="btn btn-secondary" href="#dates">Сроки акции</a>
+            </div>
+          </div>
+          <div class="hero-photo">
+            <img src="/early-booking-hero.jpg" alt="Семья на море" />
+            <div class="hero-photo-badge">
+              <strong>17 ноября — 25 декабря 2026</strong>
+              <span>Успейте забронировать по условиям акции</span>
+            </div>
           </div>
         </div>
-        <div class="panel dates">
-          <h2>Сроки</h2>
-          <div class="date-row"><span>Прогрев</span> с 2 ноября 2026</div>
-          <div class="date-row"><span>Старт акции</span> 17 ноября 2026</div>
-          <div class="date-row"><span>Конец акции</span> 25 декабря 2026</div>
-          <div class="date-row"><span>Отдых с сертификатом</span> 28.03.2027 — 15.11.2027</div>
-          <div class="date-row"><span>Без сертификата</span> до 31.12.2027</div>
+
+        <div class="panel timer-panel">
+          <div>
+            <h2 id="timer-title">До старта акции</h2>
+            <p id="timer-sub">Акция стартует 17 ноября 2026</p>
+          </div>
+          <div class="timer" aria-live="polite">
+            <div class="time-box"><span class="time-num" id="t-d">00</span><span class="time-label">дней</span></div>
+            <div class="time-box"><span class="time-num" id="t-h">00</span><span class="time-label">часов</span></div>
+            <div class="time-box"><span class="time-num" id="t-m">00</span><span class="time-label">минут</span></div>
+            <div class="time-box"><span class="time-num" id="t-s">00</span><span class="time-label">секунд</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <h2 class="section-title">Почему бронировать заранее</h2>
+        <div class="benefits">
+          <div class="panel benefit"><div class="benefit-icon">₽</div><h3>Небольшая предоплата</h3><p>Достаточно внести 5 000 ₽, чтобы закрепить поездку.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">★</div><h3>Лучший выбор</h3><p>Пока свободны популярные отели, даты и смены в лагерях.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">⏱</div><h3>Доплата по графику</h3><p>Остаток — частями, график виден в личном кабинете.</p></div>
+          <div class="panel benefit"><div class="benefit-icon">✓</div><h3>Можно с сертификатом</h3><p>Часть стоимости можно оплатить сертификатом на отдых.</p></div>
         </div>
       </div>
     </section>
@@ -195,69 +262,73 @@
     <section id="products">
       <div class="container">
         <h2 class="section-title">Что можно забронировать</h2>
+        <p class="section-lead">Предложения с отметкой «Раннее бронирование» в каталоге — участвуют в акции.</p>
         <div class="tabs" role="tablist">
-          <button class="tab is-on" type="button" data-tab="tours">Туры</button>
-          <button class="tab" type="button" data-tab="hotels">Отели</button>
-          <button class="tab" type="button" data-tab="camps">Лагеря</button>
+          <button class="tab is-on" type="button" role="tab" data-tab="tours">Туры</button>
+          <button class="tab" type="button" role="tab" data-tab="hotels">Отели</button>
+          <button class="tab" type="button" role="tab" data-tab="camps">Детские лагеря</button>
         </div>
+
         <div class="grid" data-panel="tours">
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#ffd180,#ff7043)"><span>РБ</span></div>
+            <div class="card-img"><img src="/early-booking-hero.jpg" alt="Туры по России" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
               <h3>Туры по России</h3>
-              <p>Ж/д и пакеты туроператоров без авиа. Список отелей внутри акции сузим к старту.</p>
+              <p>Готовые туры с проживанием и проездом — выберите направление и даты.</p>
               <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=tours">Смотреть туры</a>
             </div>
           </article>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#ffe082,#fb8c00)"><span>РБ</span></div>
+            <div class="card-img"><img src="/early-booking-train.jpg" alt="Поезд вдоль моря" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
-              <h3>Анапа и Крым с ж/д</h3>
-              <p>Направления, которые в прошлом сезоне были ядром акции. Состав подтвердит продукт.</p>
+              <h3>На море поездом</h3>
+              <p>Туры в Анапу и Крым с ж/д билетами туда и обратно.</p>
               <a class="btn" href="https://online.mosgortur.ru/tours/?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=rail">Туры с ж/д</a>
             </div>
           </article>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#c5e1a5,#43a047)"><span>РБ</span></div>
+            <div class="card-img grad" style="background:linear-gradient(145deg,#aed581,#43a047)">40 000 ₽<span class="card-badge">Сертификат</span></div>
             <div class="card-body">
-              <h3>Сертификат</h3>
-              <p>Номинал до 40 000 ₽ на человека. К круизам и гостевым домам сертификат может не применяться.</p>
-              <a class="btn" href="https://online.mosgortur.ru/for-tourists/how-get-certificate/">Как получить</a>
+              <h3>Оплата сертификатом</h3>
+              <p>Сертификатом можно оплатить часть поездки — до 40 000 ₽ на человека.</p>
+              <a class="btn btn-secondary" href="https://online.mosgortur.ru/for-tourists/how-get-certificate/">Как получить сертификат</a>
             </div>
           </article>
         </div>
+
         <div class="grid" data-panel="hotels" hidden>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#b3e5fc,#0288d1)"><span>РБ</span></div>
+            <div class="card-img"><img src="/early-booking-hotels.jpg" alt="Отель у бассейна" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
-              <h3>Отели без авиа</h3>
-              <p>Размещение по России. В акцию попадут только объекты, которые продукт отметит к старту.</p>
+              <h3>Отели по России</h3>
+              <p>Проживание без перелёта: курорты, города, загородный отдых.</p>
               <a class="btn" href="https://online.mosgortur.ru/new/russia-hotels?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=hotels">Смотреть отели</a>
             </div>
           </article>
         </div>
+
         <div class="grid" data-panel="camps" hidden>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#ffcc80,#f4511e)"><span>РБ</span></div>
+            <div class="card-img"><img src="/raduga-hero.png" alt="Лагерь «Радуга»" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
-              <h3>Радуга</h3>
-              <p>Смены, которые успеем выставить в акцию. Договор и цены — до старта.</p>
-              <a class="btn" href="https://online.mosgortur.ru/new/raduga?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=raduga">Смены Радуги</a>
+              <h3>«Радуга»</h3>
+              <p>Смены сезона 2027 в детском лагере «Радуга».</p>
+              <a class="btn" href="https://online.mosgortur.ru/new/raduga?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=raduga">Смены «Радуги»</a>
             </div>
           </article>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#c8e6c9,#2e7d32)"><span>РБ</span></div>
+            <div class="card-img"><img src="/vlasevo-hero-final.png" alt="Лагерь «Власьево»" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
-              <h3>Власьево</h3>
-              <p>Отдельные смены раннего бронирования, не весь каталог лагеря.</p>
-              <a class="btn" href="https://motrip.ru/vlasevo?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=vlasevo">Смены Власьево</a>
+              <h3>«Власьево»</h3>
+              <p>Смены сезона 2027 в детском лагере «Власьево».</p>
+              <a class="btn" href="https://motrip.ru/vlasevo?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=vlasevo">Смены «Власьево»</a>
             </div>
           </article>
           <article class="card">
-            <div class="card-visual" style="background:linear-gradient(145deg,#b2ebf2,#00838f)"><span>РБ</span></div>
+            <div class="card-img"><img src="/early-booking-camps.jpg" alt="Дети в лагере на море" loading="lazy" /><span class="card-badge">Раннее бронирование</span></div>
             <div class="card-body">
               <h3>Лагеря на море</h3>
-              <p>Только партнёры, с кем договор будет до 17 ноября 2026. Лагеря МО без актуальных цен не включаем.</p>
+              <p>Детские лагеря на побережье — смотрите смены в каталоге.</p>
               <a class="btn" href="https://online.mosgortur.ru/kids?utm_source=motrip&utm_medium=landing&utm_campaign=early_booking_2027&utm_content=camps">Каталог лагерей</a>
             </div>
           </article>
@@ -265,13 +336,31 @@
       </div>
     </section>
 
+    <section id="dates">
+      <div class="container">
+        <h2 class="section-title">Сроки</h2>
+        <div class="dates-grid">
+          <div class="panel dates-card">
+            <h3>Бронирование по акции</h3>
+            <div class="date-row"><span>Начало</span> 17 ноября 2026</div>
+            <div class="date-row"><span>Окончание</span> 25 декабря 2026</div>
+          </div>
+          <div class="panel dates-card">
+            <h3>Даты отдыха</h3>
+            <div class="date-row"><span>С сертификатом</span> 28 марта — 15 ноября 2027</div>
+            <div class="date-row"><span>Без сертификата</span> 28 марта — 31 декабря 2027</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="pay">
       <div class="container">
-        <h2 class="section-title">Как оплатить</h2>
+        <h2 class="section-title">Как забронировать</h2>
         <div class="steps">
-          <div class="step"><div class="num">01</div><h3>Предоплата 5 000 ₽</h3><p>Фиксирует цену акции. Сумма — черновик, как в сезоне 2026.</p></div>
-          <div class="step"><div class="num">02</div><h3>График доплаты</h3><p>Остаток — по графику в личном кабинете. Текст про РБ только у заявок этой акции.</p></div>
-          <div class="step"><div class="num">03</div><h3>Сертификат</h3><p>Можно применить там, где продукт это разрешил. Исключения объяснит горячая линия.</p></div>
+          <div class="panel step"><div class="num">01</div><h3>Выберите отдых</h3><p>Тур, отель или смену в лагере с отметкой «Раннее бронирование».</p></div>
+          <div class="panel step"><div class="num">02</div><h3>Внесите 5 000 ₽</h3><p>Предоплата закрепляет бронь по условиям акции.</p></div>
+          <div class="panel step"><div class="num">03</div><h3>Доплатите остаток</h3><p>По графику в личном кабинете — можно частично сертификатом.</p></div>
         </div>
       </div>
     </section>
@@ -280,27 +369,41 @@
       <div class="container">
         <h2 class="section-title">Вопросы</h2>
         <details open>
-          <summary>До какой даты действует акция?</summary>
-          <p>Черновик: с 17 ноября по 25 декабря 2026. Прогрев — с 2 ноября. Финальные даты подтвердит маркетинг.</p>
+          <summary>До какой даты можно забронировать по акции?</summary>
+          <p>Акция действует с 17 ноября по 25 декабря 2026 года.</p>
         </details>
         <details>
-          <summary>Сколько нужно внести сейчас?</summary>
-          <p>Черновик предоплаты — 5 000 ₽. Это не полная стоимость тура.</p>
+          <summary>Сколько нужно заплатить сразу?</summary>
+          <p>Предоплата — 5 000 ₽. Оставшуюся сумму вы вносите по графику платежей, он доступен в личном кабинете.</p>
         </details>
         <details>
-          <summary>На какие даты отдыха можно бронировать?</summary>
-          <p>С сертификатом — с 28 марта по 15 ноября 2027. Без сертификата — до 31 декабря 2027.</p>
+          <summary>На какие даты можно поехать?</summary>
+          <p>С сертификатом — с 28 марта по 15 ноября 2027 года. Без сертификата — с 28 марта по 31 декабря 2027 года.</p>
         </details>
         <details>
-          <summary>Где правила?</summary>
-          <p id="rules" class="rules">PDF правил сезона 2027 ещё нет. Пока не подменяем его файлом 2025 года. Ссылку добавим, когда юридический текст будет готов.</p>
+          <summary>Можно ли оплатить сертификатом?</summary>
+          <p>Да, часть стоимости — до 40 000 ₽ на человека. К некоторым предложениям сертификат не применяется, это указано в карточке.</p>
         </details>
       </div>
     </section>
+
+    <section>
+      <div class="container">
+        <div class="panel cta-final">
+          <div>
+            <h2>Выберите отдых на 2027 год</h2>
+            <p>Предоплата 5 000 ₽ · акция до 25 декабря 2026</p>
+          </div>
+          <a class="btn" href="#products">Выбрать отдых</a>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer>
-    <div class="container">Мосгортур · раннее бронирование сезона 2027 · страница-черновик на motrip.ru</div>
+    <div class="container">© Мосгортур · <a href="https://online.mosgortur.ru/">online.mosgortur.ru</a></div>
   </footer>
+
   <script>
     const tabs = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('[data-panel]');
@@ -312,6 +415,33 @@
         });
       });
     });
+
+    const START = new Date('2026-11-17T00:00:00+03:00').getTime();
+    const END = new Date('2026-12-25T23:59:59+03:00').getTime();
+    const pad = (n) => String(n).padStart(2, '0');
+    const titleEl = document.getElementById('timer-title');
+    const subEl = document.getElementById('timer-sub');
+    function tick() {
+      const now = Date.now();
+      let target = START;
+      if (now >= START && now <= END) {
+        target = END;
+        titleEl.textContent = 'До конца акции';
+        subEl.textContent = 'Бронируйте до 25 декабря 2026';
+      } else if (now > END) {
+        titleEl.textContent = 'Акция завершена';
+        subEl.textContent = 'Следите за новыми предложениями на online.mosgortur.ru';
+        ['t-d','t-h','t-m','t-s'].forEach((id) => { document.getElementById(id).textContent = '00'; });
+        return;
+      }
+      const diff = Math.max(0, target - now);
+      document.getElementById('t-d').textContent = pad(Math.floor(diff / 86400000));
+      document.getElementById('t-h').textContent = pad(Math.floor(diff / 3600000) % 24);
+      document.getElementById('t-m').textContent = pad(Math.floor(diff / 60000) % 60);
+      document.getElementById('t-s').textContent = pad(Math.floor(diff / 1000) % 60);
+    }
+    tick();
+    setInterval(tick, 1000);
   </script>
 </body>
 </html>
