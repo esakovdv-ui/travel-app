@@ -473,7 +473,7 @@
           </details>
           <details>
             <summary>Что делать, если я не получу сертификат?</summary>
-            <p>Бронирование сохранится. Если сертификат не будет выдан, оставшуюся стоимость отдыха можно оплатить самостоятельно. Оплату необходимо внести по графику — не позднее чем за <span data-cfg="finalDays">30</span> календарных дней до начала отдыха.</p>
+            <p>Вы можете сохранить бронирование и оплатить оставшуюся стоимость самостоятельно или отказаться от поездки. При отказе до <span data-cfg="fullRefundDeadline">16 февраля 2027 года</span> предоплата <span data-cfg="prepayment">5 000 ₽</span> возвращается полностью. После этой даты возврат рассчитывается за вычетом фактически понесённых расходов.</p>
           </details>
         </div>
       </div>
@@ -506,6 +506,7 @@
       prepaymentHoursAfterConfirmation: 48,
       certificateAmountPerPerson: 40000,
       certificateApplyDeadline: '2027-02-16T23:59:59+03:00',
+      fullRefundDeadline: '2027-02-16T23:59:59+03:00',
       restPeriodStart: '2027-03-28',
       latestRestStart: '2027-11-14',
       restPeriodEnd: '2027-11-15',
@@ -538,6 +539,7 @@
       prepaymentDeadline: withYear(cfg.prepaymentDeadline),
       certAmount: rubles(cfg.certificateAmountPerPerson),
       certDeadline: withYear(cfg.certificateApplyDeadline),
+      fullRefundDeadline: withYear(cfg.fullRefundDeadline),
       bookingStart: withYear(cfg.bookingStart),
       bookingEndDay: dayMonth(cfg.bookingEnd),
       bookingRange: range(cfg.bookingStart, cfg.bookingEnd),
