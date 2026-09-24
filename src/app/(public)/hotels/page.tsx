@@ -8,7 +8,7 @@ import { Preloader } from '@/components/ui/preloader';
 import { toUserSearchError } from '@/lib/search-errors';
 import { hotelsLabel } from '@/lib/utils';
 import styles from '../tours/tours.module.css';
-import type { WlSearchContext } from '@/lib/wl-link';
+import { wlBaseUrl as resolveWlBaseUrl, type WlSearchContext } from '@/lib/wl-link';
 
 const HotelMap = dynamic(
   () => import('@/components/tours/hotel-map').then(m => m.HotelMap),
@@ -46,7 +46,7 @@ function HotelsPageInner() {
   const [wl, setWl] = useState<WlSearchContext | undefined>(undefined);
 
 
-  const wlBaseUrl = process.env.NEXT_PUBLIC_WL_BASE_URL ?? '';
+  const wlBaseUrl = resolveWlBaseUrl();
 
   useEffect(() => {
     const startDateFrom = searchParams.get('startDateFrom') ?? searchParams.get('startDate');
