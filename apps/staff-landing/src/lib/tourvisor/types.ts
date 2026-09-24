@@ -167,3 +167,9 @@ export interface HotelRoom {
   services?: string
   images: string[]
 }
+
+export interface Region {
+  id: number
+  name: string
+  countryId: number
+}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSearchResults } from '@/lib/tourvisor/search'
 import { tourvisorErrorResponse } from '@/lib/tourvisor/errors'
+import { toPlainText } from '@/lib/sanitize-html'
 
 // Туроператоры, с которыми работает Мосгортур
 const ALLOWED_OPERATOR_IDS = new Set([
@@ -39,7 +40,15 @@ export async function GET(
         tours: hotel.tours.filter(t => ALLOWED_OPERATOR_IDS.has(t.operator.id)),
       }))
       .filter(hotel => hotel.tours.length > 0)
-      .map(hotel => ({ ...hotel, price: hotel.tours[0].price }))
+      .map(hotel => ({
+        ...hotel,
+        price: hotel.tours[0].price,
+        // Описание приходит с HTML-сущностями и изредка с тегами. В карточке
+        // оно выводится обычным текстом, поэтому React показывал «700 м&#178;»
+        // буквально. Чистим здесь, а не в компоненте: так это верно для любого,
+        // кто возьмёт выдачу.
+        hotelDescription: toPlainText(hotel.hotelDescription),
+      }))
 
     return NextResponse.json(filtered)
   } catch (e) {

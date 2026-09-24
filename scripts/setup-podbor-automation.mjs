@@ -70,7 +70,7 @@ function bootstrapPodborAutomation() {
   const token = String.fromCharCode(${codes});
   PropertiesService.getScriptProperties().setProperty('YANDEX_METRIKA_TOKEN', token);
   setupAndSync();
-  setupWeeklyTrigger();
+  setupHourlyTrigger();
 }
 `;
 
@@ -79,9 +79,9 @@ function bootstrapPodborAutomation() {
 
   console.log('\nГотово.');
   console.log('Apps Script → вставить', out);
-  console.log('Run bootstrapPodborAutomation() — один раз (токен + данные + триггер пн 09:00 МСK)');
-  console.log('\nGitHub Actions: workflow sync-podbor-funnel-sheet.yml, secret YANDEX_METRIKA_TOKEN уже задан.');
-  console.log('Для автозаливки через Actions добавьте GOOGLE_SERVICE_ACCOUNT_JSON в secrets.');
+  console.log('Run bootstrapPodborAutomation() — один раз (токен + данные + триггер каждый час)');
+  console.log('\nGitHub Actions: workflow sync-podbor-funnel-sheet.yml — cron каждый час.');
+  console.log('Нужны secrets: YANDEX_METRIKA_TOKEN + GOOGLE_SERVICE_ACCOUNT_JSON.');
 }
 
 main();

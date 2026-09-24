@@ -36,6 +36,9 @@ pm2 restart all
 - `BITRIX_DOMAIN` — домен портала Bitrix24 (например `crm.mosgortur.ru`)
 - `WEBHOOK_TOKEN` — часть URL вебхука после `/rest/` (например `1981/xxxxxxxx`)
 - Заявки с `/raduga` → `POST /api/raduga-lead` → сделка в воронке 12 (`crm.deal.add`), не лиды
+- Заявки с `/podbor` (имя+телефон) → `POST /api/podbor-lead` → сделка в воронке 12, title `Подбор: …`
+- `PODBOR_BITRIX_SOURCE_ID` — опционально SOURCE_ID сделок подбора (по умолчанию `WEBFORM`)
+- `PODBOR_BITRIX_ASSIGNED_BY_ID` — опционально ответственный (по умолчанию `1`)
 - `REBOOKING_BITRIX_DOMAIN` — домен Б24 для `/rebooking` (по умолчанию как `BITRIX_DOMAIN`)
 - `REBOOKING_WEBHOOK_TOKEN` — вебхук для лидов перебронирования (`crm.lead.add`), например `1981/j9pvdbhovvem7j6c`
 - Заявки с `/rebooking` → popup ТурВизора → webhook `GET /api/tourvisor-order-webhook` или `POST /api/rebooking-lead/sync` → лид в Битрикс24

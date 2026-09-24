@@ -1,29 +1,62 @@
 /**
  * Google Apps Script для таблицы podbor funnel.
- * Вставить: Extensions → Apps Script → вставить этот файл → Run setupAndSync
+ * Листы: Воронка (визард + туры/отели) / Справочник
  *
- * Script Properties (Project settings → Script properties):
- *   YANDEX_METRIKA_TOKEN — OAuth-токен Яндекс.Метрики
- *
- * Триггер (опционально): setupWeeklyTrigger — каждый понедельник 09:00 МСK
+ * Визард: недели строками. Туры и отели: показатели строками, недели колонками.
  */
 
 const SHEET_FUNNEL = 'Воронка';
 const SHEET_REF = 'Справочник';
+const OBSOLETE = ['Визард', 'Туры', 'Отели', 'Лист1'];
 
 const COUNTERS = { mgt: '90662828', wizard: '109401746', hotels: '97107007' };
 const UTM_PODBOR = "ym:s:UTMSource=='podbor_wizard'";
+const PODBOR_TOUR_MODULE = '68ea30c6';
+const TOURS_FROM_PODBOR = "ym:pv:URL=@'" + PODBOR_TOUR_MODULE + "'";
+const PODBOR_TOURS_REF_START = '2026-08-21';
+const PODBOR_TOURS_ENTRY_REF = '(' + UTM_PODBOR + " OR ym:pv:URL=@'podbor_ref=1')";
 const PODBOR_HOTELS_ENTRY = "(ym:s:UTMSource=='podbor_wizard' OR ym:pv:URL=@'podbor_ref=1')";
-const HOTEL_LEAD_GOAL = 358300437;
-/** Учёт с этой даты (МСK). Тестовые прохождения до неё — нули. */
+const HOTEL_LT_GOALS = {
+  checkout: 579160037,
+  paymentBlock: 579160036,
+  purchase: 579160040,
+};
 const PODBOR_FUNNEL_START = '2026-08-13';
 
-const COLUMNS = [
+function toursFiltersForWeek_(weekFrom) {
+  if (weekFrom >= PODBOR_TOURS_REF_START) {
+    return {
+      search: PODBOR_TOURS_ENTRY_REF,
+      card: PODBOR_TOURS_ENTRY_REF + " AND ym:pv:URL=@'action=tourCard'",
+      goals: PODBOR_TOURS_ENTRY_REF,
+    };
+  }
+  return {
+    search: TOURS_FROM_PODBOR + " AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='",
+    card: TOURS_FROM_PODBOR + " AND ym:pv:URL=@'action=tourCard'",
+    goals: TOURS_FROM_PODBOR,
+  };
+}
+
+const WIZARD_COLUMNS = [
   'Неделя', 'С', 'По', 'Клик баннер', 'Клик popup', 'Старт визарда',
-  'Шаг: кто едет', 'Шаг: бюджет', 'Шаг: формат', 'Шаг: регион', 'Шаг: даты', 'Шаг: итог',
-  'Handoff', 'Handoff: туры', 'Handoff: отели', 'CR старт→handoff', 'UTM: пользователи', 'Туры: выдача', 'Туры: карточка',
-  'Туры: корзина', 'Туры: бронь', 'Туры: оплата', 'Отели: выдача', 'Отели: корзина',
-  'Отели: чекаут', 'Отели: заявка', 'Обновлено',
+  'CR → кто едет', 'Шаг: кто едет', 'CR → бюджет', 'Шаг: бюджет',
+  'CR → формат', 'Шаг: формат', 'CR → регион', 'Шаг: регион',
+  'CR → даты', 'Шаг: даты', 'CR → итог', 'Шаг: итог',
+  'CR → handoff', 'Handoff', 'CR старт→handoff',
+  'Handoff: туры', 'CR туры от handoff', 'Handoff: отели', 'CR отели от handoff',
+  'Лид (контакт)', 'CR итог→лид', 'Заказ (Битrix)', 'CR лид→заказ',
+];
+
+const TOURS_LABELS = [
+  'Handoff: туры', 'Выдача', 'CR handoff→выдача', 'Карточка', 'CR выдача→карточка',
+  'Корзина', 'CR карточка→корзина', 'Бронь', 'CR корзина→бронь', 'Заявка', 'CR бронь→заявка',
+];
+
+const HOTELS_LABELS = [
+  'Handoff: отели', 'Выдача', 'CR handoff→выдача', 'Корзина', 'CR выдача→корзина',
+  'Чекаут', 'CR корзина→чекаут', 'Блок оплаты', 'CR чекаут→блок оплаты',
+  'Оплата', 'CR блок оплаты→оплата',
 ];
 
 const WIZARD_GOALS = [
@@ -31,6 +64,7 @@ const WIZARD_GOALS = [
   { key: 'budget', id: 595566510 }, { key: 'format', id: 595566511 },
   { key: 'region', id: 595566512 }, { key: 'dates', id: 595566513 },
   { key: 'summary', id: 595566514 }, { key: 'handoff', id: 595566515 },
+  { key: 'lead', id: 602593348 },
 ];
 
 function metrikaGet_(path) {
@@ -73,17 +107,13 @@ function hotelEntryClients_(entryFrom, entryTo) {
   return Object.keys(clients);
 }
 
-/** clientID journey: заход с подбора → действие на отелях в отчётной неделе. */
-function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
-  var entryFrom = PODBOR_FUNNEL_START > reportFrom ? PODBOR_FUNNEL_START : reportFrom;
-  var ids = hotelEntryClients_(entryFrom, reportTo);
-  if (!ids.length) return 0;
-
+function journeyCount_(counter, reportFrom, reportTo, entryIds, downstreamFilter) {
+  if (!entryIds || !entryIds.length) return 0;
   var matched = {};
-  for (var i = 0; i < ids.length; i += 10) {
-    var chunk = ids.slice(i, i + 10);
+  for (var i = 0; i < entryIds.length; i += 10) {
+    var chunk = entryIds.slice(i, i + 10);
     var orFilter = chunk.map(function (cid) { return "ym:s:clientID=='" + cid + "'"; }).join(' OR ');
-    var path = '/stat/v1/data?id=' + COUNTERS.hotels + '&date1=' + reportFrom + '&date2=' + reportTo +
+    var path = '/stat/v1/data?id=' + counter + '&date1=' + reportFrom + '&date2=' + reportTo +
       '&metrics=ym:s:visits&dimensions=ym:s:clientID&limit=10000' +
       '&filters=' + encodeURIComponent('(' + orFilter + ') AND ' + downstreamFilter);
     (metrikaGet_(path).data || []).forEach(function (row) {
@@ -91,6 +121,12 @@ function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
     });
   }
   return Object.keys(matched).length;
+}
+
+function hotelJourneyCount_(reportFrom, reportTo, downstreamFilter) {
+  var entryFrom = PODBOR_FUNNEL_START > reportFrom ? PODBOR_FUNNEL_START : reportFrom;
+  var ids = hotelEntryClients_(entryFrom, reportTo);
+  return journeyCount_(COUNTERS.hotels, reportFrom, reportTo, ids, downstreamFilter);
 }
 
 function weekStartMonday_(dayKey) {
@@ -137,6 +173,57 @@ function effectiveMetricsRange_(week) {
   return { from: from, to: week.to };
 }
 
+function bitrixPost_(method, payload) {
+  var props = PropertiesService.getScriptProperties();
+  var base = (props.getProperty('BITRIX_REST_BASE_URL') || 'https://it.mosgortur.ru/b24catch').replace(/\/+$/, '');
+  var token = (props.getProperty('BITRIX_WEBHOOK_TOKEN') || '1981/0ly7df3o8j23eq30').replace(/^\/+|\/+$/g, '');
+  var url = base + '/' + token + '/' + method.replace(/\.json$/i, '') + '.json';
+  var resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload || {}),
+    muteHttpExceptions: true,
+  });
+  var code = resp.getResponseCode();
+  var data = JSON.parse(resp.getContentText() || '{}');
+  if (code !== 200 || data.error) {
+    throw new Error('Bitrix ' + code + ': ' + (data.error_description || data.error || ''));
+  }
+  return data;
+}
+
+function bitrixListAll_(method, payload) {
+  var out = [];
+  var start = 0;
+  while (true) {
+    var data = bitrixPost_(method, Object.assign({}, payload, { start: start }));
+    var rows = data.result || [];
+    if (Array.isArray(rows)) out = out.concat(rows);
+    if (!data.next) break;
+    start = data.next;
+  }
+  return out;
+}
+
+/** Сделки «Подбор: …» category/12 на этапе C12:WON, DATE_CREATE в неделе. */
+function podborBitrixWonCount_(weekFrom, weekTo) {
+  var deals = bitrixListAll_('crm.deal.list', {
+    filter: {
+      CATEGORY_ID: 12,
+      STAGE_ID: 'C12:WON',
+      '>=DATE_CREATE': weekFrom + ' 00:00:00',
+      '<=DATE_CREATE': weekTo + ' 23:59:59',
+    },
+    select: ['ID', 'TITLE', 'DATE_CREATE'],
+    order: { DATE_CREATE: 'ASC' },
+  });
+  var n = 0;
+  deals.forEach(function (d) {
+    if ((d.TITLE || '').trim().toLowerCase().indexOf('подбор:') === 0) n += 1;
+  });
+  return n;
+}
+
 function fetchWeek_(week) {
   const m = {};
   m.banner = goalUsers_(COUNTERS.mgt, 595574818, week.from, week.to);
@@ -146,28 +233,69 @@ function fetchWeek_(week) {
   });
   m.handoff_tours = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='tour'");
   m.handoff_hotels = goalUsers_(COUNTERS.wizard, 595566515, week.from, week.to, "ym:s:paramsLevel2=='hotel'");
-  m.cr = pct_(m.handoff, m.start);
-  m.utm = usersCount_(COUNTERS.mgt, week.from, week.to, UTM_PODBOR);
-  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to,
-    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=search' AND ym:pv:URL=@'dateFrom='");
-  m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to,
-    "ym:pv:URL=@'68ea30c6' AND ym:pv:URL=@'action=tourCard'");
-  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
-  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, "ym:pv:URL=@'68ea30c6'");
+  var tf = toursFiltersForWeek_(week.from);
+  m.t_search = usersCount_(COUNTERS.mgt, week.from, week.to, tf.search);
+  m.t_card = usersCount_(COUNTERS.mgt, week.from, week.to, tf.card);
+  m.t_cart = goalUsers_(COUNTERS.mgt, 326738951, week.from, week.to, tf.goals);
+  m.t_book = goalUsers_(COUNTERS.mgt, 321609998, week.from, week.to, tf.goals);
+  m.t_pay = goalUsers_(COUNTERS.mgt, 321612203, week.from, week.to, tf.goals);
   m.h_search = hotelJourneyCount_(week.from, week.to, "ym:pv:URL=@'russia.mosgortur.ru/search'");
   m.h_cart = hotelJourneyCount_(week.from, week.to,
     "ym:pv:URL=@'russia.mosgortur.ru/packages/' AND ym:pv:URL!@'/success'");
-  m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal579160037reaches>0');
-  m.h_lead = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LEAD_GOAL + 'reaches>0');
+  m.h_checkout = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.checkout + 'reaches>0');
+  m.h_payment = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.paymentBlock + 'reaches>0');
+  m.h_purchase = hotelJourneyCount_(week.from, week.to, 'ym:s:goal' + HOTEL_LT_GOALS.purchase + 'reaches>0');
+  try {
+    m.lead_order = podborBitrixWonCount_(week.from, week.to);
+  } catch (e) {
+    m.lead_order = 0;
+  }
   return m;
+}
+
+function toursValues_(m) {
+  return [
+    m.handoff_tours, m.t_search, pct_(m.t_search, m.handoff_tours),
+    m.t_card, pct_(m.t_card, m.t_search), m.t_cart, pct_(m.t_cart, m.t_card),
+    m.t_book, pct_(m.t_book, m.t_cart), m.t_pay, pct_(m.t_pay, m.t_book),
+  ];
+}
+
+function hotelsValues_(m) {
+  return [
+    m.handoff_hotels, m.h_search, pct_(m.h_search, m.handoff_hotels),
+    m.h_cart, pct_(m.h_cart, m.h_search), m.h_checkout, pct_(m.h_checkout, m.h_cart),
+    m.h_payment, pct_(m.h_payment, m.h_checkout), m.h_purchase, pct_(m.h_purchase, m.h_payment),
+  ];
+}
+
+function matrixBlock_(title, labels, weekLabels, weekValueRows) {
+  var rows = [[title]];
+  rows.push(['Показатель'].concat(weekLabels));
+  for (var i = 0; i < labels.length; i++) {
+    var row = [labels[i]];
+    for (var w = 0; w < weekValueRows.length; w++) row.push(weekValueRows[w][i]);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function padRows_(rows) {
+  var width = 0;
+  rows.forEach(function (r) { if (r.length > width) width = r.length; });
+  return rows.map(function (r) {
+    while (r.length < width) r.push('');
+    return r;
+  });
 }
 
 function ensureSheets_(ss) {
   if (!ss.getSheetByName(SHEET_FUNNEL)) ss.insertSheet(SHEET_FUNNEL);
   if (!ss.getSheetByName(SHEET_REF)) ss.insertSheet(SHEET_REF);
-  const old = ss.getSheetByName('Лист1');
-  if (old && ss.getSheets().length > 2) ss.deleteSheet(old);
+  OBSOLETE.forEach(function (name) {
+    var old = ss.getSheetByName(name);
+    if (old && ss.getSheets().length > 1) ss.deleteSheet(old);
+  });
 }
 
 function setupReference_(ss) {
@@ -179,18 +307,12 @@ function setupReference_(ss) {
     [COUNTERS.mgt, '595574819', 'podbor_popup_click', 'Клик popup'],
     [COUNTERS.wizard, '595566508', 'podbor_start', 'Старт визарда'],
     [COUNTERS.wizard, '595566515', 'podbor_handoff', 'Handoff'],
-    [COUNTERS.wizard, '595566515 + format=tour', 'podbor_handoff', 'Handoff в туры'],
-    [COUNTERS.wizard, '595566515 + format=hotel', 'podbor_handoff', 'Handoff в отели'],
-    [COUNTERS.mgt, '326738951', 'click-buyonline', 'Туры: корзина по moduleId'],
-    [COUNTERS.mgt, '321609998', 'buying_submit', 'Туры: бронь по moduleId'],
-    [COUNTERS.mgt, '321612203', 'Успешная оплата', 'Туры: оплата по moduleId'],
-    [COUNTERS.hotels, '579160037', 'lt_checkout_start', 'Отели: чекаут (journey с podbor)'],
-    [COUNTERS.hotels, String(HOTEL_LEAD_GOAL), 'отправил контактные данные LT', 'Отели: заявка (journey с podbor)'],
-    [COUNTERS.hotels, 'podbor_ref=1', 'URL handoff', 'Маркер подбора в handoff URL'],
-    ['', '', '', ''],
-    ['UTM фильтр', UTM_PODBOR, '', 'Туры и вход на mosgortur.ru'],
-    ['Отели с подбора', PODBOR_HOTELS_ENTRY, 'clientID journey', 'Заход podbor_ref/UTM → выдача/корзина/чекаут/заявка'],
-    ['Старт учёта', PODBOR_FUNNEL_START, 'PODBOR_FUNNEL_START', 'Недели до этой даты не выводятся в отчёт'],
+    [COUNTERS.wizard, '602593348', 'podbor_lead_submit', 'Лид: имя+телефон → Битрикс'],
+    ['Битrix', 'category/12', 'C12:WON', 'Заказ: «Подбор: …» → Успешно сформирована заявка'],
+    [COUNTERS.mgt, '321612203', 'Успешная оплата (имя в Метрике)', 'Туры: заявка'],
+    [COUNTERS.hotels, String(HOTEL_LT_GOALS.purchase), 'lt_purchase', 'Отели: оплата'],
+    ['Лист Воронка', 'Визард: недели строками; Туры/Отели: показатели×недели', '', ''],
+    ['Старт учёта', PODBOR_FUNNEL_START, '', ''],
   ];
   sh.getRange(1, 1, rows.length, 4).setValues(rows);
 }
@@ -202,40 +324,59 @@ function setupAndSync() {
 
   const weeks = buildWeeks_(8);
   const updated = Utilities.formatDate(new Date(), 'Europe/Moscow', 'dd.MM.yyyy HH:mm');
-  const rows = [COLUMNS];
+  const weekLabels = [];
+  const wizardData = [];
+  const toursCols = [];
+  const hotelsCols = [];
 
   weeks.forEach(function (w) {
     const range = effectiveMetricsRange_(w);
     if (!range) return;
     const m = fetchWeek_(range);
-    rows.push([
-      w.label, w.from, w.to, m.banner, m.popup, m.start, m.people, m.budget, m.format,
-      m.region, m.dates, m.summary, m.handoff, m.handoff_tours, m.handoff_hotels, m.cr, m.utm, m.t_search, m.t_card,
-      m.t_cart, m.t_book, m.t_pay, m.h_search, m.h_cart, m.h_checkout, m.h_lead, updated,
+    weekLabels.push(w.label);
+    wizardData.push([
+      w.label, w.from, w.to, m.banner, m.popup, m.start,
+      pct_(m.people, m.start), m.people, pct_(m.budget, m.people), m.budget,
+      pct_(m.format, m.budget), m.format, pct_(m.region, m.format), m.region,
+      pct_(m.dates, m.region), m.dates, pct_(m.summary, m.dates), m.summary,
+      pct_(m.handoff, m.summary), m.handoff, pct_(m.handoff, m.start),
+      m.handoff_tours, pct_(m.handoff_tours, m.handoff),
+      m.handoff_hotels, pct_(m.handoff_hotels, m.handoff),
+      m.lead, pct_(m.lead, m.summary),
+      m.lead_order, pct_(m.lead_order, m.lead),
     ]);
+    toursCols.push(toursValues_(m));
+    hotelsCols.push(hotelsValues_(m));
   });
 
+  var values = [];
+  values.push(['ВИЗАРД', 'Обновлено: ' + updated]);
+  values.push(WIZARD_COLUMNS);
+  wizardData.forEach(function (r) { values.push(r); });
+  values.push([]);
+  matrixBlock_('ТУРЫ', TOURS_LABELS, weekLabels, toursCols).forEach(function (r) { values.push(r); });
+  values.push([]);
+  matrixBlock_('ОТЕЛИ', HOTELS_LABELS, weekLabels, hotelsCols).forEach(function (r) { values.push(r); });
+
+  values = padRows_(values);
   const sh = ss.getSheetByName(SHEET_FUNNEL);
   sh.clear();
-  sh.getRange(1, 1, rows.length, COLUMNS.length).setValues(rows);
-  sh.setFrozenRows(1);
-  sh.autoResizeColumns(1, COLUMNS.length);
+  sh.getRange(1, 1, values.length, values[0].length).setValues(values);
+  sh.setFrozenRows(2);
 }
 
-function setupWeeklyTrigger() {
+function setupHourlyTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'setupAndSync') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('setupAndSync')
-    .timeBased()
-    .onWeekDay(ScriptApp.WeekDay.MONDAY)
-    .atHour(9)
-    .inTimezone('Europe/Moscow')
-    .create();
+  ScriptApp.newTrigger('setupAndSync').timeBased().everyHours(1).create();
 }
 
-/** Первый запуск: sync + еженедельный триггер (нужен YANDEX_METRIKA_TOKEN в Script Properties). */
+function setupWeeklyTrigger() {
+  setupHourlyTrigger();
+}
+
 function setupAll() {
   setupAndSync();
-  setupWeeklyTrigger();
+  setupHourlyTrigger();
 }

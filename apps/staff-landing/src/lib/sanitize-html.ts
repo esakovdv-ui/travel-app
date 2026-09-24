@@ -34,6 +34,30 @@ export function decodeEntities(input: string): string {
     .replace(/&amp;/gi, '&')
 }
 
+/**
+ * Плоский текст без разметки — для мест, где строка выводится как обычный
+ * текст, а не через dangerouslySetInnerHTML.
+ *
+ * Описания в выдаче поиска приходят с сущностями («700 м&#178;») и изредка с
+ * тегами. React экранирует их, и сотрудник видел «700 м&#178;» буквально.
+ * Здесь теги выбрасываем вместе с разметкой, сущности раскрываем, пробелы
+ * схлопываем — переносы строк в двухстрочной карточке всё равно не нужны.
+ */
+export function toPlainText(input: unknown): string {
+  if (typeof input !== 'string' || !input) return ''
+
+  return decodeEntities(
+    input
+      .replace(COMMENTS, '')
+      .replace(STRIP_WITH_CONTENT, '')
+      // <br> и </p> — это границы предложений: без пробела слова слипаются.
+      .replace(/<\/?(br|p|li|div)\b[^>]*>/gi, ' ')
+      .replace(/<[^>]*>/g, ''),
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function sanitizeHtml(input: unknown): string {
   if (typeof input !== 'string' || !input) return ''
 

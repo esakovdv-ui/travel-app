@@ -15,7 +15,7 @@ export class TourvisorError extends Error {
 }
 
 interface TvRequestOptions {
-  params?: Record<string, string | number | boolean | undefined>
+  params?: Record<string, string | number | boolean | undefined | number[]>
   /** Next.js fetch cache revalidate, секунды. Не передавать — без кэша. */
   revalidate?: number
   /** Таймаут одной попытки, мс. */
@@ -45,9 +45,17 @@ export async function tvFetch<T>(path: string, options: TvRequestOptions = {}): 
   const url = new URL(`${TV_BASE}${path}`)
   if (options.params) {
     for (const [key, value] of Object.entries(options.params)) {
-      if (value !== undefined && value !== null) {
-        url.searchParams.set(key, String(value))
+      if (value === undefined || value === null) continue
+      if (Array.isArray(value)) {
+        // Списки Tourvisor принимает только повторяющимися параметрами:
+        // regionIds=19&regionIds=20. Через запятую отвечает ошибкой схемы,
+        // скобки regionIds[] не понимает вовсе — проверено на боевом API.
+        for (const item of value) {
+          if (item !== undefined && item !== null) url.searchParams.append(key, String(item))
+        }
+        continue
       }
+      url.searchParams.set(key, String(value))
     }
   }
 
@@ -90,7 +98,15 @@ export async function tvFetch<T>(path: string, options: TvRequestOptions = {}): 
       if (Number.isFinite(remaining) && remaining < 50) {
         console.warn(`[tourvisor] rate limit close: ${remaining} left, path=${path}`)
       }
-      return res.json() as Promise<T>
+      // Tourvisor изредка отдаёт обрезанное тело при коде 200 — ловили
+      // «Unterminated string in JSON at position 25». Это та же временная
+      // осечка, что и сетевая, и лечится так же — повтором.
+      try {
+        return await (res.json() as Promise<T>)
+      } catch {
+        lastError = new TourvisorError(502, 'malformed_json')
+        continue
+      }
     }
 
     const body = await res.text().catch(() => '')

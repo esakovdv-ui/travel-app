@@ -56,23 +56,35 @@ export function useAppHeight(): void {
     }
 
     // Частые пороги: наблюдатель срабатывает на пересечении каждого из них,
-    // поэтому при прокрутке родителя высота пересчитывается плавно.
+    // поэтому по краям прокрутки высота пересчитывается плавно.
     const thresholds = Array.from({ length: 101 }, (_, i) => i / 100)
     const io = new IntersectionObserver(entries => apply(entries[entries.length - 1]), { threshold: thresholds })
     io.observe(probe)
 
-    const onResize = () => {
-      // Смена ориентации меняет и высоту фрейма, и видимую часть.
-      io.unobserve(probe)
-      io.observe(probe)
-    }
-    window.addEventListener('resize', onResize)
-    window.addEventListener('orientationchange', onResize)
+    // Пороги молчат, пока фрейм целиком накрывает экран.
+    //
+    // Замер на стенде (экран 390×844, фрейм 2400px): при прокрутке родителя с
+    // 400 до 1600 доля пересечения всё время равна единице, ни один порог не
+    // пересекается — наблюдатель не срабатывает, и --app-offset застревает на
+    // 280px. Оболочка остаётся приколоченной к началу фрейма, а экран уезжает
+    // на полторы тысячи пикселей ниже: человек видит пустоту, обрезанные
+    // карточки и вылезающий футер родителя.
+    //
+    // Повторный observe заставляет наблюдателя отчитаться заново, даже когда
+    // доля не менялась. Раз в 150 мс — незаметно для глаза и дёшево.
+    const REMEASURE_MS = 150
+    const remeasure = () => { io.unobserve(probe); io.observe(probe) }
+    const timer = setInterval(remeasure, REMEASURE_MS)
+
+    // Смена ориентации меняет и высоту фрейма, и видимую часть.
+    window.addEventListener('resize', remeasure)
+    window.addEventListener('orientationchange', remeasure)
 
     return () => {
+      clearInterval(timer)
       io.disconnect()
-      window.removeEventListener('resize', onResize)
-      window.removeEventListener('orientationchange', onResize)
+      window.removeEventListener('resize', remeasure)
+      window.removeEventListener('orientationchange', remeasure)
       probe.remove()
       root.style.removeProperty('--app-height')
       root.style.removeProperty('--app-offset')

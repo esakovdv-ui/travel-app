@@ -39,6 +39,8 @@ flowchart TD
   region --> dates[5. Даты на календаре]
   dates --> summary[6. Итог]
   summary --> handoff[Туры / Отели]
+  summary --> contact["Имя и телефон → Битрикс category 12"]
+  contact --> handoff
 ```
 
 ### Шаг 1 — Кто едет
@@ -92,9 +94,22 @@ Fit: ориентир по **средней цене чел./ночь** из о�
 
 Оценка = цена × ночи × люди × 0.88 для отеля. Пороги: ≤105% бюджета — ок, ≤135% — доплата, выше — скорее не влезает.
 
-### Шаг 6 — Итог → handoff
+### Шаг 6 — Итог → handoff / контакт
 
-CTA «Показать туры» / «Показать отели». Из iframe — переход в `window.top`.
+Основной CTA: «Показать туры» / «Показать отели» → `openHandoff`. Из iframe — переход в `window.top`.
+
+Необязательно на том же экране: имя + телефон + согласие на ПДн → `POST /api/podbor-lead` → сделка в Битрикс [category/12](https://crm.mosgortur.ru/crm/deal/category/12/) (`STAGE_ID: C12:NEW`). Handoff не блокируется.
+
+| Поле | Значение |
+|------|----------|
+| Название | `Подбор: {формат}, {регион}, {даты} — {имя}` |
+| UTM | `utm_source=podbor_wizard` (+ medium/campaign) |
+| SOURCE_ID | `WEBFORM` или env `PODBOR_BITRIX_SOURCE_ID` |
+| Ответственный | `1` или env `PODBOR_BITRIX_ASSIGNED_BY_ID` |
+| Дедуп | открытая сделка «Подбор:…» по телефону в category/12 за 48 ч |
+| SLA в комментарии | связаться через 2–4 часа, если нет самостоятельной оплаты |
+
+Метрика: `reachGoal('podbor_lead_submit')` на счётчике 109401746, цель **602593348** («Подбор: заявка менеджеру»).
 
 ---
 
@@ -107,7 +122,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 | Формат | Регион | Куда | Выдача |
 |--------|--------|------|--------|
-| Тур | любой (кроме МО) | `online.mosgortur.ru/tours/#module6?action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
+| Тур | любой (кроме МО) | `online.mosgortur.ru/tours/?…&target=module6&action=search&moduleId=68ea30c6-…` | Sletat module6 с параметрами |
 | Тур | у моря | + `beachLines=1,2,3&ticketsIncluded=true&resorts=19,63,322,663,1475` | Популярные черноморские направления без Крыма |
 | Тур | СПб / Калининград / Казань | + `resorts=1264` / `3788` / `495` | Только выбранное направление |
 | Тур | Другой регион | + `resorts=536,3027,3824,3801,3737,3781,7064,42` | Пул популярных не-морских регионов |
@@ -122,14 +137,15 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ### Параметры
 
-**Туры** (`buildTourSearchUrl`) — hash Sletat:
+**Туры** (`buildTourSearchUrl`) — query Sletat (`target=module6`, не hash):
 
 - `adults`, `kids` = возрасты через запятую (`7,10`), не количество
 - `dateFrom` = `dateTo` = заезд (`DD/MM/YYYY`); `minNights` = `maxNights` = число ночей
 - `maxPrice` = бюджет визарда (сумма на поездку), `minPrice` = 70% от max
 - `country=150`, `city=832` (вылет из Москвы), `minHotelRating=0`
 - Регион: море → `beachLines` + `resorts=19,63,322,663,1475`; СПб `resorts=1264`, Калининградская обл. `3788`, Казань `495`; другой → `resorts=536,3027,3824,3801,3737,3781,7064,42`; «не знаю» — без `resorts`
-- UTM в query **до** `#`: `/tours/?utm_source=podbor_wizard&utm_campaign=…&utm_medium=wizard#module6?action=search&…`. Не класть UTM в hash — Метрика его не видит.
+- UTM и поиск в одном query: `/tours/?podbor_ref=1&utm_source=podbor_wizard&…&target=module6&action=search&moduleId=…&…`
+- **Не использовать `#module6?…`:** на `online.mosgortur.ru` плагин UTM делает `router.replace({ query })` без `hash` — hash теряется до старта Слетать, остаётся пустая форма. Слетать читает и `target=module6&…` из query; UTM-replace эти ключи сохраняет.
 
 **Отели** (`buildHotelSearchUrl`):
 
@@ -140,8 +156,8 @@ CTA «Показать туры» / «Показать отели». Из iframe
 
 ### Проверено
 
-1. Тур + море → `/tours/?utm_source=podbor_wizard#module6?action=search&…&beachLines=1,2,3` + kids ages  
-2. Тур + другой → тот же модуль с датами/людьми  
+1. Тур + море → `/tours/?utm_source=podbor_wizard&target=module6&action=search&…&beachLines=1,2,3` + kids ages  
+2. Тур + СПб / другой → тот же query-формат с `resorts` / датами / людьми; после открытия — выдача, не пустая форма  
 3. Отель + море / МО / СПб → `russia.mosgortur.ru/search/…` с датой и ночами  
 
 ---
@@ -172,6 +188,7 @@ CTA «Показать туры» / «Показать отели». Из iframe
 | 595566513 | `podbor_step_dates` | Дошли до шага дат | `nights`, `checkIn`, `checkOut` |
 | 595566514 | `podbor_step_summary` | Дошли до итога | `format`, `region`, `nights`, `budget`, `adults`, `kids` |
 | 595566515 | `podbor_handoff` | Нажали «Показать туры/отели» | те же + даты |
+| 602593348 | `podbor_lead_submit` | Отправили имя и телефон менеджеру | те же + `duplicate` |
 
 ### Вход с сайта МГТ (90662828)
 
@@ -180,29 +197,32 @@ CTA «Показать туры» / «Показать отели». Из iframe
 | 595574818 | `podbor_banner_click` | Клик по баннеру |
 | 595574819 | `podbor_popup_click` | Клик по popup |
 
-В Метрике: отчёт «Воронка» по целям `podbor_start` → `podbor_step_*` → `podbor_handoff`.
+В Метрике: отчёт «Воронка» по целям `podbor_start` → `podbor_step_*` → `podbor_handoff` / `podbor_lead_submit`.
 
 ### После handoff — прокси-воронка (UTM `podbor_wizard`)
 
-Handoff ставит `utm_source=podbor_wizard`. Нижняя часть воронки считается **отдельно** (нет join user-level между счётчиками 109401746 и 90662828/97107007).
-
-В таблице **Handoff: туры / Handoff: отели** — цель `podbor_handoff` с фильтром `paramsLevel2==tour|hotel`. Это split по кнопке, не по доходу на выдачу.
+**Туры и отели после handoff** считаются на **своём** счётчике (не join с визардом 109401746):
 
 | Слой | Счётчик | Метрика |
 |------|---------|---------|
-| Handoff: туры | 109401746 | `podbor_handoff` + `format=tour` |
-| Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` |
-| Туры: выдача | 90662828 | Пользователи с URL модуля визарда + `action=search` + даты (не UTM: он был в hash) |
-| Туры: карточка | 90662828 | Пользователи с URL модуля + `action=tourCard` |
-| Туры: корзина | 90662828 | цель **326738951** `click-buyonline` в сессии с moduleId визарда |
-| Туры: бронь | 90662828 | цель **321609998** `sletat:module6:buying_submit` в сессии с moduleId визарда |
-| Туры: оплата | 90662828 | цель **321612203** в сессии с moduleId визарда (допущение: это подбор) |
+| Handoff: туры | 109401746 | `podbor_handoff` + `format=tour` (только визард) |
+| Handoff: отели | 109401746 | `podbor_handoff` + `format=hotel` (только визард) |
+| Туры: выдача | 90662828 | До **2026-08-21**: moduleId + search. С **2026-08-21** (неделя целиком после): `podbor_ref`/UTM |
+| Туры: карточка | 90662828 | когорта входа + URL `action=tourCard` |
+| Туры: корзина | 90662828 | цель **326738951** в визитах когорты входа |
+| Туры: бронь | 90662828 | цель **321609998** в визитах когорты входа |
+| Туры: заявка | 90662828 | цель **321612203** (в Метрике «Успешная оплата», по продукту — лид) в визитах входа |
 | Отели: выдача | 97107007 | clientID journey: заход с `podbor_ref=1` / UTM → URL `/search` |
-| Отели: корзина | 97107007 | clientID journey → URL `/packages/` |
+| Отели: корзина | 97107007 | clientID journey → URL `/packages/` (без `/success`) |
 | Отели: чекаут | 97107007 | clientID journey → **579160037** `lt_checkout_start` |
-| Отели: заявка | 97107007 | clientID journey → **358300437** «отправил контактные данные LT» |
+| Отели: блок оплаты | 97107007 | clientID journey → **579160036** `payment_block_displayed` |
+| Отели: оплата | 97107007 | clientID journey → **579160040** `lt_purchase` (реальная покупка) |
 
-Handoff URL для отелей: `podbor_ref=1` + `utm_source=podbor_wizard` (UTM может пропасть на внутренних переходах — journey по clientID на счётчике 97107007).
+В блоке **ТУРЫ**: handoff → выдача. До даты `podbor_ref` выдача по moduleId (иначе нули). Со следующей полной недели после 2026-08-21 — узкий маркер.
+
+Цели LT-воронки — как в `yandex-metrika-mcp` (`funnel-report.mjs`, `docs/ytm-funnel-setup.md`). Legacy **358300437** «отправил контактные данные LT» / колонка «Отели: заявка» не используем. `lt_contact_submitted` (579160038) разработчики не смогли отправить — шаг пропущен.
+
+Handoff URL для отелей и туров: `podbor_ref=1` + `utm_source=podbor_wizard` в query (до `#`). У отелей UTM может пропасть на внутренних переходах — journey по clientID на 97107007.
 
 ### Журнал ответов визарда (сервер)
 
@@ -239,9 +259,20 @@ curl -o podbor.tsv "https://motrip.ru/api/podbor-responses?password=podbor2026&f
 
 Таблица: [воронка podbor](https://docs.google.com/spreadsheets/d/1hgznwftwCCB9RRsLzVfm8jSKjAk8irZNruiIYBWgLMQ/edit)
 
-Листы: **Воронка** (недели × этапы), **Справочник** (ID целей и фильтры).
+Листы:
 
-**Все числа в «Воронке» — уникальные пользователи (`ym:s:users` / `goal*users`), не клики и не визиты.** Handoff: туры и Handoff: отели могут суммироваться больше общего Handoff — часть людей меняет формат и жмёт кнопку дважды.
+| Лист | Что внутри |
+|------|------------|
+| **Воронка** | Три блока на одном листе |
+| **Справочник** | ID целей и фильтры |
+
+Блоки на «Воронке»:
+
+1. **ВИЗАРД** — недели строками, шаги опроса колонками + CR шаг→шаг. После «Лид (контакт)» — **Заказ (Битrix)**: сделки «Подбор: …» на этапе `C12:WON` (заявка сформирована менеджером), по `DATE_CREATE` в неделе.  
+2. **ТУРЫ** — показатели строками (handoff → … → заявка + CR), недели колонками  
+3. **ОТЕЛИ** — показатели строками (handoff → … → оплата + CR), недели колонками  
+
+**Все числа — уникальные пользователи (`ym:s:users` / `goal*users`), не клики и не визиты.** Handoff: туры и Handoff: отели могут суммироваться больше общего Handoff — часть людей меняет формат и жмёт кнопку дважды.
 
 Обновление:
 
@@ -260,9 +291,9 @@ npm run podbor:setup-automation     # sync + storage/podbor-bootstrap-once.gs д
 
 1. `npm run podbor:setup-automation`
 2. Extensions → Apps Script → вставить `storage/podbor-bootstrap-once.gs`
-3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **понедельник 09:00 МСK** → `setupAndSync`
+3. Run **`bootstrapPodborAutomation()`** один раз — сохранит токен, зальёт данные, включит триггер **каждый час** → `setupAndSync`
 
-**GitHub Actions:** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron пн 09:00 МСK. Secret `YANDEX_METRIKA_TOKEN` задан. Для записи в Sheet добавьте `GOOGLE_SERVICE_ACCOUNT_JSON` (email SA → редактор таблицы).
+**GitHub Actions (основной путь):** workflow [`.github/workflows/sync-podbor-funnel-sheet.yml`](../.github/workflows/sync-podbor-funnel-sheet.yml), cron **каждый час**. При ошибке job делает до **4 попыток** с паузой 3–12 мин; внутри скрипта — ретраи Метрики (квота/5xx) и Google Sheets, а тяжёлые запросы дробятся. Secrets: `YANDEX_METRIKA_TOKEN` + `GOOGLE_SERVICE_ACCOUNT_JSON` (без Google SA workflow считает Метрику, но в Sheet не пишет). Email SA должен быть редактором таблицы.
 
 Без Google SA:
 

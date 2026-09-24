@@ -1,6 +1,9 @@
 /**
- * Подключается на странице-родителе (online.mosgortur.ru), где лендинг в iframe motrip.ru/raduga.
- * Прокидывает ?shift= и UTM в src iframe и отвечает на postMessage из raduga.html.
+ * Подключается на странице-родителе (online.mosgortur.ru).
+ *
+ * 1) /raduga — прокидывает ?shift= и UTM в src iframe, отвечает на postMessage.
+ * 2) /forstaff — прячет плавающие кнопки чата Bitrix24 и Novofon/Comagic:
+ *    они рисуются поверх iframe staff.motrip.ru и перекрывают «Выбрать».
  *
  * <script src="https://motrip.ru/raduga-parent-bridge.js" defer></script>
  */
@@ -17,6 +20,49 @@
     'utm_term',
     'clckid',
   ];
+  var FORSTAFF_WIDGET_STYLE_ID = 'motrip-forstaff-hide-chat-widgets';
+
+  function isForstaffPath() {
+    try {
+      return /\/forstaff\/?$/.test(window.location.pathname);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Виджеты живут в родителе (не внутри iframe), поэтому прятать их можно
+   * только отсюда. display:none надёжнее z-index: кнопка fixed и иначе
+   * всё равно торчит из-под угла, если iframe не на весь экран.
+   */
+  function hideForstaffChatWidgets() {
+    if (!isForstaffPath()) {
+      var stale = document.getElementById(FORSTAFF_WIDGET_STYLE_ID);
+      if (stale) stale.remove();
+      return;
+    }
+    if (document.getElementById(FORSTAFF_WIDGET_STYLE_ID)) return;
+
+    var style = document.createElement('style');
+    style.id = FORSTAFF_WIDGET_STYLE_ID;
+    style.textContent = [
+      /* Bitrix24 CRM-кнопка (зелёный кружок с чатом) */
+      '.b24-widget-button-wrapper,',
+      '.b24-widget-button-shadow,',
+      '[data-b24-crm-button-cont],',
+      '[data-b24-crm-button-shadow],',
+      /* Novofon / Comagic (телефонная стойка поверх портала) */
+      '.comagic-widget,',
+      '.comagic-o-rack,',
+      '[c-wtype="rack"] {',
+      '  display: none !important;',
+      '  visibility: hidden !important;',
+      '  pointer-events: none !important;',
+      '  z-index: -1 !important;',
+      '}',
+    ].join('\n');
+    (document.head || document.documentElement).appendChild(style);
+  }
 
   function parentParams() {
     return new URLSearchParams(window.location.search);
@@ -38,6 +84,8 @@
   }
 
   function patchIframe() {
+    hideForstaffChatWidgets();
+
     var iframe = document.querySelector(IFRAME_SELECTOR);
     if (!iframe) return false;
 

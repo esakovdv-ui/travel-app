@@ -258,6 +258,7 @@ export default function StaffPage() {
     nightsTo: 14,
     adults: 1,
     childAges: [] as number[],
+    regionIds: [] as number[],
   })
 
   useEffect(() => {
@@ -300,6 +301,7 @@ export default function StaffPage() {
       adults: String(form.adults),
     })
     if (form.childAges.length > 0) qs.set('childs', form.childAges.join(','))
+    for (const id of form.regionIds) qs.append('regionIds', String(id))
     router.push(`/tours?${qs.toString()}`)
   }, [router, form, selectedCountry])
 

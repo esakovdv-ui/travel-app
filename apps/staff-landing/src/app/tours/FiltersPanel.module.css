@@ -62,7 +62,10 @@
   composes: outline from '../shared/buttons.module.css';
   padding: 4px 11px;
   color: var(--c-text-muted);
-  font-size: 0.76rem;
+  /* Одна ступень с подписями чекбоксов и радио: раньше в сайдбаре стояли
+     четыре размера подряд — 11.52, 12.16, 12.8 и 13.12px. Соседние отличались
+     меньше чем на пиксель, но глаз читал это как разнобой. */
+  font-size: 0.82rem;
 }
 .chip:hover { border-color: var(--c-blue); color: var(--c-blue); background: var(--c-blue-subtle); }
 .chipActive {
@@ -143,7 +146,7 @@
   gap: 4px;
   margin-top: 5px;
   color: var(--c-blue);
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   padding: 0;
 }
 .showMoreBtn:hover { text-decoration: underline; }
@@ -156,7 +159,7 @@
   margin-bottom: 8px;
 }
 .priceVal {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--c-text);
 }

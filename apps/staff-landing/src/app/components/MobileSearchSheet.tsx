@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { cachedRegions, loadRegions, prefetchAllRegions } from '@/lib/regions-cache'
+import { cachedAvailability, loadAvailability } from '@/lib/region-availability-client'
+import type { Availability } from '@/lib/region-availability-client'
 import styles from './MobileSearchSheet.module.css'
 import { MonthGrid, monthsFromNow, nextRange } from './MonthGrid'
 import {
@@ -8,14 +11,25 @@ import {
   isoDate,
   nightsBetween,
   offsetDate,
+  searchDateFrom,
   shortDate,
 } from '@/lib/date-utils'
 import { yearsLabel } from '@/lib/plural'
+
+// Отпуск планируют за год вперёд, а календарь открывался на два месяца и
+// добавлял по два за нажатие — до следующего лета пять кликов. Tourvisor
+// принимает даты минимум на 15 месяцев вперёд (проверено на боевом), так что
+// ограничение было только наше. Порог в 18 месяцев — чтобы не плодить
+// бесконечную ленту сеток.
+const CAL_MONTHS_START = 6
+const CAL_MONTHS_STEP = 6
+const CAL_MONTHS_MAX = 18
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SearchForm {
   countryId: number
+  regionIds: number[]
   targetDate: string
   dateFlex: 0 | 1 | 2
   nightsFrom: number
@@ -89,6 +103,7 @@ type Step = 'destination' | 'dates' | 'travelers' | null
 
 const DEFAULT_FORM: SearchForm = {
   countryId: 4,
+  regionIds: [],
   targetDate: (() => { const d = new Date(); d.setDate(d.getDate() + 21); return isoDate(d) })(),
   dateFlex: 0,
   nightsFrom: 7,
@@ -103,7 +118,7 @@ export function MobileSearchSheet({
   const [step, setStep] = useState<Step>('destination')
   const [calFrom, setCalFrom] = useState<string | null>(null)
   const [calTo, setCalTo] = useState<string | null>(null)
-  const [monthsShown, setMonthsShown] = useState(4)
+  const [monthsShown, setMonthsShown] = useState(CAL_MONTHS_START)
   const calRef = useRef<HTMLDivElement>(null)
 
   // Sync calendar state when sheet opens
@@ -112,7 +127,7 @@ export function MobileSearchSheet({
     setStep('destination')
     setCalFrom(form.targetDate || null)
     setCalTo(form.targetDate ? offsetDate(form.targetDate, form.nightsTo) : null)
-    setMonthsShown(4)
+    setMonthsShown(CAL_MONTHS_START)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
@@ -122,6 +137,51 @@ export function MobileSearchSheet({
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  // Курорты выбранной страны. Не отмечено ничего — ищем по всей стране.
+  const [regions, setRegions] = useState<{ id: number; name: string }[]>(
+    () => cachedRegions(form.countryId) ?? [],
+  )
+  useEffect(() => {
+    if (!isOpen || !form.countryId) return
+
+    // Кэш вкладки: если список уже грели, чипсы появятся без паузы.
+    const готовые = cachedRegions(form.countryId)
+    if (готовые) { setRegions(готовые); return }
+
+    let cancelled = false
+    loadRegions(form.countryId).then(list => { if (!cancelled) setRegions(list) })
+    return () => { cancelled = true }
+  }, [isOpen, form.countryId])
+
+  // На телефоне наведения нет, поэтому тянем справочник целиком при открытии
+  // шторки: 35 КБ один раз против паузы на каждой смене страны.
+  useEffect(() => {
+    if (!isOpen) return
+    void prefetchAllRegions()
+  }, [isOpen])
+
+  // Порядок курортов по наблюдённым предложениям — тот же, что на десктопе.
+  const [availability, setAvailability] = useState<Availability | null>(null)
+  useEffect(() => {
+    const dateFrom = form.targetDate ? searchDateFrom(form.targetDate, form.dateFlex) : ''
+    if (!isOpen || !form.countryId || !dateFrom) { setAvailability(null); return }
+
+    const готовое = cachedAvailability(form.countryId, dateFrom)
+    if (готовое) { setAvailability(готовое); return }
+
+    let cancelled = false
+    loadAvailability(form.countryId, dateFrom)
+      .then(a => { if (!cancelled) setAvailability(a) })
+    return () => { cancelled = true }
+  }, [isOpen, form.countryId, form.targetDate, form.dateFlex])
+
+  /** Курорты с подтверждёнными предложениями — вперёд. Никого не убираем. */
+  const orderedRegions = useMemo(() => {
+    if (!availability?.known) return regions
+    const seen = availability.seen
+    return [...regions].sort((a, b) => Number(seen.has(b.id)) - Number(seen.has(a.id)))
+  }, [regions, availability])
+
   if (!isOpen) return null
 
   const popular = popularIds
@@ -129,6 +189,7 @@ export function MobileSearchSheet({
     .filter(Boolean) as Country[]
 
   const selectedCountry = countries.find(c => c.id === form.countryId)
+
 
   // Section summary texts
   const destinationSummary = selectedCountry?.name ?? 'Выберите страну'
@@ -146,8 +207,16 @@ export function MobileSearchSheet({
       : []),
   ].join(', ')
 
+  /**
+   * Увести к календарю.
+   *
+   * scroll-margin-top на самом календаре (см. .calendar в модуле стилей)
+   * отодвигает цель на высоту прилипших чипсов дат — без него первая неделя
+   * месяца оказывалась под ними.
+   */
   function scrollToCal() {
-    setTimeout(() => calRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+    // Календарь монтируется вместе с шагом дат — даём ему появиться.
+    setTimeout(() => calRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
   }
 
   function toggleStep(s: Step) {
@@ -169,7 +238,11 @@ export function MobileSearchSheet({
       return
     }
     const nights = nightsBetween(from, to)
-    onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights })
+    // Выбранный вручную диапазон — это точный ответ на вопрос «когда».
+    // Гибкость по умолчанию ±2 дня превращала его в окно вылета 3–7 октября
+    // при выбранном 5-м, и человек не понимал, почему выдача не совпадает
+    // с тем, что он ткнул. Сбрасываем в ноль; расширить можно осознанно.
+    onUpdate({ targetDate: from, nightsFrom: nights, nightsTo: nights, dateFlex: 0 })
     // Диапазон собран — уводим к следующему шагу
     setTimeout(() => setStep('travelers'), 350)
   }
@@ -210,6 +283,55 @@ export function MobileSearchSheet({
             </div>
             <ChevronIcon open={step === 'destination'} />
           </button>
+          {/*
+            Курорты — необязательное сужение, поэтому лента, а не сетка внутри
+            шага. Раскрытая сетка из 46 чипсов занимала весь экран и уводила
+            «Когда» и «Кто едет» далеко за фолд: человек видел стену кнопок и
+            красный «Поиск», но не следующий шаг. Одна строка с горизонтальной
+            прокруткой держит курорты на виду и никого не заслоняет, а порядок
+            по наблюдённым предложениям выводит вперёд те, где что-то есть.
+          */}
+          {form.countryId > 0 && regions.length > 0 && (
+            <div className={styles.regionsStrip}>
+              <div className={styles.regionsLabel}>
+                Курорты
+                {form.regionIds.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.regionsReset}
+                    onClick={() => onUpdate({ regionIds: [] })}
+                  >
+                    вся страна
+                  </button>
+                )}
+              </div>
+              <div className={styles.regionsRow}>
+                {orderedRegions.map(rg => {
+                  const on = form.regionIds.includes(rg.id)
+                  const тихий = availability?.known === true && !availability.seen.has(rg.id)
+                  return (
+                    <button
+                      key={rg.id}
+                      type="button"
+                      className={[
+                        styles.regionsChip,
+                        on ? styles.regionsChipOn : '',
+                        тихий ? styles.regionsChipQuiet : '',
+                      ].filter(Boolean).join(' ')}
+                      aria-pressed={on}
+                      onClick={() => onUpdate({
+                        regionIds: on
+                          ? form.regionIds.filter(x => x !== rg.id)
+                          : [...form.regionIds, rg.id],
+                      })}
+                    >
+                      {rg.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {step === 'destination' && (
             <div className={styles.sectionBody}>
               <div className={styles.countryList}>
@@ -217,13 +339,19 @@ export function MobileSearchSheet({
                   <button
                     key={c.id}
                     className={`${styles.countryRow} ${c.id === form.countryId ? styles.countryRowActive : ''}`}
-                    onClick={() => { onUpdate({ countryId: c.id }); setStep('dates') }}
+                    onClick={() => {
+                      onUpdate({ countryId: c.id, regionIds: [] })
+                      // Курорты остались лентой на виду, поэтому держать шаг
+                      // открытым больше незачем: ведём к датам, как раньше.
+                      setStep('dates')
+                    }}
                   >
                     <span>{c.name}</span>
                     {c.id === form.countryId && <CheckIcon />}
                   </button>
                 ))}
               </div>
+
             </div>
           )}
         </div>
@@ -242,10 +370,18 @@ export function MobileSearchSheet({
           </button>
           {step === 'dates' && (
             <div className={styles.sectionBody}>
-              {/* Date chips */}
+              {/*
+                Чипсы дат выглядят как поля ввода, и люди пытались набрать в них
+                дату руками. Печатать тут некуда — дни выбираются в календаре
+                ниже, — поэтому тап по чипсу это кнопка, которая туда и уводит.
+                Сам диапазон не трогаем: следующий тап по дню и так начинает
+                выбор заново (см. nextRange), так что терять человеку нечего.
+              */}
               <div className={styles.dateChips}>
                 <div className={`${styles.dateChip} ${calFrom ? styles.dateChipFilled : ''}`}>
-                  <span>{calFrom ? shortDate(calFrom) : 'Заезд'}</span>
+                  <button type="button" className={styles.dateChipMain} onClick={scrollToCal}>
+                    {calFrom ? shortDate(calFrom) : 'Заезд'}
+                  </button>
                   {calFrom && (
                     <button className={styles.dateChipReset}
                       onClick={() => { setCalFrom(null); setCalTo(null) }} aria-label="Сбросить дату заезда">×</button>
@@ -255,7 +391,9 @@ export function MobileSearchSheet({
                   <path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z" />
                 </svg>
                 <div className={`${styles.dateChip} ${calTo ? styles.dateChipFilled : ''}`}>
-                  <span>{calTo ? shortDate(calTo) : 'Выезд'}</span>
+                  <button type="button" className={styles.dateChipMain} onClick={scrollToCal}>
+                    {calTo ? shortDate(calTo) : 'Выезд'}
+                  </button>
                   {calTo && (
                     <button className={styles.dateChipReset}
                       onClick={() => setCalTo(null)} aria-label="Сбросить дату выезда">×</button>
@@ -280,14 +418,19 @@ export function MobileSearchSheet({
               </div>
 
               {/* Месяцы: начиная с текущего, по 4 за раз */}
-              <div ref={calRef}>
+              <div ref={calRef} className={styles.calendar}>
                 {calMonths.map(({ year, month }) => (
                   <MonthGrid key={`${year}-${month}`} year={year} month={month} calFrom={calFrom} calTo={calTo} onDay={handleDay} classes={CAL_CLASSES} />
                 ))}
               </div>
-              <button className={styles.loadMoreBtn} onClick={() => setMonthsShown(n => n + 4)}>
-                Загрузить другие даты
-              </button>
+              {monthsShown < CAL_MONTHS_MAX && (
+                <button
+                  className={styles.loadMoreBtn}
+                  onClick={() => setMonthsShown(n => Math.min(n + CAL_MONTHS_STEP, CAL_MONTHS_MAX))}
+                >
+                  Загрузить другие даты
+                </button>
+              )}
             </div>
           )}
         </div>

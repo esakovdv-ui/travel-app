@@ -1,17 +1,30 @@
 ---
-description: Автоматический деплой на production после изменений
+description: Ветка и PR на каждую правку, деплой motrip.ru после слияния
 alwaysApply: true
 ---
 
-# Авто-деплой motrip.ru
+# Ветка и PR на каждую правку
 
-После любых изменений, влияющих на production (код, `public/*.html`, API, конфиги), **сразу деплоить без вопроса** «задеплоить?»:
+Прямой пуш в `main` запрещён. Любое изменение — даже правка одной строки — едет через ветку и pull request.
 
-1. `git add` только релевантные файлы (не `graphify-out/`, не `tsconfig.tsbuildinfo`)
-2. `git commit` с кратким сообщением
-3. `git push origin main` — триггерит GitHub Actions Deploy to production
-4. Дождаться завершения workflow или проверить `curl https://motrip.ru/`
+Порядок работы:
+
+1. Ветка от свежего `origin/main`: `git fetch origin && git switch -c fix/short-name origin/main`
+   Префиксы как в репозитории: `fix/`, `feat/`, `chore/`, `ci/`.
+2. `git add` только релевантные файлы (не `graphify-out/`, не `tsconfig.tsbuildinfo`, не `.env`)
+3. `git commit` в стиле репозитория: `fix(podbor): краткое описание`
+4. `git push -u origin HEAD`
+5. `gh pr create` — в описании что изменилось, зачем и как проверить
+
+PR создаю сам и сразу, не спрашивая. **Не мержу** — слияние за человеком.
+
+## Деплой
+
+Деплоит слияние PR в `main` — GitHub Actions **Deploy to production**. Отдельно ничего запускать не нужно.
+
+После мержа: дождаться workflow или проверить `curl https://motrip.ru/`.
 
 Сервер: VPS `72.56.32.183`, PM2 `travel-app`, скрипт `/home/deploy.sh`.
+Правки staff-landing: `bash /home/travel-app/scripts/deploy-staff-landing.sh`.
 
 Не запускать repair и deploy параллельно. При падении сборки (OOM) — repair workflow, не полный deploy со staff-landing.

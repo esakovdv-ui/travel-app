@@ -3,7 +3,6 @@
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { BrandLogo, MgtBadge } from '../components/Brand'
 import { HeaderSearchBar } from '../components/HeaderSearchBar'
 import { MobileSearchSheet } from '../components/MobileSearchSheet'
 import type { SearchForm } from '../components/MobileSearchSheet'
@@ -18,10 +17,12 @@ import {
   computeFilterOptions,
 } from './FiltersPanel'
 import type { FilterState } from './FiltersPanel'
+import { reportSeenRegions } from '@/lib/region-availability-client'
+import { cachedPhotos, loadPhotos } from '@/lib/hotel-photos'
 import { staffFetch } from '@/lib/staff-client'
 import { useStaffGuard } from '@/lib/use-staff-guard'
 import { useAppHeight } from '@/lib/use-app-height'
-import { hotelsLabel, hotelsWord, nightsLabel, secondsWord, toursLabel, variantsWord } from '@/lib/plural'
+import { hotelsLabel, hotelsWord, nightsLabel, secondsWord, toursLabel, toursWord, variantsWord } from '@/lib/plural'
 import { dateRangeToTarget, flexLabel, offsetDate, searchDateFrom, shortDate } from '@/lib/date-utils'
 import { reachGoal, StaffGoals } from '@/lib/metrika'
 import type { HotelSearchResult, HotelDescription, HotelRoom, TourSummary } from '@/lib/tourvisor/types'
@@ -163,7 +164,16 @@ interface FlightLeg {
 type FlightEntry =
   | { st: 'loading' }
   | { st: 'error' }
-  | { st: 'ok'; forward: FlightLeg | null; backward: FlightLeg | null }
+  | {
+      st: 'ok'
+      forward: FlightLeg | null
+      backward: FlightLeg | null
+      options: number
+      outboundCount: number
+      inboundCount: number
+      priceFrom: number | null
+      priceTo: number | null
+    }
 
 function parseLeg(raw: any): FlightLeg | null {
   if (!raw || typeof raw !== 'object') return null
@@ -185,13 +195,185 @@ function parseLeg(raw: any): FlightLeg | null {
   }
 }
 
-function parseFlightsResponse(raw: unknown): { forward: FlightLeg | null; backward: FlightLeg | null } {
-  const r = raw as any
-  const first = Array.isArray(r?.flights) ? r.flights[0] : null
-  if (!first) return { forward: null, backward: null }
+/**
+ * Заглушка вместо рейса.
+ *
+ * Первым в списке идёт вариант с isDefault, и у чартеров это сплошь и рядом
+ * пустышка: номер «SU000», вылет и прилёт в 00:00. Замер на боевом: из 122
+ * вариантов такой ровно один — и именно его мы и показывали, пока настоящий
+ * рейс «SU2156 12:45 → 18:10» лежал следующей строкой. Отсюда и ощущение,
+ * что рейсы не подгружаются: они подгружались, мы рисовали заглушку.
+ */
+function isStubLeg(raw: any): boolean {
+  if (!raw) return true
+  const dep = raw.departure?.time ?? ''
+  const arr = raw.arrival?.time ?? ''
+  const blank = (t: string) => t === '' || t === '00:00'
+  return blank(dep) && blank(arr)
+}
+
+/**
+ * Интервалы вылета для фильтра.
+ *
+ * Выбирают перелёт по времени: цена у вариантов чаще всего одинаковая, а
+ * вылетать в пять утра и в полдень — разные вещи. Листать полторы сотни строк
+ * никто не станет, поэтому даём сузить.
+ */
+const DEPARTURE_SLOTS = [
+  { key: 'any',     label: 'Любое',        from: 0,  to: 24 },
+  { key: 'night',   label: 'Ночь 00–06',   from: 0,  to: 6 },
+  { key: 'morning', label: 'Утро 06–12',   from: 6,  to: 12 },
+  { key: 'day',     label: 'День 12–18',   from: 12, to: 18 },
+  { key: 'evening', label: 'Вечер 18–24',  from: 18, to: 24 },
+] as const
+
+type SlotKey = (typeof DEPARTURE_SLOTS)[number]['key']
+
+/** Час вылета из «07:40». Не разобрали — пропускаем через любой фильтр. */
+function departureHour(time: string): number | null {
+  const m = /^(\d{1,2}):/.exec(time)
+  return m ? +m[1] : null
+}
+
+/** Одно плечо перелёта для строки выбора. */
+interface FlightSide {
+  company: string
+  number: string
+  depTime: string
+  depDate: string
+  depPort: string
+  arrTime: string
+  arrDate: string
+  arrPort: string
+  /** Пересадок: сегментов минус один. */
+  stops: number
+  /** «10+8кг», «Только РК» или пусто, если оператор не сказал. */
+  baggage: string
+  isCharter: boolean
+}
+
+/** Вариант перелёта: пара «туда + обратно» и её цена. */
+interface FlightOption {
+  key: string
+  out: FlightSide
+  back: FlightSide | null
+  price: number
+}
+
+/** Длительность плеча по времени вылета и прилёта. */
+function legDuration(dep: string, arr: string): string {
+  const toMin = (t: string) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t)
+    return m ? +m[1] * 60 + +m[2] : null
+  }
+  const a = toMin(dep), b = toMin(arr)
+  if (a == null || b == null) return ''
+  // Прилёт «раньше» вылета — рейс через полночь.
+  const diff = b >= a ? b - a : b + 24 * 60 - a
+  const h = Math.floor(diff / 60), min = diff % 60
+  return min ? `${h} ч ${min} м` : `${h} ч`
+}
+
+function buildSide(segments: any[]): FlightSide | null {
+  const first = segments?.[0]
+  const last = segments?.[segments.length - 1]
+  if (!first) return null
+  const bag = Number(first.baggage ?? 0)
+  const carry = typeof first.carryOn === 'string' ? first.carryOn.trim() : ''
   return {
-    forward:  parseLeg(first.forward?.[0] ?? null),
-    backward: parseLeg(first.backward?.[0] ?? null),
+    company: first.company?.name ?? '',
+    number: first.number ?? '',
+    depTime: first.departure?.time ?? '',
+    depDate: first.departure?.date ?? '',
+    depPort: first.departure?.port?.id ?? '',
+    arrTime: last.arrival?.time ?? '',
+    arrDate: last.arrival?.date ?? '',
+    arrPort: last.arrival?.port?.id ?? '',
+    stops: Math.max(0, segments.length - 1),
+    // Оператор часто не заполняет ни то, ни другое — тогда молчим, а не
+    // выдумываем «только ручная кладь», как делали раньше.
+    baggage: bag > 0 ? `${bag} кг` : carry || '',
+    isCharter: first.charter === true,
+  }
+}
+
+/**
+ * Варианты перелёта парами.
+ *
+ * Раньше я раскладывал их на два независимых списка — «туда» и «обратно», —
+ * предполагая, что сочетать можно свободно. Это допущение: оператор отдаёт
+ * готовые пары, и на замере они складывались в полную решётку 11×11 только
+ * потому, что так вышло. У «Слетать» каждый вариант — именно пара, и цена у
+ * пар разная («Доплата + 865», «+ 13 963»). Показываем как есть.
+ */
+function buildFlightOptions(raw: unknown): FlightOption[] {
+  const r = raw as any
+  const list: any[] = Array.isArray(r?.flights) ? r.flights
+    : Array.isArray(r?.data?.flights) ? r.data.flights : []
+
+  const seen = new Set<string>()
+  const options: FlightOption[] = []
+
+  for (const item of list) {
+    if (isStubLeg(item.forward?.[0])) continue
+    const out = buildSide(item.forward ?? [])
+    if (!out) continue
+    const back = buildSide(item.backward ?? [])
+    const key = [out.number, out.depTime, back?.number ?? '', back?.depTime ?? ''].join('|')
+    if (seen.has(key)) continue
+    seen.add(key)
+    options.push({ key, out, back, price: Number(item?.price?.value) || 0 })
+  }
+
+  return options.sort((a, b) => a.price - b.price || a.out.depTime.localeCompare(b.out.depTime))
+}
+
+function parseFlightsResponse(raw: unknown): {
+  forward: FlightLeg | null
+  backward: FlightLeg | null
+  /** Сколько вариантов перелёта предложил оператор. */
+  options: number
+  /** Из скольких рейсов туда и обратно они складываются. */
+  outboundCount: number
+  inboundCount: number
+  /** Разброс цен между ними: выбор рейса меняет стоимость тура. */
+  priceFrom: number | null
+  priceTo: number | null
+} {
+  const r = raw as any
+  const list: any[] = Array.isArray(r?.flights) ? r.flights
+    : Array.isArray(r?.data?.flights) ? r.data.flights
+    : []
+  if (list.length === 0) {
+    return { forward: null, backward: null, options: 0, outboundCount: 0, inboundCount: 0, priceFrom: null, priceTo: null }
+  }
+
+  // Берём первый вариант с настоящим рейсом; если таких нет — что есть.
+  const chosen = list.find(f => !isStubLeg(f.forward?.[0])) ?? list[0]
+
+  // Считаем только по настоящим рейсам: у заглушки своя цена, и сравнение с
+  // ней давало ложный «разброс» — на замере 99 106 против 115 788, хотя все
+  // 121 реальные комбинации стоят ровно одинаково.
+  const prices = list
+    .filter(f => !isStubLeg(f.forward?.[0]))
+    .map(f => Number(f?.price?.value))
+    .filter(n => Number.isFinite(n) && n > 0)
+
+  // Комбинаций много (121 на замере), но складываются они из коротких списков:
+  // 11 рейсов туда и 11 обратно. Считаем именно их — «ещё 120 вариантов»
+  // ничего не говорит, а «11 рейсов туда» говорит.
+  const real = list.filter(f => !isStubLeg(f.forward?.[0]))
+  const outbound = new Set(real.map(f => f.forward?.[0]?.number).filter(Boolean))
+  const inbound  = new Set(real.map(f => f.backward?.[0]?.number).filter(Boolean))
+
+  return {
+    forward:  parseLeg(chosen.forward?.[0] ?? null),
+    backward: parseLeg(chosen.backward?.[0] ?? null),
+    options: list.length,
+    outboundCount: outbound.size,
+    inboundCount: inbound.size,
+    priceFrom: prices.length ? Math.min(...prices) : null,
+    priceTo:   prices.length ? Math.max(...prices) : null,
   }
 }
 
@@ -264,14 +446,197 @@ function SlidersGlyph() {
 
 // ─── Карточка отеля ───────────────────────────────────────────────────────────
 
+/**
+ * «Не нашли подходящее» — выход для того, кто пролистал выдачу впустую.
+ *
+ * Стоит в конце списка и в обеих пустых выдачах: это те два места, где человек
+ * закрывал вкладку. Заявка уходит в CRM так же, как бронь, только менеджер
+ * подбирает руками.
+ */
+function HelpCta({ onClick }: { onClick: () => void }) {
+  return (
+    <div className={styles.helpCta}>
+      <div className={styles.helpCtaText}>
+        <div className={styles.helpCtaTitle}>Не нашли подходящий тур?</div>
+        <div className={styles.helpCtaHint}>
+          Здесь только то, что операторы отдали в поиск. Расскажите, что нужно, —
+          менеджер подберёт вариант вручную и поможет забронировать.
+        </div>
+      </div>
+      <button type="button" className={styles.helpCtaBtn} onClick={onClick}>
+        Помогите подобрать
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Всегда доступный вход в подбор.
+ *
+ * Карточка в конце списка ловит только тех, кто пролистал выдачу до конца.
+ * Человеку, который с первого экрана понял, что хочет другого, идти было
+ * некуда. Ярлык висит у правого края и не занимает места в раскладке.
+ *
+ * Отсчитывается от оболочки .toursPage, а не от вьюпорта: во фрейме fixed
+ * зацепился бы за высоту растянутого фрейма и уехал бы за экран.
+ */
+function HelpTab({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={styles.helpTab}
+      onClick={onClick}
+      aria-label="Помогите подобрать тур"
+    >
+      {/* Без иконки. Ярлычок вертикальный, а значок в него не поворачивается —
+          самолётик лежал поперёк надписи и цеплял глаз. Текста здесь довольно:
+          он и так говорит, что будет по нажатию. */}
+      <span className={styles.helpTabLabel}>Подобрать тур</span>
+    </button>
+  )
+}
+
+/**
+ * Галерея карточки: первое фото из выдачи, остальные — по требованию.
+ *
+ * Первый кадр приходит вместе со списком, поэтому карточка рисуется сразу и
+ * без единого запроса. Остальные два десятка лежат в отдельном запросе на
+ * отель — за ними идём только когда человек начал листать. Иначе сотня
+ * карточек в списке разом упёрлась бы в лимит эндпоинта, а листают единицы.
+ */
+function HotelGallery({ hotel, onOpen }: { hotel: HotelSearchResult; onOpen: () => void }) {
+  const first = hotel.picturelink
+  const [photos, setPhotos] = useState<string[]>(() => cachedPhotos(hotel.id) ?? (first ? [first] : []))
+  const [index, setIndex] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const touchX = useRef<number | null>(null)
+  // Длину читаем из ref: сразу после загрузки состояние ещё старое, и
+  // перемотка считала бы остаток по одному кадру.
+  const photosRef = useRef<string[]>(photos)
+  useEffect(() => { photosRef.current = photos }, [photos])
+
+  // Список поменялся (новый поиск) — начинаем с первого кадра.
+  useEffect(() => {
+    const start = cachedPhotos(hotel.id) ?? (first ? [first] : [])
+    setPhotos(start)
+    photosRef.current = start
+    setIndex(0)
+  }, [hotel.id, first])
+
+  /** Подтянуть остальные кадры. Вызываем при первом же намерении листать. */
+  const ensurePhotos = useCallback(async () => {
+    if (cachedPhotos(hotel.id) || loading) return
+    setLoading(true)
+    const list = await loadPhotos(hotel.id)
+    setLoading(false)
+    if (list.length > 1) {
+      // Кадр из выдачи и первый из галереи — разные файлы одного отеля.
+      // Показываем галерею целиком, начиная с того же места.
+      setPhotos(list)
+      photosRef.current = list
+      setIndex(0)
+    }
+  }, [hotel.id, loading])
+
+  const move = useCallback((delta: number) => {
+    setIndex(i => {
+      const n = photosRef.current.length
+      if (n < 2) return 0
+      return (i + delta + n) % n
+    })
+  }, [])
+
+  /**
+   * Шаг по галерее.
+   *
+   * Дожидаемся загрузки, а потом листаем: если двигать сразу, первый клик
+   * уходит в пустоту — кадров ещё один, перематывать нечего, и человеку
+   * приходится жать дважды.
+   */
+  const step = useCallback(async (delta: number) => {
+    await ensurePhotos()
+    move(delta)
+  }, [ensurePhotos, move])
+
+  if (!first && photos.length === 0) {
+    return <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
+  }
+
+  const many = photos.length > 1
+
+  return (
+    <div
+      className={styles.hotelGallery}
+      onPointerEnter={() => { void ensurePhotos() }}
+      onTouchStart={e => { touchX.current = e.touches[0].clientX; void ensurePhotos() }}
+      onTouchEnd={e => {
+        if (touchX.current == null) return
+        const dx = e.changedTouches[0].clientX - touchX.current
+        touchX.current = null
+        if (Math.abs(dx) > 30) void step(dx < 0 ? 1 : -1)
+      }}
+    >
+      <img
+        src={photos[index] ?? first}
+        alt={hotel.name}
+        className={styles.hotelThumb}
+        loading="lazy"
+        onClick={e => { e.stopPropagation(); onOpen() }}
+      />
+
+      {many && (
+        <>
+          <button
+            type="button"
+            className={`${styles.galleryArrow} ${styles.galleryArrowPrev}`}
+            onClick={e => { e.stopPropagation(); void step(-1) }}
+            aria-label="Предыдущее фото"
+          >‹</button>
+          <button
+            type="button"
+            className={`${styles.galleryArrow} ${styles.galleryArrowNext}`}
+            onClick={e => { e.stopPropagation(); void step(1) }}
+            aria-label="Следующее фото"
+          >›</button>
+          {/* Точек столько же, сколько кадров, но не больше восьми: у отеля
+              бывает за двадцать снимков, и лента точек превращалась в кашу. */}
+          <div className={styles.galleryDots} aria-hidden="true">
+            {photos.slice(0, 8).map((_, i) => (
+              <span
+                key={i}
+                className={`${styles.galleryDot} ${i === Math.min(index, 7) ? styles.galleryDotOn : ''}`}
+              />
+            ))}
+          </div>
+          <div className={styles.galleryCount}>{index + 1}/{photos.length}</div>
+        </>
+      )}
+
+      {/* Пока не листали — одна стрелка вперёд как приглашение. */}
+      {!many && hotel.hasPictures && (
+        <button
+          type="button"
+          className={`${styles.galleryArrow} ${styles.galleryArrowNext}`}
+          onClick={e => { e.stopPropagation(); void step(1) }}
+          aria-label="Показать фотографии"
+        >›</button>
+      )}
+    </div>
+  )
+}
+
 function HotelCard({
   hotel,
   selected,
-  onClick,
+  onSelect,
+  onOpen,
 }: {
   hotel: HotelSearchResult
   selected: boolean
-  onClick: () => void
+  /** Тап по карточке — выделить и показать отель на карте. */
+  onSelect: () => void
+  /** «Смотреть» — открыть карточку отеля с номерами и бронированием. */
+  onOpen: () => void
 }) {
   const bestTour = hotel.tours[0]
 
@@ -281,28 +646,46 @@ function HotelCard({
       ? styles.hotelCardRatingMid
       : styles.hotelCardRatingLow
 
+  // Карточка на десктопе стала вдвое шире, и прежних трёх строк ей не хватало:
+  // середина пустовала. Досыпаем то, что уже пришло в выдаче, без лишних
+  // запросов.
+  //
+  // Показываем только то, что описывает отель целиком либо ту же самую
+  // «от»-цену. Номер и тип перелёта сюда не годятся: они у каждого тура свои,
+  // а в карточке их несколько — вынесенный наверх номер самого дешёвого
+  // выглядел бы как единственный доступный. Дата заезда остаётся: она
+  // относится к тому же предложению, что цена и число ночей рядом.
   const specs: string[] = []
   if (hotel.seaDistance && hotel.seaDistance > 0)
     specs.push(`${hotel.seaDistance} м до пляжа`)
+  if (bestTour?.date) {
+    const start = parseTourDate(bestTour.date)
+    if (start) specs.push(`заезд ${formatDateShort(start)}`)
+  }
+
+  // Сколько всего вариантов внутри отеля: подсказывает, есть ли смысл заходить.
+  const tourCount = hotel.tours.length
 
   return (
     // Карточка была <div onClick> — с клавиатуры отель нельзя было открыть вовсе.
     <article
+      data-hotel-id={hotel.id}
       className={`${styles.hotelCard} ${selected ? styles.hotelCardSelected : ''}`}
-      onClick={onClick}
+      onClick={onSelect}
     >
       <div className={styles.hotelThumbWrap}>
-        {hotel.picturelink ? (
-          <img src={hotel.picturelink} alt={hotel.name} className={styles.hotelThumb} loading="lazy" />
-        ) : (
-          <div className={styles.hotelThumbPlaceholder}><HotelGlyph /></div>
-        )}
-        {hotel.category > 0 && (
-          <div className={styles.hotelStarsOverlay}>{stars(hotel.category)}</div>
-        )}
+        <HotelGallery hotel={hotel} onOpen={onOpen} />
       </div>
 
       <div className={styles.hotelCardBody}>
+        {/* Звёзды были наложены на фотографию: 0.75rem оранжевым поверх
+            снимка, и на светлых кадрах их не было видно. А звёздность
+            читают первой, до цены — место ей в тексте. */}
+        {hotel.category > 0 && (
+          <div className={styles.hotelCardStars} aria-label={`${hotel.category} звёзд`}>
+            {stars(hotel.category)}
+          </div>
+        )}
         <div className={styles.hotelCardTitleRow}>
           <div className={styles.hotelCardName}>{hotel.name}</div>
           {hotel.rating > 0 && (
@@ -317,6 +700,14 @@ function HotelCard({
             <PinGlyph />
             <span>{hotel.subRegion?.name ?? hotel.region?.name}</span>
           </div>
+        )}
+
+        {/* Описание приходит в выдаче у всех отелей (замер: 185 из 185) и
+            относится к отелю целиком, а не к одному варианту. Показываем
+            только на десктопе: там карточка широкая и середина пустует, а на
+            телефоне она и без того плотная — см. .hotelCardDesc в стилях. */}
+        {hotel.hotelDescription && (
+          <div className={styles.hotelCardDesc}>{hotel.hotelDescription}</div>
         )}
 
         {specs.length > 0 && (
@@ -344,13 +735,16 @@ function HotelCard({
               {hotel.price.toLocaleString('ru-RU')} ₽
             </div>
             {bestTour?.nights && (
-              <div className={styles.hotelCardNights}>{nightsLabel(bestTour.nights)}</div>
+              <div className={styles.hotelCardNights}>
+                {nightsLabel(bestTour.nights)}
+                {tourCount > 1 && ` · ${tourCount} ${variantsWord(tourCount)}`}
+              </div>
             )}
           </div>
           <button
             type="button"
             className={styles.hotelCardBookBtn}
-            onClick={e => { e.stopPropagation(); onClick() }}
+            onClick={e => { e.stopPropagation(); onOpen() }}
             aria-label={`Смотреть туры: ${hotel.name}`}
           >
             Смотреть
@@ -427,10 +821,75 @@ function FlightLegRow({ leg, dir }: { leg: FlightLeg; dir: string }) {
           <span className={styles.flightTag}>{leg.companyName} {leg.number}</span>
           {leg.plane && <span className={styles.flightTag}>{leg.plane}</span>}
           <span className={styles.flightTag}>{cls}</span>
+          {/* Ноль здесь означает «оператор не указал», а не «багажа нет».
+              Замер: у всех 122 вариантов baggage=0 и carryOn пустой. Раньше
+              мы на этом основании писали «ручная кладь» — то есть уверенно
+              сообщали, что багаж не входит, хотя данных об этом нет. */}
           <span className={styles.flightTag}>
-            {leg.baggage > 0 ? `багаж ${leg.baggage} кг` : 'ручная кладь'}
+            {leg.baggage > 0 ? `багаж ${leg.baggage} кг` : 'багаж не указан'}
           </span>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Одно плечо в строке выбора.
+ *
+ * Набор полей подсмотрен у «Слетать»: авиакомпания, время и аэропорт вылета,
+ * время в пути, время и аэропорт прилёта, прямой или с пересадкой, багаж.
+ * Аэропорт важен отдельно — из Москвы летают и из VKO, и из SVO, и человеку
+ * это не всё равно.
+ */
+function FlightSideRow({ side, dir }: { side: FlightSide; dir: string }) {
+  const dur = legDuration(side.depTime, side.arrTime)
+  return (
+    <span className={styles.flightSide}>
+      <span className={styles.flightSideDir}>{dir}</span>
+      <span className={styles.flightSideTime}>
+        {side.depTime} {side.depPort} → {side.arrTime} {side.arrPort}
+      </span>
+      <span className={styles.flightSideMeta}>
+        {[
+          side.company,
+          side.number,
+          dur && `в пути ${dur}`,
+          side.stops === 0 ? 'прямой' : `${side.stops} ${side.stops === 1 ? 'пересадка' : 'пересадки'}`,
+          side.baggage ? `багаж ${side.baggage}` : 'багаж не указан',
+        ].filter(Boolean).join(' · ')}
+      </span>
+    </span>
+  )
+}
+
+/** Ряд кнопок-интервалов для одного плеча. */
+function FlightSlotRow({
+  label, value, counts, onPick,
+}: {
+  label: string
+  value: SlotKey
+  counts: Record<string, number>
+  onPick: (key: SlotKey) => void
+}) {
+  // Пустые интервалы прячем: кнопка с нулём только дразнит.
+  const shown = DEPARTURE_SLOTS.filter(sl => sl.key === 'any' || counts[sl.key] > 0)
+  if (shown.length <= 1) return null
+  return (
+    <div className={styles.flightSlotsRow}>
+      <span className={styles.flightSlotsLabel}>{label}</span>
+      <div className={styles.flightSlots}>
+        {shown.map(sl => (
+          <button
+            key={sl.key}
+            type="button"
+            className={`${styles.flightSlot} ${value === sl.key ? styles.flightSlotOn : ''}`}
+            aria-pressed={value === sl.key}
+            onClick={() => onPick(sl.key)}
+          >
+            {sl.label} <span className={styles.flightSlotCount}>{counts[sl.key]}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -486,30 +945,22 @@ function RoomTourGroup({
   searchId: string
 }) {
   const [listExpanded, setListExpanded] = useState(false)
-  const [expandedTourId, setExpandedTourId] = useState<string | null>(null)
-  const [flightCache, setFlightCache] = useState<Record<string, FlightEntry>>({})
-  const fetchedRef = useRef<Set<string>>(new Set())
 
   const { room, name, tours } = group
-  const shown = listExpanded ? tours : tours.slice(0, 5)
+  // Три строки, как у «Слетать» и Level.Travel: они прячут остальное за одной
+  // ссылкой и умещают сотню туров в экран. У нас каждый тур был своей строкой,
+  // отсюда и стена. Пять — уже перебор, потому что оператора мы не выводим и
+  // соседние строки отличаются только ценой.
+  const VISIBLE_TOURS = 3
+  const shown = listExpanded ? tours : tours.slice(0, VISIBLE_TOURS)
 
-  // Fetch flight details when a tour row is expanded
-  useEffect(() => {
-    if (!expandedTourId || !searchId) return
-    if (!group.tours.some(t => t.id === expandedTourId)) return
-    if (fetchedRef.current.has(expandedTourId)) return
-    fetchedRef.current.add(expandedTourId)
-    setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'loading' } }))
-    staffFetch(`/api/tourvisor/tours/${expandedTourId}/flights`)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(data => {
-        const { forward, backward } = parseFlightsResponse(data)
-        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'ok', forward, backward } }))
-      })
-      .catch(() => {
-        setFlightCache(c => ({ ...c, [expandedTourId]: { st: 'error' } }))
-      })
-  }, [expandedTourId, searchId, group.tours])
+  // Сравнимость: при десяти строках выбор превращался в чтение столбика чисел.
+  // Помечаем самый дешёвый и показываем, на сколько дороже каждый следующий.
+  const minPrice = tours.length ? Math.min(...tours.map(t => t.price)) : 0
+
+  // Рейсы больше не тянем здесь: этим занимается вкладка «Перелёт», которая
+  // открывается по нажатию «Выбрать». Раньше запрос уходил дважды — строка
+  // раскрывалась тем же нажатием и дублировала его.
 
   return (
     <div className={styles.roomBlock}>
@@ -536,11 +987,17 @@ function RoomTourGroup({
           {room && (
             <div className={styles.roomBlockMeta}>
               {room.area != null && <span>{room.area} м²</span>}
+              {/* Число комнат приходило в данных, но не выводилось: «2 комнаты,
+                  55 м²» отвечает на вопрос о номере лучше, чем одна площадь. */}
+              {room.roomCount != null && room.roomCount > 1 && (
+                <span>{room.roomCount} комн.</span>
+              )}
               {room.bedroomCount != null && room.bedroomCount > 0 && (
                 <span>{room.bedroomCount} спал.</span>
               )}
-              {room.hasBalcony && <span>Балкон</span>}
-              {room.hasKitchen && <span>Кухня</span>}
+              {/* Балкон и кухня больше не дублируем отдельными плашками: они и
+                  так входят в список услуг ниже, который раньше не выводился
+                  вовсе. Две плашки из десятка пунктов только сбивали. */}
             </div>
           )}
           <div className={styles.roomBlockMinPrice}>от {formatPrice(tours[0].price)}</div>
@@ -548,10 +1005,28 @@ function RoomTourGroup({
       </div>
 
       {/* Описание номера (HTML из Tourvisor) */}
-      {room && (room.sleepingPlaces || room.description || room.comment) && (
+      {room && (room.sleepingPlaces || room.description || room.comment
+                || room.services || room.location || room.viewDescription) && (
         <div className={styles.roomDesc}>
           {room.sleepingPlaces && (
             <div dangerouslySetInnerHTML={{ __html: room.sleepingPlaces }} />
+          )}
+          {/* Услуги номера приходили всегда и не показывались ни разу: «Балкон,
+              Кухня, Мягкая мебель, Шкаф или гардероб…». Именно по ним человек
+              и выбирает между номерами одного отеля. */}
+          {room.services && (
+            <div className={styles.roomServices}>
+              <div className={styles.roomDescLabel}>В номере</div>
+              <div dangerouslySetInnerHTML={{ __html: room.services }} />
+            </div>
+          )}
+          {room.location && (
+            <div><span className={styles.roomDescLabel}>Расположение</span>{' '}
+              <span dangerouslySetInnerHTML={{ __html: room.location }} /></div>
+          )}
+          {room.viewDescription && (
+            <div><span className={styles.roomDescLabel}>Вид</span>{' '}
+              <span dangerouslySetInnerHTML={{ __html: room.viewDescription }} /></div>
           )}
           {room.description && (
             <div dangerouslySetInnerHTML={{ __html: room.description }} />
@@ -566,23 +1041,26 @@ function RoomTourGroup({
       <div className={styles.roomToursList}>
         {shown.map(tour => {
           const selected = bookTourId === tour.id
-          const isExpanded = expandedTourId === tour.id
-          const perPerson = tour.adults > 0 ? Math.round(tour.price / tour.adults) : null
-          const flight = flightCache[tour.id]
+          // При одном взрослом «₽/чел» дословно повторяет общую цену — на SGL
+          // в строке стояли два одинаковых числа подряд.
+          const perPerson = tour.adults > 1 ? Math.round(tour.price / tour.adults) : null
           return (
             <Fragment key={tour.id}>
               {/* Строку раскрывала обёртка <div onClick>. Кнопку в кнопку вложить
                   нельзя, поэтому раскрытие повесили на левую половину, а «Выбрать»
                   осталось отдельной кнопкой — обе доступны с клавиатуры. */}
               <div
-                className={`${styles.roomTourRow} ${selected ? styles.roomTourRowSelected : ''} ${isExpanded ? styles.roomTourRowExpanded : ''}`}
+                className={`${styles.roomTourRow} ${selected ? styles.roomTourRowSelected : ''}`}
               >
+                {/* Раньше левая половина раскрывала детали рейса. Они переехали
+                    на вкладку «Перелёт», и кнопка осталась бы мёртвой — теперь
+                    она выбирает тур, как и «Выбрать» справа: попасть по строке
+                    проще, чем по кнопке. */}
                 <button
                   type="button"
                   className={styles.roomTourLeft}
-                  onClick={() => setExpandedTourId(prev => prev === tour.id ? null : tour.id)}
-                  aria-expanded={isExpanded}
-                  aria-label={`${formatDateRange(tour.date, tour.nights)}, ${nightsLabel(tour.nights)} — показать рейс`}
+                  onClick={() => onSelectTour(selected ? null : tour.id)}
+                  aria-label={`${formatDateRange(tour.date, tour.nights)}, ${nightsLabel(tour.nights)} — выбрать тур`}
                 >
                   <span className={styles.tourDate}>{formatDateRange(tour.date, tour.nights)}</span>
                   <span className={styles.tourNights}>{nightsLabel(tour.nights)}</span>
@@ -599,23 +1077,35 @@ function RoomTourGroup({
                   {tour.placement && (
                     <span className={styles.tourRoomTag}>{tour.placement}</span>
                   )}
+                  {/* Тип перелёта есть в фильтрах, а в самой строке его не было:
+                      человек отбирал по нему и не видел, что выбрал. */}
+                  <span className={styles.tourRoomTag}>
+                    {tour.isCharter ? 'чартер' : 'регуляр'}
+                  </span>
                 </button>
                 <div className={styles.roomTourRight}>
-                  <div className={styles.tourPrice}>{formatPrice(tour.price)}</div>
-                  {perPerson && (
-                    <div className={styles.tourPricePerPerson}>
-                      {perPerson.toLocaleString('ru-RU')} ₽/чел
-                    </div>
-                  )}
+                  <div className={styles.tourPriceGroup}>
+                    <div className={styles.tourPrice}>{formatPrice(tour.price)}</div>
+                    {perPerson && (
+                      <div className={styles.tourPricePerPerson}>
+                        {perPerson.toLocaleString('ru-RU')} ₽/чел
+                      </div>
+                    )}
+                    {tour.price === minPrice ? (
+                      <div className={styles.tourCheapest}>самый дешёвый</div>
+                    ) : (
+                      <div className={styles.tourDiff}>
+                        +{(tour.price - minPrice).toLocaleString('ru-RU')} ₽
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className={`${styles.tourSelectBtn} ${selected ? styles.tourSelectBtnActive : ''}`}
                     aria-pressed={selected}
                     onClick={e => {
                       e.stopPropagation()
-                      const next = selected ? null : tour.id
-                      onSelectTour(next)
-                      if (next) setExpandedTourId(next)
+                      onSelectTour(selected ? null : tour.id)
                     }}
                   >
                     {selected ? '✓ Выбран' : 'Выбрать'}
@@ -623,34 +1113,17 @@ function RoomTourGroup({
                 </div>
               </div>
 
-              {/* Детали рейса — для развёрнутого тура */}
-              {isExpanded && (
-                <div className={styles.flightDetails} onClick={e => e.stopPropagation()}>
-                  <div className={styles.flightDetailsLabel}>Рейс</div>
-                  {!flight || flight.st === 'loading' ? (
-                    <FlightSkeleton />
-                  ) : flight.st === 'error' ? (
-                    <span className={styles.flightError}>Данные недоступны</span>
-                  ) : (
-                    <>
-                      {flight.forward  && <FlightLegRow leg={flight.forward}  dir="Туда" />}
-                      {flight.backward && <FlightLegRow leg={flight.backward} dir="Обратно" />}
-                      {!flight.forward && !flight.backward && (
-                        <span className={styles.flightError}>Данные рейса не получены</span>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
             </Fragment>
           )
         })}
-        {tours.length > 5 && (
+        {tours.length > VISIBLE_TOURS && (
           <button
             className={styles.showMoreToursBtn}
             onClick={() => setListExpanded(v => !v)}
           >
-            {listExpanded ? 'Свернуть ↑' : `Ещё ${tours.length - 5} ${variantsWord(tours.length - 5)} ↓`}
+            {listExpanded
+              ? 'Свернуть ↑'
+              : `Ещё ${tours.length - VISIBLE_TOURS} ${toursWord(tours.length - VISIBLE_TOURS)} ↓`}
           </button>
         )}
       </div>
@@ -787,8 +1260,24 @@ function HotelModal({
     setLightboxOpen(true)
   }
 
+  /**
+   * Кнопка «Оставить заявку» в шапке карточки.
+   *
+   * Раньше она только прокручивала к номерам — и на вкладках «Перелёт», «Об
+   * отеле» или «На карте» не делала ничего: блока номеров там нет в разметке,
+   * прокручивать не к чему. Кнопка выглядела рабочей и молчала.
+   *
+   * Если тур уже выбран — открываем форму: человек прошёл весь путь, вести его
+   * обратно к списку незачем. Если нет — возвращаем на вкладку с номерами и
+   * подводим к ним.
+   */
   function scrollToRooms() {
-    roomsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (bookTourId) { setBookFormOpen(true); return }
+    setTab('rooms')
+    // Секция рисуется вместе со сменой вкладки — ждём кадр отрисовки.
+    requestAnimationFrame(() => {
+      roomsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   async function handleBook(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -846,7 +1335,27 @@ function HotelModal({
               adults: selectedTour.adults,
               childs: selectedTour.childs,
               placement: selectedTour.placement,
+              // Номер в заявку не уходил вовсе: был только placement («DBL»),
+              // то есть размещение, а не категория. Человек выбирает «comfort
+              // sea view», видит его в нижней плашке — а менеджер получал
+              // сделку, из которой номер не понять.
+              room: selectedRoomName || null,
+              roomType: selectedTour.roomType || null,
               flightProgram: selectedTour.name,
+              // Пожелание по времени вылета: забронировать конкретный рейс мы
+              // не можем, но донести до менеджера — можем.
+              flightPreference: (() => {
+                const p = flightOptions.find(f => f.key === pickFlight)
+                if (!p) return null
+                const parts = [
+                  `туда ${p.out.depTime} ${p.out.depPort}→${p.out.arrPort} (${p.out.company} ${p.out.number})`,
+                ]
+                if (p.back) {
+                  parts.push(`обратно ${p.back.depTime} ${p.back.depPort}→${p.back.arrPort} (${p.back.company} ${p.back.number})`)
+                }
+                if (p.price > flightBase) parts.push(`доплата ${(p.price - flightBase).toLocaleString('ru-RU')} ₽`)
+                return parts.join(', ')
+              })(),
               isCharter: selectedTour.isCharter,
               operator: selectedTour.operator?.russianName || selectedTour.operator?.name,
               operatorLink: link,
@@ -881,6 +1390,129 @@ function HotelModal({
 
   // Всё, что Tourvisor знает об отеле. Порядок — от «что это вообще за отель»
   // к деталям. Пустые блоки отсеиваются: у разных отелей заполнены разные поля.
+  /**
+   * Разделы карточки.
+   *
+   * Всё лежало одним свитком: номера, а следом двенадцать описательных блоков,
+   * контакты и карта. Отсюда и ощущение переполненности — не от строк с
+   * турами, а от того, что на экране сразу всё.
+   *
+   * Так же разведено у «Слетать» («Номера · Описание и услуги · На карте ·
+   * Отзывы») и у Level.Travel, где описание вынесено на отдельный экран.
+   * Берём вариант «Слетать»: переключение внутри карточки, без лишнего
+   * перехода — портал служебный, лишние клики тут не нужны.
+   *
+   * Это разделы, а не шаги мастера: выбор тура нелинеен — человек смотрит
+   * цену, уходит к описанию, возвращается, меняет дату. Порядок ему навязывать
+   * незачем.
+   */
+  type ModalTab = 'rooms' | 'flight' | 'about' | 'map'
+  const [tab, setTab] = useState<ModalTab>('rooms')
+
+  /**
+   * Шаг выбора перелёта.
+   *
+   * Появляется, когда тур выбран, — как отдельная страница «Выбор перелёта» у
+   * «Слетать», куда попадают после нажатия «Выбрать». Забронировать конкретный
+   * рейс мы не можем, оформляет менеджер, поэтому выбор здесь — пожелание: оно
+   * уходит в заявку и менеджер видит, во сколько человеку удобно лететь.
+   */
+  const [flightsRaw, setFlightsRaw] = useState<unknown>(null)
+  const [flightsState, setFlightsState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [pickFlight, setPickFlight] = useState<string | null>(null)
+  const [flightsExpanded, setFlightsExpanded] = useState(false)
+  const [slotOut, setSlotOut] = useState<SlotKey>('any')
+  const [slotBack, setSlotBack] = useState<SlotKey>('any')
+
+  /**
+   * Загрузка рейсов с повтором.
+   *
+   * Раньше первая же неудача показывала «не удалось» без права на вторую
+   * попытку и без кнопки — человек застревал. На стороне Турвизора запрос
+   * повторяется трижды, но если моргнул наш собственный маршрут, до тех
+   * повторов дело не доходит. Пробуем ещё раз сами, а потом отдаём кнопку.
+   */
+  const loadFlights = useCallback(async (tourId: string, signal: { cancelled: boolean }) => {
+    setFlightsState('loading')
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 700))
+      try {
+        const res = await staffFetch(`/api/tourvisor/tours/${tourId}/flights`)
+        if (!res.ok) throw new Error(String(res.status))
+        const data = await res.json()
+        if (signal.cancelled) return
+        setFlightsRaw(data)
+        setFlightsState('ok')
+        return
+      } catch {
+        if (signal.cancelled) return
+      }
+    }
+    if (!signal.cancelled) setFlightsState('error')
+  }, [])
+
+  useEffect(() => {
+    setPickFlight(null); setFlightsExpanded(false); setSlotOut('any'); setSlotBack('any')
+    if (!bookTourId) { setFlightsState('idle'); setFlightsRaw(null); return }
+    const signal = { cancelled: false }
+    void loadFlights(bookTourId, signal)
+    return () => { signal.cancelled = true }
+  }, [bookTourId, loadFlights])
+
+  const flightOptions = useMemo(
+    () => (flightsState === 'ok' ? buildFlightOptions(flightsRaw) : []),
+    [flightsState, flightsRaw],
+  )
+  // Дешёвый вариант — точка отсчёта для доплаты, как «Доплата + 865» у «Слетать».
+  // Считаем по всем вариантам, а не по отфильтрованным: иначе доплата прыгала
+  // бы при смене фильтра, хотя цена тура не менялась.
+  const flightBase = flightOptions.length ? flightOptions[0].price : 0
+  const FLIGHTS_VISIBLE = 6
+
+  /** Попадает ли время в интервал. Не разобрали час — пропускаем. */
+  const inSlot = useCallback((time: string, key: SlotKey) => {
+    if (key === 'any') return true
+    const sl = DEPARTURE_SLOTS.find(x => x.key === key)!
+    const h = departureHour(time)
+    return h == null || (h >= sl.from && h < sl.to)
+  }, [])
+
+  /**
+   * Числа на кнопках считаем с учётом соседнего фильтра.
+   *
+   * Иначе «Утро 55» осталось бы на месте после сужения обратного рейса, и
+   * человек жал бы на интервал, где на самом деле ничего нет.
+   */
+  const slotCounts = useCallback((which: 'out' | 'back') => {
+    const other = which === 'out' ? slotBack : slotOut
+    const pool = flightOptions.filter(o =>
+      inSlot(which === 'out' ? (o.back?.depTime ?? '') : o.out.depTime, other))
+    const counts: Record<string, number> = {}
+    for (const sl of DEPARTURE_SLOTS) {
+      counts[sl.key] = pool.filter(o =>
+        inSlot(which === 'out' ? o.out.depTime : (o.back?.depTime ?? ''), sl.key)).length
+    }
+    return counts
+  }, [flightOptions, slotOut, slotBack, inSlot])
+
+  const visibleFlights = useMemo(
+    () => flightOptions.filter(o =>
+      inSlot(o.out.depTime, slotOut) && inSlot(o.back?.depTime ?? '', slotBack)),
+    [flightOptions, slotOut, slotBack, inSlot],
+  )
+
+  /**
+   * Выбрали тур — ведём к перелёту, как «Слетать» ведёт на свою страницу.
+   * Сняли выбор — возвращаем к номерам.
+   *
+   * Без возврата человек оставался на вкладке «Перелёт», которой уже нет:
+   * кнопка исчезала вместе с выбором, а тело модалки становилось пустым —
+   * выглядело так, будто предложения перестали выводиться.
+   */
+  useEffect(() => {
+    setTab(bookTourId ? 'flight' : 'rooms')
+  }, [bookTourId])
+
   const rawSections: [title: string, html: string | undefined][] = [
     ['Об отеле',                desc?.common?.description],
     ['Расположение',            desc?.common?.place],
@@ -1024,41 +1656,59 @@ function HotelModal({
               </div>
             )}
 
-            {/* Описание отеля.
-                Раньше здесь вручную повторялись пять почти одинаковых блоков,
-                и половина того, что отдаёт Tourvisor, просто не выводилась:
-                услуги отеля, что входит в номер, детская инфраструктура,
-                платные услуги, анимация, контакты. Именно по ним и понятно,
-                что это за отель. */}
-            {loading && <BlockSkeleton lines={4} />}
+            {/* Полоса разделов. Липкая, чтобы вернуться к ценам можно было с
+                любого места описания, а не прокруткой обратно. */}
+            <div className={styles.modalTabs} role="tablist">
+              <button
+                type="button" role="tab" aria-selected={tab === 'rooms'}
+                className={`${styles.modalTab} ${tab === 'rooms' ? styles.modalTabOn : ''}`}
+                onClick={() => setTab('rooms')}
+              >
+                Номера и цены
+              </button>
+              {/* Пока описание грузится, разделов ещё нет — но кнопку показываем
+                  сразу, иначе полоса дёргалась бы, подставляя вкладку задним
+                  числом под уже нацеленный палец. */}
+              {bookTourId && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'flight'}
+                  className={`${styles.modalTab} ${tab === 'flight' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('flight')}
+                >
+                  Перелёт
+                </button>
+              )}
+              {(loading || descSections.length > 0 || contacts.length > 0) && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'about'}
+                  className={`${styles.modalTab} ${tab === 'about' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('about')}
+                >
+                  Об отеле
+                </button>
+              )}
+              {hasCoords && (
+                <button
+                  type="button" role="tab" aria-selected={tab === 'map'}
+                  className={`${styles.modalTab} ${tab === 'map' ? styles.modalTabOn : ''}`}
+                  onClick={() => setTab('map')}
+                >
+                  На карте
+                </button>
+              )}
+            </div>
 
-            {!loading && descSections.map(section => (
-              <div key={section.title} className={styles.modalSection}>
-                <div className={styles.modalSectionTitle}>{section.title}</div>
-                <div
-                  className={styles.modalSectionText}
-                  dangerouslySetInnerHTML={{ __html: section.html }}
-                />
-              </div>
-            ))}
-
-            {!loading && contacts.length > 0 && (
-              <div className={styles.modalSection}>
-                <div className={styles.modalSectionTitle}>Контакты отеля</div>
-                <div className={styles.contactList}>
-                  {contacts.map(c => (
-                    <div key={c.label} className={styles.contactRow}>
-                      <span className={styles.contactLabel}>{c.label}</span>
-                      {c.href
-                        ? <a className={styles.contactValue} href={c.href} target="_blank" rel="noopener noreferrer">{c.value}</a>
-                        : <span className={styles.contactValue}>{c.value}</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {/* Номера идут перед описанием отеля.
+                Карточку открывают, чтобы выбрать номер и забронировать, а не
+                читать про инфраструктуру. Замер до перестановки: блок номеров
+                начинался на 1686px при высоте модалки 2381px — 71% прокрутки,
+                под десятью секциями описания. Сотрудники до него не долистывали. */}
             {/* ── Номера и туры — сгруппировано ── */}
+            {/* Условный рендер, а не атрибут hidden: .modalSection задаёт
+                display:flex, и правило класса перебивает браузерное
+                [hidden]{display:none} — блок номеров оставался виден на
+                вкладке «Об отеле». */}
+            {tab === 'rooms' && (
             <div className={styles.modalSection} ref={roomsSectionRef}>
               {/* Было «Номера и туры · 4», где 4 — число туров, а не номеров:
                   подпись читалась как «четыре номера». */}
@@ -1082,11 +1732,166 @@ function HotelModal({
                 </div>
               )}
             </div>
+            )}
+
+            {/* ── Шаг «Перелёт» ── */}
+            {tab === 'flight' && selectedTour && (
+              <div className={styles.modalSection}>
+                <div className={styles.flightPickSummary}>
+                  <div className={styles.flightPickRoom}>{selectedRoomName || hotel.name}</div>
+                  <div className={styles.flightPickDates}>
+                    {formatDateRange(selectedTour.date, selectedTour.nights)}
+                    {' · '}{nightsLabel(selectedTour.nights)}
+                    {' · '}{formatPrice(selectedTour.price)}
+                  </div>
+                </div>
+
+                {flightsState === 'loading' && <FlightSkeleton />}
+
+                {/* Формулировка подсмотрена у «Слетать»: рейсы могут не прийти,
+                    но заявке это не мешает. Прежнее «Данные недоступны»
+                    пугало на ровном месте. */}
+                {/* Два разных случая, и раньше они выглядели одинаково.
+                    Запрос упал — это одно. Оператор ответил, но прислал только
+                    заглушку без времени вылета — совсем другое: данные мы
+                    получили, просто рейсов в них нет. Писать «не удалось
+                    получить» во втором случае неверно. */}
+                {flightsState === 'error' && (
+                  <div className={styles.flightPickNote}>
+                    Не удалось запросить рейсы. Заявку это не блокирует —
+                    менеджер подберёт перелёт и пришлёт детали.
+                    {' '}
+                    <button
+                      type="button"
+                      className={styles.flightRetryBtn}
+                      onClick={() => {
+                        if (!bookTourId) return
+                        void loadFlights(bookTourId, { cancelled: false })
+                      }}
+                    >
+                      Повторить
+                    </button>
+                  </div>
+                )}
+                {flightsState === 'ok' && flightOptions.length === 0 && (
+                  <div className={styles.flightPickNote}>
+                    Оператор не указал рейсы по этому туру. Заявку это не
+                    блокирует — менеджер подберёт перелёт и пришлёт детали.
+                  </div>
+                )}
+
+                {flightsState === 'ok' && flightOptions.length > 0 && (
+                  <>
+                    <div className={styles.flightPickNote}>
+                      {slotOut === 'any' && slotBack === 'any'
+                        ? `${flightOptions.length} ${variantsWord(flightOptions.length)} перелёта.`
+                        : `${visibleFlights.length} из ${flightOptions.length}.`}
+                      Выберите удобный — пожелание уйдёт в заявку, окончательную
+                      стоимость подтвердит менеджер.
+                    </div>
+
+                    {/* Фильтры по времени. Показываем, только когда вариантов
+                        много: на двух-трёх строках они лишние. Обратный рейс —
+                        отдельным рядом: сузив вылет туда, человек всё равно
+                        остаётся с десятком возвращений. */}
+                    {flightOptions.length > FLIGHTS_VISIBLE && (
+                      <>
+                        <FlightSlotRow
+                          label="Вылет туда"
+                          value={slotOut}
+                          counts={slotCounts('out')}
+                          onPick={k => { setSlotOut(k); setFlightsExpanded(false) }}
+                        />
+                        {flightOptions.some(o => o.back) && (
+                          <FlightSlotRow
+                            label="Вылет обратно"
+                            value={slotBack}
+                            counts={slotCounts('back')}
+                            onPick={k => { setSlotBack(k); setFlightsExpanded(false) }}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    <div className={styles.flightPickList}>
+                      {(flightsExpanded ? visibleFlights : visibleFlights.slice(0, FLIGHTS_VISIBLE))
+                        .map(opt => {
+                          const extra = opt.price - flightBase
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              className={`${styles.flightPickRow} ${pickFlight === opt.key ? styles.flightPickRowOn : ''}`}
+                              aria-pressed={pickFlight === opt.key}
+                              onClick={() => setPickFlight(p => (p === opt.key ? null : opt.key))}
+                            >
+                              <span className={styles.flightPickLegs}>
+                                <FlightSideRow side={opt.out} dir="Туда" />
+                                {opt.back && <FlightSideRow side={opt.back} dir="Обратно" />}
+                              </span>
+                              <span className={styles.flightPickPrice}>
+                                {extra > 0
+                                  ? <span className={styles.flightPickExtra}>+{extra.toLocaleString('ru-RU')} ₽</span>
+                                  : <span className={styles.flightPickIncluded}>без доплаты</span>}
+                              </span>
+                            </button>
+                          )
+                        })}
+                    </div>
+
+                    {visibleFlights.length > FLIGHTS_VISIBLE && (
+                      <button
+                        type="button"
+                        className={styles.showMoreToursBtn}
+                        onClick={() => setFlightsExpanded(v => !v)}
+                      >
+                        {flightsExpanded
+                          ? 'Свернуть ↑'
+                          : `Показать ещё ${visibleFlights.length - FLIGHTS_VISIBLE} ↓`}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Описание отеля.
+                Раньше здесь вручную повторялись пять почти одинаковых блоков,
+                и половина того, что отдаёт Tourvisor, просто не выводилась:
+                услуги отеля, что входит в номер, детская инфраструктура,
+                платные услуги, анимация, контакты. Именно по ним и понятно,
+                что это за отель. */}
+            {loading && tab === 'about' && <BlockSkeleton lines={4} />}
+
+            {!loading && tab === 'about' && descSections.map(section => (
+              <div key={section.title} className={styles.modalSection}>
+                <div className={styles.modalSectionTitle}>{section.title}</div>
+                <div
+                  className={styles.modalSectionText}
+                  dangerouslySetInnerHTML={{ __html: section.html }}
+                />
+              </div>
+            ))}
+
+            {!loading && tab === 'about' && contacts.length > 0 && (
+              <div className={styles.modalSection}>
+                <div className={styles.modalSectionTitle}>Контакты отеля</div>
+                <div className={styles.contactList}>
+                  {contacts.map(c => (
+                    <div key={c.label} className={styles.contactRow}>
+                      <span className={styles.contactLabel}>{c.label}</span>
+                      {c.href
+                        ? <a className={styles.contactValue} href={c.href} target="_blank" rel="noopener noreferrer">{c.value}</a>
+                        : <span className={styles.contactValue}>{c.value}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Мини-карта ── */}
-            {hasCoords && (
+            {hasCoords && tab === 'map' && (
               <div className={styles.modalSection}>
-                <div className={styles.modalSectionTitle}>На карте</div>
                 <HotelMiniMap lat={hotel.latitude} lng={hotel.longitude} />
               </div>
             )}
@@ -1154,6 +1959,19 @@ function HotelModal({
                         {' · '}{nightsLabel(selectedTour.nights)}
                         {selectedTour.meal?.fullName && ` · ${selectedTour.meal.fullName}`}
                       </div>
+                      {/* Выбранный рейс: он уходит в заявку, значит человек
+                          должен увидеть его перед отправкой. Раньше сводка
+                          обрывалась на питании, и проверить было нечего. */}
+                      {(() => {
+                        const f = flightOptions.find(o => o.key === pickFlight)
+                        if (!f) return null
+                        return (
+                          <div className={styles.bookingSummaryFlight}>
+                            Перелёт: туда {f.out.depTime} {f.out.depPort}→{f.out.arrPort}
+                            {f.back && `, обратно ${f.back.depTime} ${f.back.depPort}→${f.back.arrPort}`}
+                          </div>
+                        )
+                      })()}
                       <div className={styles.bookingSummaryPrice}>{formatPrice(selectedTour.price)}</div>
                     </div>
                   )}
@@ -1272,6 +2090,9 @@ function ToursContent() {
   const nightsTo    = Number(searchParams.get('nightsTo') ?? 14)
   const adults      = Number(searchParams.get('adults') ?? 2)
   const childsStr   = searchParams.get('childs') ?? ''
+  const regionIds   = searchParams.getAll('regionIds')
+  // Строкой — чтобы эффект поиска перезапускался при смене набора курортов.
+  const regionKey   = regionIds.join(',')
   const countryName = searchParams.get('countryName') ?? ''
 
   // ── Поиск ──────────────────────────────────────────────────────────────────
@@ -1292,6 +2113,19 @@ function ToursContent() {
   const [etaSec, setEtaSec] = useState<number | null>(null)
 
   // ── Фильтры ────────────────────────────────────────────────────────────────
+
+  // ── Заявка «не нашли подходящее» ───────────────────────────────────────────
+  //
+  // Выдача Tourvisor — это то, что отдали операторы, а не весь рынок: часть
+  // туров собирается только руками. Без этой формы человек, не увидев своего
+  // варианта, просто уходил со страницы, и заявка не доходила до отдела.
+  const [helpOpen, setHelpOpen]             = useState(false)
+  const [helpName, setHelpName]             = useState('')
+  const [helpPhone, setHelpPhone]           = useState('')
+  const [helpComment, setHelpComment]       = useState('')
+  const [helpSubmitting, setHelpSubmitting] = useState(false)
+  const [helpDone, setHelpDone]             = useState(false)
+  const [helpError, setHelpError]           = useState('')
 
   const [filters, setFilters]       = useState<FilterState>(DEFAULT_FILTERS)
   const [sortKey, setSortKey]       = useState<SortKey>('popular')
@@ -1321,8 +2155,9 @@ function ToursContent() {
       nightsTo,
       adults,
       childAges: childsStr ? childsStr.split(',').map(Number) : [],
+      regionIds: regionIds.map(Number),
     }
-  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   const [mobileForm, setMobileForm] = useState<SearchForm>(initMobileForm)
 
@@ -1368,6 +2203,7 @@ function ToursContent() {
       adults: String(mobileForm.adults),
     })
     if (mobileForm.childAges.length > 0) qs.set('childs', mobileForm.childAges.join(','))
+    for (const id of mobileForm.regionIds) qs.append('regionIds', String(id))
     router.push(`/tours?${qs.toString()}`)
   }
 
@@ -1435,6 +2271,26 @@ function ToursContent() {
 
   useEffect(() => clearCollapseTimer, [])
 
+  /**
+   * Выделить отель, не открывая карточку.
+   *
+   * Связь карты и списка работает в обе стороны: тап по пину подсвечивает
+   * карточку и подкручивает к ней список, тап по карточке подводит карту к
+   * пину (см. эффект по selectedId в MapView). Открывает отель только
+   * «Смотреть» — и повторный тап по уже выбранному пину.
+   */
+  const selectHotel = useCallback((id: number, opts?: { scrollList?: boolean }) => {
+    setSelectedId(id)
+    if (!opts?.scrollList) return
+    // Список — свой контейнер прокрутки, поэтому block: 'nearest':
+    // 'center' дёргал бы всю страницу.
+    requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelector(`[data-hotel-id="${id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }, [])
+
   const openHotel = useCallback((hotel: HotelSearchResult, source?: 'map') => {
     reachGoal(StaffGoals.hotelOpen, {
       hotel: hotel.name,
@@ -1484,11 +2340,20 @@ function ToursContent() {
     if (pollTimer.current) { clearTimeout(pollTimer.current); pollTimer.current = null }
   }, [])
 
+  /**
+   * Курорты, встреченные в этом поиске. Копим их, чтобы по завершении
+   * отправить в журнал наблюдений — он задаёт порядок чипсов в форме.
+   */
+  const seenRegionsRef = useRef<Set<number>>(new Set())
+
   /** Забирает текущую выдачу и возвращает число отелей в ней. */
   const fetchResults = useCallback(async (searchId: string): Promise<number | null> => {
     const res = await staffFetch(`/api/tourvisor/results/${searchId}?limit=${RESULTS_LIMIT}`)
     if (!res.ok) return null
     const data: HotelSearchResult[] = await res.json()
+    for (const hotel of data) {
+      if (hotel.region?.id) seenRegionsRef.current.add(hotel.region.id)
+    }
     setHotels(data)
     return data.length
   }, [])
@@ -1513,6 +2378,9 @@ function ToursContent() {
     setProgress(0)
     setPhase('starting')
     deadlineRef.current = null
+    // Курорты копим по одному поиску: без сброса в журнал ушли бы вперемешку
+    // курорты прошлой страны.
+    seenRegionsRef.current = new Set()
 
     const sleep = (ms: number) => new Promise<void>(resolve => {
       pollTimer.current = setTimeout(resolve, ms)
@@ -1608,6 +2476,12 @@ function ToursContent() {
       if (!alive()) return
       setProgress(100)
       setPhase('done')
+      // Журнал наполняем только поиском по всей стране. Если человек сам
+      // выбрал курорты, выдача сужена его фильтром, и записать её значило бы
+      // объявить остальные курорты страны пустыми.
+      if (regionIds.length === 0) {
+        reportSeenRegions(countryId, dateFrom, [...seenRegionsRef.current])
+      }
       reachGoal(StaffGoals.toursResults, {
         country: countryName || '',
         hotels: count,
@@ -1623,6 +2497,8 @@ function ToursContent() {
       adults: String(adults),
     })
     if (childsStr) params.set('childs', childsStr)
+    // Курорты приходят повторяющимися параметрами и такими же уходят дальше.
+    for (const id of regionIds) params.append('regionIds', id)
 
     staffFetch(`/api/tourvisor/search?${params}`)
       .then(r => r.ok ? r.json() : r.json().then((e: unknown) => Promise.reject(e)))
@@ -1640,7 +2516,7 @@ function ToursContent() {
 
     return () => { runIdRef.current++; stopPoll() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr])
+  }, [guard, countryId, dateFrom, dateTo, nightsFrom, nightsTo, adults, childsStr, regionKey])
 
   // ── Обратный отсчёт в полосе загрузки ──────────────────────────────────────
 
@@ -1686,6 +2562,72 @@ function ToursContent() {
     return parts.join(' · ')
   })()
 
+  /**
+   * Заявка на подбор: человек не нашёл подходящий вариант.
+   *
+   * Шлём тем же маршрутом, что и обычную бронь, но с kind='help' и параметрами
+   * поиска вместо тура: менеджеру важно знать, что именно человек искал в тот
+   * момент, когда решил, что подходящего нет.
+   */
+  async function handleHelp(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (helpSubmitting) return
+
+    const name = helpName.trim()
+    const phone = helpPhone.trim()
+    if (name.length < 2) {
+      setHelpError('Укажите, как к вам обращаться — хотя бы имя.')
+      return
+    }
+    if (!isPhoneComplete(phone)) {
+      setHelpError('Проверьте телефон: нужны 11 цифр, например +7 999 123-45-67.')
+      return
+    }
+
+    setHelpSubmitting(true)
+    setHelpError('')
+
+    try {
+      const res = await staffFetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'help',
+          name,
+          phone,
+          comment: helpComment.trim(),
+          search: {
+            country: countryName || undefined,
+            // Та же строка, что человек видел в шапке: менеджеру не придётся
+            // гадать, о каком именно окне дат идёт речь.
+            dates: searchSummary,
+            // Взрослые уже есть в searchSummary, а дети — нет: отдельную строку
+            // шлём только ради них, иначе в описании сделки «2 взр.» повторится.
+            people: childsStr
+              ? `${adults} взр. + ${childsStr.split(',').length} реб.`
+              : undefined,
+            found: hotels.length,
+          },
+        }),
+      })
+      if (!res.ok) throw new Error(await leadErrorMessage(res))
+      reachGoal(StaffGoals.leadSuccess, { kind: 'help', country: countryName || '' })
+      setHelpDone(true)
+    } catch (err) {
+      reachGoal(StaffGoals.leadFail)
+      setHelpError(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+    } finally {
+      setHelpSubmitting(false)
+    }
+  }
+
+  function closeHelp() {
+    setHelpOpen(false)
+    setHelpDone(false)
+    setHelpError('')
+    setHelpComment('')
+  }
+
   // Подхедер: число выводится отдельным <strong>, поэтому здесь — только хвост.
   const subheaderTail = hotels.length !== filtered.length
     ? `из ${hotelsLabel(hotels.length)} подходят фильтрам`
@@ -1694,11 +2636,17 @@ function ToursContent() {
   return (
     <div className={styles.toursPage}>
 
-      {/* ─── Хедер ───────────────────────────────────────────────────────── */}
+      {/* ─── Хедер ───────────────────────────────────────────────────────────
+          Только строка поиска, без логотипов.
+
+          Портал живёт во фрейме под шапкой родителя, и каждая наша строка
+          отнимает высоту у выдачи дважды: сначала чужая шапка, потом наша.
+          Логотипы «Мои путешествия» и «Мосгортур» и так стоят в футере, а
+          здесь занимали целый ряд — на телефоне это был ряд без единой
+          полезной кнопки. */}
       <header className={pageStyles.siteHeader}>
         <div className="shell">
           <div className={pageStyles.headerInner}>
-            <BrandLogo />
             <div style={{ flex: 1, minWidth: 0 }}>
               <HeaderSearchBar
                 initialCountryId={countryId}
@@ -1710,7 +2658,6 @@ function ToursContent() {
                 initialChildAges={childsStr ? childsStr.split(',').map(Number) : []}
               />
             </div>
-            <MgtBadge />
           </div>
         </div>
       </header>
@@ -1882,9 +2829,14 @@ function ToursContent() {
                 {countryName ? ` «${countryName}»` : ''}. Попробуйте сдвинуть даты,
                 увеличить разброс «±дней» или выбрать другое направление.
               </div>
-              <button className={styles.resetFiltersBtn} onClick={() => router.push('/')}>
-                Изменить параметры поиска
-              </button>
+              <div className={styles.emptyStateActions}>
+                <button className={styles.resetFiltersBtn} onClick={() => router.push('/')}>
+                  Изменить параметры поиска
+                </button>
+                <button className={styles.emptyStateSecondaryBtn} onClick={() => setHelpOpen(true)}>
+                  Помогите подобрать
+                </button>
+              </div>
             </div>
           ) : filtered.length === 0 && phase === 'done' ? (
             <div className={styles.emptyState}>
@@ -1894,9 +2846,14 @@ function ToursContent() {
               <div className={styles.emptyStateHint}>
                 Всего найдено {hotelsLabel(hotels.length)}. Ослабьте фильтры, чтобы увидеть варианты.
               </div>
-              <button className={styles.resetFiltersBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
-                Сбросить фильтры
-              </button>
+              <div className={styles.emptyStateActions}>
+                <button className={styles.resetFiltersBtn} onClick={() => setFilters(DEFAULT_FILTERS)}>
+                  Сбросить фильтры
+                </button>
+                <button className={styles.emptyStateSecondaryBtn} onClick={() => setHelpOpen(true)}>
+                  Помогите подобрать
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -1905,9 +2862,14 @@ function ToursContent() {
                   key={hotel.id}
                   hotel={hotel}
                   selected={selectedId === hotel.id}
-                  onClick={() => openHotel(hotel)}
+                  onSelect={() => selectHotel(hotel.id)}
+                  onOpen={() => openHotel(hotel)}
                 />
               ))}
+              {/* Выдача Tourvisor — это то, что отдали операторы, а не весь
+                  рынок. Дойдя до конца списка и не найдя своего, человек
+                  раньше просто закрывал вкладку. */}
+              {phase === 'done' && <HelpCta onClick={() => setHelpOpen(true)} />}
             </>
           )}
         </div>
@@ -1917,7 +2879,13 @@ function ToursContent() {
             <MapView
               hotels={filtered}
               selectedId={selectedId}
-              onSelect={hotel => openHotel(hotel, 'map')}
+              // Первый тап по пину выбирает карточку, повторный по тому же —
+              // открывает отель. Так у человека есть шаг осмотра перед
+              // погружением, а прежний сценарий никуда не делся.
+              onSelect={hotel => {
+                if (selectedId === hotel.id) openHotel(hotel, 'map')
+                else selectHotel(hotel.id, { scrollList: true })
+              }}
             />
           ) : (
             <div className={styles.mapPlaceholder}>
@@ -1970,6 +2938,75 @@ function ToursContent() {
           onClose={closeModal}
           searchId={searchIdRef.current ?? ''}
         />
+      )}
+
+      {/* Ярлык подбора: доступен на любом шаге, пока форма не открыта. */}
+      {!helpOpen && !modalHotel && <HelpTab onClick={() => setHelpOpen(true)} />}
+
+      {/* ── Форма «помогите подобрать» ── */}
+      {helpOpen && (
+        <div className={styles.helpOverlay} onClick={closeHelp}>
+          <div className={styles.helpCard} onClick={e => e.stopPropagation()}>
+            {helpDone ? (
+              <div className={styles.bookingSuccess}>
+                <div className={styles.bookingSuccessIcon}>✓</div>
+                <div className={styles.bookingSuccessTitle}>Заявка принята</div>
+                <div className={styles.bookingSuccessText}>
+                  Менеджер отдела свяжется с вами и подберёт варианты вручную.
+                </div>
+                <button className={styles.stickyFooterBtn} onClick={closeHelp}>Закрыть</button>
+              </div>
+            ) : (
+              <>
+                <button className={styles.bookingBackBtn} onClick={closeHelp}>← Назад к турам</button>
+                <div className={styles.bookingTitle}>Поможем подобрать тур</div>
+                <div className={styles.helpCardHint}>
+                  Опишите, что нужно, — менеджер поищет за пределами онлайн-выдачи
+                  и вернётся с вариантами.
+                </div>
+
+                {/* Что человек искал — уходит в заявку и без повторного ввода. */}
+                <div className={styles.bookingSummary}>
+                  <div className={styles.bookingSummaryDetails}>{searchSummary}</div>
+                </div>
+
+                <form onSubmit={handleHelp} className={styles.bookingForm}>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-name">Ваше имя</label>
+                    <input
+                      id="help-name" className="input" type="text" required
+                      placeholder="Как к вам обращаться" autoComplete="name"
+                      value={helpName} onChange={e => setHelpName(e.target.value)}
+                      aria-invalid={helpError ? true : undefined}
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-phone">Телефон</label>
+                    <input
+                      id="help-phone" className="input" type="tel" inputMode="tel" required
+                      placeholder="+7 999 123-45-67" autoComplete="tel"
+                      value={helpPhone} onChange={e => setHelpPhone(e.target.value)}
+                      aria-invalid={helpError ? true : undefined}
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="field-label" htmlFor="help-comment">Что ищете</label>
+                    <textarea
+                      id="help-comment" className={`input ${styles.helpTextarea}`} rows={3}
+                      placeholder="Например: две недели у моря в сентябре, бюджет до 150 тысяч, нужен номер с балконом"
+                      value={helpComment} onChange={e => setHelpComment(e.target.value)}
+                    />
+                  </div>
+                  {helpError && <div className={styles.bookingError} role="alert">{helpError}</div>}
+                  <button type="submit" className="btn btn-red btn-block" disabled={helpSubmitting}>
+                    {helpSubmitting ? 'Отправка…' : 'Отправить заявку'}
+                  </button>
+                </form>
+                <div className={styles.bookingNote}>Мы свяжемся с вами в течение рабочего дня</div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       <MobileSearchSheet

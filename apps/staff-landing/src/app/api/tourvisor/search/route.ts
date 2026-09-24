@@ -8,6 +8,7 @@ export async function GET(request: Request) {
 
   const validation = validateSearchParams({
     countryId: searchParams.get('countryId'),
+    regionIds: searchParams.getAll('regionIds'),
     dateFrom: searchParams.get('dateFrom'),
     dateTo: searchParams.get('dateTo'),
     nightsFrom: searchParams.get('nightsFrom'),

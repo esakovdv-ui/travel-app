@@ -542,6 +542,13 @@ html[data-framed='1'] .authPage {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Замерено на боевом: попап с курортами уходил на 118px ниже кромки экрана
+     при высоте окна 900px, и до курортов нельзя было домотать. Ограничиваем
+     высотой окна и прокручиваем внутри. Вычитаем шапку с строкой поиска
+     (попап начинается примерно на 170px) плюс запас снизу. */
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ─── Сегмент «Когда»: даты + гибкость + ночи в одном поповере ───────────── */
@@ -743,6 +750,8 @@ html[data-framed='1'] .authPage {
   flex-direction: column;
   gap: 2px;
   margin-top: 4px;
+  /* По той же причине, что и .regionGrid выше. */
+  flex-shrink: 0;
 }
 
 .popoverItem {
@@ -1444,3 +1453,79 @@ html[data-framed='1'] .authPage {
 @media (pointer: coarse) {
     .searchSegTrigger { min-height: 44px; }
 }
+
+/* ─── Курорты в панели «Куда» ───────────────────────────────────────────────
+   Выбор необязателен: ничего не отмечено — ищем по всей стране. Но сузить
+   здесь дешевле, чем ждать полную выдачу и фильтровать её потом. */
+
+.regionGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 2px 0 4px;
+  /*
+   * Не даём сжиматься. Попап — flex-колонка со своей прокруткой, и его дети
+   * ужимались раньше, чем он начинал скроллиться: у Турции 20 курортов
+   * схлопывались в одну строку 30px при содержимом в 329px. Пусть лучше
+   * прокручивается сам попап — он для этого и ограничен по высоте.
+   */
+  flex-shrink: 0;
+}
+
+.regionChip {
+  padding: 6px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition);
+}
+.regionChip:hover { border-color: var(--c-blue); }
+.regionChipActive {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+}
+
+/*
+ * Курорт, по которому на выбранный месяц предложений пока не встречалось.
+ * Приглушаем, но оставляем кликабельным: Tourvisor отдаёт операторов не
+ * одинаково от поиска к поиску, поэтому «не видели» — это не «нет».
+ */
+.regionChipQuiet {
+  opacity: 0.45;
+}
+.regionChipQuiet:hover { opacity: 1; }
+.regionChipQuiet.regionChipActive { opacity: 1; }
+
+/* Сброс к «всей стране» — рядом с заголовком, чтобы выход был на виду. */
+.regionReset {
+  margin-left: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-blue);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.regionHint {
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  padding: 6px 0 8px;
+}
+
+/* Окно вылета при включённой гибкости — приглушённо, рядом с числом ночей. */
+.nightsHintFlex { color: var(--c-text-muted); }

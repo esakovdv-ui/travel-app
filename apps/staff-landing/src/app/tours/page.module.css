@@ -273,9 +273,16 @@
 
 /* ─── Список отелей ─────────────────────────────────────────────────────── */
 
+/*
+ * Список тянется, карта — нет.
+ *
+ * Раньше было наоборот: список сидел в жёстких 400px, а карта забирала весь
+ * остаток, и на широком мониторе получалось ~780px карты против 400px
+ * карточек. Читают всё-таки карточки, поэтому лишнее место отдаём им.
+ */
 .listPane {
-  width: 400px;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 420px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -302,14 +309,22 @@
 }
 
 /* Фото — левая колонка, overflow:hidden только здесь для скруглений */
+/*
+ * Фотографии дали больше места: карточка на десктопе шириной около 700px, и
+ * 150px под снимок читались как марка на конверте. Доля вместо жёсткой
+ * ширины — на узких экранах не съедает текст, на широких растёт вместе с
+ * карточкой.
+ */
 .hotelThumbWrap {
-  width: 150px;
-  flex-shrink: 0;
+  flex: 0 0 clamp(150px, 32%, 280px);
   position: relative;
   background: var(--c-blue-subtle);
   overflow: hidden;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   align-self: stretch;
+  /* Снимок 4:3 — привычная пропорция отельных фото; при коротком описании
+     карточка иначе получалась ниже, чем нужно кадру. */
+  min-height: 180px;
 }
 
 .hotelThumb {
@@ -329,14 +344,14 @@
   background: linear-gradient(135deg, rgba(12,36,97,0.08), rgba(12,36,97,0.03));
 }
 
-.hotelStarsOverlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+/* Звёзды над названием отеля. Раньше лежали поверх фотографии и терялись
+   на светлых снимках — сотрудники жаловались, что звёздности не видно. */
+.hotelCardStars {
   color: #f59e0b;
-  font-size: 0.75rem;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
-  letter-spacing: 1px;
+  font-size: 0.82rem;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 /* Правый блок */
@@ -419,6 +434,20 @@
   color: #7a5200;
   font-size: 0.74rem;
   font-weight: 600;
+}
+
+/*
+ * Описание отеля. Две строки с обрезкой: нужно дать представление, а не
+ * пересказать карточку целиком.
+ */
+.hotelCardDesc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hotelCardFooter {
@@ -582,7 +611,9 @@
 /* ─── Карта ─────────────────────────────────────────────────────────────── */
 
 .mapPane {
-  flex: 1;
+  /* Доля от ширины, но с потолком: на большом мониторе карте незачем расти
+     дальше — она и так вся видна, а место полезнее карточкам. */
+  flex: 0 0 clamp(320px, 34%, 620px);
   position: relative;
   min-width: 0;
   /* Яндекс-контролы («Открыть Яндекс Карты», копирайт) имеют собственные высокие
@@ -1502,6 +1533,16 @@
   gap: 10px;
 }
 
+/* Цена, «₽/чел» и пометка о разнице — одним столбиком, чтобы правый край
+   строки оставался узким: раньше они шли в ряд и выдавливали «Выбрать». */
+.tourPriceGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
 .tourIncludedBadge {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
@@ -1794,6 +1835,14 @@
   /* Сайдбар скрыт — фильтры через bottom sheet */
   .body > aside { display: none !important; }
 
+  /*
+   * Шапка портала на телефоне пуста: строка поиска в ней скрыта, а логотипы
+   * убраны — оставалась полоса в 61px без единой кнопки. Во фрейме она
+   * отнимала высоту у выдачи вторым этажом после шапки родителя. Поиск на
+   * телефоне открывается из .mobileSearchBar ниже.
+   */
+  .toursPage > header { display: none; }
+
   .mobileActions { display: flex; }
 
   /* Сортировка переехала в шторку фильтров: в подхедере она забирала половину
@@ -1804,7 +1853,14 @@
      повторял его слово в слово и съедал ещё 48px. */
   .subheaderSearching { display: none; }
 
-  .listPane { width: 100%; border-right: none; }
+  /* На телефоне список занимает всю ширину: настольные min-width и доля
+     карты здесь только мешали бы. */
+  .listPane { width: 100%; min-width: 0; flex: 1 1 auto; border-right: none; }
+
+  /* На телефоне карточка узкая и без того плотная: описание добавило бы две
+     строки каждой, а список стал бы вдвое длиннее. Пустует только широкая
+     настольная карточка — там оно и нужно. */
+  .hotelCardDesc { display: none; }
 
   .mapPane { display: none; }
   .mapPaneVisible { display: block !important; height: calc(var(--app-height, 100dvh) * 0.55); }
@@ -1982,4 +2038,548 @@ a.contactValue {
 .subheaderQuiet {
   color: var(--c-text-muted);
   font-size: 0.78rem;
+}
+
+/* ─── «Не нашли подходящее»: карточка в списке и форма подбора ──────────── */
+
+/*
+ * Карточка-приглашение в конце списка. Намеренно не похожа на отель: не белая
+ * плитка, а мягкая подложка с пунктиром — иначе читалась бы как ещё один
+ * вариант и терялась среди них.
+ */
+.helpCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(20, 20, 43, 0.18);
+  background: rgba(20, 20, 43, 0.03);
+}
+
+.helpCtaText {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.helpCtaTitle {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 4px;
+}
+
+.helpCtaHint {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+.helpCtaBtn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: 1.5px solid var(--c-red);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--c-red);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.helpCtaBtn:hover {
+  background: var(--c-red);
+  color: #fff;
+}
+
+/*
+ * Оверлей формы. Накрывает страницу целиком, но отсчитывается от оболочки
+ * .toursPage, а не от вьюпорта: внутри iframe родитель растягивает фрейм под
+ * контент, и position: fixed зацепился бы за эти ~2400px — карточка уехала бы
+ * на два экрана вниз. Ровно по этой причине fixed убран со всех плавающих
+ * элементов страницы.
+ */
+.helpOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 20, 43, 0.45);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.helpCard {
+  width: 100%;
+  max-width: 460px;
+  background: var(--c-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--c-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Форма выше экрана на невысоких окнах — прокручиваем её, а не обрезаем. */
+  max-height: calc(var(--app-height, 100dvh) - 40px);
+  overflow-y: auto;
+}
+
+/*
+ * Типографика карточки: чем меньше ступеней, тем спокойнее читается.
+ *
+ * Было шесть разных сочетаний размера и насыщенности на один экран — при
+ * одном и том же Manrope это читается как «шрифты разные». Свели к трём:
+ * заголовок, основной текст, мелкий. Поля не трогаем: на мобильных им нужен
+ * ровно 16px, иначе Safari зумит страницу при фокусе (см. globals.css).
+ */
+.helpCard .bookingTitle {
+  font-size: 1.02rem;
+}
+
+.helpCardHint,
+.helpCard .bookingSummaryDetails {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+}
+
+.helpCardHint {
+  margin-top: -6px;
+}
+
+.helpCard .bookingNote {
+  font-size: 0.78rem;
+}
+
+.helpTextarea {
+  resize: vertical;
+  min-height: 76px;
+  font: inherit;
+}
+
+/* ─── Ярлык подбора: всегда под рукой ──────────────────────────────────── */
+
+/*
+ * Висит у правого края по центру высоты. Вертикальная надпись — чтобы занимать
+ * полосу в 40px и не отъедать ширину у списка и карты.
+ *
+ * Позиция — absolute от .toursPage: во фрейме fixed цепляется за высоту
+ * растянутого родителем фрейма и уносит элемент за пределы видимой части.
+ */
+.helpTab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+
+  display: flex;
+  align-items: center;
+  padding: 16px 10px;
+
+  border: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--c-red);
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(20, 20, 43, 0.22);
+  transition: padding-right var(--transition), background var(--transition);
+}
+.helpTab:hover { padding-right: 16px; }
+
+.helpTabLabel {
+  writing-mode: vertical-rl;
+  /* Без поворота вертикальный текст читается сверху вниз «лёжа на боку». */
+  transform: rotate(180deg);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  /*
+   * На телефоне вертикальная плашка по центру края перекрыла бы карточки, а
+   * читать её боком неудобно. Сворачиваем в круглую кнопку и уводим в правый
+   * нижний угол — «Фильтры» и «Карта» стоят по центру, угол свободен.
+   */
+  /*
+   * Ярлычок остаётся ярлычком и на телефоне: круглая кнопка и короткая пилюля
+   * не объясняли, о чём они, — надпись объясняет. Только ужимаем: уже, мельче
+   * и без иконки, чтобы полоса у края не наезжала на карточки.
+   */
+  .helpTab {
+    padding: 14px 6px;
+    font-size: 0.72rem;
+    box-shadow: 0 4px 14px rgba(20, 20, 43, 0.26);
+  }
+  .helpTab:hover { padding-right: 6px; }
+  .helpTab:active { transform: translateY(-50%) scale(0.97); }
+}
+
+
+/* ─── Галерея в карточке ───────────────────────────────────────────────── */
+
+.hotelGallery {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Стрелки. Появляются по наведению на десктопе — иначе две кнопки поверх
+ * каждого снимка превращали список в рябь. На телефоне наведения нет, поэтому
+ * там они видны всегда: иначе листать было бы нечем, кроме свайпа вслепую.
+ */
+.galleryArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--c-text);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(20, 20, 43, 0.22);
+  opacity: 0;
+  transition: opacity var(--transition), background var(--transition);
+}
+.hotelGallery:hover .galleryArrow { opacity: 1; }
+.galleryArrow:hover { background: #fff; }
+.galleryArrowPrev { left: 8px; }
+.galleryArrowNext { right: 8px; }
+
+.galleryDots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.galleryDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(20, 20, 43, 0.4);
+}
+.galleryDotOn { background: #fff; }
+
+/* Счётчик — для тех отелей, где кадров больше, чем точек. */
+.galleryCount {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 43, 0.55);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.hotelGallery:hover .galleryCount { opacity: 1; }
+
+@media (max-width: 900px) {
+  /* Наведения нет — стрелки и счётчик показываем постоянно. */
+  .galleryArrow { opacity: 1; }
+  .galleryCount { opacity: 1; }
+}
+
+/* Подсказка о прочих вариантах перелёта под деталями рейса. */
+.flightAlt {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--c-text-muted);
+}
+
+/* Пометка самого дешёвого варианта и надбавка у остальных. */
+.tourCheapest {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1a7f37;
+  white-space: nowrap;
+}
+.tourDiff {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--c-text-light);
+  white-space: nowrap;
+}
+
+/* Заголовки внутри описания номера: «В номере», «Расположение», «Вид». */
+.roomDescLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.roomServices { margin-top: 6px; }
+
+@media (max-width: 900px) {
+  /*
+   * Строка варианта на телефоне складывается в два этажа.
+   *
+   * В один ряд не помещались ни плашки слева, ни цена с кнопкой справа:
+   * «Выбрать» уезжала за правый край экрана и нажать её было нечем. Теперь
+   * сверху даты и условия, снизу цена слева и кнопка справа.
+   */
+  .roomTourRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .roomTourRight {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* В своём ряду цену выравниваем по левому краю — под условиями выше. */
+  .tourPriceGroup { align-items: flex-start; }
+}
+
+/* ─── Разделы карточки отеля ───────────────────────────────────────────── */
+
+/*
+ * Липкая полоса: к ценам можно вернуться с любого места описания, не
+ * отматывая назад. Прилипает к верху прокручиваемого тела модалки.
+ */
+.modalTabs {
+  position: sticky;
+  /* Тело модалки прокручивается с отступом сверху — прилипаем под него,
+     иначе полоса вылезала бы из-под края. */
+  top: -20px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  padding: 10px 0;
+  margin-bottom: 4px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  /*
+   * Не сжиматься. Тело модалки — flex-колонка, а у элемента с собственным
+   * overflow автоматический минимальный размер равен нулю: полоса схлопывалась
+   * в 21px, кнопки внутри — в 16px при отступах 8+8, то есть текст обрезался
+   * ровно пополам. Та же ловушка, что была с сеткой курортов в попапе «Куда».
+   */
+  flex-shrink: 0;
+}
+.modalTabs::-webkit-scrollbar { display: none; }
+
+.modalTab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.modalTab:hover { background: rgba(20, 20, 43, 0.05); }
+
+.modalTabOn {
+  background: var(--c-blue);
+  color: #fff;
+}
+.modalTabOn:hover { background: var(--c-blue); }
+
+/* ─── Шаг выбора перелёта ──────────────────────────────────────────────── */
+
+.flightPickSummary {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--c-blue-subtle);
+  margin-bottom: 10px;
+}
+.flightPickRoom { font-size: 0.92rem; font-weight: 700; color: var(--c-text); }
+.flightPickDates { font-size: 0.8rem; color: var(--c-text-muted); margin-top: 2px; }
+
+.flightPickNote {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--c-text-muted);
+  margin-bottom: 10px;
+}
+
+.flightPickLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 12px 0 6px;
+}
+
+/*
+ * Список рейсов. Колонок нет: цена от рейса не зависит, выбирают только время,
+ * поэтому строка короткая и одинаковая — так проще пробежать глазами.
+ */
+.flightPickList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flightPickRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition), background var(--transition);
+}
+.flightPickRow:hover { border-color: var(--c-blue); }
+
+.flightPickRowOn {
+  border-color: var(--c-blue);
+  background: var(--c-blue-subtle);
+}
+
+/* Строка варианта: два плеча слева, доплата справа. */
+.flightPickRow {
+  align-items: center;
+}
+.flightPickLegs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flightSide { display: block; min-width: 0; }
+.flightSideDir {
+  display: inline-block;
+  min-width: 62px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-light);
+}
+.flightSideTime {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.flightSideMeta {
+  display: block;
+  margin-left: 62px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+.flightPickPrice { flex-shrink: 0; text-align: right; }
+.flightPickExtra { font-size: 0.86rem; font-weight: 700; color: var(--c-text); white-space: nowrap; }
+.flightPickIncluded { font-size: 0.76rem; font-weight: 600; color: #1a7f37; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  /* Подпись плеча уводим на свою строку: «ТУДА» и время в один ряд не влезали. */
+  .flightSideMeta { margin-left: 0; }
+  .flightSideDir { min-width: 0; margin-right: 8px; }
+}
+
+/* Фильтр по времени вылета — над списком рейсов. */
+.flightSlots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.flightSlot {
+  padding: 6px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--c-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition);
+}
+.flightSlot:hover { border-color: var(--c-blue); }
+
+.flightSlotOn {
+  background: var(--c-blue);
+  border-color: var(--c-blue);
+  color: #fff;
+}
+
+/* Число вариантов в интервале — приглушённее подписи. */
+.flightSlotCount { opacity: 0.6; font-weight: 700; }
+
+/* Ряд фильтра: подпись плеча и кнопки-интервалы. */
+.flightSlotsRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.flightSlotsLabel {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+/* Выбранный рейс в сводке формы заявки. */
+.bookingSummaryFlight {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+}
+
+/* «Повторить» рядом с сообщением о неудачном запросе рейсов. */
+.flightRetryBtn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--c-blue);
+  text-decoration: underline;
+  cursor: pointer;
 }

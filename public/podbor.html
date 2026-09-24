@@ -261,6 +261,52 @@
     .summary div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
     .summary dt { color: var(--muted); }
     .summary dd { margin: 0; font-weight: 700; text-align: right; }
+    .contact-card {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 15px; padding: 18px;
+      margin-top: 16px; margin-bottom: 8px;
+    }
+    .contact-card h3 {
+      margin: 0 0 6px; font-size: 17px; font-weight: 800;
+    }
+    .contact-card .contact-sub {
+      margin: 0 0 14px; font-size: 14px; color: var(--muted); line-height: 1.4;
+    }
+    .contact-fields { display: grid; gap: 10px; }
+    .contact-fields label {
+      display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted);
+    }
+    .contact-fields input[type="text"],
+    .contact-fields input[type="tel"] {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px 14px; font: inherit; font-weight: 700; font-size: 16px;
+      color: var(--text); background: var(--white); outline: none;
+    }
+    .contact-fields input:focus { border-color: var(--orange); }
+    .contact-consent {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-top: 12px; font-size: 13px; color: var(--muted); line-height: 1.35;
+    }
+    .contact-consent input { margin-top: 3px; flex-shrink: 0; }
+    .contact-consent a { color: var(--orange); }
+    .contact-error {
+      margin: 10px 0 0; font-size: 13px; font-weight: 700; color: #c0392b;
+    }
+    .contact-error[hidden], .contact-ok[hidden] { display: none !important; }
+    .contact-ok {
+      margin: 10px 0 0; font-size: 14px; font-weight: 700; color: #1a7f37;
+    }
+    .contact-actions { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn-secondary {
+      background: var(--white); color: var(--orange);
+      border: 2px solid var(--orange);
+    }
+    .btn-secondary:hover { background: #fff7f0; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .hp-field {
+      position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;
+    }
     .note { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
     .note a { color: var(--orange); }
     .actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
@@ -631,6 +677,32 @@
       <div class="actions">
         <button type="button" class="btn btn-ghost" data-go="dates">Назад</button>
         <button type="button" class="btn btn-primary" id="goResults">Показать варианты</button>
+      </div>
+      <div class="contact-card" id="contactCard">
+        <h3>Нужна помощь менеджера?</h3>
+        <p class="contact-sub">Оставьте имя и телефон — перезвоним, если сами не найдёте подходящий вариант.</p>
+        <form id="contactForm" novalidate>
+          <div class="hp-field" aria-hidden="true">
+            <label>Сайт <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          </div>
+          <div class="contact-fields">
+            <label>Имя
+              <input type="text" id="contactName" name="name" autocomplete="name" maxlength="100" placeholder="Как к вам обращаться" required>
+            </label>
+            <label>Телефон
+              <input type="tel" id="contactPhone" name="phone" autocomplete="tel" maxlength="18" inputmode="numeric" placeholder="+7 (___) ___-__-__" required>
+            </label>
+          </div>
+          <label class="contact-consent">
+            <input type="checkbox" id="contactConsent" name="consent" required>
+            <span>Согласен(на) на <a href="https://online.mosgortur.ru/documents/new-documents/Форма_согласия_на_обработку_персональных_данных_в_сети_Интернет.pdf" target="_blank" rel="noopener">обработку персональных данных</a></span>
+          </label>
+          <p class="contact-error" id="contactError" hidden></p>
+          <p class="contact-ok" id="contactOk" hidden>Заявку приняли. Можно открыть подборку выше, нажав на кнопку «Показать туры».</p>
+          <div class="contact-actions">
+            <button type="submit" class="btn btn-secondary" id="contactSubmit">Оставить телефон менеджеру</button>
+          </div>
+        </form>
       </div>
       <p class="footer-cert">Сертификатом можно оплатить часть суммы — до 40&nbsp;000&nbsp;₽ на человека. <a href="https://online.mosgortur.ru/for-tourists/how-get-certificate/" target="_blank" rel="noopener">Как это работает</a></p>
     </section>
@@ -1470,7 +1542,15 @@
       ].join('_');
       const maxPrice = state.budget || 80000;
       const minPrice = Math.round(maxPrice * 0.7);
+      // online.mosgortur.ru снимает UTM через router.replace({ query }) без hash —
+      // из‑за этого #module6?… всегда теряется до старта Слетать (пустая форма).
+      // Слетать также читает target=module6&… из query; эти параметры replace сохраняет.
       const params = new URLSearchParams({
+        podbor_ref: '1',
+        utm_source: 'podbor_wizard',
+        utm_campaign: campaign,
+        utm_medium: 'wizard',
+        target: 'module6',
         action: 'search',
         moduleId: '68ea30c6-f7a0-4a8c-9775-ccd5a3063a02',
         country: '150',
@@ -1492,11 +1572,6 @@
         isRailwaySupported: 'false',
         tourFormRequiredFields: '0',
       });
-      const utm = new URLSearchParams({
-        utm_source: 'podbor_wizard',
-        utm_campaign: campaign,
-        utm_medium: 'wizard',
-      });
       if (state.kidsAges.length) {
         params.set('kids', state.kidsAges.join(','));
       }
@@ -1506,7 +1581,8 @@
       }
       const resorts = tourResortsParam(state.region);
       if (resorts) params.set('resorts', resorts);
-      return `https://online.mosgortur.ru/tours/?${utm.toString()}#module6?${params.toString()}`;
+
+      return `https://online.mosgortur.ru/tours/?${params.toString()}`;
     }
 
     function buildHandoffUrl() {
@@ -1537,6 +1613,350 @@
 
     document.getElementById('goResults').addEventListener('click', () => {
       openHandoff(buildHandoffUrl());
+    });
+
+    const PHONE_MASK_EMPTY = '+7 (___) ___-__-__';
+    const PHONE_MIN_CURSOR = 4;
+
+    function normalizePastedDigits(text) {
+      let raw = String(text).replace(/\D/g, '');
+      if (!raw) return '';
+      if (raw.length >= 11 && (raw[0] === '8' || raw[0] === '7')) {
+        raw = raw.slice(1);
+      }
+      return raw.slice(0, 10);
+    }
+
+    function formatNationalDigits(digitString) {
+      if (!digitString.length) return PHONE_MASK_EMPTY;
+      const area = (digitString.slice(0, 3) + '___').slice(0, 3);
+      const mid = (digitString.slice(3, 6) + '___').slice(0, 3);
+      const part1 = (digitString.slice(6, 8) + '__').slice(0, 2);
+      const part2 = (digitString.slice(8, 10) + '__').slice(0, 2);
+      return `+7 (${area}) ${mid}-${part1}-${part2}`;
+    }
+
+    function digitIndexFromCursor(formatted, cursor) {
+      let count = 0;
+      for (let i = 0; i < cursor && i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') count += 1;
+      }
+      return count;
+    }
+
+    function cursorFromDigitIndex(formatted, digitIndex) {
+      if (digitIndex <= 0) return PHONE_MIN_CURSOR;
+      let seen = 0;
+      for (let i = 0; i < formatted.length; i += 1) {
+        const ch = formatted[i];
+        if (ch >= '0' && ch <= '9') {
+          seen += 1;
+          if (seen === digitIndex) return i + 1;
+        }
+      }
+      for (let i = 0; i < formatted.length; i += 1) {
+        if (formatted[i] === '_') return Math.max(i, PHONE_MIN_CURSOR);
+      }
+      return formatted.length;
+    }
+
+    function createPhoneMaskController(input) {
+      let digits = '';
+      let skipKeydown = false;
+
+      function render(caretIndex) {
+        const index = caretIndex ?? digits.length;
+        const formatted = formatNationalDigits(digits);
+        input.value = formatted;
+        try {
+          const cursor = cursorFromDigitIndex(formatted, index);
+          const safeCursor = Math.max(PHONE_MIN_CURSOR, Math.min(cursor, formatted.length));
+          input.setSelectionRange(safeCursor, safeCursor);
+        } catch (_) { /* iOS / readonly */ }
+      }
+
+      function setDigits(nextDigits, caretIndex) {
+        digits = nextDigits.slice(0, 10);
+        render(caretIndex ?? digits.length);
+      }
+
+      function selectionDigitRange() {
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        return {
+          from: digitIndexFromCursor(input.value, start),
+          to: digitIndexFromCursor(input.value, end),
+        };
+      }
+
+      function insertAt(index, chunk) {
+        const normalized = normalizePastedDigits(chunk);
+        if (!normalized) return;
+        const merged = (digits.slice(0, index) + normalized + digits.slice(index)).slice(0, 10);
+        setDigits(merged, index + normalized.length);
+      }
+
+      function deleteBackward(from, to) {
+        if (from <= 0 && to <= 0) return;
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from > 0) {
+          setDigits(digits.slice(0, from - 1) + digits.slice(from), from - 1);
+        }
+      }
+
+      function deleteForward(from, to) {
+        if (from !== to) {
+          setDigits(digits.slice(0, from) + digits.slice(to), from);
+          return;
+        }
+        if (from < digits.length) {
+          setDigits(digits.slice(0, from) + digits.slice(from + 1), from);
+        }
+      }
+
+      function handleKeydown(event) {
+        if (input.disabled || input.readOnly) return;
+        const { from, to } = selectionDigitRange();
+
+        if (event.key === 'Backspace') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (event.key === 'Delete') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (event.key.length === 1 && /\d/.test(event.key)) {
+          event.preventDefault();
+          if (digits.length >= 10 && from === to) return;
+          const merged = (digits.slice(0, from) + event.key + digits.slice(from === to ? from : to)).slice(0, 10);
+          setDigits(merged, from + 1);
+          return;
+        }
+
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
+        }
+      }
+
+      input.addEventListener('focus', () => {
+        if (input.disabled) return;
+        render(digits.length);
+        if (!digits.length) {
+          try {
+            input.setSelectionRange(PHONE_MIN_CURSOR, PHONE_MIN_CURSOR);
+          } catch (_) { /* ignore */ }
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        if (!digits.length) {
+          input.value = '';
+        } else {
+          input.value = formatNationalDigits(digits);
+        }
+      });
+
+      input.addEventListener('click', () => {
+        if (input.disabled) return;
+        requestAnimationFrame(() => {
+          const index = digitIndexFromCursor(input.value, input.selectionStart ?? 0);
+          render(index);
+        });
+      });
+
+      input.addEventListener('beforeinput', (event) => {
+        if (input.disabled) return;
+        skipKeydown = true;
+        const { from, to } = selectionDigitRange();
+        const { inputType, data } = event;
+
+        if (inputType === 'deleteContentBackward') {
+          event.preventDefault();
+          deleteBackward(from, to);
+          return;
+        }
+
+        if (inputType === 'deleteContentForward') {
+          event.preventDefault();
+          deleteForward(from, to);
+          return;
+        }
+
+        if (
+          inputType === 'insertText'
+          || inputType === 'insertFromPaste'
+          || inputType === 'insertReplacementText'
+          || inputType === 'insertFromDrop'
+        ) {
+          const chunk = data ?? '';
+          if (!/\d/.test(chunk)) {
+            event.preventDefault();
+            return;
+          }
+          event.preventDefault();
+          if (digits.length >= 10 && from === to && inputType === 'insertText') return;
+          if (from !== to) {
+            const merged = (digits.slice(0, from) + normalizePastedDigits(chunk) + digits.slice(to)).slice(0, 10);
+            setDigits(merged, from + normalizePastedDigits(chunk).length);
+            return;
+          }
+          insertAt(from, chunk);
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (skipKeydown) {
+          skipKeydown = false;
+          return;
+        }
+        handleKeydown(event);
+      });
+
+      input.addEventListener('paste', (event) => {
+        if (input.disabled) return;
+        event.preventDefault();
+        const pasted = (event.clipboardData || window.clipboardData).getData('text');
+        const { from, to } = selectionDigitRange();
+        const normalized = normalizePastedDigits(pasted);
+        const merged = (digits.slice(0, from) + normalized + digits.slice(to)).slice(0, 10);
+        setDigits(merged, from + normalized.length);
+      });
+
+      return {
+        getValue() {
+          return digits.length ? `+7${digits}` : '';
+        },
+        getDigitCount() {
+          return digits.length;
+        },
+        isComplete() {
+          return digits.length === 10;
+        },
+      };
+    }
+
+    const contactPhoneCtrl = createPhoneMaskController(document.getElementById('contactPhone'));
+
+    function maskPhoneLocal(phone) {
+      const digits = String(phone || '').replace(/\D/g, '');
+      if (digits.length < 4) return '****';
+      return '+7***' + digits.slice(-4);
+    }
+
+    function setContactError(message) {
+      const el = document.getElementById('contactError');
+      if (!message) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+      }
+      el.hidden = false;
+      el.textContent = message;
+    }
+
+    function setContactBusy(busy) {
+      const btn = document.getElementById('contactSubmit');
+      btn.disabled = busy;
+      btn.textContent = busy ? 'Отправляем…' : 'Оставить телефон менеджеру';
+    }
+
+    document.getElementById('contactForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setContactError('');
+      document.getElementById('contactOk').hidden = true;
+
+      const name = (document.getElementById('contactName').value || '').trim();
+      const phone = contactPhoneCtrl.getValue();
+      const consent = document.getElementById('contactConsent').checked;
+      const website = (document.querySelector('#contactForm input[name="website"]')?.value || '').trim();
+
+      if (!name) {
+        setContactError('Укажите имя');
+        return;
+      }
+      if (!contactPhoneCtrl.isComplete()) {
+        setContactError('Введите номер полностью: +7 (___) ___-__-__');
+        document.getElementById('contactPhone').focus();
+        return;
+      }
+      if (!consent) {
+        setContactError('Нужно согласие на обработку данных');
+        return;
+      }
+
+      setContactBusy(true);
+      const handoffUrl = buildHandoffUrl();
+      const answers = snapshotAnswers(handoffUrl);
+
+      try {
+        const response = await fetch('/api/podbor-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            consent: true,
+            website,
+            sessionId: getSessionId(),
+            answers,
+            utm: parseUtm(),
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          const map = {
+            invalid_phone: 'Проверьте номер телефона',
+            missing_fields: 'Заполните имя и телефон',
+            consent_required: 'Нужно согласие на обработку данных',
+            misconfigured: 'Сейчас не получается отправить. Откройте подборку или попробуйте позже.',
+            bitrix_error: 'Не удалось отправить заявку. Попробуйте ещё раз или откройте подборку.',
+          };
+          setContactError(map[data.error] || 'Не удалось отправить заявку. Попробуйте ещё раз.');
+          setContactBusy(false);
+          return;
+        }
+
+        track('podbor_lead_submit', {
+          format: state.format,
+          region: state.region,
+          nights: tripNights(),
+          budget: state.budget,
+          adults: state.adults,
+          kids: state.kids,
+          duplicate: Boolean(data.duplicate),
+        });
+        logPodbor('lead_submit', {
+          step: 'lead_submit',
+          answers: Object.assign({}, answers, {
+            contactName: name,
+            phoneMasked: maskPhoneLocal(phone),
+            bitrixDealId: typeof data.dealId === 'number' ? data.dealId : undefined,
+          }),
+        });
+
+        document.getElementById('contactOk').hidden = false;
+        document.getElementById('contactOk').textContent =
+          'Заявку приняли. Можно открыть подборку выше, нажав на кнопку «' +
+          (state.format === 'hotel' ? 'Показать отели' : 'Показать туры') +
+          '».';
+        document.getElementById('contactSubmit').disabled = true;
+        document.getElementById('contactSubmit').textContent = 'Заявку приняли';
+        document.getElementById('contactName').disabled = true;
+        document.getElementById('contactPhone').disabled = true;
+        document.getElementById('contactConsent').disabled = true;
+      } catch (_) {
+        setContactError('Нет связи. Проверьте интернет и попробуйте ещё раз.');
+        setContactBusy(false);
+      }
     });
 
     try {
