@@ -8,6 +8,7 @@ import { Preloader } from '@/components/ui/preloader';
 import { toUserSearchError } from '@/lib/search-errors';
 import { toursLabel } from '@/lib/utils';
 import styles from './tours.module.css';
+import type { WlSearchContext } from '@/lib/wl-link';
 
 const HotelMap = dynamic(
   () => import('@/components/tours/hotel-map').then(m => m.HotelMap),
@@ -41,6 +42,8 @@ function ToursPageInner() {
   const [error, setError]     = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Контекст последнего поиска — нужен ссылкам на карточки отелей в WL.
+  const [wl, setWl] = useState<WlSearchContext | undefined>(undefined);
 
 
   const wlBaseUrl = process.env.NEXT_PUBLIC_WL_BASE_URL ?? '';
@@ -52,6 +55,7 @@ function ToursPageInner() {
     setLoading(true);
     setError(null);
     setHotels([]);
+    setWl(undefined);
     setFilters({});
     setActive(EMPTY_FILTERS);
     setSearched(true);
@@ -60,11 +64,14 @@ function ToursPageInner() {
       toCountry:     searchParams.get('toCountry')     ?? 'TR',
       startDateFrom,
       startDateTill: searchParams.get('startDateTill') ?? startDateFrom,
-      endDateFrom:   searchParams.get('endDateFrom')   ?? '',
-      endDateTill:   searchParams.get('endDateTill')   ?? '',
       adults:        searchParams.get('adults')        ?? '2',
       fromCity:      searchParams.get('fromCity')      ?? 'Moscow',
-      searchType:    'auto',
+      // Тип задаёт таб, который выбрал человек, а не страна: раньше здесь было
+      // 'auto', и Россия молча превращалась в поиск без перелёта, а заграница —
+      // в тур с перелётом, независимо от выбора в шапке.
+      searchType:    'package',
+      ...(searchParams.get('endDateFrom') ? { endDateFrom: searchParams.get('endDateFrom')! } : {}),
+      ...(searchParams.get('endDateTill') ? { endDateTill: searchParams.get('endDateTill')! } : {}),
       ...(searchParams.get('toCity') ? { toCity: searchParams.get('toCity')! } : {}),
       ...(Number(searchParams.get('kids') ?? 0) > 0 ? {
         kids:     searchParams.get('kids')!,
@@ -77,6 +84,12 @@ function ToursPageInner() {
       .then(data => {
         if (!data.success) throw new Error(data.error);
         setHotels(data.hotels ?? []);
+        setWl({
+          requestId:  data.request_id,
+          searchType: data.search_type,
+          adults:     Number(searchParams.get('adults') ?? 2),
+          fromCity:   searchParams.get('fromCity') ?? 'Moscow',
+        });
         setFilters(data.filters ?? {});
       })
       .catch(err => setError(toUserSearchError(err)))
@@ -121,6 +134,7 @@ function ToursPageInner() {
                     key={h.tour_id}
                     hotel={h}
                     wlBaseUrl={wlBaseUrl}
+                    wl={wl}
                     variant="row"
                     onMouseEnter={() => setHoveredId(h.tour_id)}
                     onMouseLeave={() => setHoveredId(null)}
@@ -139,7 +153,7 @@ function ToursPageInner() {
 
           {hasMap && (
             <div className={styles.mapPanel}>
-              <HotelMap hotels={filtered} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} />
+              <HotelMap hotels={filtered} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} wl={wl} />
             </div>
           )}
         </div>
