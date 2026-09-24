@@ -20,11 +20,13 @@ jobs:
           REBOOKING_WEBHOOK_TOKEN: ${{ secrets.REBOOKING_WEBHOOK_TOKEN }}
           TOURVISOR_AUTHKEY: ${{ secrets.TOURVISOR_AUTHKEY }}
           TOURVISOR_TOKEN: ${{ secrets.TOURVISOR_TOKEN }}
+          LEVEL_TRAVEL_API_KEY: ${{ secrets.LEVEL_TRAVEL_API_KEY }}
+          NEXT_PUBLIC_WL_BASE_URL: ${{ vars.NEXT_PUBLIC_WL_BASE_URL }}
         with:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN,TOURVISOR_AUTHKEY,TOURVISOR_TOKEN
+          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN,TOURVISOR_AUTHKEY,TOURVISOR_TOKEN,LEVEL_TRAVEL_API_KEY,NEXT_PUBLIC_WL_BASE_URL
           script: |
             set -e
             ENV_FILE=/home/travel-app/.env.local
@@ -58,6 +60,14 @@ jobs:
             fi
             if [ -n "$TOURVISOR_TOKEN" ]; then
               set_env_var TOURVISOR_TOKEN "$TOURVISOR_TOKEN"
+            fi
+            # Ключ Level Travel и адрес White Label переезжают только вместе.
+            # Порознь они дают неработающую связку: поиск идёт по одному
+            # партнёру, а ссылка ведёт на WL другого, и тот не узнаёт
+            # request_id — карточка открывается на своих дефолтных датах.
+            if [ -n "$LEVEL_TRAVEL_API_KEY" ]; then
+              set_env_var LEVEL_TRAVEL_API_KEY "$LEVEL_TRAVEL_API_KEY"
+              set_env_var NEXT_PUBLIC_WL_BASE_URL "${NEXT_PUBLIC_WL_BASE_URL:-https://mytrip.mosgortur.ru}"
             fi
             MAIN_EXIT=0
             /home/deploy.sh || MAIN_EXIT=$?
