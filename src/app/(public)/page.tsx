@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { listFeaturedReviews } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
 import { APP_NAME } from '@/lib/constants';
-import { readThematicRows, fetchRowHotels } from '@/lib/thematic-rows';
+import { readThematicRows, fetchRowHotels, type ThematicRowHotels } from '@/lib/thematic-rows';
 import { readSearchTags } from '@/lib/search-tags';
 import type { HotelData } from '@/components/tours/hotel-card';
 import {
@@ -41,18 +41,19 @@ export default async function HomePage() {
 
   // Последовательно — чтобы не словить rate-limit LT API при параллельных запросах
   const reviews = await listFeaturedReviews(3);
-  const rowResults: HotelData[][] = [];
+  const rowResults: ThematicRowHotels[] = [];
   for (const r of rowConfigs) {
-    const items = await fetchRowHotels(r.id, r.search).catch((err) => {
+    const result = await fetchRowHotels(r.id, r.search).catch((err) => {
       console.error(`[thematic-rows] Ошибка ряда "${r.id}":`, err);
-      return [] as HotelData[];
+      return { hotels: [] as HotelData[], wl: {} };
     });
-    rowResults.push(items);
+    rowResults.push(result);
   }
 
   const thematicRows = rowConfigs.map((config, i) => ({
     ...config,
-    items: rowResults[i],
+    items: rowResults[i].hotels,
+    wl: rowResults[i].wl,
   }));
 
   return (

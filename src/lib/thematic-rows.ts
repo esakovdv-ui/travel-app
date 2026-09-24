@@ -3,6 +3,13 @@ import path from 'path';
 import { unstable_cache } from 'next/cache';
 import type { HotelData } from '@/components/tours/hotel-card';
 import { enqueueSearch, pollUntilComplete, getHotels } from '@/lib/leveltravel';
+import type { WlSearchContext } from '@/lib/wl-link';
+
+/** Отели ряда вместе с контекстом поиска — он нужен ссылкам на WL. */
+export interface ThematicRowHotels {
+  hotels: HotelData[];
+  wl: WlSearchContext;
+}
 
 export interface ThematicRowSearch {
   toCountry: string;
@@ -39,13 +46,13 @@ export function writeThematicRows(rows: ThematicRowConfig[]): void {
 
 // Кэшируем каждый ряд на 6 часов
 export const fetchRowHotels = unstable_cache(
-  async (rowId: string, search: ThematicRowSearch): Promise<HotelData[]> => {
+  async (rowId: string, search: ThematicRowSearch): Promise<ThematicRowHotels> => {
     const today = new Date();
     const startDate = new Date(today);
     startDate.setDate(today.getDate() + search.startOffsetDays);
     const startDateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD, leveltravel.ts сам конвертирует
 
-    const { request_id } = await enqueueSearch({
+    const { request_id, search_type } = await enqueueSearch({
       fromCity: 'Moscow',
       toCountry: search.toCountry,
       toCity: search.toCity || undefined,
@@ -59,7 +66,13 @@ export const fetchRowHotels = unstable_cache(
     const data = await getHotels(request_id);
     const hotels: HotelData[] = data.hotels ?? [];
     console.log(`[thematic-rows] ${rowId}: ${hotels.length} отелей`);
-    return hotels.slice(0, search.maxResults);
+    return {
+      hotels: hotels.slice(0, search.maxResults),
+      // Ряд кэшируется на 6 часов вместе с request_id. Если WL к моменту клика
+      // его уже не помнит, он просто откроет отель на своих дефолтах — то есть
+      // не хуже, чем было до проброса контекста.
+      wl: { requestId: request_id, searchType: search_type, adults: search.adults, fromCity: 'Moscow' },
+    };
   },
   ['thematic-row-hotels'],
   { revalidate: 6 * 60 * 60, tags: ['thematic-rows'] }

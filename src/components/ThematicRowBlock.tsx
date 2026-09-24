@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ThematicRowConfig } from '@/lib/thematic-rows';
 import type { HotelData } from '@/components/tours/hotel-card';
+import { buildWlHotelUrl, type WlSearchContext } from '@/lib/wl-link';
 import { StarIcon, ArrowRightIcon } from '@/components/icons';
 import styles from '@/app/(public)/home.module.css';
 
@@ -14,11 +15,12 @@ function nights(n: number) {
 }
 
 interface Props {
-  collection: ThematicRowConfig & { items: HotelData[] };
+  collection: ThematicRowConfig & { items: HotelData[]; wl?: WlSearchContext };
 }
 
 export default function ThematicRowBlock({ collection }: Props) {
   const [items, setItems] = useState<HotelData[]>(collection.items);
+  const [wl, setWl] = useState<WlSearchContext | undefined>(collection.wl);
   const [loading, setLoading] = useState(collection.items.length === 0);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function ThematicRowBlock({ collection }: Props) {
       .then(data => {
         if (!cancelled && Array.isArray(data.hotels)) {
           setItems(data.hotels);
+          setWl(data.wl);
         }
       })
       .catch(() => { /* silent — user sees empty state */ })
@@ -74,7 +77,11 @@ export default function ThematicRowBlock({ collection }: Props) {
               return (
                 <a
                   className={styles.thematicListingCard}
-                  href={`${wlBaseUrl}${item.hotel.link}`}
+                  href={buildWlHotelUrl(
+                    wlBaseUrl,
+                    { link: item.hotel.link, minPrice: item.min_price, nights: item.min_price_nights, dates: item.dates },
+                    wl,
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   key={`${collection.id}-${item.tour_id}`}

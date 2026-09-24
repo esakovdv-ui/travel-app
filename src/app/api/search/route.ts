@@ -7,26 +7,39 @@ function toDisplayDate(date: string | undefined): string | undefined {
   return date;
 }
 
+/**
+ * Пустой параметр в URL — это отсутствие значения, а не значение «».
+ * Без этого в LT уезжали пустые строки вида `endDateTill=`.
+ *
+ * Поиск это всё равно не чинит: при поиске диапазоном LT требует
+ * end_date_from и end_date_till обязательно и на их отсутствие отвечает
+ * «invalid date». Здесь мы просто не отправляем мусор.
+ */
+function str(value: string | null): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   const params = {
-    fromCity:      searchParams.get('fromCity')      ?? 'Moscow',
-    toCountry:     searchParams.get('toCountry')     ?? '',
-    toCity:        searchParams.get('toCity')        ?? undefined,
+    fromCity:      str(searchParams.get('fromCity'))  ?? 'Moscow',
+    toCountry:     str(searchParams.get('toCountry')) ?? '',
+    toCity:        str(searchParams.get('toCity')),
     adults:        Number(searchParams.get('adults') ?? 2),
     // Вариант А (конвертируем в DD.MM.YYYY для API)
-    startDate:     toDisplayDate(searchParams.get('startDate') ?? undefined),
-    nights:        searchParams.get('nights')        ?? undefined,
-    endDate:       toDisplayDate(searchParams.get('endDate') ?? undefined),
+    startDate:     toDisplayDate(str(searchParams.get('startDate'))),
+    nights:        str(searchParams.get('nights')),
+    endDate:       toDisplayDate(str(searchParams.get('endDate'))),
     // Вариант Б
-    startDateFrom: searchParams.get('startDateFrom') ?? undefined,
-    startDateTill: searchParams.get('startDateTill') ?? undefined,
-    endDateFrom:   searchParams.get('endDateFrom')   ?? undefined,
-    endDateTill:   searchParams.get('endDateTill')   ?? undefined,
+    startDateFrom: str(searchParams.get('startDateFrom')),
+    startDateTill: str(searchParams.get('startDateTill')),
+    endDateFrom:   str(searchParams.get('endDateFrom')),
+    endDateTill:   str(searchParams.get('endDateTill')),
     kids:          searchParams.get('kids') ? Number(searchParams.get('kids')) : undefined,
-    kidsAges:      searchParams.get('kidsAges')      ?? undefined,
-    searchType:    (searchParams.get('searchType')   ?? 'auto') as 'package' | 'hotel' | 'auto',
+    kidsAges:      str(searchParams.get('kidsAges')),
+    searchType:    (str(searchParams.get('searchType')) ?? 'auto') as 'package' | 'hotel' | 'auto',
   };
 
   const hasDates = params.startDate || params.startDateFrom;
@@ -39,7 +52,7 @@ export async function GET(request: Request) {
 
   try {
     // Шаг 1: ставим поиск в очередь
-    const { request_id } = await enqueueSearch(params);
+    const { request_id, search_type } = await enqueueSearch(params);
 
     // Шаг 2: ждём завершения поиска (поллинг)
     await pollUntilComplete(request_id);
@@ -50,6 +63,8 @@ export async function GET(request: Request) {
     return Response.json({
       success: true,
       request_id,
+      // нужен клиенту, чтобы собрать ссылку на карточку отеля в WL
+      search_type,
       hotels: hotels.hotels,
       hotels_count: hotels.hotels_count,
       filters: hotels.filters,

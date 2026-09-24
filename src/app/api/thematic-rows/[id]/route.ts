@@ -14,8 +14,8 @@ export async function GET(
   }
 
   try {
-    const hotels = await fetchRowHotels(config.id, config.search);
-    return NextResponse.json({ hotels });
+    const { hotels, wl } = await fetchRowHotels(config.id, config.search);
+    return NextResponse.json({ hotels, wl });
   } catch {
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }

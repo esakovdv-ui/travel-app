@@ -83,7 +83,12 @@ export async function enqueueSearch(params: SearchParams) {
   const data = JSON.parse(text);
   if (!data.request_id) throw new Error(`No request_id in response: ${text.slice(0, 200)}`);
 
-  return data as { request_id: string };
+  // search_type отдаём наружу: при 'auto' вызывающий код сам не знает, чем всё
+  // разрешилось, а ссылкам на WL этот тип нужен.
+  return {
+    request_id: data.request_id as string,
+    search_type: searchType as 'hotel' | 'package',
+  };
 }
 
 // 2. Проверить статус поиска

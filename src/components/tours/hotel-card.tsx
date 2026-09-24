@@ -1,10 +1,13 @@
 'use client';
 import styles from './hotel-card.module.css';
+import { buildWlHotelUrl, type WlSearchContext } from '@/lib/wl-link';
 
 export interface HotelData {
   tour_id: string;
   min_price: number;
   min_price_nights: number;
+  /** Карта «дата → цена»: по ней собирается ссылка на нужную дату в WL. */
+  dates?: Record<string, number>;
   pansion_prices?: Record<string, number>;
   extras?: {
     instant_confirm?: boolean;
@@ -68,12 +71,15 @@ function bestMeal(pansion_prices?: Record<string, number>) {
 export function HotelCard({
   hotel: h,
   wlBaseUrl,
+  wl,
   variant = 'card',
   onMouseEnter,
   onMouseLeave,
 }: {
   hotel: HotelData;
   wlBaseUrl: string;
+  /** Контекст поиска — без него WL откроет отель на своих датах и своей цене. */
+  wl?: WlSearchContext;
   variant?: 'card' | 'row';
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -189,7 +195,11 @@ export function HotelCard({
               Telegram и Instagram, и кнопка молча переставала работать. */}
           <a
             className={styles.bookBtn}
-            href={`${wlBaseUrl}${h.hotel.link}`}
+            href={buildWlHotelUrl(
+              wlBaseUrl,
+              { link: h.hotel.link, minPrice: h.min_price, nights: h.min_price_nights, dates: h.dates },
+              wl,
+            )}
             target="_blank"
             rel="noopener noreferrer"
           >

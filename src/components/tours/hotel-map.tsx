@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { HotelData } from './hotel-card';
+import { buildWlHotelUrl, type WlSearchContext } from '@/lib/wl-link';
 import styles from './hotel-map.module.css';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -91,7 +92,7 @@ function FitBounds({ hotels }: { hotels: HotelData[] }) {
   return null;
 }
 
-function HotelPopupContent({ h, wlBaseUrl }: { h: HotelData; wlBaseUrl: string }) {
+function HotelPopupContent({ h, wlBaseUrl, wl }: { h: HotelData; wlBaseUrl: string; wl?: WlSearchContext }) {
   const image = h.hotel.images?.[0]?.x500;
   const price = h.min_price?.toLocaleString('ru-RU');
 
@@ -121,7 +122,11 @@ function HotelPopupContent({ h, wlBaseUrl }: { h: HotelData; wlBaseUrl: string }
           <span style={{ fontWeight: 700, fontSize: 17, color: '#1a1a1a' }}>{price} ₽</span>
         </div>
         <a
-          href={`${wlBaseUrl}${h.hotel.link}`}
+          href={buildWlHotelUrl(
+            wlBaseUrl,
+            { link: h.hotel.link, minPrice: h.min_price, nights: h.min_price_nights, dates: h.dates },
+            wl,
+          )}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -141,6 +146,7 @@ interface HotelMapProps {
   hotels: HotelData[];
   hoveredId: string | null;
   wlBaseUrl?: string;
+  wl?: WlSearchContext;
 }
 
 /**
@@ -183,7 +189,7 @@ function useLabelLayout(hotels: HotelData[]) {
   return withLabel;
 }
 
-function Markers({ hotels, hoveredId, wlBaseUrl }: { hotels: HotelData[]; hoveredId?: string | null; wlBaseUrl: string }) {
+function Markers({ hotels, hoveredId, wlBaseUrl, wl }: { hotels: HotelData[]; hoveredId?: string | null; wlBaseUrl: string; wl?: WlSearchContext }) {
   const withLabel = useLabelLayout(hotels);
 
   return (
@@ -200,7 +206,7 @@ function Markers({ hotels, hoveredId, wlBaseUrl }: { hotels: HotelData[]; hovere
             zIndexOffset={active ? 1000 : showLabel ? 100 : 0}
           >
             <Popup closeButton={false} className={styles.popup} offset={[0, -4]}>
-              <HotelPopupContent h={h} wlBaseUrl={wlBaseUrl} />
+              <HotelPopupContent h={h} wlBaseUrl={wlBaseUrl} wl={wl} />
             </Popup>
           </Marker>
         );
@@ -209,7 +215,7 @@ function Markers({ hotels, hoveredId, wlBaseUrl }: { hotels: HotelData[]; hovere
   );
 }
 
-export function HotelMap({ hotels, hoveredId, wlBaseUrl = '' }: HotelMapProps) {
+export function HotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProps) {
   const withCoords = hotels.filter(h => h.hotel.lat && h.hotel.long);
 
   const center: [number, number] = withCoords.length > 0
@@ -230,7 +236,7 @@ export function HotelMap({ hotels, hoveredId, wlBaseUrl = '' }: HotelMapProps) {
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         <FitBounds hotels={withCoords} />
-        <Markers hotels={withCoords} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} />
+        <Markers hotels={withCoords} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} wl={wl} />
       </MapContainer>
     </div>
   );
