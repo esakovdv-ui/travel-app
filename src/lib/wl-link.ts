@@ -11,6 +11,22 @@
  * сняты с самого WL — так он линкует карточки в собственной выдаче.
  */
 
+/**
+ * Адрес White Label по умолчанию.
+ *
+ * NEXT_PUBLIC_* вшивается в бандл при сборке, и если на сервере переменной
+ * не оказалось, `process.env.NEXT_PUBLIC_WL_BASE_URL ?? ''` давал пустую
+ * строку — ссылки становились относительными и вели на наш же /hotels
+ * вместо WL. Так и случилось на проде. Поэтому база задаётся здесь,
+ * а переменная окружения лишь переопределяет её.
+ */
+const DEFAULT_WL_BASE_URL = 'https://mytrip.mosgortur.ru';
+
+export function wlBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_WL_BASE_URL?.trim();
+  return fromEnv || DEFAULT_WL_BASE_URL;
+}
+
 export interface WlSearchContext {
   /** Идентификатор поиска в Level Travel. Без него WL игнорирует остальные параметры. */
   requestId?: string;
@@ -44,7 +60,9 @@ export function buildWlHotelUrl(
 ): string {
   if (!offer.link) return baseUrl;
 
-  const url = `${baseUrl}${offer.link}`;
+  // Пустая база дала бы относительный путь на наш же домен.
+  const base = baseUrl?.trim() || DEFAULT_WL_BASE_URL;
+  const url = `${base}${offer.link}`;
 
   // Без request_id остальные параметры WL не применяет — проверено, даты
   // всё равно сбрасываются на дефолтные. Тогда ссылка остаётся как была.

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ThematicRowConfig } from '@/lib/thematic-rows';
 import type { HotelData } from '@/components/tours/hotel-card';
-import { buildWlHotelUrl, type WlSearchContext } from '@/lib/wl-link';
+import { buildWlHotelUrl, wlBaseUrl as resolveWlBaseUrl, type WlSearchContext } from '@/lib/wl-link';
 import { StarIcon, ArrowRightIcon } from '@/components/icons';
 import styles from '@/app/(public)/home.module.css';
 
@@ -43,7 +43,7 @@ export default function ThematicRowBlock({ collection }: Props) {
     return () => { cancelled = true; };
   }, [collection.id, collection.items.length]);
 
-  const wlBaseUrl = process.env.NEXT_PUBLIC_WL_BASE_URL ?? '';
+  const wlBaseUrl = resolveWlBaseUrl();
 
   return (
     <section className={styles.thematicRow}>
