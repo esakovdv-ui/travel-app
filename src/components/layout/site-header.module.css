@@ -264,8 +264,13 @@
 }
 
 .searchWrap > * {
-  overflow: hidden;
   min-height: 0;
+}
+
+/* Клипаем только в схлопнутом состоянии — иначе `overflow: hidden`, нужный
+   анимации 1fr→0fr, режет выпадающий список направлений по высоте шапки. */
+.searchWrapCollapsed > * {
+  overflow: hidden;
 }
 
 .searchWrapCollapsed {
