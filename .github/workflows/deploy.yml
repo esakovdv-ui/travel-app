@@ -12,6 +12,34 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Нужен, чтобы понять, менялся ли staff-landing в этом пуше.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Нужно ли пересобирать staff-landing
+        id: staff
+        run: |
+          BEFORE='${{ github.event.before }}'
+          ZERO=0000000000000000000000000000000000000000
+
+          # По умолчанию собираем. Пропускаем сборку только когда точно
+          # убедились, что staff-landing не менялся: ошибка сравнения не должна
+          # приводить к тихо пропущенному деплою.
+          CHANGED=true
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "$ZERO" ]; then
+            if DIFF=$(git diff --name-only "$BEFORE" '${{ github.sha }}' 2>/dev/null); then
+              if ! printf '%s\n' "$DIFF" | grep -q '^apps/staff-landing/'; then
+                CHANGED=false
+              fi
+            else
+              echo 'не удалось сравнить коммиты — собираем staff на всякий случай'
+            fi
+          fi
+
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "staff-landing менялся: $CHANGED"
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -22,11 +50,12 @@ jobs:
           TOURVISOR_TOKEN: ${{ secrets.TOURVISOR_TOKEN }}
           LEVEL_TRAVEL_API_KEY: ${{ secrets.LEVEL_TRAVEL_API_KEY }}
           NEXT_PUBLIC_WL_BASE_URL: ${{ vars.NEXT_PUBLIC_WL_BASE_URL }}
+          DEPLOY_STAFF: ${{ steps.staff.outputs.changed }}
         with:
           host: 72.56.32.183
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN,TOURVISOR_AUTHKEY,TOURVISOR_TOKEN,LEVEL_TRAVEL_API_KEY,NEXT_PUBLIC_WL_BASE_URL
+          envs: BITRIX_DOMAIN,WEBHOOK_TOKEN,REBOOKING_WEBHOOK_TOKEN,TOURVISOR_AUTHKEY,TOURVISOR_TOKEN,LEVEL_TRAVEL_API_KEY,NEXT_PUBLIC_WL_BASE_URL,DEPLOY_STAFF
           script: |
             set -e
             ENV_FILE=/home/travel-app/.env.local
@@ -71,7 +100,13 @@ jobs:
             fi
             MAIN_EXIT=0
             /home/deploy.sh || MAIN_EXIT=$?
-            if [ -f /home/travel-app/scripts/deploy-staff-landing.sh ]; then
+            # Раньше staff-landing пересобирался на каждом деплое, даже когда
+            # в нём не было ни одной правки: rm -rf .next, полный npm install
+            # и ещё одна сборка Next сразу после сборки travel-app. На машине
+            # с 1.9 ГБ и одним ядром это и роняло деплой.
+            if [ "$DEPLOY_STAFF" != "true" ]; then
+              echo "staff-landing не менялся — пропускаем его пересборку"
+            elif [ -f /home/travel-app/scripts/deploy-staff-landing.sh ]; then
               bash /home/travel-app/scripts/deploy-staff-landing.sh
             fi
             exit $MAIN_EXIT

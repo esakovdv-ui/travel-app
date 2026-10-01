@@ -67,6 +67,10 @@ ls -la "$DST/docs" || true
 
 rm -rf .next
 npm install
+# Потолок кучи V8: на сервере 1.9 ГБ памяти и одно ядро, без лимита сборка
+# падает с «JavaScript heap out of memory». Swap тут не помогает — лимит V8
+# от него не зависит.
+export NODE_OPTIONS="--max-old-space-size=768"
 npm run build
 pm2 restart staff-landing
 pm2 status staff-landing
