@@ -1,6 +1,13 @@
 /**
  * Сборка ссылок на карточку отеля в White Label.
  *
+ * Параметры те же, в которые WL переписывает собственный адрес, если открыть
+ * карточку без них: start_date, nights, adults, kids, search_type, from.
+ * Раньше мы слали request_id + offer_date/offer_nights/offer_price — это
+ * работало, пока их поиск отвечал быстро, но 01.10 страница стала открываться
+ * пустой с «Hotel searcher: невозможно получить номера»: WL ждал наш поиск,
+ * а тот у них подвисал. Формат ниже ни от какого поиска не зависит.
+ *
  * Level Travel отдаёт в выдаче только относительный путь вида
  * `/hotels/9161535-Mirazh_Gostevoj_Dom`. Если открыть его как есть, WL ничего
  * не знает о нашем поиске и подставляет свои дефолты: ближайшие даты и тур
@@ -28,11 +35,11 @@ export function wlBaseUrl(): string {
 }
 
 export interface WlSearchContext {
-  /** Идентификатор поиска в Level Travel. Без него WL игнорирует остальные параметры. */
-  requestId?: string;
   /** `hotel` — только проживание, `package` — тур с перелётом. */
   searchType?: 'hotel' | 'package';
   adults?: number;
+  /** Количество детей. WL ждёт этот параметр даже пустым. */
+  kids?: number;
   /** Код города вылета Level Travel, напр. `Moscow`. */
   fromCity?: string;
 }
@@ -64,27 +71,20 @@ export function buildWlHotelUrl(
   const base = baseUrl?.trim() || DEFAULT_WL_BASE_URL;
   const url = `${base}${offer.link}`;
 
-  // Без request_id остальные параметры WL не применяет — проверено, даты
-  // всё равно сбрасываются на дефолтные. Тогда ссылка остаётся как была.
-  if (!ctx.requestId) return url;
+  const date = cheapestDate(offer.dates);
+  if (!date || !offer.nights) return url;
 
   const searchType = ctx.searchType ?? 'package';
   const params = new URLSearchParams({
-    request_id: ctx.requestId,
+    start_date: date,
+    nights: String(offer.nights),
+    adults: String(ctx.adults ?? 2),
+    kids: ctx.kids ? String(ctx.kids) : '',
     search_type: searchType,
+    // Города вылета у нас только российские, поэтому суффикс всегда RU.
+    // У поиска «только отель» вылета нет — WL ждёт в этом случае `Any`.
+    from: searchType === 'hotel' ? 'Any-RU' : `${ctx.fromCity ?? 'Moscow'}-RU`,
   });
-
-  if (offer.minPrice) params.set('offer_price', String(offer.minPrice));
-  if (offer.nights)   params.set('offer_nights', String(offer.nights));
-
-  const date = cheapestDate(offer.dates);
-  if (date) params.set('offer_date', date);
-
-  if (ctx.adults) params.set('adults', String(ctx.adults));
-
-  // Города вылета у нас только российские, поэтому суффикс всегда RU.
-  // У поиска «только отель» вылета нет — WL ждёт в этом случае `Any`.
-  params.set('from', searchType === 'hotel' ? 'Any-RU' : `${ctx.fromCity ?? 'Moscow'}-RU`);
 
   return `${url}${url.includes('?') ? '&' : '?'}${params}`;
 }

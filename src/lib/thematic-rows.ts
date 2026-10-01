@@ -68,10 +68,7 @@ export const fetchRowHotels = unstable_cache(
     console.log(`[thematic-rows] ${rowId}: ${hotels.length} отелей`);
     return {
       hotels: hotels.slice(0, search.maxResults),
-      // Ряд кэшируется на 6 часов вместе с request_id. Если WL к моменту клика
-      // его уже не помнит, он просто откроет отель на своих дефолтах — то есть
-      // не хуже, чем было до проброса контекста.
-      wl: { requestId: request_id, searchType: search_type, adults: search.adults, fromCity: 'Moscow' },
+      wl: { searchType: search_type, adults: search.adults, fromCity: 'Moscow' },
     };
   },
   ['thematic-row-hotels'],
