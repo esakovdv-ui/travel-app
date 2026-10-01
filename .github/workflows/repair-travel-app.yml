@@ -46,6 +46,10 @@ jobs:
             export NODE_OPTIONS="--max-old-space-size=768"
             npm run build
             pm2 restart travel-app || pm2 start npm --name travel-app -- start
+            # Выше мы остановили staff-landing, чтобы освободить память под
+            # сборку. Если его не поднять обратно, staff.motrip.ru остаётся
+            # лежать с 502 — ровно так и случилось 01.10.2026.
+            pm2 start staff-landing || pm2 restart staff-landing || true
             pm2 save || true
             sleep 8
             echo "=== pm2 ==="
