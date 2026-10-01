@@ -85,9 +85,9 @@ function HotelsPageInner() {
         if (!data.success) throw new Error(data.error);
         setHotels(data.hotels ?? []);
         setWl({
-          requestId:  data.request_id,
           searchType: data.search_type,
           adults:     Number(searchParams.get('adults') ?? 2),
+          kids:       Number(searchParams.get('kids') ?? 0),
           fromCity:   searchParams.get('fromCity') ?? 'Moscow',
         });
         setFilters(data.filters ?? {});

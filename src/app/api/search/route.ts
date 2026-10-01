@@ -54,8 +54,22 @@ export async function GET(request: Request) {
     // Шаг 1: ставим поиск в очередь
     const { request_id, search_type } = await enqueueSearch(params);
 
-    // Шаг 2: ждём завершения поиска (поллинг)
-    await pollUntilComplete(request_id);
+    // Шаг 2: ждём завершения поиска (поллинг).
+    //
+    // Раньше таймаут выбрасывал ошибку, и человек видел «не удалось загрузить»
+    // даже когда часть операторов уже всё нашла: мы ждём, пока закончат ВСЕ,
+    // и один подвисший хоронил всю выдачу. Так 01.10 перестали открываться
+    // Египет, ОАЭ и Вьетнам — ровно на 31-й секунде.
+    //
+    // Теперь таймаут не фатален: забираем то, что успело найтись. Выдача
+    // может быть неполной, но это лучше пустого экрана с ошибкой.
+    let complete = true;
+    try {
+      await pollUntilComplete(request_id);
+    } catch {
+      complete = false;
+      console.warn(`[search] таймаут поллинга, отдаём частичную выдачу: ${request_id}`);
+    }
 
     // Шаг 3: получаем отели
     const hotels = await getHotels(request_id);
@@ -65,6 +79,8 @@ export async function GET(request: Request) {
       request_id,
       // нужен клиенту, чтобы собрать ссылку на карточку отеля в WL
       search_type,
+      // false — часть операторов не успела ответить, выдача неполная
+      complete,
       hotels: hotels.hotels,
       hotels_count: hotels.hotels_count,
       filters: hotels.filters,
