@@ -365,13 +365,33 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
+  /* Три поля в ряд на телефоне не помещаются: при ширине экрана 375px
+     на «Когда» остаётся 83px, и дата «20 ноя – 27 ноя, 7 ночей» обрезается.
+     Раскладываем в две строки: «Куда» на всю ширину сверху, «Когда»
+     и «Кто едет» с кнопкой — снизу. */
   .bar,
   .barTours {
-    grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr) auto minmax(40px, auto);
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, auto);
+    row-gap: 2px;
+    border-radius: 24px;
+    padding: 6px;
+  }
+
+  .segWhere {
+    grid-column: 1 / -1;
+  }
+
+  /* Разделитель между «Куда» и «Когда» теперь между строк — он лишний */
+  .divWhere {
+    display: none;
   }
 
   .seg {
-    padding: 7px 8px;
+    padding: 7px 10px;
+  }
+
+  .segValue {
+    font-size: 0.82rem;
   }
 }

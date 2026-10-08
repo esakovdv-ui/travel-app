@@ -245,7 +245,7 @@ export function SearchBar({
 
           {/* Куда */}
           <div
-            className={`${styles.seg} ${activeField === 'where' ? styles.segActive : ''}`}
+            className={`${styles.seg} ${styles.segWhere} ${activeField === 'where' ? styles.segActive : ''}`}
             onClick={() => setActiveField('where')}
             role="button" tabIndex={0}
           >
@@ -266,11 +266,11 @@ export function SearchBar({
             )}
           </div>
 
-          <div className={`${styles.div} ${activeField === 'where' || activeField === 'when' ? styles.divHidden : ''}`} />
+          <div className={`${styles.div} ${styles.divWhere} ${activeField === 'where' || activeField === 'when' ? styles.divHidden : ''}`} />
 
           {/* Когда */}
           <div
-            className={`${styles.seg} ${activeField === 'when' ? styles.segActive : ''}`}
+            className={`${styles.seg} ${styles.segWhen} ${activeField === 'when' ? styles.segActive : ''}`}
             onClick={() => toggle('when')}
             role="button" tabIndex={0}
           >
