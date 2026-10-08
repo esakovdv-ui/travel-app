@@ -232,8 +232,13 @@ export function HotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProp
         scrollWheelZoom={true}
         attributionControl={false}
       >
+        {/* Esri Light Gray Canvas: светлая подложка без ключа.
+            CARTO, стоявший здесь раньше, с лета требует API-ключ и вместо
+            тайлов отдаёт заглушку «API KEY REQUIRED» с кодом 200 — ошибки
+            в консоли нет, а карта серая. */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          attribution="&copy; Esri"
         />
         <FitBounds hotels={withCoords} />
         <Markers hotels={withCoords} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} wl={wl} />
