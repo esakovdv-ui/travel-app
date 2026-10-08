@@ -17,7 +17,7 @@ const SEARCH_TABS: Array<{
   { id: 'services', label: 'Лагеря', hint: 'Лучший детский отдых'}
 ];
 
-const SEARCH_PILLS = ['Популярно: Япония', 'На майские', 'С детьми', 'До 7 дней'];
+const SEARCH_PILLS = ['Популярно: Турция', 'На новогодние', 'С детьми', 'До 7 дней'];
 
 const GUEST_GROUPS = [
   { id: 'adults', label: 'Взрослые', hint: 'От 13 лет' },

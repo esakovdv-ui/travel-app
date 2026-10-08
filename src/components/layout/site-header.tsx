@@ -21,7 +21,7 @@ const NAV_LINKS = [
   { href: '/about',   label: 'О сервисе' },
 ];
 
-const SEARCH_PILLS = ['Популярно: Япония', 'На майские', 'С детьми', 'До 7 дней'];
+const SEARCH_PILLS = ['Популярно: Турция', 'На новогодние', 'С детьми', 'До 7 дней'];
 
 const HEADER_TABS = [
   { id: 'stays'       as SearchTab, label: 'Отели', hint: 'Без перелёта',        icon: <BuildingsIcon weight="light" size={16} /> },
