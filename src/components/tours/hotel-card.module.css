@@ -20,9 +20,21 @@
 .cardRow .imageWrap {
   width: 220px;
   flex-shrink: 0;
+  /* aspect-ratio снят намеренно: высоту строки задаёт контент карточки,
+     а фото подстраивается под неё. Иначе вертикальные снимки растягивали
+     карточку до 394px при 146px содержимого — четверть экрана уходила
+     в пустоту, и в выдачу помещалось полторы позиции. */
   aspect-ratio: unset;
   height: auto;
+  align-self: stretch;
   border-radius: 0;
+}
+.cardRow .image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .cardRow .body {
   padding: 16px 20px;
