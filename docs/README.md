@@ -10,7 +10,7 @@
 | [`../PROJECT.md`](../PROJECT.md) | Обзор продукта, стек, страницы, БД, auth, changelog, roadmap |
 | [`../README.md`](../README.md) | Git-flow, запуск, структура `src/` |
 | [`infrastructure.md`](./infrastructure.md) | VPS, деплой, PM2, env, Bitrix |
-| [`staff-metrika-goals.md`](./staff-metrika-goals.md) | Цели Яндекс.Метрики для staff.motrip.ru |
+| [`staff-metrika-goals.md`](./staff-metrika-goals.md) | Цели Яндекс.Метрики и Google Sheet воронки staff.motrip.ru |
 | [`../apps/staff-landing/README.md`](../apps/staff-landing/README.md) | Портал сотрудников: auth, админка, деплой |
 
 ## Остальные docs/
