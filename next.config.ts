@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  async redirects() {
+    return [{ source: '/stories', destination: '/', permanent: false }];
+  },
   async rewrites() {
     return [
       {

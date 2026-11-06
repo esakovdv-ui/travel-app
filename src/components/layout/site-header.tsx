@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BrandLogo } from './brand-logo';
 import {
   MagnifyingGlassIcon, ListIcon, XIcon,
-  BuildingsIcon, AirplaneTakeoffIcon, BookOpenIcon,
+  BuildingsIcon, AirplaneTakeoffIcon,
 } from '@/components/icons';
 import { SearchBar, SearchBarValues, SearchBarSnapshot, SearchTab } from '@/components/ui/search-bar';
 import { UserMenu, UserMenuUser } from './user-menu';
@@ -17,7 +17,6 @@ import styles from './site-header.module.css';
 const NAV_LINKS = [
   { href: '/tours',   label: 'Туры' },
   { href: '/hotels',  label: 'Отели' },
-  { href: '/stories', label: 'Истории' },
   { href: '/about',   label: 'О сервисе' },
 ];
 
@@ -187,17 +186,6 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
             </span>
           </button>
         ))}
-        <Link
-          href="/stories"
-          tabIndex={collapsed ? -1 : 0}
-          className={`${styles.headerTab} ${styles.headerTabStories}`}
-        >
-          <span className={styles.headerTabIcon}><BookOpenIcon weight="light" size={16} /></span>
-          <span className={styles.headerTabText}>
-            <span className={styles.headerTabLabel}>Истории</span>
-            <span className={styles.headerTabHint}>Опыт путешественников</span>
-          </span>
-        </Link>
       </div>
     );
   }
@@ -270,15 +258,6 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
                   </span>
                 </button>
               ))}
-              {isHome && (
-                <Link href="/stories" className={`${styles.headerTab} ${styles.headerTabStories}`}>
-                  <span className={styles.headerTabIcon}><BookOpenIcon weight="light" size={16} /></span>
-                  <span className={styles.headerTabText}>
-                    <span className={styles.headerTabLabel}>Истории</span>
-                    <span className={styles.headerTabHint}>Опыт путешественников</span>
-                  </span>
-                </Link>
-              )}
             </div>
           )}
 
