@@ -38,6 +38,7 @@ function SearchBarFromURL({
   onValuesChange: (s: SearchBarSnapshot) => void;
 }) {
   const searchParams = useSearchParams();
+  const kidsAges = searchParams.get('kidsAges');
   const initialValues = {
     toCountry:     searchParams.get('toCountry')     ?? undefined,
     toCity:        searchParams.get('toCity')        ?? undefined,
@@ -47,6 +48,7 @@ function SearchBarFromURL({
     endDateTill:   searchParams.get('endDateTill')   ?? undefined,
     adults:        Number(searchParams.get('adults') ?? 2),
     kids:          Number(searchParams.get('kids')   ?? 0),
+    kidsAges:      kidsAges ? kidsAges.split(',').map(Number) : undefined,
     fromCity:      searchParams.get('fromCity')      ?? 'Moscow',
   };
   return (
@@ -149,6 +151,11 @@ export function SiteHeader({ initialUser }: { initialUser?: UserMenuUser | null 
       ...(v.toCity  && { toCity: v.toCity }),
       ...(v.kids > 0 && { kids: String(v.kids), kidsAges: v.kidsAges.join(',') }),
     });
+    const currentParams = new URLSearchParams(window.location.search);
+    for (const name of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+      const value = currentParams.get(name);
+      if (value) params.set(name, value);
+    }
     const route = v.tab === 'experiences' ? '/tours' : '/hotels';
     router.push(`${route}?${params}`);
     setSearchOpen(false);
