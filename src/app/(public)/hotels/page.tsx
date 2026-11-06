@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { HotelCard, HotelData } from '@/components/tours/hotel-card';
 import { FiltersPanel, FiltersData, ActiveFilters, EMPTY_FILTERS } from '@/components/tours/filters-panel';
 import { Preloader } from '@/components/ui/preloader';
@@ -34,6 +34,7 @@ function applyFilters(hotels: HotelData[], f: ActiveFilters): HotelData[] {
 }
 
 function HotelsPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [hotels, setHotels]   = useState<HotelData[]>([]);
   const [filters, setFilters] = useState<FiltersData>({});
@@ -51,6 +52,9 @@ function HotelsPageInner() {
   useEffect(() => {
     const startDateFrom = searchParams.get('startDateFrom') ?? searchParams.get('startDate');
     if (!startDateFrom) return;
+    const country = searchParams.get('toCountry')?.trim() || 'TR';
+    const controller = new AbortController();
+    let redirecting = false;
 
     setLoading(true);
     setError(null);
@@ -61,7 +65,7 @@ function HotelsPageInner() {
     setSearched(true);
 
     const params = new URLSearchParams({
-      toCountry:     searchParams.get('toCountry')     ?? 'TR',
+      toCountry:     country,
       startDateFrom,
       startDateTill: searchParams.get('startDateTill') ?? startDateFrom,
       adults:        searchParams.get('adults')        ?? '2',
@@ -79,10 +83,19 @@ function HotelsPageInner() {
       } : {}),
     });
 
-    fetch(`/api/search?${params}`)
+    fetch(`/api/search?${params}`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
+        if (controller.signal.aborted) return;
         if (!data.success) throw new Error(data.error);
+        if (country.toUpperCase() !== 'RU' && data.complete === true &&
+            Array.isArray(data.hotels) && data.hotels.length === 0) {
+          const tourParams = new URLSearchParams(searchParams.toString());
+          tourParams.set('fromHotels', '1');
+          redirecting = true;
+          router.replace(`/tours?${tourParams}`);
+          return;
+        }
         setHotels(data.hotels ?? []);
         setWl({
           searchType: data.search_type,
@@ -92,9 +105,15 @@ function HotelsPageInner() {
         });
         setFilters(data.filters ?? {});
       })
-      .catch(err => setError(toUserSearchError(err)))
-      .finally(() => setLoading(false));
-  }, [searchParams]);
+      .catch(err => {
+        if (!controller.signal.aborted) setError(toUserSearchError(err));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted && !redirecting) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [router, searchParams]);
 
   const filtered = useMemo(() => applyFilters(hotels, active), [hotels, active]);
   const hasMap   = useMemo(() => filtered.some(h => h.hotel.lat && h.hotel.long), [filtered]);

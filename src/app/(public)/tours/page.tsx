@@ -103,6 +103,12 @@ function ToursPageInner() {
     <div className={styles.page}>
       <Preloader show={loading} />
 
+      {searchParams.get('fromHotels') === '1' && (
+        <p className={styles.searchNotice} role="status">
+          На эти даты не нашлось отелей без перелёта. Здесь можно посмотреть туры с перелётом на те же даты.
+        </p>
+      )}
+
       {error && <div className={styles.error}>{error}</div>}
 
       {!loading && hotels.length > 0 && (

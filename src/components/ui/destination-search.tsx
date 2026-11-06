@@ -73,7 +73,10 @@ export function DestinationSearch({ value, onChange, onSelect }: Props) {
                   key={`${d.toCountry}-${d.toCity}`}
                   type="button"
                   className={`${styles.option} ${value?.toCity === d.toCity ? styles.optionActive : ''}`}
-                  onClick={() => handleSelect(d)}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleSelect(d);
+                  }}
                 >
                   <span className={styles.optionCity}>{d.labelShort}</span>
                   <span className={styles.optionCountry}>{d.label.split(', ')[1]}</span>

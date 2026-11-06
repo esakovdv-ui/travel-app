@@ -3,6 +3,14 @@
   padding-right: calc(42vw + 48px);
 }
 
+.searchNotice {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
 .layout {
   display: flex;
   gap: 20px;
