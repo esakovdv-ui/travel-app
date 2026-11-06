@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { listFeaturedReviews } from '@/lib/repositories';
 import { buildMetadata } from '@/lib/seo';
 import { APP_NAME } from '@/lib/constants';
 import { readThematicRows, fetchRowHotels, type ThematicRowHotels } from '@/lib/thematic-rows';
@@ -7,7 +6,7 @@ import { readSearchTags } from '@/lib/search-tags';
 import type { HotelData } from '@/components/tours/hotel-card';
 import {
   UmbrellaIcon, GlobeIcon, AirplaneTakeoffIcon, AirplaneLandingIcon,
-  MapPinIcon, SuitcaseIcon, StarIcon,
+  MapPinIcon, SuitcaseIcon,
 } from '@/components/icons';
 import ThematicRowBlock from '@/components/ThematicRowBlock';
 import styles from './home.module.css';
@@ -40,7 +39,6 @@ export default async function HomePage() {
     .sort((a, b) => a.order - b.order);
 
   // Последовательно — чтобы не словить rate-limit LT API при параллельных запросах
-  const reviews = await listFeaturedReviews(3);
   const rowResults: ThematicRowHotels[] = [];
   for (const r of rowConfigs) {
     const result = await fetchRowHotels(r.id, r.search).catch((err) => {
@@ -75,29 +73,6 @@ export default async function HomePage() {
         {thematicRows.map((collection) => (
           <ThematicRowBlock key={collection.id} collection={collection} />
         ))}
-      </section>
-
-      <section className={styles.reviewSection}>
-        <div className="shell">
-          <div className={styles.reviewGrid}>
-            {reviews.map((review) => (
-              <blockquote className={styles.reviewCard} key={review.id}>
-                <div className={styles.reviewTop}>
-                  <div className={styles.reviewAvatar} aria-hidden="true">
-                    {review.authorName.charAt(0)}
-                  </div>
-                  <div>
-                    <div className={styles.reviewStars}>
-                    {Array.from({ length: review.rating }, (_, i) => <StarIcon key={i} weight="fill" size={13} />)}
-                  </div>
-                    <footer className={styles.reviewAuthor}>{review.authorName}</footer>
-                  </div>
-                </div>
-                <p className={styles.reviewText}>{review.comment}</p>
-              </blockquote>
-            ))}
-          </div>
-        </div>
       </section>
     </main>
   );

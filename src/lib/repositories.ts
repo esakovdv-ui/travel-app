@@ -93,10 +93,6 @@ export async function listAllReviews() {
   return [...mockReviews].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function listFeaturedReviews(limit = 3) {
-  return mockReviews.filter((item) => item.status === 'approved').slice(0, limit);
-}
-
 export async function createReview(review: TravelReview) {
   mockReviews.unshift(review);
   logEvent('info', 'review.created', { reviewId: review.id, packageId: review.packageId });

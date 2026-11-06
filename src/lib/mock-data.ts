@@ -160,39 +160,6 @@ export const mockPackages: TravelPackage[] = [
 
 export const mockReviews: TravelReview[] = [
   {
-    id: 'rev-1',
-    packageId: 'pkg-bali-luxe',
-    authorName: 'Светлана Р.',
-    authorEmail: 'svetlana@example.com',
-    rating: 5,
-    comment:
-      'Маршрут был отточен до мелочей — от встречи в аэропорту до последнего ужина на пляже. Никакой спешки, только удовольствие.',
-    status: 'approved',
-    createdAt: '2026-03-09T08:00:00.000Z'
-  },
-  {
-    id: 'rev-2',
-    packageId: 'pkg-alps-premium',
-    authorName: 'Амелия Т.',
-    authorEmail: 'amelia@example.com',
-    rating: 5,
-    comment:
-      'Прекрасный темп, отличный выбор отелей, а горный ужин стал самым запоминающимся моментом путешествия.',
-    status: 'approved',
-    createdAt: '2026-03-11T08:00:00.000Z'
-  },
-  {
-    id: 'rev-3',
-    packageId: 'pkg-iceland-fire-ice',
-    authorName: 'Александр М.',
-    authorEmail: 'alex@example.com',
-    rating: 5,
-    comment:
-      'Северное сияние в первую же ночь — это незабываемо. Тур продуман до мелочей, гид невероятно знающий.',
-    status: 'approved',
-    createdAt: '2026-03-07T08:00:00.000Z'
-  },
-  {
     id: 'rev-4',
     packageId: 'pkg-morocco-design',
     authorName: 'Мария К.',
