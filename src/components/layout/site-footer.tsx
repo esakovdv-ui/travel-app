@@ -30,7 +30,6 @@ export function SiteFooter() {
             <nav className={styles.columnLinks} aria-label="Основные разделы">
               <Link href="/tours">Подобрать тур</Link>
               <Link href="/hotels">Отели без перелёта</Link>
-              <Link href="/about">О сервисе</Link>
             </nav>
           </div>
 

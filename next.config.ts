@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return [{ source: '/stories', destination: '/', permanent: false }];
+    return [
+      { source: '/stories', destination: '/', permanent: false },
+      { source: '/about', destination: '/', permanent: false },
+    ];
   },
   async rewrites() {
     return [
