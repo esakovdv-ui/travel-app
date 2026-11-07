@@ -17,7 +17,6 @@ import styles from './site-header.module.css';
 const NAV_LINKS = [
   { href: '/tours',   label: 'Туры' },
   { href: '/hotels',  label: 'Отели' },
-  { href: '/about',   label: 'О сервисе' },
 ];
 
 const SEARCH_PILLS = ['Популярно: Турция', 'На новогодние', 'С детьми', 'До 7 дней'];
