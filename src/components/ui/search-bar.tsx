@@ -6,7 +6,7 @@ import {
 } from '@/components/icons';
 import { DateRangePicker, DateRangeValue } from './date-range-picker';
 import { DestinationSearch } from './destination-search';
-import { DestinationOption, DESTINATION_OPTIONS } from '@/lib/destinations';
+import { DestinationOption, initialDestination } from '@/lib/destinations';
 import styles from './search-bar.module.css';
 
 export type SearchTab = 'stays' | 'experiences';
@@ -108,10 +108,7 @@ export function SearchBar({
     onTabChange?.(t);
   }
 
-  const initDest = DESTINATION_OPTIONS.find(
-    d => d.toCountry === initialValues?.toCountry &&
-      (!initialValues?.toCity || d.toCity === initialValues?.toCity)
-  ) ?? null;
+  const initDest = initialDestination(initialValues?.toCountry, initialValues?.toCity);
 
   const [destination, setDestination] = useState<DestinationOption | null>(initDest);
   const [fromCity, setFromCity] = useState(initialValues?.fromCity ?? 'Moscow');
