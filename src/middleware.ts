@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyJwtToken } from '@/lib/jwt';
 import { SESSION_COOKIE, JWT_SECRET } from '@/lib/session';
 
+import { captureFirstTouch, FIRST_TOUCH_COOKIE } from '@/lib/mytrip-attribution';
+
+function withFirstTouch(request: NextRequest, response: NextResponse): NextResponse {
+  if (
+    request.method === 'GET' &&
+    request.headers.get('accept')?.includes('text/html') &&
+    !request.headers.get('purpose')?.includes('prefetch') &&
+    !request.headers.get('sec-purpose')?.includes('prefetch') &&
+    !request.cookies.has(FIRST_TOUCH_COOKIE)
+  ) {
+    response.cookies.set(FIRST_TOUCH_COOKIE, captureFirstTouch(request.nextUrl.searchParams), {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+    response.headers.set('Cache-Control', 'private, no-store');
+  }
+  return response;
+}
+
 const PROTECTED = ['/account'];
 
 /**
@@ -55,13 +76,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const isProtected = PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'));
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected) return withFirstTouch(request, NextResponse.next());
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
-    return NextResponse.redirect(loginUrl);
+    return withFirstTouch(request, NextResponse.redirect(loginUrl));
   }
 
   const payload = await verifyJwtToken(token, JWT_SECRET);
@@ -70,19 +91,12 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('next', pathname);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(SESSION_COOKIE);
-    return response;
+    return withFirstTouch(request, response);
   }
 
-  return NextResponse.next();
+  return withFirstTouch(request, NextResponse.next());
 }
 
 export const config = {
-  matcher: [
-    '/account',
-    '/account/:path*',
-    '/admin',
-    '/admin/:path*',
-    '/podbor-admin',
-    '/podbor-admin/:path*',
-  ],
+  matcher: ['/account/:path*', '/admin/:path*', '/podbor-admin/:path*', '/((?!api/|_next/|go/mytrip|.*\\.(?!html$)[^/]+$).*)'],
 };
