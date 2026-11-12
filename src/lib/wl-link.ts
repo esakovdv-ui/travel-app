@@ -1,3 +1,5 @@
+import { MYTRIP_ORIGIN, mytripHandoff } from './mytrip-attribution';
+
 /**
  * Сборка ссылок на карточку отеля в White Label.
  *
@@ -27,7 +29,7 @@
  * вместо WL. Так и случилось на проде. Поэтому база задаётся здесь,
  * а переменная окружения лишь переопределяет её.
  */
-const DEFAULT_WL_BASE_URL = 'https://mytrip.mosgortur.ru';
+const DEFAULT_WL_BASE_URL = MYTRIP_ORIGIN;
 
 export function wlBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_WL_BASE_URL?.trim();
@@ -65,14 +67,14 @@ export function buildWlHotelUrl(
   offer: WlOffer,
   ctx: WlSearchContext = {},
 ): string {
-  if (!offer.link) return baseUrl;
+  if (!offer.link) return mytripHandoff(baseUrl || DEFAULT_WL_BASE_URL);
 
   // Пустая база дала бы относительный путь на наш же домен.
   const base = baseUrl?.trim() || DEFAULT_WL_BASE_URL;
   const url = `${base}${offer.link}`;
 
   const date = cheapestDate(offer.dates);
-  if (!date || !offer.nights) return url;
+  if (!date || !offer.nights) return mytripHandoff(url);
 
   const searchType = ctx.searchType ?? 'package';
   const params = new URLSearchParams({
@@ -86,5 +88,7 @@ export function buildWlHotelUrl(
     from: searchType === 'hotel' ? 'Any-RU' : `${ctx.fromCity ?? 'Moscow'}-RU`,
   });
 
-  return `${url}${url.includes('?') ? '&' : '?'}${params}`;
+  const target = new URL(url);
+  for (const [key, value] of params) target.searchParams.set(key, value);
+  return mytripHandoff(target.href);
 }
