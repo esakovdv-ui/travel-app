@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -215,7 +216,7 @@ function Markers({ hotels, hoveredId, wlBaseUrl, wl }: { hotels: HotelData[]; ho
   );
 }
 
-export function HotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProps) {
+function LeafletHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProps) {
   const withCoords = hotels.filter(h => h.hotel.lat && h.hotel.long);
 
   const center: [number, number] = withCoords.length > 0
@@ -245,4 +246,172 @@ export function HotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProp
       </MapContainer>
     </div>
   );
+}
+
+type Coordinates = [longitude: number, latitude: number];
+
+interface YandexMap {
+  addChild(child: unknown): void;
+  removeChild(child: unknown): void;
+  setLocation(location: { center: Coordinates; zoom: number } | { bounds: [Coordinates, Coordinates] }): void;
+  destroy(): void;
+}
+
+interface YandexMaps {
+  ready: Promise<void>;
+  YMap: new (container: HTMLElement, options: { location: { center: Coordinates; zoom: number } }) => YandexMap;
+  YMapDefaultSchemeLayer: new () => unknown;
+  YMapDefaultFeaturesLayer: new () => unknown;
+  YMapMarker: new (options: { coordinates: Coordinates; zIndex: number }, element: HTMLElement) => unknown;
+}
+
+let mapsPromise: Promise<YandexMaps> | undefined;
+
+function loadYandexMaps(apiKey: string): Promise<YandexMaps> {
+  if (mapsPromise) return mapsPromise;
+
+  mapsPromise = new Promise<YandexMaps>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `https://api-maps.yandex.ru/v3/?apikey=${encodeURIComponent(apiKey)}&lang=ru_RU`;
+    script.referrerPolicy = 'strict-origin-when-cross-origin';
+
+    const timeout = window.setTimeout(() => fail(), 15000);
+    function fail() {
+      window.clearTimeout(timeout);
+      script.remove();
+      reject(new Error('Не удалось загрузить Яндекс Карты'));
+    }
+
+    script.onerror = fail;
+    script.onload = () => {
+      const api = (window as Window & { ymaps3?: YandexMaps }).ymaps3;
+      if (!api) {
+        fail();
+        return;
+      }
+      api.ready.then(() => {
+        window.clearTimeout(timeout);
+        resolve(api);
+      }, fail);
+    };
+    document.head.append(script);
+  }).catch(error => {
+    mapsPromise = undefined;
+    throw error;
+  });
+
+  return mapsPromise;
+}
+
+function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: HotelMapProps & { apiKey: string }) {
+  const container = useRef<HTMLDivElement>(null);
+  const [instance, setInstance] = useState<{ api: YandexMaps; map: YandexMap }>();
+  const [failed, setFailed] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const points = useMemo(() => hotels.flatMap(hotel => {
+    const { lat, long } = hotel.hotel;
+    if (lat == null || long == null || !Number.isFinite(lat) || !Number.isFinite(long)) return [];
+    const coordinates: Coordinates = [long, lat];
+    return [{ hotel, coordinates }];
+  }), [hotels]);
+  const selected = points.find(({ hotel }) => hotel.tour_id === selectedId)?.hotel;
+
+  useEffect(() => {
+    let cancelled = false;
+    let map: YandexMap | undefined;
+
+    loadYandexMaps(apiKey).then(api => {
+      if (cancelled || !container.current) return;
+      map = new api.YMap(container.current, { location: { center: [34.6, 36.8], zoom: 10 } });
+      map.addChild(new api.YMapDefaultSchemeLayer());
+      map.addChild(new api.YMapDefaultFeaturesLayer());
+      setInstance({ api, map });
+    }).catch(() => {
+      if (!cancelled) setFailed(true);
+    });
+
+    return () => {
+      cancelled = true;
+      const mountedMap = map;
+      if (mountedMap) queueMicrotask(() => mountedMap.destroy());
+    };
+  }, [apiKey]);
+
+  const boundsKey = JSON.stringify(points.map(({ coordinates }) => coordinates));
+  useEffect(() => {
+    if (!instance) return;
+    const coordinates: Coordinates[] = JSON.parse(boundsKey);
+    if (coordinates.length === 0) return;
+    const longitudes = coordinates.map(([longitude]) => longitude);
+    const latitudes = coordinates.map(([, latitude]) => latitude);
+    const southwest: Coordinates = [Math.min(...longitudes), Math.min(...latitudes)];
+    const northeast: Coordinates = [Math.max(...longitudes), Math.max(...latitudes)];
+    if (southwest[0] === northeast[0] && southwest[1] === northeast[1]) {
+      instance.map.setLocation({ center: southwest, zoom: 13 });
+    } else {
+      instance.map.setLocation({ bounds: [southwest, northeast] });
+    }
+  }, [instance, boundsKey]);
+
+  if (failed) return <LeafletHotelMap {...{ hotels, hoveredId, wlBaseUrl, wl }} />;
+
+  return (
+    <div className={`${styles.mapWrap} ${styles.yandexWrap}`}>
+      <div ref={container} className={styles.map} />
+      {instance && points.map(({ hotel, coordinates }) => (
+        <YandexHotelMarker
+          key={hotel.tour_id}
+          instance={instance}
+          coordinates={coordinates}
+          hotel={hotel}
+          active={hoveredId === hotel.tour_id || selectedId === hotel.tour_id}
+          onSelect={setSelectedId}
+        />
+      ))}
+      {selected && (
+        <div className={styles.yandexPopup}>
+          <button type="button" className={styles.closePopup} aria-label="Закрыть карточку отеля" onClick={() => setSelectedId(null)}>×</button>
+          <HotelPopupContent h={selected} wlBaseUrl={wlBaseUrl} wl={wl} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YandexHotelMarker({ instance, coordinates, hotel, active, onSelect }: {
+  instance: { api: YandexMaps; map: YandexMap };
+  coordinates: Coordinates;
+  hotel: HotelData;
+  active: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const [element] = useState(() => document.createElement('div'));
+  const [longitude, latitude] = coordinates;
+
+  useEffect(() => {
+    const marker = new instance.api.YMapMarker(
+      { coordinates: [longitude, latitude], zIndex: active ? 1000 : 0 },
+      element,
+    );
+    instance.map.addChild(marker);
+    return () => instance.map.removeChild(marker);
+  }, [instance, longitude, latitude, active, element]);
+
+  return createPortal(
+    <button
+      type="button"
+      className={styles.yandexMarker}
+      aria-label={`${hotel.hotel.name}, ${priceLabel(hotel.min_price)}`}
+      aria-pressed={active}
+      onClick={() => onSelect(hotel.tour_id)}
+    >
+      {priceLabel(hotel.min_price)}
+    </button>,
+    element,
+  );
+}
+
+export function HotelMap(props: HotelMapProps) {
+  const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_KEY;
+  return apiKey ? <YandexHotelMap {...props} apiKey={apiKey} /> : <LeafletHotelMap {...props} />;
 }

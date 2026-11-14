@@ -27,3 +27,50 @@
   display: none;
 }
 
+
+.yandexWrap {
+  position: relative;
+}
+
+.yandexMarker {
+  transform: translate(-50%, -50%);
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 5px 11px;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
+  cursor: pointer;
+}
+
+.yandexMarker[aria-pressed='true'] {
+  background: #1b4fbf;
+  color: #fff;
+}
+
+.yandexPopup {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 18%);
+}
+
+.closePopup {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+}
