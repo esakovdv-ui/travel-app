@@ -27,9 +27,8 @@ function makeDotIcon(active: boolean) {
   });
 }
 
-/** Сокращаем до тысяч: «116 782 ₽» → «117 т₽» — плашка вдвое уже */
 function priceLabel(price: number | null | undefined): string {
-  return price ? `${Math.round(price / 1000).toLocaleString('ru-RU')} т₽` : '—';
+  return price ? `${price.toLocaleString('ru-RU')} ₽` : '—';
 }
 
 /** Ширина плашки. Используется и при отрисовке, и при раскладке без наложений. */
@@ -250,6 +249,10 @@ function LeafletHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProp
 type Coordinates = [latitude: number, longitude: number];
 
 interface YandexMap {
+  getZoom(): number;
+  getGlobalPixelCenter(): Coordinates;
+  options: { get(name: "projection"): { toGlobalPixels(point: Coordinates, zoom: number): Coordinates } };
+  events: { add(name: string, callback: () => void): void; remove(name: string, callback: () => void): void };
   geoObjects: { add(marker: unknown): void; removeAll(): void };
   setCenter(center: Coordinates, zoom: number): void;
   setBounds(bounds: [Coordinates, Coordinates], options: { checkZoomRange: boolean; zoomMargin: number }): void;
@@ -259,10 +262,11 @@ interface YandexMap {
 interface YandexMaps {
   ready(callback: () => void): void;
   Map: new (container: HTMLElement, options: { center: Coordinates; zoom: number; controls: string[] }) => YandexMap;
+  templateLayoutFactory: { createClass(template: string): unknown };
   Placemark: new (
     coordinates: Coordinates,
     properties: { iconContent: string; hintContent: string },
-    options: { preset: string; iconColor: string },
+    options: { iconLayout: unknown; iconShape: { type: string; coordinates: number[][] }; zIndex: number },
   ) => { events: { add(event: 'click', callback: () => void): void } };
 }
 
@@ -306,6 +310,7 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
   const [instance, setInstance] = useState<{ api: YandexMaps; map: YandexMap }>();
   const [failed, setFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [viewport, setViewport] = useState(0);
   const selected = hotels.find(hotel => hotel.tour_id === selectedId);
 
   useEffect(() => {
@@ -331,23 +336,64 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
   ));
 
   useEffect(() => {
+    if (!instance || !container.current) return;
+    const refresh = () => setViewport(value => value + 1);
+    const observer = new ResizeObserver(refresh);
+    observer.observe(container.current);
+    instance.map.events.add('boundschange', refresh);
+    return () => {
+      observer.disconnect();
+      instance.map.events.remove('boundschange', refresh);
+    };
+  }, [instance]);
+
+  const project = useCallback((point: Coordinates) => {
+    if (!instance || !container.current) return null;
+    const { map } = instance;
+    const [x, y] = map.options.get('projection').toGlobalPixels(point, map.getZoom());
+    const [centerX, centerY] = map.getGlobalPixelCenter();
+    return [x - centerX + container.current.clientWidth / 2, y - centerY + container.current.clientHeight / 2];
+  }, [instance]);
+
+  useEffect(() => {
     if (!instance) return;
 
     instance.map.geoObjects.removeAll();
-    for (const hotel of hotels) {
+    const placed: number[][] = [];
+    const sorted = [...hotels].sort((a, b) =>
+      Number(b.tour_id === (selectedId ?? hoveredId)) - Number(a.tour_id === (selectedId ?? hoveredId))
+      || (a.min_price ?? Infinity) - (b.min_price ?? Infinity),
+    );
+    for (const hotel of sorted) {
       const { lat, long } = hotel.hotel;
       if (lat == null || long == null || !Number.isFinite(lat) || !Number.isFinite(long)) continue;
 
       const active = hoveredId === hotel.tour_id || selectedId === hotel.tour_id;
+      const pixel = project([lat, long]);
+      const width = priceIconWidth(hotel.min_price);
+      const [x, y] = pixel ?? [0, 0];
+      const box = [x - width / 2 - 4, y - 17, x + width / 2 + 4, y + 17];
+      const showLabel = active || !placed.some(([left, top, right, bottom]) =>
+        box[0] < right && box[2] > left && box[1] < bottom && box[3] > top,
+      );
+      if (showLabel) placed.push(box);
+      const halfWidth = showLabel ? width / 2 : 9;
+      const halfHeight = showLabel ? 15 : 9;
       const marker = new instance.api.Placemark(
         [lat, long],
         { iconContent: priceLabel(hotel.min_price), hintContent: '' },
-        { preset: 'islands#blueStretchyIcon', iconColor: active ? '#102c6e' : '#1b4fbf' },
+        {
+          iconLayout: instance.api.templateLayoutFactory.createClass(
+            `<span class="${styles.yandexPin} ${showLabel ? '' : styles.yandexDot} ${active ? styles.yandexActive : ''}">${showLabel ? '$[properties.iconContent]' : ''}</span>`,
+          ),
+          iconShape: { type: 'Rectangle', coordinates: [[-halfWidth, -halfHeight], [halfWidth, halfHeight]] },
+          zIndex: active ? 1000 : showLabel ? 100 : 0,
+        },
       );
       marker.events.add('click', () => setSelectedId(hotel.tour_id));
       instance.map.geoObjects.add(marker);
     }
-  }, [instance, hotels, hoveredId, selectedId]);
+  }, [instance, hotels, hoveredId, selectedId, project, viewport]);
 
   useEffect(() => {
     if (!instance) return;
@@ -364,13 +410,23 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
     }
   }, [instance, boundsKey]);
 
+  const lat = selected?.hotel.lat;
+  const long = selected?.hotel.long;
+  const anchor = lat != null && long != null ? project([lat, long]) : null;
+  const mapWidth = container.current?.clientWidth ?? 0;
+  const mapHeight = container.current?.clientHeight ?? 0;
+
   if (failed) return <LeafletHotelMap {...{ hotels, hoveredId, wlBaseUrl, wl }} />;
 
   return (
     <div className={`${styles.mapWrap} ${styles.yandexWrap}`}>
       <div ref={container} className={styles.map} />
-      {selected && (
-        <div className={styles.yandexPopup}>
+      {selected && anchor && anchor[0] >= 0 && anchor[0] <= mapWidth && anchor[1] >= 0 && anchor[1] <= mapHeight && (
+        <div className={styles.yandexPopup} style={{
+          left: Math.max(8, Math.min(anchor[0] - 120, mapWidth - 248)),
+          top: anchor[1] >= 260 ? anchor[1] - 18 : Math.min(anchor[1] + 18, Math.max(8, mapHeight - 260)),
+          transform: anchor[1] >= 260 ? 'translateY(-100%)' : undefined,
+        }}>
           <button type="button" className={styles.closePopup} aria-label="Закрыть карточку отеля" onClick={() => setSelectedId(null)}>×</button>
           <HotelPopupContent h={selected} wlBaseUrl={wlBaseUrl} wl={wl} />
         </div>
