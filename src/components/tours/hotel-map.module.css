@@ -32,25 +32,6 @@
   position: relative;
 }
 
-.yandexMarker {
-  transform: translate(-50%, -50%);
-  border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 5px 11px;
-  background: #fff;
-  color: #1a1a1a;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 20%);
-  cursor: pointer;
-}
-
-.yandexMarker[aria-pressed='true'] {
-  background: #1b4fbf;
-  color: #fff;
-}
-
 .yandexPopup {
   position: absolute;
   top: 12px;
