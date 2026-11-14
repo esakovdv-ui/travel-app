@@ -75,6 +75,9 @@ export function HotelCard({
   variant = 'card',
   onMouseEnter,
   onMouseLeave,
+  resultId,
+  selected,
+  onShowOnMap,
 }: {
   hotel: HotelData;
   wlBaseUrl: string;
@@ -83,6 +86,9 @@ export function HotelCard({
   variant?: 'card' | 'row';
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  resultId?: string;
+  selected?: boolean;
+  onShowOnMap?: () => void;
 }) {
   const price    = h.min_price?.toLocaleString('ru-RU');
   const prevPrice = h.extras?.previous_price
@@ -102,6 +108,8 @@ export function HotelCard({
   return (
     <div
       className={`${styles.card} ${variant === 'row' ? styles.cardRow : ''}`}
+      id={resultId}
+      data-selected={selected || undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -177,6 +185,12 @@ export function HotelCard({
           <div className={styles.mealRow}>
             <span className={styles.mealBadge}>{meal.name}</span>
           </div>
+        )}
+
+        {onShowOnMap && (
+          <button type="button" className={styles.showOnMap} onClick={onShowOnMap}>
+            {selected ? 'Показан на карте' : 'На карте'}
+          </button>
         )}
 
         {/* Цена + кнопка */}

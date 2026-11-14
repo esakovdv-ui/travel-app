@@ -291,3 +291,30 @@
   background: var(--c-red-hover);
   transform: scale(1.03);
 }
+
+.cardRow[data-selected='true'] {
+  outline: 2px solid #1b4fbf;
+  outline-offset: -2px;
+}
+
+.cardRow[id] {
+  scroll-margin-block: 90px 16px;
+}
+
+.showOnMap {
+  align-self: flex-start;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #1b4fbf;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .showOnMap {
+    display: none;
+  }
+}

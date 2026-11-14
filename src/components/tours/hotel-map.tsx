@@ -144,6 +144,9 @@ function HotelPopupContent({ h, wlBaseUrl, wl }: { h: HotelData; wlBaseUrl: stri
 interface HotelMapProps {
   hotels: HotelData[];
   hoveredId: string | null;
+  selectedId?: string | null;
+  focusSelection?: { id: string } | null;
+  onSelectionChange?: (id: string | null) => void;
   wlBaseUrl?: string;
   wl?: WlSearchContext;
 }
@@ -188,18 +191,32 @@ function useLabelLayout(hotels: HotelData[]) {
   return withLabel;
 }
 
-function Markers({ hotels, hoveredId, wlBaseUrl, wl }: { hotels: HotelData[]; hoveredId?: string | null; wlBaseUrl: string; wl?: WlSearchContext }) {
+function Markers({ hotels, hoveredId, selectedId, focusSelection, onSelectionChange, wlBaseUrl, wl }: HotelMapProps & { wlBaseUrl: string }) {
+  const map = useMap();
+  const markerRefs = useRef(new Map<string, L.Marker>());
+  useEffect(() => {
+    if (!focusSelection || selectedId !== focusSelection.id) return;
+    const marker = markerRefs.current.get(focusSelection.id);
+    if (!marker) return;
+    map.panTo(marker.getLatLng());
+    marker.openPopup();
+  }, [map, focusSelection, selectedId]);
   const withLabel = useLabelLayout(hotels);
 
   return (
     <>
       {hotels.map(h => {
-        const active = hoveredId === h.tour_id;
+        const active = (selectedId ?? hoveredId) === h.tour_id;
         // Наведённый отель показываем плашкой всегда, чтобы его было видно в списке
         const showLabel = active || withLabel.has(h.tour_id);
         return (
           <Marker
             key={h.tour_id}
+            ref={marker => {
+              if (marker) markerRefs.current.set(h.tour_id, marker);
+              else markerRefs.current.delete(h.tour_id);
+            }}
+            eventHandlers={{ click: () => onSelectionChange?.(h.tour_id) }}
             position={[h.hotel.lat!, h.hotel.long!]}
             icon={showLabel ? makePriceIcon(h.min_price, active) : makeDotIcon(active)}
             zIndexOffset={active ? 1000 : showLabel ? 100 : 0}
@@ -214,7 +231,7 @@ function Markers({ hotels, hoveredId, wlBaseUrl, wl }: { hotels: HotelData[]; ho
   );
 }
 
-function LeafletHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProps) {
+function LeafletHotelMap({ hotels, wlBaseUrl = '', ...props }: HotelMapProps) {
   const withCoords = hotels.filter(h => h.hotel.lat && h.hotel.long);
 
   const center: [number, number] = withCoords.length > 0
@@ -240,7 +257,7 @@ function LeafletHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl }: HotelMapProp
           attribution="&copy; Esri"
         />
         <FitBounds hotels={withCoords} />
-        <Markers hotels={withCoords} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} wl={wl} />
+        <Markers {...props} hotels={withCoords} wlBaseUrl={wlBaseUrl} />
       </MapContainer>
     </div>
   );
@@ -305,11 +322,10 @@ function loadYandexMaps(apiKey: string): Promise<YandexMaps> {
   return mapsPromise;
 }
 
-function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: HotelMapProps & { apiKey: string }) {
+function YandexHotelMap({ hotels, hoveredId, selectedId, focusSelection, onSelectionChange, wlBaseUrl = '', wl, apiKey }: HotelMapProps & { apiKey: string }) {
   const container = useRef<HTMLDivElement>(null);
   const [instance, setInstance] = useState<{ api: YandexMaps; map: YandexMap }>();
   const [failed, setFailed] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewport, setViewport] = useState(0);
   const selected = hotels.find(hotel => hotel.tour_id === selectedId);
 
@@ -390,10 +406,10 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
           zIndex: active ? 1000 : showLabel ? 100 : 0,
         },
       );
-      marker.events.add('click', () => setSelectedId(hotel.tour_id));
+      marker.events.add('click', () => onSelectionChange?.(hotel.tour_id));
       instance.map.geoObjects.add(marker);
     }
-  }, [instance, hotels, hoveredId, selectedId, project, viewport]);
+  }, [instance, hotels, hoveredId, selectedId, project, viewport, onSelectionChange]);
 
   useEffect(() => {
     if (!instance) return;
@@ -410,13 +426,22 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
     }
   }, [instance, boundsKey]);
 
+  const focusHotel = focusSelection ? selected : undefined;
+  const focusLat = focusHotel?.hotel.lat;
+  const focusLong = focusHotel?.hotel.long;
+  useEffect(() => {
+    if (instance && focusLat != null && focusLong != null) {
+      instance.map.setCenter([focusLat, focusLong], instance.map.getZoom());
+    }
+  }, [instance, focusSelection, focusLat, focusLong]);
+
   const lat = selected?.hotel.lat;
   const long = selected?.hotel.long;
   const anchor = lat != null && long != null ? project([lat, long]) : null;
   const mapWidth = container.current?.clientWidth ?? 0;
   const mapHeight = container.current?.clientHeight ?? 0;
 
-  if (failed) return <LeafletHotelMap {...{ hotels, hoveredId, wlBaseUrl, wl }} />;
+  if (failed) return <LeafletHotelMap {...{ hotels, hoveredId, selectedId, focusSelection, onSelectionChange, wlBaseUrl, wl }} />;
 
   return (
     <div className={`${styles.mapWrap} ${styles.yandexWrap}`}>
@@ -427,7 +452,7 @@ function YandexHotelMap({ hotels, hoveredId, wlBaseUrl = '', wl, apiKey }: Hotel
           top: anchor[1] >= 260 ? anchor[1] - 18 : Math.min(anchor[1] + 18, Math.max(8, mapHeight - 260)),
           transform: anchor[1] >= 260 ? 'translateY(-100%)' : undefined,
         }}>
-          <button type="button" className={styles.closePopup} aria-label="Закрыть карточку отеля" onClick={() => setSelectedId(null)}>×</button>
+          <button type="button" className={styles.closePopup} aria-label="Закрыть карточку отеля" onClick={() => onSelectionChange?.(null)}>×</button>
           <HotelPopupContent h={selected} wlBaseUrl={wlBaseUrl} wl={wl} />
         </div>
       )}

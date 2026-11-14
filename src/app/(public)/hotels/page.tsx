@@ -43,6 +43,17 @@ function HotelsPageInner() {
   const [error, setError]     = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ id: string; source: 'map' | 'list' } | null>(null);
+  const selectFromMap = (id: string | null) => {
+    setSelection(id === null ? null : { id, source: 'map' });
+    if (id !== null) {
+      document.getElementById(`result-${id}`)?.scrollIntoView({
+        block: 'nearest',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+      });
+    }
+  };
+
   // Контекст последнего поиска — нужен ссылкам на карточки отелей в WL.
   const [wl, setWl] = useState<WlSearchContext | undefined>(undefined);
 
@@ -122,6 +133,10 @@ function HotelsPageInner() {
   }, [router, searchParams]);
 
   const filtered = useMemo(() => applyFilters(hotels, active), [hotels, active]);
+  const selectedId = filtered.some(h => h.tour_id === selection?.id) ? selection?.id ?? null : null;
+  useEffect(() => {
+    if (!selectedId) setSelection(null);
+  }, [selectedId]);
   const hasMap   = useMemo(() => filtered.some(h => h.hotel.lat && h.hotel.long), [filtered]);
 
   return (
@@ -160,6 +175,11 @@ function HotelsPageInner() {
                     wlBaseUrl={wlBaseUrl}
                     wl={wl}
                     variant="row"
+                    resultId={`result-${h.tour_id}`}
+                    selected={selectedId === h.tour_id}
+                    onShowOnMap={h.hotel.lat && h.hotel.long
+                      ? () => setSelection({ id: h.tour_id, source: 'list' })
+                      : undefined}
                     onMouseEnter={() => setHoveredId(h.tour_id)}
                     onMouseLeave={() => setHoveredId(null)}
                   />
@@ -177,7 +197,15 @@ function HotelsPageInner() {
 
           {hasMap && (
             <div className={styles.mapPanel}>
-              <HotelMap hotels={filtered} hoveredId={hoveredId} wlBaseUrl={wlBaseUrl} wl={wl} />
+              <HotelMap
+                hotels={filtered}
+                hoveredId={selectedId ? null : hoveredId}
+                selectedId={selectedId}
+                focusSelection={selection?.source === 'list' ? selection : null}
+                onSelectionChange={selectFromMap}
+                wlBaseUrl={wlBaseUrl}
+                wl={wl}
+              />
             </div>
           )}
         </div>
