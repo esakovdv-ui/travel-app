@@ -20,7 +20,7 @@ function applyFilters(hotels: HotelData[], f: ActiveFilters): HotelData[] {
     if (f.priceMin !== null && h.min_price < f.priceMin) return false;
     if (f.priceMax !== null && h.min_price > f.priceMax) return false;
     if (f.stars.length > 0 && !f.stars.includes(h.hotel.stars)) return false;
-    if (f.ratingMin !== null && h.hotel.rating < f.ratingMin) return false;
+    if (f.ratingMin !== null && !(h.hotel.rating >= f.ratingMin)) return false;
     if (f.meals.length > 0) {
       const hotelMeals = Object.keys(h.pansion_prices ?? {});
       if (!f.meals.some(m => hotelMeals.includes(m))) return false;
@@ -61,7 +61,13 @@ function HotelsPageInner() {
     setHotels([]);
     setWl(undefined);
     setFilters({});
-    setActive(EMPTY_FILTERS);
+    const priceMin = Number(searchParams.get('priceMin'));
+    const ratingMin = Number(searchParams.get('ratingMin'));
+    setActive({
+      ...EMPTY_FILTERS,
+      priceMin: Number.isFinite(priceMin) && priceMin > 0 ? priceMin : null,
+      ratingMin: [6, 7, 8, 9].includes(ratingMin) ? ratingMin : null,
+    });
     setSearched(true);
 
     const params = new URLSearchParams({
