@@ -22,7 +22,7 @@
 | `rebooking-landing.md` | Ребукинг |
 | `rebooking-email-campaign.md` | Email-кампания ребукинга |
 | `rebooking-bitrix-campaign-import.md` | Импорт кампании в Bitrix |
-| [`seo/semantic-core-online-mosgortur.md`](./seo/semantic-core-online-mosgortur.md) | Семантическое ядро online.mosgortur.ru для Яндекса |
+| [`seo/semantic-core-online-mosgortur.md`](./seo/semantic-core-online-mosgortur.md) | Бизнес-запрос: по каким словам люди должны находить online.mosgortur.ru в Яндексе |
 
 ## Важно для правок на сервере
 
