@@ -1,6 +1,7 @@
 export interface City {
   nameRu: string;
   nameEn: string; // to_city для API
+  aliases?: string[];
 }
 
 export interface Country {
@@ -24,7 +25,7 @@ export const DESTINATIONS: Country[] = [
       { nameRu: 'Сиде',            nameEn: 'Side' },
       { nameRu: 'Бодрум',          nameEn: 'Bodrum' },
       { nameRu: 'Мармарис',        nameEn: 'Marmaris' },
-      { nameRu: 'Стамбул',         nameEn: 'Istanbul' },
+      { nameRu: 'Стамбул',         nameEn: 'Istanbul', aliases: ['Константинополь'] },
     ],
   },
   {
@@ -33,7 +34,7 @@ export const DESTINATIONS: Country[] = [
     category: 'mass',
     cities: [
       { nameRu: 'Хургада',         nameEn: 'Hurghada' },
-      { nameRu: 'Шарм-эль-Шейх',  nameEn: 'Sharm el-Sheikh' },
+      { nameRu: 'Шарм-эль-Шейх',  nameEn: 'Sharm el-Sheikh', aliases: ['Шарм эш Шейх'] },
       { nameRu: 'Марса-Алам',      nameEn: 'Marsa Alam' },
     ],
   },
@@ -76,7 +77,7 @@ export const DESTINATIONS: Country[] = [
     cities: [
       { nameRu: 'Сочи',            nameEn: 'Sochi' },
       { nameRu: 'Краснодарский край', nameEn: 'Krasnodar' },
-      { nameRu: 'Санкт-Петербург', nameEn: 'Saint Petersburg' },
+      { nameRu: 'Санкт-Петербург', nameEn: 'Saint Petersburg', aliases: ['Питер', 'СПб', 'Санкт Петербург'] },
       { nameRu: 'Казань',          nameEn: 'Kazan' },
       { nameRu: 'Москва',          nameEn: 'Moscow' },
     ],
@@ -162,7 +163,8 @@ export interface DestinationOption {
   labelShort: string;  // "Кемер"
   toCountry: string;   // "TR"
   toCity: string;      // "Kemer"
-  category: 'mass' | 'growing' | 'premium';
+  aliases?: string[];
+  category: 'mass' | 'growing' | 'premium' | 'catalog';
 }
 
 export const DESTINATION_OPTIONS: DestinationOption[] = DESTINATIONS.flatMap(country =>
@@ -171,6 +173,7 @@ export const DESTINATION_OPTIONS: DestinationOption[] = DESTINATIONS.flatMap(cou
     labelShort: city.nameRu,
     toCountry: country.iso2,
     toCity: city.nameEn,
+    aliases: city.aliases,
     category: country.category,
   }))
 );
@@ -181,3 +184,21 @@ export const COUNTRY_OPTIONS = DESTINATIONS.map(c => ({
   iso2: c.iso2,
   category: c.category,
 }));
+
+export function normalizeDestination(text: string) {
+  return text.toLowerCase().replace(/ё/g, 'е').replace(/[\s.,–—-]+/g, ' ').trim();
+}
+
+export function initialDestination(country?: string, city?: string): DestinationOption | null {
+  const known = DESTINATION_OPTIONS.find(d => d.toCountry === country && (!city || d.toCity === city));
+  if (known) return known;
+  if (!country) return null;
+  const countryLabel = COUNTRY_OPTIONS.find(c => c.iso2 === country)?.nameRu ?? country;
+  return {
+    label: city ? `${city}, ${countryLabel}` : countryLabel,
+    labelShort: city ?? countryLabel,
+    toCountry: country,
+    toCity: city ?? '',
+    category: 'catalog',
+  };
+}

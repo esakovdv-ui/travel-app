@@ -129,3 +129,23 @@ export async function pollUntilComplete(requestId: string, maxWaitMs = 30000) {
   }
   throw new Error('Search timeout');
 }
+
+interface LevelTravelDestinationCountry {
+  iso2: string;
+  name_ru: string;
+  cities: { name_ru: string; name_en: string }[];
+}
+
+export async function getLevelTravelDestinations(): Promise<LevelTravelDestinationCountry[]> {
+  const response = await fetch(`${BASE_URL}/references/destinations`, {
+    headers: HEADERS,
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error(`Destination directory failed: ${response.status}`);
+  const data = await response.json();
+  if (data.success !== true || !Array.isArray(data.countries)) {
+    throw new Error('Invalid destination directory');
+  }
+  return data.countries;
+}

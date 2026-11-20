@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { DateRangePicker, DateRangeValue } from '@/components/ui/date-range-picker';
 import { DestinationSearch } from '@/components/ui/destination-search';
-import { DESTINATION_OPTIONS, DestinationOption } from '@/lib/destinations';
+import { DestinationOption, initialDestination } from '@/lib/destinations';
 import styles from './tour-search-form.module.css';
 
 export interface TourSearchValues {
@@ -55,11 +55,9 @@ function ageLabel(n: number) {
 }
 
 export function TourSearchForm({ initialValues, onSearch, loading, showFromCity = true, submitLabel = 'Найти туры' }: Props) {
-  const initDestination = DESTINATION_OPTIONS.find(
-    d => d.toCountry === initialValues?.toCountry && (!initialValues?.toCity || d.toCity === initialValues?.toCity)
-  ) ?? null;
+  const selectedDestination = initialDestination(initialValues?.toCountry, initialValues?.toCity);
 
-  const [destination, setDestination] = useState<DestinationOption | null>(initDestination);
+  const [destination, setDestination] = useState<DestinationOption | null>(selectedDestination);
   const [fromCity, setFromCity] = useState(initialValues?.fromCity ?? 'Moscow');
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     start: initialValues?.startDateFrom ? ltToISO(initialValues.startDateFrom) : null,
